@@ -55,7 +55,11 @@ Snapshot date: 2026-11-03. This ecosystem changes often (see the October 2026 ar
 - **MultiViewer** (desktop app, F1 TV based) and its undocumented circuits API: not a data source for us (used by v1, dropped).
 - **Game telemetry (EA F1 UDP)**: real-time and well documented, but it describes the video game, not real races. Out of scope.
 
-## 3. Consequences for StintLine (proposed, pending decision)
+## 3. Consequences for StintLine
+
+> **Superseded by [ADR 0002](../adr/0002-data-sources-and-live-strategy.md).** FastF1 is dropped entirely, and live mode uses our own unauthenticated SignalR Core client, run locally.
+> A probe on 2026-11-03 confirmed that 20 topics, including `TimingAppData`, `TyreStintSeries` and `LapSeries`, are delivered without auth. Only `CarData.z` and `Position.z` are withheld.
+> The list below is the initial proposal, kept for history.
 
 1. **OpenF1 is the primary source** for laps, stints, pit, race control, weather and intervals, historical and free. **Jolpica** is canonical for calendar, results and pit-stop durations.
 2. **FastF1 becomes an optional, local-only adapter** behind the provider interface. It is disabled in CI and on the demo server, and it requires the user's own F1 TV credentials via environment variables. Tests use recorded fixtures only, as for every provider.
