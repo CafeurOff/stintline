@@ -38,6 +38,9 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 | Rival stop share | 0.5 | `pit_exit.py` | A rival that pitted on the decision lap still has its out-lap (≈ half its loss) to run. |
 | `WindowConfig.min_stint_laps` | 5 | `window.py` | Shorter stints are never strategic. |
 | `WindowConfig.window_tolerance_s` | 1.0 s | `window.py` | Plans within 1 s of the best are treated as equivalent. |
+| `WhatIfConfig.min_stint_laps` | 3 | `whatif.py` | A stop every two laps is never a plan; shorter stints are rejected. |
+| `WhatIfConfig.long_stint_margin_laps` | 3 | `whatif.py` | Stints longer than the longest run on that compound in the race (+ 3 laps) are extrapolated: a warning is shown. |
+| `WhatIfConfig.require_two_dry_compounds` | `True` | `whatif.py` | Dry-race rule: a single-compound plan is flagged as illegal (still simulated). |
 
 ## 3. Methods
 
@@ -57,6 +60,8 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 
 **Optimal window.** Exhaustive search over 1- and 2-stop plans, using the closed-form stint cost `n · pace₀ + slope · Σ ages`. It enforces the two-dry-compounds rule, optional maximum stint length, and returns every plan within 1 s of the best.
 
+**What-if replay of a whole race (ADR 0010).** The car's real race is kept and only the modelled effect of the change is added, lap by lap: `alt(lap) = real(lap) + Σ_{k ≤ lap} [tyre delta(k) + stop delta(k)]`. The tyre delta is the compound pace at the alternative age minus the pace at the real age (the car offset and fuel cancel), zero on neutralised laps. Each added stop adds the loss expected under that lap's conditions (`PitLossEstimate.under`), each removed real stop takes it back. Both schedules use the same convention: new set from the lap after the in-lap. The finishing order uses the official race times (with penalties) of the other cars, which do not change. σ² = Σ σ_pitloss² over the added and removed stops + Σ_compound (slope SE × net tyre age on that compound)², the slope error being shared by every lap on the compound. The finishing position is a distribution: P(between two rival times) from the Normal CDF.
+
 ## 4. Validation
 
 ### 4.1 Synthetic ground truth (unit tests)
@@ -64,6 +69,8 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 - Pooled compound slope unbiased when pace and stint length are correlated.
 - Pit loss recovered within 1 s, and SC pit loss within 2.5 s.
 - Undercut gain matches the hand calculation (0.15 s/lap × 26 laps − 0.4 s compound offset ≈ 3.5 s).
+
+**What-if.** Two synthetic races generated with the same seed differ only in one car's strategy, so every lap draws the same noise and the second race is the exact answer for "the first race with the second strategy". The replay matches it within max(1 s, 2σ) for later and earlier one-stops, a two-stop, and stops under or outside a Safety Car (`tests/test_whatif.py`). On the real Hungarian Grand Prix 2025, swapping Norris's one-stop and Piastri's two-stop moves each by about 1.4 s (σ ≈ 3.7 s), consistent with the 0.7 s that separated them.
 
 ### 4.2 Pit-exit backtest on real 2025 races
 `manage.py seed_demo --backtest && manage.py backtest`. Each measurable green stop is predicted with the pit loss estimated from the *other* stops of the race (leave-one-out). It is compared with the observed position at the end of the out-lap. Stops under or next to a neutralisation, on lap 1 or on the final lap are skipped.
@@ -123,4 +130,6 @@ Each ±0.011 s/kg shifts slopes by about ±0.019 s/lap. 0.022 s/kg yields negati
 - **Track evolution** (rubbering-in) is absorbed into the fuel and degradation terms.
 - **Traffic** is not modelled explicitly beyond outlier removal.
 - **Undercut and window** are verified on synthetic data and physically plausible inputs, but not yet backtested against observed undercut outcomes. This is planned once enough pairwise exchanges are labelled.
+- **What-if: the other cars do not react** to the new strategy, and overtaking on track costs nothing: a car that rejoins behind a slower one is assumed to pass at once. The car's own traffic and mistakes stay as they were in the real race. Retired cars, cars with gaps in their timing and wet races cannot be replayed.
+- **Pit loss under a Safety Car** can be overestimated when a stop's out-lap falls under the SC (the slow SC lap inflates the measured loss). Found with the what-if tests; affects circuits where the field pitted just before a Safety Car.
 - **Sample size.** Nine dry 2025 races. Wet races, Qatar-style stint limits and sprint races are not part of the validation.
