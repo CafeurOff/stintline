@@ -40,6 +40,9 @@ ignore = [
     "PLR0913",  # explicit keyword-heavy signatures are preferred over config dicts
 ]
 
+# Mathematical notation used in model docstrings.
+allowed-confusables = ["σ", "×", "Φ", "·", "−"]
+
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "PLR2004", "S106", "PLC0415"]
 "apps/api/manage.py" = ["PLC0415"]
