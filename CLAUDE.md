@@ -8,6 +8,7 @@ It must stay accessible to casual fans first, with deeper charts for hardcore fa
 - Phases 0–5 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (see `docs/model.md`), versioned API (`/api/v1`) and a bilingual (EN/FR) web UI built around the circuit: cars replayed on the real track, pit-stop and undercut simulations drawn on it, tyres and model pages (ADR 0007, `apps/web/CLAUDE.md`).
 - Phase 6 done: every season stored (timing from 2023, results, qualifying, standings and biographies from 1950), team radio references, automatic import after each Grand Prix (Celery beat), driver, standings and radio endpoints (ADR 0008).
 - Phase 7 done: hub pages (home, Grands Prix by season since 1950 as cards, Grand Prix page with circuit, podium, results and race analysis: key facts, positions and gaps lap by lap, lap times, tyre strategies, best sectors and top speeds), drivers and teams as season cards with photos, line-ups and official car renders, profiles with season charts, standings with the title-fight chart, race picker dialog, photo driver picker, Wikipedia driver portraits (ADR 0009). Data stays current on its own: `refresh_recent` catches up on anything missed.
+- Phase 8 done: what-if replay of a whole race with another tyre strategy (ADR 0010, `stintline_strategy.whatif`, `POST /sessions/{id}/simulate/strategy`, "Strategy" mode on the circuit with a ghost car and finishing-position chances).
 - Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -31,7 +32,8 @@ packages/racedata/   Pure Python, import `racedata`. Capability protocols (sched
   fixtures/          recorded upstream responses (tests + offline demo)
 packages/strategy/   Strategy engine, import `stintline_strategy` (numpy + scipy, no Django, no I/O).
                      Modules: domain, laps, fuel, degradation, pit_loss, pit_exit, pace, undercut,
-                     window, backtest, synthetic (ground-truth races for tests)
+                     window, whatif (whole-race strategy replay), backtest, synthetic
+                     (ground-truth races for tests)
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
 infra/               docker compose, Dockerfiles, nginx, deploy config
 docs/                architecture, data sources, model, ADRs, research
