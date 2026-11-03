@@ -26,3 +26,7 @@ class RateLimitedError(ProviderError):
 
 class InvalidPayloadError(ProviderError):
     """The upstream response could not be parsed into the expected DTOs."""
+
+
+class NotFoundError(ProviderError):
+    """The requested resource does not exist upstream (HTTP 404)."""

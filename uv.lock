@@ -1373,6 +1373,7 @@ source = { editable = "packages/racedata" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
+    { name = "structlog" },
 ]
 
 [package.dev-dependencies]
@@ -1384,6 +1385,7 @@ dev = [
 requires-dist = [
     { name = "httpx", specifier = ">=0.28" },
     { name = "pydantic", specifier = ">=2.10" },
+    { name = "structlog", specifier = ">=25.1" },
 ]
 
 [package.metadata.requires-dev]

@@ -6,10 +6,17 @@ normalised into typed DTOs (UTC datetimes, explicit units) before leaving it.
 
 from racedata.errors import (
     InvalidPayloadError,
+    NotFoundError,
     ProviderError,
     RateLimitedError,
     UpstreamUnavailableError,
 )
 
-__all__ = ["InvalidPayloadError", "ProviderError", "RateLimitedError", "UpstreamUnavailableError"]
+__all__ = [
+    "InvalidPayloadError",
+    "NotFoundError",
+    "ProviderError",
+    "RateLimitedError",
+    "UpstreamUnavailableError",
+]
 __version__ = "0.1.0"
