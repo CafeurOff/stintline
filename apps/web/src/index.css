@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Neutral palette, no team or series branding. Contrast pairs are chosen
+ * for WCAG AA in both themes (text/surface >= 4.5:1, muted/surface >= 4.5:1).
+ */
+@theme {
+  --color-surface: #ffffff;
+  --color-surface-raised: #f8fafc;
+  --color-border: #cbd5e1;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-accent: #b91c1c;
+  --color-ok: #15803d;
+  --color-warn: #a16207;
+  --color-danger: #b91c1c;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface: #0b1120;
+    --color-surface-raised: #111827;
+    --color-border: #334155;
+    --color-text: #f1f5f9;
+    --color-text-muted: #94a3b8;
+    --color-accent: #f87171;
+    --color-ok: #4ade80;
+    --color-warn: #facc15;
+    --color-danger: #f87171;
+  }
+}
+
+html {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-surface font-sans text-text antialiased;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-accent;
+}
