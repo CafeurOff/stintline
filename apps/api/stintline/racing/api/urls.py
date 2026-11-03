@@ -11,4 +11,5 @@ urlpatterns = [
     path(
         "sessions/<int:session_id>/stints", views.SessionStintsView.as_view(), name="session-stints"
     ),
+    path("sessions/<int:session_id>/track", views.SessionTrackView.as_view(), name="session-track"),
 ]

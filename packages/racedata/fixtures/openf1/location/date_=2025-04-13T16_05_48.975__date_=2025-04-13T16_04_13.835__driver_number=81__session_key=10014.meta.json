@@ -1,0 +1,14 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/location",
+  "params": {
+    "session_key": "10014",
+    "driver_number": "81",
+    "date>": "2025-04-13T16:04:13.835",
+    "date<": "2025-04-13T16:05:48.975"
+  },
+  "recorded_at": "2026-11-03T13:09:13+00:00",
+  "sha256": "dcf168f1a1908aa1f4f9a8511565081cdca2182e2cf58ee36323b55d4820eb51",
+  "bytes": 46639,
+  "dropped_fields": []
+}

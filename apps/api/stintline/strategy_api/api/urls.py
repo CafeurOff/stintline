@@ -6,6 +6,7 @@ app_name = "strategy"
 
 urlpatterns = [
     path("sessions/<int:session_id>/laps", views.SessionLapsView.as_view(), name="laps"),
+    path("sessions/<int:session_id>/replay", views.SessionReplayView.as_view(), name="replay"),
     path(
         "sessions/<int:session_id>/degradation",
         views.SessionDegradationView.as_view(),

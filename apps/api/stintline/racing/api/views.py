@@ -4,10 +4,12 @@ from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
 from stintline.racing import selectors
 from stintline.racing.api.serializers import (
@@ -15,7 +17,9 @@ from stintline.racing.api.serializers import (
     EventSerializer,
     SeasonSerializer,
     SessionDetailSerializer,
+    TrackSerializer,
 )
+from stintline.racing.geometry import normalise_outline
 from stintline.racing.models import Event, Season, Session
 
 
@@ -75,3 +79,29 @@ class SessionStintsView(APIView):
         stamp = _session_or_404(session_id).ingested_at
         data = EntryStintsSerializer(selectors.session_stints(session_id), many=True).data
         return cached_response(request, data, "stints", session_id, stamp)
+
+
+class SessionTrackView(APIView):
+    @extend_schema(
+        operation_id="session_track_retrieve",
+        summary="Circuit outline drawn from a reference lap, in screen coordinates",
+        responses={200: TrackSerializer, 404: ProblemSerializer},
+        tags=["racing"],
+    )
+    def get(self, request: Request, session_id: int) -> Response:
+        stamp = _session_or_404(session_id).ingested_at
+        outline = selectors.track_outline(session_id)
+        if outline is None:
+            raise NotFound("No circuit outline for this session.")
+        shape = normalise_outline(outline.points)
+        data = TrackSerializer(
+            {
+                "width": shape.width,
+                "height": shape.height,
+                "car_number": outline.car_number,
+                "lap_number": outline.lap_number,
+                "lap_time_s": outline.lap_time_s,
+                "points": shape.points,
+            }
+        ).data
+        return cached_response(request, data, "track", session_id, stamp)

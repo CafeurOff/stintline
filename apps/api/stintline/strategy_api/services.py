@@ -131,6 +131,38 @@ def laps(context: RaceContext, cars: list[int]) -> list[dict[str, Any]]:
     ]
 
 
+def replay(context: RaceContext) -> dict[str, Any]:
+    """Per car and per lap: race time at the line, compound and tyre age. Enough for the
+    UI to place every car on the circuit at any instant (interpolating within a lap) and
+    to show what each car is running. Lists are indexed by ``lap - 1``; a lap the car
+    did not complete is ``None``."""
+    total = context.race.total_laps
+    cars: list[dict[str, Any]] = []
+    for car in context.race.cars:
+        line: list[float | None] = [None] * total
+        compounds: list[str | None] = [None] * total
+        ages: list[int | None] = [None] * total
+        pit_in: list[int] = []
+        for lap in context.race.laps_of(car):
+            if not 1 <= lap.lap <= total:
+                continue
+            line[lap.lap - 1] = lap.end_time_s
+            compounds[lap.lap - 1] = lap.compound.value
+            ages[lap.lap - 1] = lap.tyre_age
+            if lap.is_pit_in:
+                pit_in.append(lap.lap)
+        cars.append(
+            {
+                "car_number": car,
+                "line_times_s": line,
+                "compounds": compounds,
+                "tyre_ages": ages,
+                "pit_in_laps": pit_in,
+            }
+        )
+    return {"total_laps": total, "cars": cars}
+
+
 def degradation(context: RaceContext, cars: list[int] | None) -> dict[str, Any]:
     if cars:
         _require_cars(context, cars)

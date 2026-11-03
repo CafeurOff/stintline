@@ -277,6 +277,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/sessions/{session_id}/replay:
+    get:
+      operationId: session_replay_retrieve
+      summary: Line-crossing times, compounds and tyre ages of every car on every
+        lap
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Replay'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/sessions/{session_id}/simulate/pit-exit:
     post:
       operationId: simulate_pit_exit
@@ -377,6 +411,33 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/EntryStints'
+          description: ''
+  /api/v1/sessions/{session_id}/track:
+    get:
+      operationId: session_track_retrieve
+      summary: Circuit outline drawn from a reference lap, in screen coordinates
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
           description: ''
 components:
   schemas:
@@ -1155,6 +1216,50 @@ components:
       - status
       - title
       - type
+    Replay:
+      type: object
+      properties:
+        total_laps:
+          type: integer
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReplayCar'
+      required:
+      - cars
+      - total_laps
+    ReplayCar:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        line_times_s:
+          type: array
+          items:
+            type: number
+            format: double
+            nullable: true
+          description: Race time when the car completed each lap (index = lap - 1)
+        compounds:
+          type: array
+          items:
+            type: string
+            nullable: true
+        tyre_ages:
+          type: array
+          items:
+            type: integer
+            nullable: true
+        pit_in_laps:
+          type: array
+          items:
+            type: integer
+      required:
+      - car_number
+      - compounds
+      - line_times_s
+      - pit_in_laps
+      - tyre_ages
     RivalOutcome:
       type: object
       properties:
@@ -1374,6 +1479,39 @@ components:
       required:
       - name
       - ref
+    Track:
+      type: object
+      description: Circuit outline in screen coordinates, samples evenly spaced in
+        time over one lap.
+      properties:
+        width:
+          type: integer
+        height:
+          type: integer
+        car_number:
+          type: integer
+          description: Car whose reference lap drew the outline
+        lap_number:
+          type: integer
+        lap_time_s:
+          type: number
+          format: double
+        points:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            maxItems: 2
+            minItems: 2
+      required:
+      - car_number
+      - height
+      - lap_number
+      - lap_time_s
+      - points
+      - width
     TyreCompoundEnum:
       enum:
       - SOFT

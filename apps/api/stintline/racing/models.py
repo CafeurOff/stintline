@@ -313,3 +313,21 @@ class TrackStatus(models.Model):
 
     def __str__(self) -> str:
         return f"{self.session} {self.status} L{self.lap_start}-{self.lap_end}"
+
+
+class TrackOutline(models.Model):
+    """The circuit as driven in this session: one car's positions over its reference lap
+    (``racedata.derive.reference_lap``), sampled at about 3.7 Hz.
+
+    Samples are evenly spaced in time, so a fraction of the lap maps directly to a sample
+    index. The UI uses that to place every car on the map from its race time.
+    """
+
+    session = models.OneToOneField(Session, on_delete=models.CASCADE, related_name="track")
+    car_number = models.PositiveSmallIntegerField()
+    lap_number = models.PositiveSmallIntegerField()
+    lap_time_s = models.FloatField()
+    points = models.JSONField(help_text="[[x, y], ...] in OpenF1 plane units, in time order")
+
+    def __str__(self) -> str:
+        return f"{self.session} outline (car {self.car_number}, lap {self.lap_number})"

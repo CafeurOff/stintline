@@ -4,6 +4,7 @@ segregation): ingestion composes a schedule source, a results source and a timin
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Protocol
 
 from racedata.models import (
@@ -12,6 +13,7 @@ from racedata.models import (
     JolpicaPitStop,
     LapRecord,
     PitRecord,
+    PositionSample,
     RaceControlRecord,
     ResultRecord,
     SessionKind,
@@ -45,3 +47,7 @@ class TimingSource(Protocol):
     def race_control(self, session_key: int) -> list[RaceControlRecord]: ...
 
     def weather(self, session_key: int) -> list[WeatherRecord]: ...
+
+    def locations(
+        self, session_key: int, driver_number: int, start: datetime, end: datetime
+    ) -> list[PositionSample]: ...

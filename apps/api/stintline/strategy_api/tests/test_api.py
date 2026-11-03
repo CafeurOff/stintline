@@ -161,3 +161,18 @@ def test_model_card(db: None) -> None:
     assert gap_noise["value"] == "1.5"
     assert "calibrated" in gap_noise["description"]
     assert body["backtest"]["held-out"]["scenario"]["overall"]["n"] == 155
+
+
+def test_replay_lists_line_times_and_tyres_per_lap(seeded: None) -> None:
+    response = APIClient().get(f"/api/v1/sessions/{race_id(14)}/replay")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total_laps"] == 70
+    norris = next(car for car in body["cars"] if car["car_number"] == 4)
+    assert len(norris["line_times_s"]) == 70
+    assert norris["line_times_s"][0] < norris["line_times_s"][1]
+    assert norris["pit_in_laps"] == [31]
+    assert norris["compounds"][0] == "MEDIUM"
+    assert norris["compounds"][40] == "HARD"
+    assert response["ETag"]

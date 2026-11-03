@@ -10,13 +10,15 @@ from __future__ import annotations
 import hashlib
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import structlog
 from django.db import transaction
 from django.utils import timezone
 
-from racedata.derive import track_status_periods
+from racedata.derive import reference_lap, track_status_periods
+from racedata.errors import ProviderError
+from racedata.fixtures import MissingFixtureError
 from racedata.matching import match_sessions
 from racedata.models import (
     DriverEntry,
@@ -24,6 +26,7 @@ from racedata.models import (
     JolpicaPitStop,
     LapRecord,
     PitRecord,
+    PositionSample,
     RaceControlRecord,
     ResultRecord,
     StintRecord,
@@ -46,6 +49,7 @@ from stintline.racing.models import (
     SessionKind,
     Stint,
     Team,
+    TrackOutline,
     TrackStatus,
     WeatherSample,
 )
@@ -143,6 +147,13 @@ class _SessionPayload:
     jolpica_pits: list[JolpicaPitStop]
     race_control: list[RaceControlRecord]
     weather: list[WeatherRecord]
+    outline: _Outline | None
+
+
+@dataclass(frozen=True)
+class _Outline:
+    lap: LapRecord
+    samples: list[PositionSample]
 
 
 def is_ingestable(session: Session, now: datetime | None = None) -> bool:
@@ -180,13 +191,41 @@ def ingest_session(session: Session, sources: Sources) -> IngestReport:
         ),
         race_control=sources.timing.race_control(key),
         weather=sources.timing.weather(key),
+        outline=None,
     )
+    payload = _with_outline(payload, key, sources, report)
     with transaction.atomic():
         _write_session(session, payload, report)
         session.ingested_at = timezone.now()
         session.save(update_fields=["ingested_at"])
     log.info("session_ingested", session_id=session.pk, session_key=key, **report.counts)
     return report
+
+
+def _with_outline(
+    payload: _SessionPayload, key: int, sources: Sources, report: IngestReport
+) -> _SessionPayload:
+    """Fetch the reference lap trace. Optional: a missing trace never blocks timing data."""
+    lap = reference_lap(payload.laps, payload.pits)
+    if lap is None or lap.started_at is None or lap.lap_time_s is None:
+        report.skipped.append("track outline: no clean reference lap")
+        return payload
+    end = lap.started_at + timedelta(seconds=lap.lap_time_s)
+    try:
+        samples = sources.timing.locations(key, lap.driver_number, lap.started_at, end)
+    except (ProviderError, MissingFixtureError) as exc:
+        report.skipped.append(f"track outline: {type(exc).__name__}")
+        log.warning("track_outline_unavailable", session_key=key, error=type(exc).__name__)
+        return payload
+    if len(samples) < MIN_OUTLINE_SAMPLES:
+        report.skipped.append(f"track outline: only {len(samples)} samples")
+        return payload
+    return _SessionPayload(**{**payload.__dict__, "outline": _Outline(lap, samples)})
+
+
+MIN_OUTLINE_SAMPLES = 100
+"""A lap at ~3.7 Hz yields 250-400 samples; fewer means a gap in the feed and a broken
+drawing, so the outline is skipped instead."""
 
 
 def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -> None:
@@ -293,6 +332,17 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
         for period in track_status_periods(p.race_control)
     )
     report.add("track_status", len(periods))
+    if p.outline is not None:
+        TrackOutline.objects.update_or_create(
+            session=session,
+            defaults={
+                "car_number": p.outline.lap.driver_number,
+                "lap_number": p.outline.lap.lap_number,
+                "lap_time_s": p.outline.lap.lap_time_s,
+                "points": [[s.x, s.y] for s in p.outline.samples],
+            },
+        )
+        report.add("track_outline", 1)
 
 
 def _upsert_entries(

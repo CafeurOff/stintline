@@ -62,6 +62,21 @@ class SessionLapsView(APIView):
         )
 
 
+class SessionReplayView(APIView):
+    @extend_schema(
+        operation_id="session_replay_retrieve",
+        summary="Line-crossing times, compounds and tyre ages of every car on every lap",
+        responses={200: s.ReplaySerializer, **ERRORS},
+        tags=TAG,
+    )
+    def get(self, request: Request, session_id: int) -> Response:
+        session, context = _context(session_id)
+        data = s.ReplaySerializer(services.replay(context)).data
+        return cached_response(
+            request, data, "replay", session_id, services.context_version(session)
+        )
+
+
 class SessionDegradationView(APIView):
     @extend_schema(
         operation_id="session_degradation_retrieve",

@@ -12,6 +12,7 @@ from stintline.racing.models import (
     Session,
     SessionEntry,
     Stint,
+    TrackOutline,
     TrackStatus,
 )
 
@@ -57,3 +58,7 @@ def session_stints(session_id: int) -> QuerySet[SessionEntry]:
         )
         .order_by(*ENTRY_ORDER)
     )
+
+
+def track_outline(session_id: int) -> TrackOutline | None:
+    return TrackOutline.objects.filter(session_id=session_id).first()

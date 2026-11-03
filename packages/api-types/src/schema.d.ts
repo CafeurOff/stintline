@@ -160,6 +160,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/sessions/{session_id}/replay": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Line-crossing times, compounds and tyre ages of every car on every lap */
+    get: operations["session_replay_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}/simulate/pit-exit": {
     parameters: {
       query?: never;
@@ -203,6 +220,23 @@ export interface paths {
     };
     /** Stints and pit stops of every car, in classification order */
     get: operations["session_stints_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/track": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Circuit outline drawn from a reference lap, in screen coordinates */
+    get: operations["session_track_retrieve"];
     put?: never;
     post?: never;
     delete?: never;
@@ -547,6 +581,18 @@ export interface components {
         [key: string]: unknown;
       };
     };
+    Replay: {
+      total_laps: number;
+      cars: components["schemas"]["ReplayCar"][];
+    };
+    ReplayCar: {
+      car_number: number;
+      /** @description Race time when the car completed each lap (index = lap - 1) */
+      line_times_s: (number | null)[];
+      compounds: (string | null)[];
+      tyre_ages: (number | null)[];
+      pit_in_laps: number[];
+    };
     RivalOutcome: {
       car: number;
       /** Format: double */
@@ -624,6 +670,17 @@ export interface components {
       /** @description Jolpica constructorId */
       ref: string;
       name: string;
+    };
+    /** @description Circuit outline in screen coordinates, samples evenly spaced in time over one lap. */
+    Track: {
+      width: number;
+      height: number;
+      /** @description Car whose reference lap drew the outline */
+      car_number: number;
+      lap_number: number;
+      /** Format: double */
+      lap_time_s: number;
+      points: number[][];
     };
     /**
      * @description * `SOFT` - SOFT
@@ -941,6 +998,43 @@ export interface operations {
       };
     };
   };
+  session_replay_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Replay"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   simulate_pit_exit: {
     parameters: {
       query?: never;
@@ -1040,6 +1134,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["EntryStints"][];
+        };
+      };
+    };
+  };
+  session_track_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Track"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
     };

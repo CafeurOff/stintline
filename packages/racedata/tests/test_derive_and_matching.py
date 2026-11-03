@@ -1,17 +1,22 @@
 from datetime import UTC, date, datetime, timedelta
 
-from racedata.derive import track_status_periods
+import pytest
+
+from racedata.derive import reference_lap, track_status_periods
 from racedata.matching import match_sessions
 from racedata.models import (
     CircuitInfo,
     EventFormat,
     EventInfo,
+    LapRecord,
+    PitRecord,
     RaceControlRecord,
     ScheduledSession,
     SessionKind,
     TimingSession,
     TrackStatusKind,
 )
+from racedata.providers.openf1 import _openf1_instant
 from racedata.sources import Sources
 
 T0 = datetime(2025, 1, 1, 14, 0, tzinfo=UTC)
@@ -136,3 +141,51 @@ def test_match_sessions_ignores_unscheduled_and_distant_sessions() -> None:
     assert (
         match_sessions(make_event(T0), [timing(1, SessionKind.RACE, T0 + timedelta(days=3))]) == {}
     )
+
+
+def timed_lap(car: int, number: int, seconds: float | None, *, pit_out: bool = False) -> LapRecord:
+    return LapRecord(
+        driver_number=car,
+        lap_number=number,
+        lap_time_s=seconds,
+        sector_1_s=None,
+        sector_2_s=None,
+        sector_3_s=None,
+        is_pit_out_lap=pit_out,
+        started_at=datetime(2025, 6, 1, 13, number, tzinfo=UTC),
+        speed_trap_kph=None,
+    )
+
+
+def test_reference_lap_skips_lap_one_and_pit_laps() -> None:
+    laps = [
+        timed_lap(1, 1, 70.0),
+        timed_lap(1, 5, 80.5),
+        timed_lap(1, 6, 79.0, pit_out=True),
+        timed_lap(2, 7, 78.0),
+        timed_lap(2, 8, 81.0),
+        timed_lap(3, 9, None),
+    ]
+    pits = [
+        PitRecord(
+            driver_number=2,
+            lap_number=7,
+            occurred_at=datetime(2025, 6, 1, 13, 7, tzinfo=UTC),
+            pit_lane_duration_s=None,
+            stationary_duration_s=None,
+        )
+    ]
+
+    chosen = reference_lap(laps, pits)
+
+    assert chosen is not None
+    assert (chosen.driver_number, chosen.lap_number) == (1, 5)
+
+
+def test_reference_lap_is_none_without_candidates() -> None:
+    assert reference_lap([timed_lap(1, 1, 70.0)], []) is None
+
+
+def test_location_filter_rejects_naive_datetimes() -> None:
+    with pytest.raises(ValueError, match="aware"):
+        _openf1_instant(datetime(2025, 6, 1, 13, 0))  # noqa: DTZ001 (naive on purpose)

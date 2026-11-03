@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
+from racedata.errors import UpstreamUnavailableError
 from racedata.models import (
     CircuitInfo,
     Compound,
@@ -16,6 +17,7 @@ from racedata.models import (
     JolpicaPitStop,
     LapRecord,
     PitRecord,
+    PositionSample,
     RaceControlRecord,
     ResultRecord,
     ScheduledSession,
@@ -26,7 +28,15 @@ from racedata.models import (
 from racedata.models import SessionKind as SourceKind
 from racedata.sources import Sources
 from stintline.ingestion import services
-from stintline.racing.models import Lap, PitStop, Session, SessionEntry, SessionKind, Stint
+from stintline.racing.models import (
+    Lap,
+    PitStop,
+    Session,
+    SessionEntry,
+    SessionKind,
+    Stint,
+    TrackOutline,
+)
 from stintline.racing.tests.factories import SessionFactory
 
 pytestmark = pytest.mark.django_db
@@ -78,6 +88,7 @@ class FakeData:
     race_control: list[RaceControlRecord] = field(default_factory=list)
     events: list[EventInfo] = field(default_factory=list)
     timing_sessions: list[TimingSession] = field(default_factory=list)
+    locations: list[PositionSample] = field(default_factory=list)
 
 
 class FakeSource:
@@ -113,6 +124,11 @@ class FakeSource:
 
     def weather(self, session_key: int) -> list[WeatherRecord]:
         return self.d.weather
+
+    def locations(
+        self, session_key: int, driver_number: int, start: dt.datetime, end: dt.datetime
+    ) -> list[PositionSample]:
+        return self.d.locations
 
 
 def fake_sources(data: FakeData) -> Sources:
@@ -259,3 +275,62 @@ def test_calendar_without_timing_match_keeps_sessions_unlinked() -> None:
     assert sessions.count() == 2
     assert not sessions.filter(openf1_session_key__isnull=False).exists()
     assert sessions.get(kind=SessionKind.RACE).event.format == "sprint"
+
+
+def _samples(count: int) -> list[PositionSample]:
+    return [PositionSample(at=T0 + dt.timedelta(seconds=i / 4), x=i, y=-i) for i in range(count)]
+
+
+def test_track_outline_is_stored_from_the_fastest_clean_lap() -> None:
+    session = SessionFactory.create()
+    data = FakeData(
+        results=[result("alpha", 10)],
+        laps=[lap(10, 1, 80.0), lap(10, 2, 91.0), lap(10, 3, 89.5)],
+        locations=_samples(300),
+    )
+
+    report = services.ingest_session(session, fake_sources(data))
+
+    outline = TrackOutline.objects.get(session=session)
+    assert (outline.lap_number, outline.lap_time_s) == (3, 89.5)
+    assert outline.points[1] == [1.0, -1.0]
+    assert report.counts["track_outline"] == 1
+
+
+def test_track_outline_is_skipped_when_the_trace_is_too_short() -> None:
+    session = SessionFactory.create()
+    data = FakeData(results=[result("alpha", 10)], laps=[lap(10, 2)], locations=_samples(20))
+
+    report = services.ingest_session(session, fake_sources(data))
+
+    assert not TrackOutline.objects.exists()
+    assert any("only 20 samples" in s for s in report.skipped)
+
+
+def test_track_outline_is_skipped_without_a_clean_lap() -> None:
+    session = SessionFactory.create()
+    data = FakeData(results=[result("alpha", 10)], laps=[lap(10, 1)])
+
+    report = services.ingest_session(session, fake_sources(data))
+
+    assert not TrackOutline.objects.exists()
+    assert "track outline: no clean reference lap" in report.skipped
+
+
+def test_track_outline_failure_does_not_block_timing_data() -> None:
+    session = SessionFactory.create()
+
+    class Unavailable(FakeSource):
+        def locations(
+            self, session_key: int, driver_number: int, start: dt.datetime, end: dt.datetime
+        ) -> list[PositionSample]:
+            raise UpstreamUnavailableError("openf1", "down")
+
+    source = Unavailable(FakeData(results=[result("alpha", 10)], laps=[lap(10, 2)]))
+    sources = Sources(schedule=source, results=source, timing=source, clients=())
+
+    report = services.ingest_session(session, sources)
+
+    assert Lap.objects.count() == 1
+    assert not TrackOutline.objects.exists()
+    assert "track outline: UpstreamUnavailableError" in report.skipped

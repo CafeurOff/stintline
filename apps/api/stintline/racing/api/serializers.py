@@ -158,3 +158,16 @@ class EntryStintsSerializer(serializers.ModelSerializer[SessionEntry]):
             "stints",
             "pit_stops",
         ]
+
+
+class TrackSerializer(serializers.Serializer[Any]):
+    """Circuit outline in screen coordinates, samples evenly spaced in time over one lap."""
+
+    width = serializers.IntegerField()
+    height = serializers.IntegerField()
+    car_number = serializers.IntegerField(help_text="Car whose reference lap drew the outline")
+    lap_number = serializers.IntegerField()
+    lap_time_s = serializers.FloatField()
+    points = serializers.ListField(
+        child=serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2)
+    )

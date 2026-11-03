@@ -1,9 +1,10 @@
 """Parsing of real recorded payloads (2025 Bahrain, Hungary and Italy Grands Prix)."""
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from racedata.derive import reference_lap
 from racedata.matching import match_sessions
 from racedata.models import Compound, EventFormat, SessionKind
 from racedata.sources import Sources
@@ -101,3 +102,19 @@ def test_jolpica_pit_stops(sources: Sources) -> None:
     assert first.driver_id == "hulkenberg"
     assert first.duration_s == pytest.approx(21.594)
     assert first.local_time == "15:10:20"
+
+
+def test_reference_lap_trace_is_parsed_in_time_order(sources: Sources) -> None:
+    lap = reference_lap(sources.timing.laps(HUNGARY), sources.timing.pit(HUNGARY))
+    assert lap is not None
+    assert lap.started_at is not None
+    assert lap.lap_time_s is not None
+
+    end = lap.started_at + timedelta(seconds=lap.lap_time_s)
+    samples = sources.timing.locations(HUNGARY, lap.driver_number, lap.started_at, end)
+
+    assert (lap.driver_number, lap.lap_number) == (63, 45)
+    assert 250 < len(samples) < 400
+    assert samples == sorted(samples, key=lambda s: s.at)
+    assert lap.started_at <= samples[0].at
+    assert samples[-1].at < end

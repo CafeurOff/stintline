@@ -5,7 +5,13 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime
 
-from racedata.models import RaceControlRecord, TrackStatusKind, TrackStatusPeriod
+from racedata.models import (
+    LapRecord,
+    PitRecord,
+    RaceControlRecord,
+    TrackStatusKind,
+    TrackStatusPeriod,
+)
 
 TRACK_SCOPE = "Track"
 _CLEARING_FLAGS = frozenset({"GREEN", "CLEAR", "CHEQUERED"})
@@ -74,3 +80,21 @@ def track_status_periods(messages: Iterable[RaceControlRecord]) -> list[TrackSta
             close(at, lap)
     close(None, None)
     return periods
+
+
+def reference_lap(laps: Iterable[LapRecord], pits: Iterable[PitRecord]) -> LapRecord | None:
+    """The lap used to draw the circuit: the fastest timed lap that is neither lap 1, a
+    pit-out lap nor a pit-in lap, so the car follows the racing line from line to line.
+    Returns ``None`` when no lap qualifies (e.g. a race abandoned on lap 1)."""
+    pit_laps = {(pit.driver_number, pit.lap_number) for pit in pits}
+    candidates = [
+        lap
+        for lap in laps
+        if lap.lap_number > 1
+        and lap.lap_time_s is not None
+        and lap.lap_time_s > 0
+        and lap.started_at is not None
+        and not lap.is_pit_out_lap
+        and (lap.driver_number, lap.lap_number) not in pit_laps
+    ]
+    return min(candidates, key=lambda lap: (lap.lap_time_s, lap.driver_number), default=None)

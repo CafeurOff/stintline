@@ -202,3 +202,19 @@ class ModelCardSerializer(serializers.Serializer[Any]):
     backtest = serializers.DictField(
         help_text="Backtest metrics per set (reference, held-out) and mode"
     )
+
+
+class ReplayCarSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    line_times_s = serializers.ListField(
+        child=serializers.FloatField(allow_null=True),
+        help_text="Race time when the car completed each lap (index = lap - 1)",
+    )
+    compounds = serializers.ListField(child=serializers.CharField(allow_null=True))
+    tyre_ages = serializers.ListField(child=serializers.IntegerField(allow_null=True))
+    pit_in_laps = serializers.ListField(child=serializers.IntegerField())
+
+
+class ReplaySerializer(serializers.Serializer[Any]):
+    total_laps = serializers.IntegerField()
+    cars = ReplayCarSerializer(many=True)

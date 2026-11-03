@@ -203,6 +203,15 @@ class WeatherRecord(_DTO):
     wind_direction_deg: int | None
 
 
+class PositionSample(_DTO):
+    """Car position on the circuit plane (OpenF1 ``location``, about 3.7 Hz). Units are
+    the feed's own (roughly decimetres) and only meaningful relative to each other."""
+
+    at: datetime
+    x: float
+    y: float
+
+
 class TrackStatusPeriod(_DTO):
     """A neutralised period derived from race control messages."""
 

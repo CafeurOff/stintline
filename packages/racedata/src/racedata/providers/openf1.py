@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any, TypeVar
 
 import structlog
@@ -15,6 +16,7 @@ from racedata.models import (
     DriverEntry,
     LapRecord,
     PitRecord,
+    PositionSample,
     RaceControlRecord,
     SessionKind,
     StintRecord,
@@ -105,6 +107,32 @@ class OpenF1Source:
     def weather(self, session_key: int) -> list[WeatherRecord]:
         rows = self._rows("weather", {"session_key": session_key})
         return self._parse_all("weather", rows, _weather)
+
+    def locations(
+        self, session_key: int, driver_number: int, start: datetime, end: datetime
+    ) -> list[PositionSample]:
+        """Positions of one car in ``[start, end)``. Always bounded: a whole race for one
+        car is tens of thousands of rows, far beyond what any view needs."""
+        params: dict[str, str | int] = {
+            "session_key": session_key,
+            "driver_number": driver_number,
+            "date>": _openf1_instant(start),
+            "date<": _openf1_instant(end),
+        }
+        rows = self._rows("location", params)
+        samples = self._parse_all("location", rows, _location)
+        return sorted(samples, key=lambda s: s.at)
+
+
+def _openf1_instant(value: datetime) -> str:
+    """UTC instant with milliseconds, as OpenF1 filters expect (``2025-08-03T13:15:37.303``)."""
+    if value.tzinfo is None:
+        raise ValueError("expected an aware datetime")
+    return value.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3]
+
+
+def _location(r: dict[str, Any]) -> PositionSample:
+    return PositionSample(at=parse_datetime(PROVIDER, r["date"]), x=float(r["x"]), y=float(r["y"]))
 
 
 def _session(r: dict[str, Any]) -> TimingSession:
