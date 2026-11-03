@@ -5,29 +5,24 @@ interface SliderProps {
   value: number;
   min: number;
   max: number;
-  step?: number;
   onChange: (value: number) => void;
-  /** Short visible value (`Lap 20`). */
-  display: (value: number) => string;
   /** Spoken value for assistive tech (`Lap 20 of 70`). */
   valueText: (value: number) => string;
+  hideLabel?: boolean;
 }
 
 /**
- * Native range input with a label, a visible value and `aria-valuetext`.
- *
- * The thumb follows a local value so fast keyboard or pointer input is never lost while
- * the parent's value (often URL state) catches up; a new parent value resets it.
+ * Native range input. The thumb follows a local value so fast keyboard or pointer input
+ * is never lost while the parent's value catches up; a new parent value resets it.
  */
 export function Slider({
   label,
   value,
   min,
   max,
-  step = 1,
   onChange,
-  display,
   valueText,
+  hideLabel = false,
 }: SliderProps) {
   const id = useId();
   const [local, setLocal] = useState(value);
@@ -37,21 +32,15 @@ export function Slider({
     setLocal(value);
   }
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={id} className="text-xs font-medium text-text-muted">
-          {label}
-        </label>
-        <output htmlFor={id} className="tabular text-sm font-semibold">
-          {display(local)}
-        </output>
-      </div>
+    <div className="flex min-w-0 flex-1 flex-col">
+      <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm text-muted"}>
+        {label}
+      </label>
       <input
         id={id}
         type="range"
         min={min}
         max={max}
-        step={step}
         value={local}
         aria-valuetext={valueText(local)}
         onChange={(event) => {
@@ -59,7 +48,7 @@ export function Slider({
           setLocal(next);
           onChange(next);
         }}
-        className="w-full accent-accent"
+        className="w-full accent-mark"
       />
     </div>
   );

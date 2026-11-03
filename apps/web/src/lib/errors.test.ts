@@ -1,40 +1,35 @@
 import { ApiError, errorMessage, unwrap } from "./errors";
+import { en, type MessageKey } from "./i18n/en";
 
 const response = (status: number) => new Response(null, { status });
+const t = (key: MessageKey) => en[key];
 
 describe("unwrap", () => {
   it("returns data when present", () => {
     expect(unwrap({ data: 1, response: response(200) })).toBe(1);
   });
 
-  it("uses the problem detail as the message", () => {
+  it("keeps the problem detail", () => {
     const call = () =>
       unwrap({
         error: {
           title: "Invalid request",
           status: 400,
-          detail: "Stop lap is after the flag.",
+          detail: "Lap is after the flag.",
           code: "invalid",
         },
         response: response(400),
       });
-    expect(call).toThrow(new ApiError(400, "invalid", "Stop lap is after the flag."));
-  });
-
-  it("explains throttling", () => {
-    expect(() => unwrap({ error: {}, response: response(429) })).toThrow(/Too many simulations/);
-  });
-
-  it("hides unexpected bodies behind a generic message", () => {
-    expect(() => unwrap({ error: "boom", response: response(500) })).toThrow(
-      "The API returned an unexpected response.",
-    );
+    expect(call).toThrow(new ApiError(400, "invalid", "Lap is after the flag."));
   });
 });
 
 describe("errorMessage", () => {
-  it("never leaks non-API errors", () => {
-    expect(errorMessage(new TypeError("Failed to fetch"))).toBe("Could not reach the API.");
-    expect(errorMessage(new ApiError(404, "not_found", "No session."))).toBe("No session.");
+  it("translates throttling, network and unexpected errors", () => {
+    expect(() => unwrap({ error: {}, response: response(429) })).toThrow(ApiError);
+    expect(errorMessage(new ApiError(429, "throttled", ""), t)).toBe(en["error.throttled"]);
+    expect(errorMessage(new TypeError("Failed to fetch"), t)).toBe(en["error.network"]);
+    expect(errorMessage(new ApiError(500, "unexpected", ""), t)).toBe(en["error.unexpected"]);
+    expect(errorMessage(new ApiError(404, "not_found", "No session."), t)).toBe("No session.");
   });
 });

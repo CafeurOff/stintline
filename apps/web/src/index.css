@@ -1,69 +1,64 @@
 @import "tailwindcss";
+@import "@fontsource/titillium-web/400.css";
+@import "@fontsource/titillium-web/600.css";
+@import "@fontsource/titillium-web/700.css";
 
 /*
- * Design tokens. Warm neutrals, soft shadows and the system type stack come from the
- * Omexis design system; the dark pit-wall mood and the red accent come from StintLine v1.
- * Dark is the default theme, `data-theme="light"` on <html> switches to light.
+ * Design tokens. The circuit is the interface: a quiet, near-black ground (dark, default)
+ * or a warm paper ground (light), one race red for marks and actions, team colours for
+ * cars. Titillium Web, self-hosted. No gradients, glows or decorative cards.
  *
- * Contrast (WCAG AA, checked on bg, surface and raised): text >= 10:1, muted >= 6:1,
- * accent-text >= 4.5:1. `accent` is a fill colour (>= 3:1 against surfaces, white text on
- * `accent-strong` >= 4.5:1). Compound fills are shared by both themes and always carry a
- * dark letter (>= 5:1), so colour is never the only signal.
+ * Contrast (WCAG AA): text >= 12:1, muted >= 6:1 on bg and panel in both themes.
+ * `mark` is a fill (>= 3:1 on surfaces); text in red uses `mark-text`; white on
+ * `action` >= 5:1. Compound fills are shared by both themes and carry a dark letter.
  */
 @theme {
-  --color-bg: #1c1b19;
-  --color-panel: #222220;
-  --color-surface: #2a2927;
-  --color-raised: #33312e;
-  --color-hover: rgb(250 249 245 / 0.08);
-  --color-border: rgb(250 249 245 / 0.12);
-  --color-border-strong: rgb(250 249 245 / 0.24);
-  --color-text: rgb(250 249 245 / 0.92);
-  --color-text-muted: rgb(250 249 245 / 0.66);
-  --color-accent: #e5484d;
-  --color-accent-strong: #c62832;
-  --color-accent-text: #ff8a8e;
-  --color-accent-tint: rgb(229 72 77 / 0.14);
-  --color-ok: #6fa859;
-  --color-warn: #dabe4a;
-  --color-danger: #f07a86;
-  --color-ink: #1c1b19;
+  --color-bg: #0d0d10;
+  --color-panel: #15151a;
+  --color-raised: #1d1d24;
+  --color-line: #26262e;
+  --color-line-strong: #3a3a44;
+  --color-track: #2c2c35;
+  --color-track-edge: #3d3d48;
+  --color-ink: #f1f1f3;
+  --color-muted: #a3a3ad;
+  --color-mark: #ff3b3b;
+  --color-mark-text: #ff7070;
+  --color-action: #d4101a;
+  --color-ghost: #ffffff;
+  --color-zone: rgb(255 255 255 / 0.16);
+  --color-gain: #3ddc6f;
+  --color-loss: #ff7070;
+  --color-caution: #ffd400;
+  --color-tyre-ink: #15151a;
 
-  --color-tyre-soft: #f0565b;
-  --color-tyre-medium: #f2c94c;
-  --color-tyre-hard: #e8e6dc;
-  --color-tyre-inter: #4cb45a;
-  --color-tyre-wet: #4d90e0;
+  --color-tyre-soft: #ef4b51;
+  --color-tyre-medium: #f0c430;
+  --color-tyre-hard: #ebe9e1;
+  --color-tyre-inter: #3fb950;
+  --color-tyre-wet: #3d8bfd;
   --color-tyre-unknown: #9b9993;
 
-  --shadow-card: 0 18px 44px rgb(0 0 0 / 0.32), 0 3px 10px rgb(0 0 0 / 0.2);
-  --shadow-soft: 0 4px 20px rgb(0 0 0 / 0.24);
-
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --font-sans: "Titillium Web", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 :root[data-theme="light"] {
-  --color-bg: #faf9f5;
-  --color-panel: #f3f1ea;
-  --color-surface: #ffffff;
-  --color-raised: #f0eee6;
-  --color-hover: rgb(15 12 8 / 0.04);
-  --color-border: rgb(15 12 8 / 0.1);
-  --color-border-strong: rgb(15 12 8 / 0.22);
-  --color-text: rgb(15 12 8 / 0.92);
-  --color-text-muted: rgb(15 12 8 / 0.66);
-  --color-accent: #c62832;
-  --color-accent-strong: #c62832;
-  --color-accent-text: #b0222b;
-  --color-accent-tint: rgb(198 40 50 / 0.08);
-  --color-ok: #3f7a2e;
-  --color-warn: #8a6d00;
-  --color-danger: #a63244;
-
-  --shadow-card: 0 18px 44px rgb(20 20 19 / 0.08), 0 3px 10px rgb(20 20 19 / 0.05);
-  --shadow-soft: 0 4px 20px rgb(20 20 19 / 0.05);
+  --color-bg: #f3f2ee;
+  --color-panel: #ffffff;
+  --color-raised: #ebeae5;
+  --color-line: #e2e1dc;
+  --color-line-strong: #c9c8c2;
+  --color-track: #d6d5cf;
+  --color-track-edge: #c2c1ba;
+  --color-ink: #15151a;
+  --color-muted: #5d5d66;
+  --color-mark: #d4101a;
+  --color-mark-text: #b80d16;
+  --color-ghost: #15151a;
+  --color-zone: rgb(21 21 26 / 0.14);
+  --color-gain: #1d7a3e;
+  --color-loss: #b80d16;
+  --color-caution: #8a6d00;
 }
 
 html {
@@ -75,14 +70,14 @@ html {
 }
 
 body {
-  @apply bg-bg font-sans text-text antialiased;
+  @apply bg-bg font-sans text-ink antialiased;
 }
 
 :focus-visible {
-  @apply outline-2 outline-offset-2 outline-accent;
+  @apply outline-2 outline-offset-2 outline-mark;
 }
 
-/* Timing data lines up digit by digit. */
+/* Timing figures line up digit by digit. */
 .tabular {
   font-variant-numeric: tabular-nums;
 }

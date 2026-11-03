@@ -2,6 +2,7 @@ export type CompoundKey = "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET" | 
 
 export interface CompoundInfo {
   key: CompoundKey;
+  /** English label, for non-UI uses. UI text goes through `t("compound.<key>")`. */
   label: string;
   letter: string;
   /** CSS colour (a theme token), shared by both themes and paired with a dark letter. */

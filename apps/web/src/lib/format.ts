@@ -1,51 +1,72 @@
+import type { Locale } from "./i18n/locale";
+
 const EM_DASH = "—";
 const MINUS = "−";
 
-/** Lap time as `m:ss.sss` (`1:20.642`). Null or non-finite values render as an em dash. */
-export function formatLapTime(seconds: number | null | undefined): string {
-  if (seconds == null || !Number.isFinite(seconds)) return EM_DASH;
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds - minutes * 60;
-  const secs = rest.toFixed(3).padStart(6, "0");
-  return minutes > 0 ? `${minutes}:${secs}` : rest.toFixed(3);
+export interface Formatters {
+  /** `21.3 s` / `21,3 s`. */
+  seconds: (value: number | null | undefined, digits?: number) => string;
+  /** Signed: `+1.2 s`, `−0.4 s`. */
+  delta: (value: number, digits?: number) => string;
+  /** `45 ms`. */
+  millis: (seconds: number) => string;
+  /** `1:20.642` / `1:20,642`. */
+  lapTime: (value: number | null | undefined) => string;
+  /** Clamped at the ends: `<1%` / `<1 %`. */
+  probability: (p: number) => string;
+  percent: (ratio: number) => string;
+  /** `5th` / `5e`, `1st` / `1er`. */
+  ordinal: (n: number) => string;
+  number: (value: number, digits?: number) => string;
+  /** Calendar date of a race (`3 Aug 2025` / `3 août 2025`). */
+  date: (isoDate: string) => string;
 }
 
-/** Duration in seconds with a unit (`21.3 s`). */
-export function formatSeconds(seconds: number | null | undefined, digits = 1): string {
-  if (seconds == null || !Number.isFinite(seconds)) return EM_DASH;
-  return `${seconds.toFixed(digits)} s`;
-}
+const EN_SUFFIX: Record<string, string> = { one: "st", two: "nd", few: "rd", other: "th" };
 
-/** Signed delta with a true minus sign (`+0.12 s`, `−1.30 s`). */
-export function formatDelta(seconds: number, digits = 2): string {
-  const rounded = Number(seconds.toFixed(digits));
-  const sign = rounded > 0 ? "+" : rounded < 0 ? MINUS : "±";
-  return `${sign}${Math.abs(rounded).toFixed(digits)} s`;
-}
-
-/** Probability as a percentage, clamped at the extremes (`<1%`, `>99%`). */
-export function formatProbability(p: number): string {
-  if (p < 0.01) return "<1%";
-  if (p > 0.99) return ">99%";
-  return `${Math.round(p * 100)}%`;
-}
-
-/** Ratio as a whole percentage (`49%`). */
-export function formatPercent(ratio: number): string {
-  return `${Math.round(ratio * 100)}%`;
-}
-
-/** Track position (`P4`). */
-export function formatPosition(position: number | null | undefined): string {
-  return position == null ? EM_DASH : `P${position}`;
-}
-
-/** Calendar date in UTC (`3 Aug 2025`). Race dates are dates, not instants. */
-export function formatDate(isoDate: string): string {
-  return new Intl.DateTimeFormat("en-GB", {
+export function createFormatters(locale: Locale): Formatters {
+  const tag = locale === "fr" ? "fr-FR" : "en-GB";
+  const fixed = (digits: number) =>
+    new Intl.NumberFormat(tag, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  const pct = new Intl.NumberFormat(tag, { style: "percent", maximumFractionDigits: 0 });
+  const enOrdinal = new Intl.PluralRules("en-GB", { type: "ordinal" });
+  const dateFormat = new Intl.DateTimeFormat(tag, {
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
-  }).format(new Date(isoDate));
+  });
+  const unitSpace = " ";
+
+  const number = (value: number, digits = 1) => fixed(digits).format(value);
+  const seconds = (value: number | null | undefined, digits = 1) =>
+    value == null || !Number.isFinite(value) ? EM_DASH : `${number(value, digits)}${unitSpace}s`;
+
+  return {
+    number,
+    seconds,
+    delta(value, digits = 1) {
+      const rounded = Number(value.toFixed(digits));
+      const sign = rounded > 0 ? "+" : rounded < 0 ? MINUS : "±";
+      return `${sign}${number(Math.abs(rounded), digits)}${unitSpace}s`;
+    },
+    millis: (value) => `${Math.round(value * 1000)}${unitSpace}ms`,
+    lapTime(value) {
+      if (value == null || !Number.isFinite(value)) return EM_DASH;
+      const minutes = Math.floor(value / 60);
+      const rest = number(value - minutes * 60, 3);
+      return minutes > 0 ? `${minutes}:${rest.padStart(6, "0")}` : rest;
+    },
+    probability(p) {
+      if (p < 0.01) return `<${pct.format(0.01)}`;
+      if (p > 0.99) return `>${pct.format(0.99)}`;
+      return pct.format(p);
+    },
+    percent: (ratio) => pct.format(ratio),
+    ordinal(n) {
+      if (locale === "fr") return n === 1 ? "1er" : `${n}e`;
+      return `${n}${EN_SUFFIX[enOrdinal.select(n)] ?? "th"}`;
+    },
+    date: (isoDate) => dateFormat.format(new Date(isoDate)),
+  };
 }

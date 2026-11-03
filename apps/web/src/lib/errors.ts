@@ -1,8 +1,10 @@
 import type { Schema } from "@stintline/api-types";
 
+import type { MessageKey } from "./i18n/en";
+
 type Problem = Schema<"Problem">;
 
-/** Error raised by query functions. `message` is safe to show: it comes from the API problem. */
+/** Error raised by query functions, carrying the HTTP status and the API problem. */
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -26,26 +28,29 @@ function isProblem(value: unknown): value is Problem {
   );
 }
 
-/**
- * Returns `data` from an openapi-fetch result, or throws an `ApiError` built from the
- * RFC 7807 problem body. Throttling gets a friendlier message.
- */
+/** Returns `data` from an openapi-fetch result, or throws an `ApiError`. */
 export function unwrap<T>(result: { data?: T; error?: unknown; response: Response }): T {
   if (result.data !== undefined) return result.data;
   const { status } = result.response;
-  if (status === 429) {
-    throw new ApiError(status, "throttled", "Too many simulations in a short time. Try again.");
-  }
+  if (status === 429) throw new ApiError(status, "throttled", "");
   if (isProblem(result.error)) {
     const detail = typeof result.error.detail === "string" ? result.error.detail : "";
     const message = detail && detail !== result.error.title ? detail : result.error.title;
     throw new ApiError(status, result.error.code, message);
   }
-  throw new ApiError(status, "unexpected", "The API returned an unexpected response.");
+  throw new ApiError(status, "unexpected", "");
 }
 
-/** User-facing message for any error a query can raise. */
-export function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) return error.message;
-  return "Could not reach the API.";
+type Translate = (key: MessageKey) => string;
+
+/**
+ * User-facing message. Throttling and network failures are translated; other API
+ * problems keep the server's safe detail (it never contains internals).
+ */
+export function errorMessage(error: unknown, t: Translate): string {
+  if (error instanceof ApiError) {
+    if (error.code === "throttled") return t("error.throttled");
+    return error.message || t("error.unexpected");
+  }
+  return t("error.network");
 }

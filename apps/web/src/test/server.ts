@@ -7,8 +7,10 @@ import { events } from "./fixtures/events";
 import { model } from "./fixtures/model";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
+import { replay } from "./fixtures/replay";
 import { session } from "./fixtures/session";
 import { stints } from "./fixtures/stints";
+import { track } from "./fixtures/track";
 import { undercut } from "./fixtures/undercut";
 
 export const healthyResponse: Schema<"Health"> = {
@@ -44,6 +46,8 @@ export const handlers = [
       : problem(404, "not_found", "Not found", "No session with this id."),
   ),
   http.get("*/api/v1/sessions/:id/stints", () => HttpResponse.json(stints)),
+  http.get("*/api/v1/sessions/:id/track", () => HttpResponse.json(track)),
+  http.get("*/api/v1/sessions/:id/replay", () => HttpResponse.json(replay)),
   http.get("*/api/v1/sessions/:id/pit-loss", () => HttpResponse.json(pitLoss)),
   http.get("*/api/v1/sessions/:id/degradation", () => HttpResponse.json(degradation)),
   http.post("*/api/v1/sessions/:id/simulate/undercut", () => HttpResponse.json(undercut)),

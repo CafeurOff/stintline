@@ -2,45 +2,55 @@ import { expect, test } from "@playwright/test";
 
 import { mockApi, SESSION_ID } from "./mockApi";
 
+test.use({ locale: "en-GB", reducedMotion: "reduce" });
+
 test.beforeEach(async ({ page }) => {
   await mockApi(page);
 });
 
-test("pick a race and read its tyre strategy", async ({ page }) => {
+test("open the latest race and see where a driver rejoins after a stop", async ({ page }) => {
   await page.goto("/");
-
-  await page.getByRole("link", { name: "Hungarian Grand Prix: Race strategy" }).click();
 
   await expect(page).toHaveURL(`/sessions/${SESSION_ID}`);
-  await expect(page.getByRole("heading", { name: "Hungarian Grand Prix" })).toBeVisible();
-  await expect(page.getByRole("img", { name: /Stint timeline: 20 drivers/ })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Podium" })).toContainText("Lando Norris");
-  // Official media are blocked in tests: the original car illustration takes over.
-  await expect(page.getByRole("img", { name: "McLaren car" }).first()).toBeVisible();
+  const map = page.getByRole("group", { name: /Hungaroring: cars on track/ });
+  await expect(map.getByRole("button")).toHaveCount(20);
+
+  await page.getByRole("slider", { name: "Lap" }).fill("30");
+  await page.getByRole("button", { name: "Simulate the stop" }).click();
+
+  const panel = page.getByRole("complementary");
+  await expect(panel.getByText("5th at the pit exit")).toBeVisible();
+  await expect(panel.getByText(/rejoin between ALO/)).toBeVisible();
 });
 
-test("move the undercut slider and get a new simulation", async ({ page }) => {
-  await page.goto(`/sessions/${SESSION_ID}/simulator`);
-  const card = page.getByRole("region", { name: "Undercut / overcut" });
-  await expect(card.getByText("The undercut fails")).toBeVisible();
+test("pick a driver on the map and simulate an undercut", async ({ page }) => {
+  await page.goto(`/sessions/${SESSION_ID}?lap=30`);
 
-  const slider = card.getByRole("slider", { name: "Attacker's stop lap" });
-  await slider.focus();
-  for (let i = 0; i < 5; i += 1) await page.keyboard.press("ArrowRight");
+  await page
+    .getByRole("group", { name: /cars on track/ })
+    .getByRole("button", { name: "Oscar Piastri" })
+    .click();
+  await page.getByText("Undercut", { exact: true }).click();
+  const panel = page.getByRole("complementary");
+  await expect(panel.getByText("Can Oscar Piastri undercut Charles Leclerc?")).toBeVisible();
 
-  await expect(slider).toHaveAttribute("aria-valuetext", "Lap 26 of 70");
-  await expect(page).toHaveURL(/stop=26/);
-  await expect(card.getByRole("img", { name: /lap 26/ })).toBeVisible();
+  await panel.getByRole("button", { name: "Simulate the undercut" }).click();
+
+  await expect(panel.getByText(/PIA would (stay behind|come out ahead)/)).toBeVisible();
+  await expect(page).toHaveURL(/car=81/);
 });
 
-test("read the model assumptions and backtest", async ({ page }) => {
-  await page.goto("/");
+test("read the tyres page and the explanation in French", async ({ page }) => {
+  await page.goto(`/sessions/${SESSION_ID}`);
 
-  await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Model" }).click();
+  await page.getByRole("button", { name: "fr" }).click();
+  await page.getByRole("link", { name: "Pneus" }).click();
+  await expect(page.getByText("Durs")).toBeVisible();
 
-  await expect(page.getByRole("heading", { name: "How StintLine predicts" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Held-out races" })).toContainText("0.86 pos");
-  await expect(page.getByRole("region", { name: "Lap cleaning" })).toContainText("outlier_k");
+  await page.getByRole("link", { name: "Comment ça marche" }).click();
+  await expect(page.getByRole("heading", { name: "Comment fonctionne StintLine" })).toBeVisible();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
 });
 
 test("switch to the light theme and keep it after a reload", async ({ page }) => {

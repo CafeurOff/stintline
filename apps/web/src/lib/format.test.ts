@@ -1,61 +1,50 @@
-import {
-  formatDate,
-  formatDelta,
-  formatLapTime,
-  formatPercent,
-  formatPosition,
-  formatProbability,
-  formatSeconds,
-} from "./format";
+import { createFormatters } from "./format";
 
-describe("formatLapTime", () => {
-  it("formats minutes, seconds and milliseconds", () => {
-    expect(formatLapTime(80.642)).toBe("1:20.642");
+const en = createFormatters("en");
+const fr = createFormatters("fr");
+
+describe("createFormatters", () => {
+  it("formats durations with the locale decimal separator", () => {
+    expect(en.seconds(21.276)).toBe("21.3 s");
+    expect(fr.seconds(21.276)).toBe("21,3 s");
+    expect(fr.seconds(null)).toBe("—");
   });
 
-  it("pads seconds below ten", () => {
-    expect(formatLapTime(65.1)).toBe("1:05.100");
+  it("signs deltas with a true minus", () => {
+    expect(en.delta(1.23)).toBe("+1.2 s");
+    expect(fr.delta(-0.44)).toBe("−0,4 s");
+    expect(en.delta(0.01)).toBe("±0.0 s");
   });
 
-  it("omits minutes under a minute", () => {
-    expect(formatLapTime(21.3)).toBe("21.300");
+  it("formats lap times as minutes and seconds", () => {
+    expect(en.lapTime(80.642)).toBe("1:20.642");
+    expect(fr.lapTime(65.1)).toBe("1:05,100");
+    expect(en.lapTime(21.3)).toBe("21.300");
+    expect(en.lapTime(undefined)).toBe("—");
   });
 
-  it("renders missing values as an em dash", () => {
-    expect(formatLapTime(null)).toBe("—");
-    expect(formatLapTime(Number.NaN)).toBe("—");
-  });
-});
-
-describe("formatDelta", () => {
-  it("uses a plus sign for gains and a true minus for losses", () => {
-    expect(formatDelta(0.123)).toBe("+0.12 s");
-    expect(formatDelta(-1.3)).toBe("−1.30 s");
+  it("clamps probabilities at the extremes", () => {
+    expect(en.probability(0.0001)).toBe("<1%");
+    expect(en.probability(0.999)).toBe(">99%");
+    expect(en.probability(0.364)).toBe("36%");
+    expect(fr.percent(0.49)).toBe("49 %");
   });
 
-  it("shows ± when the rounded value is zero", () => {
-    expect(formatDelta(0.001)).toBe("±0.00 s");
+  it("writes ordinals the way each language does", () => {
+    expect([1, 2, 3, 4, 11, 22].map(en.ordinal)).toEqual([
+      "1st",
+      "2nd",
+      "3rd",
+      "4th",
+      "11th",
+      "22nd",
+    ]);
+    expect([1, 5].map(fr.ordinal)).toEqual(["1er", "5e"]);
   });
-});
 
-describe("formatProbability", () => {
-  it("clamps the extremes", () => {
-    expect(formatProbability(0.0001)).toBe("<1%");
-    expect(formatProbability(0.999)).toBe(">99%");
-  });
-
-  it("rounds to a whole percentage", () => {
-    expect(formatProbability(0.364)).toBe("36%");
-  });
-});
-
-describe("small formatters", () => {
-  it("format seconds, ratios, positions and dates", () => {
-    expect(formatSeconds(21.276)).toBe("21.3 s");
-    expect(formatSeconds(null)).toBe("—");
-    expect(formatPercent(0.49)).toBe("49%");
-    expect(formatPosition(4)).toBe("P4");
-    expect(formatPosition(null)).toBe("—");
-    expect(formatDate("2025-08-03")).toBe("3 Aug 2025");
+  it("formats race dates in UTC and milliseconds", () => {
+    expect(en.date("2025-08-03")).toBe("3 Aug 2025");
+    expect(fr.date("2025-08-03")).toBe("3 août 2025");
+    expect(en.millis(0.0447)).toBe("45 ms");
   });
 });

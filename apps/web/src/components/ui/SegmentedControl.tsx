@@ -7,27 +7,29 @@ interface Option<T extends string> {
 
 interface SegmentedControlProps<T extends string> {
   legend: string;
+  hideLegend?: boolean;
   options: readonly Option<T>[];
   value: T;
   onChange: (value: T) => void;
 }
 
-/** Radio group styled as a segmented control. Arrow keys move between options. */
+/** Radio group drawn as a segmented control. Arrow keys move between options. */
 export function SegmentedControl<T extends string>({
   legend,
+  hideLegend = false,
   options,
   value,
   onChange,
 }: SegmentedControlProps<T>) {
   const name = useId();
   return (
-    <fieldset className="flex flex-col gap-1">
-      <legend className="mb-1 text-xs font-medium text-text-muted">{legend}</legend>
-      <div className="inline-flex flex-wrap rounded-lg border border-border-strong bg-raised p-0.5">
+    <fieldset className="flex min-w-0 flex-col gap-1">
+      <legend className={hideLegend ? "sr-only" : "mb-1 text-sm text-muted"}>{legend}</legend>
+      <div className="flex rounded-lg bg-raised p-1">
         {options.map((option) => (
           <label
             key={option.value}
-            className="cursor-pointer rounded-md px-2.5 py-1 text-sm text-text-muted has-checked:bg-surface has-checked:font-semibold has-checked:text-text has-checked:shadow-soft has-focus-visible:outline-2 has-focus-visible:outline-accent"
+            className="flex-1 cursor-pointer rounded-md px-3 py-1.5 text-center text-muted transition has-checked:bg-panel has-checked:font-bold has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-mark"
           >
             <input
               type="radio"

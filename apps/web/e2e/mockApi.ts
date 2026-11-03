@@ -5,8 +5,10 @@ import { events } from "../src/test/fixtures/events";
 import { model } from "../src/test/fixtures/model";
 import { pitExit } from "../src/test/fixtures/pitExit";
 import { pitLoss } from "../src/test/fixtures/pitLoss";
+import { replay } from "../src/test/fixtures/replay";
 import { session } from "../src/test/fixtures/session";
 import { stints } from "../src/test/fixtures/stints";
+import { track } from "../src/test/fixtures/track";
 import { undercut } from "../src/test/fixtures/undercut";
 
 export const SESSION_ID = session.id;
@@ -25,11 +27,16 @@ export async function mockApi(page: Page) {
       "**/api/v1/seasons",
       { count: 1, next: null, previous: null, results: [{ year: 2025, events_count: 4 }] },
     ],
-    ["**/api/v1/seasons/2025/events*", events],
+    [
+      "**/api/v1/seasons/2025/events*",
+      { ...events, results: events.results.filter((e) => e.round <= 14) },
+    ],
     [`**/api/v1/sessions/${SESSION_ID}`, session],
     [`**/api/v1/sessions/${SESSION_ID}/stints`, stints],
     [`**/api/v1/sessions/${SESSION_ID}/pit-loss`, pitLoss],
     [`**/api/v1/sessions/${SESSION_ID}/degradation`, degradation],
+    [`**/api/v1/sessions/${SESSION_ID}/track`, track],
+    [`**/api/v1/sessions/${SESSION_ID}/replay`, replay],
     ["**/api/v1/model", model],
   ];
   for (const [pattern, body] of routes) {

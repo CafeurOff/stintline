@@ -3,9 +3,9 @@ import { render, screen } from "@testing-library/react";
 import { App } from "./App";
 
 describe("App", () => {
-  it("boots with the browser router and query client", async () => {
+  it("boots with its providers", async () => {
     render(<App />);
 
-    expect(await screen.findByText("Race strategy, lap by lap.")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "StintLine" })).toBeVisible();
   });
 });

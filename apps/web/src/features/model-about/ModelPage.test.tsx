@@ -7,36 +7,29 @@ import { renderRoute } from "@/test/render";
 import { server } from "@/test/server";
 
 describe("ModelPage", () => {
-  it("shows held-out backtest metrics against the baseline", async () => {
+  it("states the held-out accuracy in plain words", async () => {
     renderRoute("/model");
 
-    const heldOut = await screen.findByRole("region", { name: "Held-out races" });
-    expect(within(heldOut).getByText("0.86 pos")).toBeVisible();
-    expect(within(heldOut).getByText("baseline 4.68")).toBeVisible();
-    expect(within(heldOut).getByText("155 stops")).toBeVisible();
+    expect(await screen.findByText(/155 real pit stops/)).toHaveTextContent(
+      "exact 49% of the time and within one place 79% of the time",
+    );
+    expect(screen.getByText(/off by 0.86 places/)).toHaveTextContent("would be off by 4.7");
   });
 
-  it("breaks the backtest down per race", async () => {
-    renderRoute("/model");
-    const heldOut = await screen.findByRole("region", { name: "Held-out races" });
+  it("keeps the assumptions behind a disclosure, translated", async () => {
+    renderRoute("/model", { locale: "fr" });
 
-    await userEvent.click(within(heldOut).getByText("Per race and mode"));
+    await userEvent.click(await screen.findByText("Réglages et hypothèses"));
 
-    expect(within(heldOut).getAllByRole("row", { name: /Austrian Grand Prix/ })).toHaveLength(2);
+    const fuel = screen.getByRole("region", { name: "Carburant" });
+    expect(within(fuel).getByText("seconds_per_kg")).toBeVisible();
+    expect(within(fuel).getByText(/Temps perdu par kilo/)).toBeVisible();
   });
 
-  it("lists assumptions by group with inline code", async () => {
-    renderRoute("/model");
-
-    const cleaning = await screen.findByRole("region", { name: "Lap cleaning" });
-    const mentions = within(cleaning).getAllByText("outlier_k");
-    expect(mentions.map((element) => element.tagName)).toEqual(["DT", "CODE"]);
-  });
-
-  it("degrades gracefully when the backtest report is missing", async () => {
+  it("says when test results are missing", async () => {
     server.use(http.get("*/api/v1/model", () => HttpResponse.json({ ...model, backtest: {} })));
     renderRoute("/model");
 
-    expect(await screen.findAllByText("Backtest results not available")).toHaveLength(2);
+    expect(await screen.findByText("Test results are not available.")).toBeVisible();
   });
 });

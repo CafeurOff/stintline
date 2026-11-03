@@ -6,15 +6,15 @@ import { server } from "@/test/server";
 
 describe("ApiStatus", () => {
   it("shows the API version when healthy", async () => {
-    renderRoute();
+    renderRoute("/model");
 
-    expect(await screen.findByText("API online · v0.1.0")).toBeInTheDocument();
+    expect(await screen.findByText("Server online · v0.1.0")).toBeInTheDocument();
   });
 
   it("shows a checking state while the request is pending", () => {
-    renderRoute();
+    renderRoute("/model");
 
-    expect(screen.getByText("Checking API…")).toHaveAttribute("role", "status");
+    expect(screen.getByText("Checking the server…")).toHaveAttribute("role", "status");
   });
 
   it("explains a degraded API using the 503 body", async () => {
@@ -26,22 +26,22 @@ describe("ApiStatus", () => {
         ),
       ),
     );
-    renderRoute();
+    renderRoute("/model");
 
-    expect(await screen.findByText("API degraded (database unavailable)")).toBeInTheDocument();
+    expect(await screen.findByText("Server degraded (database unavailable)")).toBeInTheDocument();
   });
 
   it("reports an unreachable API on network failure", async () => {
     server.use(http.get("*/api/v1/health", () => HttpResponse.error()));
-    renderRoute();
+    renderRoute("/model");
 
-    expect(await screen.findByText("API unreachable")).toBeInTheDocument();
+    expect(await screen.findByText("Server unreachable")).toBeInTheDocument();
   });
 
   it("reports an unreachable API when the body is empty", async () => {
     server.use(http.get("*/api/v1/health", () => new HttpResponse(null, { status: 204 })));
-    renderRoute();
+    renderRoute("/model");
 
-    expect(await screen.findByText("API unreachable")).toBeInTheDocument();
+    expect(await screen.findByText("Server unreachable")).toBeInTheDocument();
   });
 });

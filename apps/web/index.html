@@ -8,16 +8,20 @@
       content="StintLine: race strategy analysis for Formula 1 timing data. Unofficial project."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#1c1b19" />
+    <meta name="theme-color" content="#0d0d10" />
     <title>StintLine</title>
     <script>
       // Apply the stored theme before first paint (dark is the default). Mirrors src/lib/theme.ts.
+      // Language mirrors src/lib/i18n/locale.ts (stored choice, else browser language).
       try {
         if (localStorage.getItem("stintline-theme") === "light") {
           document.documentElement.dataset.theme = "light";
         }
+        var lang = localStorage.getItem("stintline-locale");
+        document.documentElement.lang =
+          lang === "fr" || lang === "en" ? lang : /^fr/i.test(navigator.language) ? "fr" : "en";
       } catch {
-        // Storage unavailable: keep the default theme.
+        // Storage unavailable: keep the defaults.
       }
     </script>
   </head>

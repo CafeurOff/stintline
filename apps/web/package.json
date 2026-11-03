@@ -44,6 +44,7 @@
     "vitest": "^4.1.12"
   },
   "dependencies": {
+    "@fontsource/titillium-web": "^5.3.0",
     "@stintline/api-types": "workspace:*",
     "@tanstack/react-query": "^5.105.3",
     "@visx/axis": "^4.0.0",
