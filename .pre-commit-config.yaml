@@ -1,0 +1,68 @@
+# Install: uv tool install pre-commit && pre-commit install
+# Hook revisions are bumped with `pre-commit autoupdate`.
+default_install_hook_types: [pre-commit, commit-msg]
+default_stages: [pre-commit]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+        exclude: ^apps/web/tsconfig.*\.json$
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.3
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.5.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [--strict, feat, fix, docs, test, chore, refactor, ci, build, perf, revert]
+
+  - repo: local
+    hooks:
+      - id: no-ai-attribution
+        name: reject AI attribution in commit message
+        language: pygrep
+        entry: '(?i)(co-authored-by:|generated with \[?claude|claude\.ai/code|claude-session:)'
+        stages: [commit-msg]
+
+      # The hooks below need the toolchains created in Phase 2. Their `files`
+      # filters keep them inactive until matching files exist.
+      - id: mypy
+        name: mypy (strict)
+        language: system
+        entry: uv run mypy
+        pass_filenames: false
+        files: ^(apps/api|packages/(strategy|racedata))/.*\.py$
+
+      - id: prettier
+        name: prettier
+        language: system
+        entry: pnpm exec prettier --check
+        files: ^(apps/web|packages/api-types)/.*\.(ts|tsx|js|jsx|mjs|cjs|json|css|html)$
+
+      - id: eslint
+        name: eslint
+        language: system
+        entry: pnpm --filter web exec eslint --max-warnings=0
+        files: ^apps/web/.*\.(ts|tsx)$
