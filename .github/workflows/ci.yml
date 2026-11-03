@@ -50,7 +50,7 @@ jobs:
         run: uv run pytest packages/racedata --cov-report=xml:coverage-racedata.xml
       - name: API tests on Postgres (coverage >= 80 %)
         env:
-          DATABASE_URL: postgres://stintline:stintline-ci@localhost:5432/stintline
+          DATABASE_URL: postgres://stintline:stintline-ci@127.0.0.1:5432/stintline
         run: uv run pytest apps/api --cov-report=xml:coverage-api.xml
       - name: Migrations are up to date
         run: uv run python apps/api/manage.py makemigrations --check --dry-run --settings config.settings.test

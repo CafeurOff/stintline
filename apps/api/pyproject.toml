@@ -44,9 +44,11 @@ testpaths = ["stintline", "config"]
 python_files = ["test_*.py"]
 filterwarnings = ["error"]
 addopts = [
+    "--ds=config.settings.test",
     "--strict-markers",
     "--disable-socket",
     "--allow-unix-socket",
+    "--allow-hosts=127.0.0.1,::1",
     "--cov=stintline",
     "--cov=config",
     "--cov-report=term-missing:skip-covered",
