@@ -5,7 +5,7 @@ StintLine is a race strategy decision-support tool built on Formula 1 timing dat
 It is **not** a live timing dashboard (f1-dash, MultiViewer and F1ReplayTiming already exist), not a results or standings site, and not affiliated with Formula 1, the FIA or any team.
 
 ## Status
-- Phases 0–5 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (see `docs/model.md`), versioned API (`/api/v1`) and web UI (race picker, stint timeline, degradation, undercut and pit-exit simulators, model page; see `apps/web/CLAUDE.md`).
+- Phases 0–5 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (see `docs/model.md`), versioned API (`/api/v1`) and a bilingual (EN/FR) web UI built around the circuit: cars replayed on the real track, pit-stop and undercut simulations drawn on it, tyres and model pages (ADR 0007, `apps/web/CLAUDE.md`).
 - Next: Phase 6 (live and replay). Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -14,7 +14,8 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
   config/            settings (base/dev/test/prod), urls, asgi, celery app
   stintline/core/        health endpoint, problem-style errors, shared API utilities
   stintline/racing/      ORM models: Season, Event, Session, Team, Driver, SessionEntry,
-                         Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TrackStatus
+                         Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TrackStatus,
+                         TrackOutline (reference-lap circuit drawing)
   stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
   stintline/strategy_api/ ORM to engine adapter (`adapters.py`), strategy endpoints and model card, `backtest` command
   stintline/live/        (planned) Channels consumers, live worker, replay engine
@@ -101,4 +102,5 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Laps to exclude from pace models:** lap 1, pit-in and pit-out laps, laps under SC / VSC / red flag (from race control and track status: `4` SC, `6` VSC, `7` VSC ending, `5` red), laps with null duration, and outliers (see `docs/model.md`).
 - **Missing or inconsistent data.** Lap times can be null (pit-out, lap 1, deleted). Compounds can be `UNKNOWN` or null. Stint tyre age can be missing. Drivers can retire mid-stint. Sprint weekends have two races. Driver numbers are not stable identities across seasons (e.g. 33 → 1): key drivers by provider IDs and map per session.
 - **Pit-stop durations.** Upstream "duration" fields mix pit-lane time (entry to exit) and stationary time depending on the source and season. Verify against fixtures, and name stored fields explicitly (`pit_lane_duration_s`, `stationary_duration_s`). Pit **loss** is computed by the strategy engine, never taken from upstream.
+- **Circuit outlines.** OpenF1 `location` is fetched only for the reference lap (fastest clean lap), always bounded with `date>` / `date<`. Never request a whole race: tens of thousands of rows per car. Outline samples are evenly spaced in time; the UI relies on that to place cars.
 - **Protected assets.** No team logos and no "F1" in product naming. Official driver portraits and car renders are allowed only as URL references behind `OFFICIAL_MEDIA_ENABLED` (ADR 0006): never download or commit them.

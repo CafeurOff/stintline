@@ -29,7 +29,7 @@ Last verified: 2026-11-03.
   | `weather` | `air_temperature`, `track_temperature`, `humidity`, `rainfall`, `wind_speed`, `date` |
   | `intervals` | `gap_to_leader`, `interval`, `date` (race only) |
 
-- `car_data` and `location` are not ingested (heavy and not needed for strategy).
+- `car_data` is not ingested. `location` is fetched for one reference lap per race only (the fastest clean lap, about 320 samples) to draw the circuit (ADR 0007).
 - Free tier: no live data. Sponsor tier (live, MQTT or WebSocket) is not used (ADR 0002).
 - Pitfalls: `lap_duration` is null on some laps (lap 1, pit-out, deleted). `compound` can be `UNKNOWN`. Requests that are too large return errors, so query per session and per driver.
 
@@ -55,6 +55,7 @@ Recorded responses in `packages/racedata/fixtures/<provider>/<path>/<params>.jso
 | `openf1/sessions` (`year=2025`, plus `year=2025` races only) | OpenF1 | Session keys for matching |
 | `openf1/{drivers,laps,stints,pit,race_control,weather}` with `session_key` 10014, 9928 and 9912 | OpenF1 | 2025 Bahrain (R4, Safety Car laps 32–35), Hungarian (R14) and Italian (R16) Grands Prix |
 | `jolpica/2025/{4,14,16}/{results,pitstops}` | Jolpica | Classification (identity, car numbers) and published pit-stop durations |
+| `openf1/location` for each of the nine races, bounded by `date>` and `date<` to the reference lap | OpenF1 | Circuit outlines |
 | Same endpoints for `session_key` 10006, 9971, 9955, 9920, 9877, 9839 and rounds 3, 9, 11, 15, 20, 24 | OpenF1 + Jolpica | Held-out backtest races: Japan, Spain, Austria, Netherlands, Mexico City, Abu Dhabi (`seed_demo --backtest`) |
 
 Observed quirks, all covered by tests:
