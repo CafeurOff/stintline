@@ -49,6 +49,7 @@ allowed-confusables = ["σ", "×", "Φ", "·", "−"]
 # Django declares Meta options and admin options as mutable class attributes by design.
 "**/models.py" = ["RUF012"]
 "**/admin.py" = ["RUF012"]
+"**/serializers.py" = ["RUF012"]
 ".claude/hooks/*.py" = ["S603", "S607", "T20"]
 
 [tool.ruff.lint.isort]

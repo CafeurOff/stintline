@@ -128,6 +128,8 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 50,
     "EXCEPTION_HANDLER": "stintline.core.api.exceptions.problem_exception_handler",
     "UNAUTHENTICATED_USER": None,
+    "DEFAULT_THROTTLE_CLASSES": ["rest_framework.throttling.ScopedRateThrottle"],
+    "DEFAULT_THROTTLE_RATES": {"simulate": env.str("SIMULATE_RATE", default="240/min")},
 }
 
 SPECTACULAR_SETTINGS = {
@@ -143,8 +145,12 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {
         "ComponentStatusEnum": "stintline.core.api.serializers.COMPONENT_STATUS_CHOICES",
+        "TyreCompoundEnum": "stintline.strategy_api.api.serializers.COMPOUND_CHOICES",
     },
 }
+
+OFFICIAL_MEDIA_ENABLED: bool = env.bool("OFFICIAL_MEDIA_ENABLED", default=True)
+"""Return official portrait and car image URLs (references only, ADR 0006)."""
 
 RACEDATA = {
     "MODE": env.str("RACEDATA_MODE", default="http"),

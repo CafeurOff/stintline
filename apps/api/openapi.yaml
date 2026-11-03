@@ -28,8 +28,450 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: ''
+  /api/v1/model:
+    get:
+      operationId: model_retrieve
+      summary: Model assumptions and backtest results
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelCard'
+          description: ''
+  /api/v1/seasons:
+    get:
+      operationId: seasons_list
+      description: Seasons with stored events, most recent first.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSeasonList'
+          description: ''
+  /api/v1/seasons/{year}/events:
+    get:
+      operationId: season_events_list
+      description: Grands Prix of a season with their sessions (``has_data`` = timing
+        ingested).
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEventList'
+          description: ''
+  /api/v1/sessions/{session_id}:
+    get:
+      operationId: session_retrieve
+      summary: Session with entries, media and neutralised periods
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetail'
+          description: ''
+  /api/v1/sessions/{session_id}/compare:
+    get:
+      operationId: session_compare_retrieve
+      summary: Lap-by-lap comparison of two cars
+      parameters:
+      - in: query
+        name: a
+        schema:
+          type: integer
+      - in: query
+        name: b
+        schema:
+          type: integer
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compare'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/degradation:
+    get:
+      operationId: session_degradation_retrieve
+      summary: Tyre degradation per compound and per stint
+      parameters:
+      - in: query
+        name: cars
+        schema:
+          type: string
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Degradation'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/laps:
+    get:
+      operationId: session_laps_list
+      summary: Laps with fuel-corrected times and exclusion reasons
+      parameters:
+      - in: query
+        name: cars
+        schema:
+          type: string
+        description: Comma-separated car numbers, e.g. `1,4`
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Lap'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/pit-loss:
+    get:
+      operationId: session_pit_loss_retrieve
+      summary: Pit loss measured from the session's stops
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PitLoss'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/simulate/pit-exit:
+    post:
+      operationId: simulate_pit_exit
+      summary: Predict where a car rejoins after pitting on a given lap
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PitExitRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PitExitResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/simulate/undercut:
+    post:
+      operationId: simulate_undercut
+      summary: 'Simulate an undercut: attacker pits first, defender reacts'
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UndercutRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UndercutResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/stints:
+    get:
+      operationId: session_stints_list
+      summary: Stints and pit stops of every car, in classification order
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntryStints'
+          description: ''
 components:
   schemas:
+    Assumption:
+      type: object
+      properties:
+        group:
+          type: string
+        name:
+          type: string
+        value:
+          type: string
+        description:
+          type: string
+      required:
+      - description
+      - group
+      - name
+      - value
+    Circuit:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica circuitId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 128
+        locality:
+          type: string
+          maxLength: 128
+        country:
+          type: string
+          maxLength: 64
+      required:
+      - country
+      - locality
+      - name
+      - ref
+    Compare:
+      type: object
+      properties:
+        car_a:
+          type: integer
+        car_b:
+          type: integer
+        laps:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompareLap'
+        pace_offset_a_s:
+          type: number
+          format: double
+          nullable: true
+        pace_offset_b_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - car_a
+      - car_b
+      - laps
+      - pace_offset_a_s
+      - pace_offset_b_s
+    CompareLap:
+      type: object
+      properties:
+        lap:
+          type: integer
+        time_a_s:
+          type: number
+          format: double
+          nullable: true
+        time_b_s:
+          type: number
+          format: double
+          nullable: true
+        gap_s:
+          type: number
+          format: double
+          nullable: true
+          description: 'B race time minus A (> 0: A ahead)'
+        compound_a:
+          type: string
+        compound_b:
+          type: string
+      required:
+      - compound_a
+      - compound_b
+      - gap_s
+      - lap
+      - time_a_s
+      - time_b_s
     ComponentStatusEnum:
       enum:
       - ok
@@ -38,6 +480,299 @@ components:
       description: |-
         * `ok` - ok
         * `unavailable` - unavailable
+    CompoundDegradation:
+      type: object
+      properties:
+        compound:
+          type: string
+        slope_s_per_lap:
+          type: number
+          format: double
+        slope_ci:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 2
+          minItems: 2
+        n_laps:
+          type: integer
+        n_stints:
+          type: integer
+        new_tyre_pace_s:
+          type: number
+          format: double
+        low_confidence:
+          type: boolean
+      required:
+      - compound
+      - low_confidence
+      - n_laps
+      - n_stints
+      - new_tyre_pace_s
+      - slope_ci
+      - slope_s_per_lap
+    CompoundEnum:
+      enum:
+      - SOFT
+      - MEDIUM
+      - HARD
+      - INTERMEDIATE
+      - WET
+      - UNKNOWN
+      type: string
+      description: |-
+        * `SOFT` - Soft
+        * `MEDIUM` - Medium
+        * `HARD` - Hard
+        * `INTERMEDIATE` - Intermediate
+        * `WET` - Wet
+        * `UNKNOWN` - Unknown
+    Degradation:
+      type: object
+      properties:
+        compounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompoundDegradation'
+        stints:
+          type: array
+          items:
+            $ref: '#/components/schemas/StintFit'
+        fuel:
+          $ref: '#/components/schemas/Fuel'
+      required:
+      - compounds
+      - fuel
+      - stints
+    DegradationPoint:
+      type: object
+      properties:
+        tyre_age:
+          type: integer
+        corrected_time_s:
+          type: number
+          format: double
+      required:
+      - corrected_time_s
+      - tyre_age
+    Driver:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica driverId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        code:
+          type: string
+          maxLength: 3
+        given_name:
+          type: string
+          maxLength: 64
+        family_name:
+          type: string
+          maxLength: 64
+      required:
+      - family_name
+      - given_name
+      - ref
+    Entry:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          readOnly: true
+        team_display_name:
+          type: string
+          description: Team name as shown in timing (e.g. Red Bull Racing)
+          maxLength: 64
+        team_colour:
+          type: string
+          description: 'Hex RGB without #'
+          maxLength: 6
+        grid_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        finish_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        classification:
+          type: string
+          description: positionText
+          maxLength: 8
+        status:
+          type: string
+          maxLength: 64
+        points:
+          type: number
+          format: double
+        laps_completed:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        media:
+          allOf:
+          - $ref: '#/components/schemas/Media'
+          nullable: true
+          readOnly: true
+      required:
+      - car_number
+      - driver
+      - media
+      - team
+    EntryStints:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+        team_colour:
+          type: string
+          description: 'Hex RGB without #'
+          maxLength: 6
+        finish_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        classification:
+          type: string
+          description: positionText
+          maxLength: 8
+        stints:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stint'
+          readOnly: true
+        pit_stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/PitStop'
+          readOnly: true
+      required:
+      - car_number
+      - driver
+      - pit_stops
+      - stints
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+          readOnly: true
+        round:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        name:
+          type: string
+          maxLength: 128
+        race_date:
+          type: string
+          format: date
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        circuit:
+          allOf:
+          - $ref: '#/components/schemas/Circuit'
+          readOnly: true
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SessionSummary'
+          readOnly: true
+      required:
+      - circuit
+      - format
+      - id
+      - name
+      - race_date
+      - round
+      - season
+      - sessions
+    EventSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+          readOnly: true
+        round:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        name:
+          type: string
+          maxLength: 128
+        race_date:
+          type: string
+          format: date
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        circuit:
+          allOf:
+          - $ref: '#/components/schemas/Circuit'
+          readOnly: true
+      required:
+      - circuit
+      - format
+      - id
+      - name
+      - race_date
+      - round
+      - season
+    FormatEnum:
+      enum:
+      - conventional
+      - sprint
+      type: string
+      description: |-
+        * `conventional` - Conventional
+        * `sprint` - Sprint weekend
+    Fuel:
+      type: object
+      properties:
+        seconds_per_kg:
+          type: number
+          format: double
+        gain_per_lap_s:
+          type: number
+          format: double
+      required:
+      - gain_per_lap_s
+      - seconds_per_kg
     Health:
       type: object
       properties:
@@ -51,3 +786,668 @@ components:
       - database
       - status
       - version
+    KindEnum:
+      enum:
+      - FP1
+      - FP2
+      - FP3
+      - SQ
+      - SPRINT
+      - Q
+      - R
+      type: string
+      description: |-
+        * `FP1` - Practice 1
+        * `FP2` - Practice 2
+        * `FP3` - Practice 3
+        * `SQ` - Sprint Qualifying
+        * `SPRINT` - Sprint
+        * `Q` - Qualifying
+        * `R` - Race
+    Lap:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        lap:
+          type: integer
+        time_s:
+          type: number
+          format: double
+          nullable: true
+        corrected_time_s:
+          type: number
+          format: double
+          nullable: true
+        compound:
+          type: string
+        tyre_age:
+          type: integer
+          nullable: true
+        stint:
+          type: integer
+          nullable: true
+        is_pit_in:
+          type: boolean
+        is_pit_out:
+          type: boolean
+        race_time_s:
+          type: number
+          format: double
+          nullable: true
+        excluded:
+          type: string
+          nullable: true
+          description: Exclusion reason, null if kept
+      required:
+      - car_number
+      - compound
+      - corrected_time_s
+      - excluded
+      - is_pit_in
+      - is_pit_out
+      - lap
+      - race_time_s
+      - stint
+      - time_s
+      - tyre_age
+    LapGap:
+      type: object
+      properties:
+        lap:
+          type: integer
+        gap_s:
+          type: number
+          format: double
+      required:
+      - gap_s
+      - lap
+    Media:
+      type: object
+      properties:
+        driver_image_url:
+          type: string
+          format: uri
+          nullable: true
+        car_image_url:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - car_image_url
+      - driver_image_url
+    ModelCard:
+      type: object
+      properties:
+        engine_version:
+          type: string
+        assumptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assumption'
+        backtest:
+          type: object
+          additionalProperties: {}
+          description: Backtest metrics per set (reference, held-out) and mode
+      required:
+      - assumptions
+      - backtest
+      - engine_version
+    ModelEnum:
+      enum:
+      - linear
+      - quadratic
+      type: string
+      description: |-
+        * `linear` - linear
+        * `quadratic` - quadratic
+    Neutralisation:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/NeutralisationStatusEnum'
+        lap_start:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        lap_end:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+      required:
+      - status
+    NeutralisationEnum:
+      enum:
+      - SC
+      - VSC
+      type: string
+      description: |-
+        * `SC` - SC
+        * `VSC` - VSC
+    NeutralisationStatusEnum:
+      enum:
+      - SC
+      - VSC
+      - RED
+      type: string
+      description: |-
+        * `SC` - Safety Car
+        * `VSC` - Virtual Safety Car
+        * `RED` - Red flag
+    NeutralisedLoss:
+      type: object
+      properties:
+        status:
+          type: string
+        loss_s:
+          type: number
+          format: double
+      required:
+      - loss_s
+      - status
+    NullEnum:
+      enum:
+      - null
+    PaginatedEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+    PaginatedSeasonList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Season'
+    PitExitRequestRequest:
+      type: object
+      properties:
+        car:
+          type: integer
+          maximum: 99
+          minimum: 1
+        pit_lap:
+          type: integer
+          minimum: 2
+        neutralisation:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/NeutralisationEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        rival_stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/RivalStopRequest'
+          maxItems: 19
+      required:
+      - car
+      - pit_lap
+    PitExitResult:
+      type: object
+      properties:
+        car:
+          type: integer
+        pit_lap:
+          type: integer
+        pit_loss_s:
+          type: number
+          format: double
+        sigma_s:
+          type: number
+          format: double
+        position_before:
+          type: integer
+        expected_position:
+          type: number
+          format: double
+        most_likely_position:
+          type: integer
+        interval:
+          type: array
+          items:
+            type: integer
+          maxItems: 2
+          minItems: 2
+        distribution:
+          type: array
+          items:
+            type: number
+            format: double
+        rivals:
+          type: array
+          items:
+            $ref: '#/components/schemas/RivalOutcome'
+      required:
+      - car
+      - distribution
+      - expected_position
+      - interval
+      - most_likely_position
+      - pit_lap
+      - pit_loss_s
+      - position_before
+      - rivals
+      - sigma_s
+    PitLoss:
+      type: object
+      properties:
+        green_s:
+          type: number
+          format: double
+        green_sigma_s:
+          type: number
+          format: double
+        n_green:
+          type: integer
+        neutralised:
+          type: array
+          items:
+            $ref: '#/components/schemas/NeutralisedLoss'
+        assumed_sc_s:
+          type: number
+          format: double
+        assumed_vsc_s:
+          type: number
+          format: double
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/StopLoss'
+      required:
+      - assumed_sc_s
+      - assumed_vsc_s
+      - green_s
+      - green_sigma_s
+      - n_green
+      - neutralised
+      - stops
+    PitStop:
+      type: object
+      properties:
+        lap_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          description: Lap on which the car entered the pits
+        stop_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        pit_lane_duration_s:
+          type: number
+          format: double
+          nullable: true
+          description: OpenF1 lane time
+        stationary_duration_s:
+          type: number
+          format: double
+          nullable: true
+        reported_duration_s:
+          type: number
+          format: double
+          nullable: true
+          description: Duration published by Jolpica
+      required:
+      - lap_number
+    Problem:
+      type: object
+      description: Error body returned by every endpoint (inspired by RFC 9457 problem
+        details).
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        code:
+          type: string
+        invalid_params:
+          type: object
+          additionalProperties: {}
+      required:
+      - code
+      - detail
+      - status
+      - title
+      - type
+    RivalOutcome:
+      type: object
+      properties:
+        car:
+          type: integer
+        gap_s:
+          type: number
+          format: double
+        margin_s:
+          type: number
+          format: double
+        p_pitting_car_ahead:
+          type: number
+          format: double
+      required:
+      - car
+      - gap_s
+      - margin_s
+      - p_pitting_car_ahead
+    RivalStopRequest:
+      type: object
+      properties:
+        car:
+          type: integer
+          maximum: 99
+          minimum: 1
+        lap:
+          type: integer
+          minimum: 1
+      required:
+      - car
+      - lap
+    Season:
+      type: object
+      properties:
+        year:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        events_count:
+          type: integer
+          readOnly: true
+      required:
+      - events_count
+      - year
+    SessionDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+        event:
+          allOf:
+          - $ref: '#/components/schemas/EventSummary'
+          readOnly: true
+        total_laps:
+          type: integer
+          nullable: true
+          readOnly: true
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+          readOnly: true
+        neutralisations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Neutralisation'
+          readOnly: true
+      required:
+      - entries
+      - event
+      - id
+      - kind
+      - neutralisations
+      - total_laps
+    SessionSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        scheduled_start:
+          type: string
+          format: date-time
+          nullable: true
+        has_data:
+          type: boolean
+          readOnly: true
+      required:
+      - has_data
+      - id
+      - kind
+    Stint:
+      type: object
+      properties:
+        stint_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        compound:
+          $ref: '#/components/schemas/CompoundEnum'
+        lap_start:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        lap_end:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        tyre_age_at_start:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Laps already on the set when fitted (0 = new)
+      required:
+      - compound
+      - stint_number
+    StintFit:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        stint:
+          type: integer
+        compound:
+          type: string
+        model:
+          $ref: '#/components/schemas/ModelEnum'
+        coefficients:
+          type: array
+          items:
+            type: number
+            format: double
+        slope_s_per_lap:
+          type: number
+          format: double
+        slope_ci:
+          type: array
+          items:
+            type: number
+            format: double
+          maxItems: 2
+          minItems: 2
+        r_squared:
+          type: number
+          format: double
+        rmse_s:
+          type: number
+          format: double
+        n_laps:
+          type: integer
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/DegradationPoint'
+      required:
+      - car_number
+      - coefficients
+      - compound
+      - model
+      - n_laps
+      - points
+      - r_squared
+      - rmse_s
+      - slope_ci
+      - slope_s_per_lap
+      - stint
+    StopLoss:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        lap:
+          type: integer
+        loss_s:
+          type: number
+          format: double
+        neutralisation:
+          type: string
+          nullable: true
+        outlier:
+          type: boolean
+      required:
+      - car_number
+      - lap
+      - loss_s
+      - neutralisation
+      - outlier
+    Team:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica constructorId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 128
+      required:
+      - name
+      - ref
+    TyreCompoundEnum:
+      enum:
+      - SOFT
+      - MEDIUM
+      - HARD
+      - INTERMEDIATE
+      - WET
+      type: string
+      description: |-
+        * `SOFT` - SOFT
+        * `MEDIUM` - MEDIUM
+        * `HARD` - HARD
+        * `INTERMEDIATE` - INTERMEDIATE
+        * `WET` - WET
+    UndercutRequestRequest:
+      type: object
+      properties:
+        attacker:
+          type: integer
+          maximum: 99
+          minimum: 1
+          description: Car behind, pitting first
+        defender:
+          type: integer
+          maximum: 99
+          minimum: 1
+        stop_lap:
+          type: integer
+          minimum: 2
+          description: Attacker's in-lap
+        attacker_compound:
+          $ref: '#/components/schemas/TyreCompoundEnum'
+        defender_compound:
+          $ref: '#/components/schemas/TyreCompoundEnum'
+        defender_reaction_laps:
+          type: integer
+          maximum: 10
+          minimum: 0
+          default: 1
+      required:
+      - attacker
+      - attacker_compound
+      - defender
+      - defender_compound
+      - stop_lap
+    UndercutResult:
+      type: object
+      properties:
+        gap_before_s:
+          type: number
+          format: double
+        gap_after_s:
+          type: number
+          format: double
+        net_gain_s:
+          type: number
+          format: double
+        sigma_s:
+          type: number
+          format: double
+        p_attacker_ahead:
+          type: number
+          format: double
+        attacker_ahead:
+          type: boolean
+        lap_gaps:
+          type: array
+          items:
+            $ref: '#/components/schemas/LapGap'
+      required:
+      - attacker_ahead
+      - gap_after_s
+      - gap_before_s
+      - lap_gaps
+      - net_gain_s
+      - p_attacker_ahead
+      - sigma_s
