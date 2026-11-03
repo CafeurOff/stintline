@@ -1,0 +1,5 @@
+{
+  "source": "wss://livetiming.formula1.com/signalrcore (Subscribe reply)",
+  "recorded_at": "2026-11-02T23:56:06Z",
+  "note": "Trimmed to 4 cars, 4 race control messages and 3 radio captures. Personal-use data (formula1.com terms): kept minimal for parser tests only."
+}

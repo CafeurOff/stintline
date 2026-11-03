@@ -1538,6 +1538,7 @@ dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "structlog" },
+    { name = "websockets" },
 ]
 
 [package.dev-dependencies]
@@ -1550,6 +1551,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28" },
     { name = "pydantic", specifier = ">=2.10" },
     { name = "structlog", specifier = ">=25.1" },
+    { name = "websockets", specifier = ">=15" },
 ]
 
 [package.metadata.requires-dev]

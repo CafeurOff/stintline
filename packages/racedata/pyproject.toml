@@ -8,6 +8,7 @@ dependencies = [
     "httpx>=0.28",
     "pydantic>=2.10",
     "structlog>=25.1",
+    "websockets>=15",
 ]
 
 [dependency-groups]
@@ -26,6 +27,7 @@ filterwarnings = ["error"]
 addopts = [
     "--strict-markers",
     "--disable-socket",
+    "--allow-unix-socket",  # asyncio's internal self-pipe; cannot reach the network
     "--cov=racedata",
     "--cov-report=term-missing:skip-covered",
     "--cov-fail-under=85",
