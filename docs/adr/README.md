@@ -9,3 +9,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0003](0003-charting-library-visx.md) | Charting library: visx | Accepted |
 | [0004](0004-data-model-and-ingestion.md) | Data model and idempotent ingestion | Accepted |
 | [0005](0005-numerical-stack-numpy-scipy.md) | Numerical stack for the strategy engine: numpy and scipy | Accepted |
+| [0006](0006-official-media-references.md) | Official driver and car images as URL references | Accepted |
