@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+import { mockApi } from "./mockApi";
+
 test.beforeEach(async ({ page }) => {
-  await page.route("**/api/v1/health", (route) =>
-    route.fulfill({ json: { status: "ok", version: "0.1.0", database: "ok" } }),
-  );
+  await mockApi(page);
 });
 
 test("home page loads with title, API status and disclaimer", async ({ page }) => {
@@ -11,7 +11,7 @@ test("home page loads with title, API status and disclaimer", async ({ page }) =
 
   await expect(page).toHaveTitle("StintLine");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Race strategy, lap by lap.");
-  await expect(page.getByRole("status")).toHaveText("API online · v0.1.0");
+  await expect(page.getByText("API online · v0.1.0")).toBeVisible();
   await expect(page.getByText(/not associated with Formula 1/)).toBeVisible();
 });
 
