@@ -1,0 +1,99 @@
+# Local development stack: `make up` (or `docker compose -f infra/docker-compose.yml up --build`).
+name: stintline
+
+x-api-env: &api-env
+  env_file:
+    - path: ../.env
+      required: false
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.dev
+    DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me-local-development-only}
+    DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,api
+    DATABASE_URL: postgres://${POSTGRES_USER:-stintline}:${POSTGRES_PASSWORD:-stintline-local}@postgres:5432/${POSTGRES_DB:-stintline}
+    REDIS_URL: redis://redis:6379/0
+
+x-api-build: &api-build
+  build:
+    context: ..
+    dockerfile: infra/docker/api.Dockerfile
+    target: dev
+  image: stintline-api:dev
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stintline}
+      POSTGRES_USER: ${POSTGRES_USER:-stintline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stintline-local}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    <<: [*api-build, *api-env]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../apps/api:/app/apps/api
+      - ../packages/strategy:/app/packages/strategy
+      - ../packages/racedata:/app/packages/racedata
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  worker:
+    <<: [*api-build, *api-env]
+    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=2"]
+    volumes:
+      - ../apps/api:/app/apps/api
+      - ../packages/strategy:/app/packages/strategy
+      - ../packages/racedata:/app/packages/racedata
+    depends_on:
+      api: { condition: service_healthy }
+
+  beat:
+    <<: [*api-build, *api-env]
+    command: ["celery", "-A", "config", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    depends_on:
+      api: { condition: service_healthy }
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      target: dev
+    environment:
+      VITE_API_PROXY_TARGET: http://api:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../apps/web/src:/app/apps/web/src
+      - ../apps/web/index.html:/app/apps/web/index.html
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  postgres-data:
