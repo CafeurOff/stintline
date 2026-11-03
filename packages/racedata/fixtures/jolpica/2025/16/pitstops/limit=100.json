@@ -1,0 +1,170 @@
+{
+ "MRData": {
+  "RaceTable": {
+   "Races": [
+    {
+     "Circuit": {
+      "Location": {
+       "country": "Italy",
+       "lat": "45.6156",
+       "locality": "Monza",
+       "long": "9.28111"
+      },
+      "circuitId": "monza",
+      "circuitName": "Autodromo Nazionale di Monza",
+      "url": "https://en.wikipedia.org/wiki/Monza_Circuit"
+     },
+     "PitStops": [
+      {
+       "driverId": "lawson",
+       "duration": "24.156",
+       "lap": "9",
+       "stop": "1",
+       "time": "15:16:28"
+      },
+      {
+       "driverId": "bearman",
+       "duration": "25.372",
+       "lap": "18",
+       "stop": "1",
+       "time": "15:29:07"
+      },
+      {
+       "driverId": "tsunoda",
+       "duration": "24.372",
+       "lap": "19",
+       "stop": "1",
+       "time": "15:30:30"
+      },
+      {
+       "driverId": "bortoleto",
+       "duration": "26.143",
+       "lap": "20",
+       "stop": "1",
+       "time": "15:31:51"
+      },
+      {
+       "driverId": "alonso",
+       "duration": "25.160",
+       "lap": "20",
+       "stop": "1",
+       "time": "15:31:51"
+      },
+      {
+       "driverId": "russell",
+       "duration": "25.021",
+       "lap": "27",
+       "stop": "1",
+       "time": "15:41:27"
+      },
+      {
+       "driverId": "antonelli",
+       "duration": "24.916",
+       "lap": "28",
+       "stop": "1",
+       "time": "15:43:02"
+      },
+      {
+       "driverId": "sainz",
+       "duration": "24.605",
+       "lap": "30",
+       "stop": "1",
+       "time": "15:45:54"
+      },
+      {
+       "driverId": "hadjar",
+       "duration": "24.326",
+       "lap": "32",
+       "stop": "1",
+       "time": "15:48:45"
+      },
+      {
+       "driverId": "leclerc",
+       "duration": "24.235",
+       "lap": "33",
+       "stop": "1",
+       "time": "15:49:40"
+      },
+      {
+       "driverId": "colapinto",
+       "duration": "24.971",
+       "lap": "33",
+       "stop": "1",
+       "time": "15:50:20"
+      },
+      {
+       "driverId": "max_verstappen",
+       "duration": "24.545",
+       "lap": "37",
+       "stop": "1",
+       "time": "15:54:52"
+      },
+      {
+       "driverId": "hamilton",
+       "duration": "23.971",
+       "lap": "38",
+       "stop": "1",
+       "time": "15:56:43"
+      },
+      {
+       "driverId": "albon",
+       "duration": "24.717",
+       "lap": "41",
+       "stop": "1",
+       "time": "16:01:01"
+      },
+      {
+       "driverId": "piastri",
+       "duration": "23.602",
+       "lap": "45",
+       "stop": "1",
+       "time": "16:06:02"
+      },
+      {
+       "driverId": "norris",
+       "duration": "27.498",
+       "lap": "46",
+       "stop": "1",
+       "time": "16:07:22"
+      },
+      {
+       "driverId": "stroll",
+       "duration": "38.418",
+       "lap": "49",
+       "stop": "1",
+       "time": "16:12:23"
+      },
+      {
+       "driverId": "gasly",
+       "duration": "25.012",
+       "lap": "49",
+       "stop": "1",
+       "time": "16:12:32"
+      },
+      {
+       "driverId": "ocon",
+       "duration": "30.754",
+       "lap": "51",
+       "stop": "1",
+       "time": "16:15:06"
+      }
+     ],
+     "date": "2025-09-07",
+     "raceName": "Italian Grand Prix",
+     "round": "16",
+     "season": "2025",
+     "time": "13:00:00Z",
+     "url": "https://en.wikipedia.org/wiki/2025_Italian_Grand_Prix"
+    }
+   ],
+   "round": "16",
+   "season": "2025"
+  },
+  "limit": "100",
+  "offset": "0",
+  "series": "f1",
+  "total": "19",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/16/pitstops/",
+  "xmlns": ""
+ }
+}

@@ -1,0 +1,12 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/sessions",
+  "params": {
+    "year": "2025",
+    "session_name": "Race"
+  },
+  "recorded_at": "2026-11-03T00:34:13+00:00",
+  "sha256": "491e18835cf6307ea8611923c36a4bc027bba2845f6f7771c8a165a58a9fcd84",
+  "bytes": 8629,
+  "dropped_fields": []
+}

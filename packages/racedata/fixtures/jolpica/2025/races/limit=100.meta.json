@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/races",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T00:34:07+00:00",
+  "sha256": "2e2e73a41004875c4a328b4a3f251e5089b85213475dda444b6a067007424d59",
+  "bytes": 21167,
+  "dropped_fields": []
+}

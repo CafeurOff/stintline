@@ -1,0 +1,15 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/laps",
+  "params": {
+    "session_key": "10014"
+  },
+  "recorded_at": "2026-11-03T00:34:22+00:00",
+  "sha256": "70575846549e8101047cd37c50a997ef1bf566fd30da2ea5409493fcdc8f8a3e",
+  "bytes": 333711,
+  "dropped_fields": [
+    "segments_sector_1",
+    "segments_sector_2",
+    "segments_sector_3"
+  ]
+}
