@@ -5,8 +5,8 @@ StintLine is a race strategy decision-support tool built on Formula 1 timing dat
 It is **not** a live timing dashboard (f1-dash, MultiViewer and F1ReplayTiming already exist), not a results or standings site, and not affiliated with Formula 1, the FIA or any team.
 
 ## Status
-- Phases 0–3 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and idempotent ingestion (OpenF1 and Jolpica adapters, Celery tasks, offline `seed_demo`).
-- Next: Phase 4 (strategy engine). Directories marked *(planned)* below do not exist yet.
+- Phases 0–4 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (cleaning, fuel, degradation, pit loss, pit exit, undercut/overcut, pit window, backtest; see `docs/model.md`).
+- Next: Phase 5 (API and UI). Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
 ```
@@ -16,7 +16,7 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
   stintline/racing/      ORM models: Season, Event, Session, Team, Driver, SessionEntry,
                          Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TrackStatus
   stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
-  stintline/strategy_api/ (planned) DRF views/serializers (/api/v1/), call packages/strategy
+  stintline/strategy_api/ ORM to engine adapter (`adapters.py`), `backtest` command; DRF views planned (Phase 5)
   stintline/live/        (planned) Channels consumers, live worker, replay engine
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, providers)  src/features/<feature>/  src/components/ui/  src/lib/
@@ -24,7 +24,9 @@ packages/racedata/   Pure Python, import `racedata`. Capability protocols (sched
                      adapters (openf1, jolpica; livetiming planned), HTTP client (rate limit, retry,
                      cache, timeout), DTOs, derive/matching helpers, fixture recorder
   fixtures/          recorded upstream responses (tests + offline demo)
-packages/strategy/   Pure Python strategy engine, import `stintline_strategy` (no Django, no I/O)
+packages/strategy/   Strategy engine, import `stintline_strategy` (numpy + scipy, no Django, no I/O).
+                     Modules: domain, laps, fuel, degradation, pit_loss, pit_exit, pace, undercut,
+                     window, backtest, synthetic (ground-truth races for tests)
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
 infra/               docker compose, Dockerfiles, nginx, deploy config
 docs/                architecture, data sources, model, ADRs, research
@@ -55,6 +57,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Migrations | `make makemigrations` · `make migrate` |
 | OpenAPI + TS types | `make types` (export `apps/api/openapi.yaml`, regenerate `packages/api-types`) · drift check: `make types-check` |
 | Demo data | `make seed` (`manage.py seed_demo`: 2025 calendar plus Bahrain, Hungary and Italy races from fixtures, no network, idempotent) |
+| Backtest | `manage.py seed_demo --backtest` then `manage.py backtest [--rounds 3 9 ...] [--json out.json]` |
 | Ingest real data | `manage.py ingest --season 2025 [--round 14] [--sync]` (queues Celery tasks unless `--sync`) |
 | Record a fixture | `uv run python -m racedata.tools.record_fixture openf1 laps session_key=9928` |
 | Pre-commit | `pre-commit run --all-files` |
@@ -67,7 +70,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Errors:** providers raise typed exceptions (`ProviderError`, `RateLimited`, `UpstreamUnavailable`, `InvalidPayload`). The API maps them to RFC 7807-style JSON problems. Never return `str(exc)` to clients, never use a bare `except`.
 - **Logs:** `structlog` with JSON in prod and console in dev. Log events are snake_case verbs (`ingest_session_started`) with key/value context (`session_key=…`). No `print`.
 - **Time:** all datetimes are timezone-aware UTC in storage and APIs. Local circuit time is derived from the event timezone at display time only.
-- **Assumptions:** every modelling assumption is a named, documented parameter with a justified default (no magic numbers). See `docs/model.md`.
+- **Assumptions:** every modelling assumption is a named, documented parameter with a justified default (no magic numbers). See `docs/model.md`. Never tune on the held-out backtest races (Japan, Spain, Austria, Netherlands, Mexico City, Abu Dhabi 2025). Tune on Bahrain, Hungary and Italy only.
 - **Tests:** pytest with Arrange/Act/Assert, one behaviour per test, names like `test_<unit>_<behaviour>`. factory_boy for ORM data. Vitest and Testing Library for components, Playwright for 2–3 user journeys. **No network in tests**: upstream responses are recorded fixtures under `packages/racedata/fixtures/` served by `FixtureTransport` (`/new-provider-fixture`). Test doubles (`FakeClock`, `sequence_transport`) live in `racedata.testing`.
 - **Architecture decisions:** add an ADR (`/adr`) and update this file in the same PR.
 
@@ -89,6 +92,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 
 ## Known pitfalls
 - **Toolchain pins.** TypeScript stays on 5.9 (openapi-typescript and typescript-eslint do not support 7 yet). ESLint stays on 9 (jsx-a11y). jsdom stays on 28 (29+ needs Node ≥ 22.13 and 30 needs Node ≥ 22.22). The API client resolves `fetch` at call time so MSW can intercept it.
+- **Strategy engine.** Stints can start on used tyres (`tyre_age_at_start` > 0). Pit loss already includes the out-lap new-tyre effect, so do not add it twice. Statistical tests assert calibration over many seeds, never single-seed CI containment (flaky by design).
 - **Ingestion.** Only finished races and sprints get timing data (ADR 0004). Driver identity comes from Jolpica results joined on the car number raced that weekend. The Celery worker runs with `--concurrency=1` because rate limiting is in-process.
 - **Coverage config** lives in the root `pyproject.toml` (coverage reads it from the working directory). Run pytest from the repository root.
 - **Rate limits.** OpenF1 free tier allows 3 req/s and 30 req/min. Jolpica allows ~4 req/s burst and ~500 req/hour, and paginates with `limit` ≤ 100. Always go through the `racedata` HTTP client.

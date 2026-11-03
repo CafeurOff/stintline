@@ -47,7 +47,7 @@ Last verified: 2026-11-03.
 - Usage rules: run from a personal connection, for personal use. Do not redistribute recordings. The public demo never connects to this feed.
 
 ## Fixture inventory
-Recorded responses in `packages/racedata/fixtures/<provider>/<path>/<params>.json`, used by tests and `seed_demo`. Each fixture has a `.meta.json` file (URL, params, recorded_at, sha256, dropped fields). Record new ones with `/new-provider-fixture`. Dropped fields: lap mini-sectors (size) and driver `headshot_url` (official imagery). Total size is about 1.6 MB.
+Recorded responses in `packages/racedata/fixtures/<provider>/<path>/<params>.json`, used by tests and `seed_demo`. Each fixture has a `.meta.json` file (URL, params, recorded_at, sha256, dropped fields). Record new ones with `/new-provider-fixture`. Dropped fields: lap mini-sectors (size) and driver `headshot_url` (official imagery). Total size is about 4.6 MB.
 
 | Fixture | Source | Purpose |
 | --- | --- | --- |
@@ -55,6 +55,7 @@ Recorded responses in `packages/racedata/fixtures/<provider>/<path>/<params>.jso
 | `openf1/sessions` (`year=2025`, plus `year=2025` races only) | OpenF1 | Session keys for matching |
 | `openf1/{drivers,laps,stints,pit,race_control,weather}` with `session_key` 10014, 9928 and 9912 | OpenF1 | 2025 Bahrain (R4, Safety Car laps 32–35), Hungarian (R14) and Italian (R16) Grands Prix |
 | `jolpica/2025/{4,14,16}/{results,pitstops}` | Jolpica | Classification (identity, car numbers) and published pit-stop durations |
+| Same endpoints for `session_key` 10006, 9971, 9955, 9920, 9877, 9839 and rounds 3, 9, 11, 15, 20, 24 | OpenF1 + Jolpica | Held-out backtest races: Japan, Spain, Austria, Netherlands, Mexico City, Abu Dhabi (`seed_demo --backtest`) |
 
 Observed quirks, all covered by tests:
 - Jolpica `permanentNumber` reflects the current season (Norris shows `1`, but raced `4` in 2025).

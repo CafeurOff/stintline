@@ -1,0 +1,114 @@
+{
+  "blind": {
+    "overall": {
+      "n": 76,
+      "mae": 0.881578947368421,
+      "mae_expected": 0.9082070468658652,
+      "exact_rate": 0.5,
+      "within_one_rate": 0.7368421052631579,
+      "interval_coverage": 0.6973684210526315,
+      "baseline_mae": 6.065789473684211
+    },
+    "per_race": {
+      "Bahrain Grand Prix": {
+        "n": 28,
+        "mae": 1.3571428571428572,
+        "mae_expected": 1.331974759273033,
+        "exact_rate": 0.35714285714285715,
+        "within_one_rate": 0.5714285714285714,
+        "interval_coverage": 0.5357142857142857,
+        "baseline_mae": 7.321428571428571
+      },
+      "Hungarian Grand Prix": {
+        "n": 29,
+        "mae": 0.6551724137931034,
+        "mae_expected": 0.6775196934173946,
+        "exact_rate": 0.5172413793103449,
+        "within_one_rate": 0.8275862068965517,
+        "interval_coverage": 0.7586206896551724,
+        "baseline_mae": 4.862068965517241
+      },
+      "Italian Grand Prix": {
+        "n": 19,
+        "mae": 0.5263157894736842,
+        "mae_expected": 0.6358090101608622,
+        "exact_rate": 0.6842105263157895,
+        "within_one_rate": 0.8421052631578947,
+        "interval_coverage": 0.8421052631578947,
+        "baseline_mae": 6.052631578947368
+      }
+    },
+    "skipped": [
+      "Bahrain Grand Prix car 81 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 63 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 4 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 16 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 44 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 22 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 87 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 12 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 23 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 14 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 30 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 18 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 5 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 55 lap 32: neutralised (gaps are not representative)"
+    ]
+  },
+  "scenario": {
+    "overall": {
+      "n": 76,
+      "mae": 0.5789473684210527,
+      "mae_expected": 0.6148102845655854,
+      "exact_rate": 0.5789473684210527,
+      "within_one_rate": 0.868421052631579,
+      "interval_coverage": 0.881578947368421,
+      "baseline_mae": 6.065789473684211
+    },
+    "per_race": {
+      "Bahrain Grand Prix": {
+        "n": 28,
+        "mae": 0.5714285714285714,
+        "mae_expected": 0.6101271932494429,
+        "exact_rate": 0.5357142857142857,
+        "within_one_rate": 0.8928571428571429,
+        "interval_coverage": 0.8928571428571429,
+        "baseline_mae": 7.321428571428571
+      },
+      "Hungarian Grand Prix": {
+        "n": 29,
+        "mae": 0.5862068965517241,
+        "mae_expected": 0.5821049035460204,
+        "exact_rate": 0.5517241379310345,
+        "within_one_rate": 0.8620689655172413,
+        "interval_coverage": 0.896551724137931,
+        "baseline_mae": 4.862068965517241
+      },
+      "Italian Grand Prix": {
+        "n": 19,
+        "mae": 0.5789473684210527,
+        "mae_expected": 0.6716304217455524,
+        "exact_rate": 0.6842105263157895,
+        "within_one_rate": 0.8421052631578947,
+        "interval_coverage": 0.8421052631578947,
+        "baseline_mae": 6.052631578947368
+      }
+    },
+    "skipped": [
+      "Bahrain Grand Prix car 81 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 63 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 4 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 16 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 44 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 22 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 87 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 12 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 23 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 14 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 30 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 18 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 5 lap 32: neutralised (gaps are not representative)",
+      "Bahrain Grand Prix car 55 lap 32: neutralised (gaps are not representative)"
+    ]
+  }
+}
