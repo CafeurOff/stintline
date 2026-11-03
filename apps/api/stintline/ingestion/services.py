@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 import structlog
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 
 from racedata.derive import reference_lap, track_status_periods
@@ -525,9 +525,22 @@ def _digest(m: RaceControlRecord) -> str:
     return hashlib.sha256(identity.encode()).hexdigest()
 
 
+def _last_per_key[M: models.Model](
+    model: type[M], objs: list[M], unique: list[str], report: IngestReport, name: str
+) -> list[M]:
+    """Keep the last row per unique key: Postgres refuses to upsert one row twice."""
+    columns = {f.name: f.attname for f in model._meta.concrete_fields}
+    attnames = [columns[f] for f in unique]
+    by_key = {tuple(getattr(o, a) for a in attnames): o for o in objs}
+    if len(by_key) < len(objs):
+        report.skipped.append(f"{name}: {len(objs) - len(by_key)} duplicate row(s) dropped")
+    return list(by_key.values())
+
+
 def _upsert[M: (Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TeamRadio)](
     model: type[M], objs: list[M], *, unique: list[str], report: IngestReport, name: str
 ) -> None:
+    objs = _last_per_key(model, objs, unique, report, name)
     if not objs:
         report.add(name, 0)
         return

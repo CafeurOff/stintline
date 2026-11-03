@@ -198,6 +198,29 @@ def test_inverted_stint_bounds_are_dropped_not_fatal() -> None:
     assert any("lap_end < lap_start" in s for s in report.skipped)
 
 
+def test_rows_repeating_a_unique_key_keep_the_last_one() -> None:
+    session = SessionFactory.create()
+    first = StintRecord(
+        driver_number=10,
+        stint_number=1,
+        compound=Compound.SOFT,
+        lap_start=1,
+        lap_end=10,
+        tyre_age_at_start=0,
+    )
+    data = FakeData(
+        results=[result("alpha", 10)],
+        stints=[first, first.model_copy(update={"lap_end": 12})],
+        laps=[lap(10, 1), lap(10, 1, None)],
+    )
+
+    report = services.ingest_session(session, fake_sources(data))
+
+    assert Stint.objects.get().lap_end == 12
+    assert Lap.objects.get().lap_time_s is None
+    assert any("stints: 1 duplicate" in s for s in report.skipped)
+
+
 def test_duplicate_weather_and_pit_rows_are_collapsed() -> None:
     session = SessionFactory.create()
     sample = WeatherRecord(
