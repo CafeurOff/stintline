@@ -12,3 +12,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0006](0006-official-media-references.md) | Official driver and car images as URL references | Accepted |
 | [0007](0007-circuit-map-and-bilingual-ui.md) | Circuit-first interface and bilingual UI | Accepted |
 | [0008](0008-fan-hub-scope-and-full-data.md) | StintLine becomes a fan hub, built on every public season | Accepted |
+| [0009](0009-wikipedia-driver-portraits.md) | Driver portraits from Wikipedia when no official portrait applies | Accepted |

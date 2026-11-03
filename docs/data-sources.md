@@ -46,6 +46,13 @@ Last verified: 2026-11-03.
 - `drivers`, `constructors` and `circuits` give biographies (884, 214 and 78 rows in Nov 2026).
 - Results rows carry `Time.millis`, `FastestLap.rank` and the driver's biography. Early seasons contain shared drives (two drivers, one car); StintLine keeps the first row and reports the others.
 
+## Wikipedia (driver portraits, ADR 0009)
+- API: `https://en.wikipedia.org/w/api.php`, no key. One call per second with the StintLine User-Agent.
+- `action=query&prop=pageimages&piprop=thumbnail|name&pithumbsize=500&pilicense=free&redirects=1&titles=…` (50 titles per call) gives the free lead image of each driver's article. Titles come from the Jolpica driver `url`.
+- `action=query&prop=imageinfo&iiprop=url|extmetadata&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles=File:…` gives the author and licence to display.
+- Thumbnail URLs carry analytics query parameters; the provider strips them. Images are referenced, never downloaded.
+- Fixtures: the 2025 grid and four historical titles (including one missing article) under `fixtures/wikipedia/`. Long queries get a hashed fixture file name (`racedata.fixtures.MAX_SLUG_CHARS`).
+
 ## Official live timing feed (local live mode)
 - Hub: `wss://livetiming.formula1.com/signalrcore` (SignalR Core, JSON protocol). An `OPTIONS` on `/signalrcore/negotiate` provides the `AWSALBCORS` cookie, then the client invokes `Subscribe([topics])`. The reply is a full snapshot, then incremental `feed` messages `[topic, payload, timestamp]` that merge into the snapshot.
 - Topics we use: `SessionInfo`, `SessionStatus`, `DriverList`, `LapCount`, `TimingData`, `TimingAppData` (stints: `Compound`, `New`, `StartLaps`, `TotalLaps`), `TyreStintSeries`, `LapSeries` (position per lap), `TrackStatus` (`1` clear, `2` yellow, `4` SC, `5` red, `6` VSC, `7` VSC ending), `RaceControlMessages`, `WeatherData`, `PitLaneTimeCollection`, `ExtrapolatedClock`.
@@ -76,4 +83,4 @@ Observed quirks, all covered by tests:
 - Jolpica pit `time` is circuit-local.
 
 ## Attribution
-Data courtesy of [OpenF1](https://openf1.org) and [Jolpica](https://github.com/jolpica/jolpica-f1). Formula 1 timing data © Formula One World Championship Limited. StintLine is unofficial and not associated with Formula 1, the FIA or any team.
+Data courtesy of [OpenF1](https://openf1.org) and [Jolpica](https://github.com/jolpica/jolpica-f1). Driver photos from [Wikimedia Commons](https://commons.wikimedia.org), credited on each profile with their author and licence. Formula 1 timing data © Formula One World Championship Limited. StintLine is unofficial and not associated with Formula 1, the FIA or any team.
