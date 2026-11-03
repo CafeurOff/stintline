@@ -46,8 +46,6 @@ repos:
         entry: '(?i)(co-authored-by:|generated with \[?claude|claude\.ai/code|claude-session:)'
         stages: [commit-msg]
 
-      # The hooks below need the toolchains created in Phase 2. Their `files`
-      # filters keep them inactive until matching files exist.
       - id: mypy
         name: mypy (strict)
         language: system
@@ -64,5 +62,6 @@ repos:
       - id: eslint
         name: eslint
         language: system
-        entry: pnpm --filter web exec eslint --max-warnings=0
-        files: ^apps/web/.*\.(ts|tsx)$
+        entry: pnpm --filter web lint
+        pass_filenames: false
+        files: ^apps/web/.*\.(ts|tsx|js)$
