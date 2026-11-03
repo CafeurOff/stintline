@@ -44,5 +44,7 @@ def build_logging_config(*, json_logs: bool, level: str) -> dict[str, Any]:
         "root": {"handlers": ["console"], "level": level},
         "loggers": {
             "django.db.backends": {"level": logging.getLevelName(logging.WARNING)},
+            # httpx logs every request at INFO, including fixture-backed ones.
+            "httpx": {"level": logging.getLevelName(logging.WARNING)},
         },
     }

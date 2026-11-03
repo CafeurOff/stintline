@@ -20,5 +20,5 @@ Read the root `CLAUDE.md` first. This file only adds backend-specific rules.
 
 ## Tests
 - `pytest-django` + factory_boy (`tests/factories.py`). Test settings use Postgres in CI and SQLite only where explicitly allowed.
-- Provider calls are replaced by fixture-backed fakes from `racedata` (`tests/fixtures/<provider>/`). An autouse fixture blocks sockets (`pytest-socket`).
+- Provider calls use fixture-backed sources (`RACEDATA_MODE=fixtures` in test settings, `racedata.sources.build_fixture_sources`) or in-memory fakes implementing the racedata protocols. `pytest-socket` blocks sockets except loopback (for Postgres).
 - Coverage gate: ≥ 80 %.

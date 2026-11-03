@@ -19,6 +19,7 @@ dependencies = [
     "whitenoise>=6.8",
     "stintline-strategy",
     "stintline-racedata",
+    "django-stubs-ext>=5.2,<5.3",
 ]
 
 [dependency-groups]
@@ -54,7 +55,3 @@ addopts = [
     "--cov-report=term-missing:skip-covered",
     "--cov-fail-under=80",
 ]
-
-[tool.coverage.run]
-branch = true
-omit = ["*/migrations/*", "*/config/wsgi.py", "*/manage.py", "*/config/settings/dev.py", "*/config/settings/prod.py"]

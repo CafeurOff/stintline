@@ -6,9 +6,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import django_stubs_ext
 import environ
 
 from config.logging import build_logging_config
+
+# Makes generic classes such as ``ModelAdmin[Model]`` subscriptable at runtime.
+django_stubs_ext.monkeypatch()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 REPO_ROOT = BASE_DIR.parent.parent
@@ -33,6 +37,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "channels",
     "stintline.core",
+    "stintline.racing",
+    "stintline.ingestion",
 ]
 
 MIDDLEWARE = [
@@ -137,6 +143,13 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ComponentStatusEnum": "stintline.core.api.serializers.COMPONENT_STATUS_CHOICES",
     },
+}
+
+RACEDATA = {
+    "MODE": env.str("RACEDATA_MODE", default="http"),
+    "CACHE_DIR": env.str("RACEDATA_CACHE_DIR", default=str(BASE_DIR / ".racedata-cache")),
+    "OPENF1_BASE_URL": env.str("OPENF1_BASE_URL", default="https://api.openf1.org/v1"),
+    "JOLPICA_BASE_URL": env.str("JOLPICA_BASE_URL", default="https://api.jolpi.ca/ergast/f1"),
 }
 
 STINTLINE_VERSION: str = env.str("STINTLINE_VERSION", default="0.1.0")
