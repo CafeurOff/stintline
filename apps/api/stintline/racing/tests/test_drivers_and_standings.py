@@ -41,6 +41,7 @@ def test_retired_driver_career_from_history() -> None:
     assert body["totals"]["first_season"] == 1950
     assert body["media"] is None
     assert body["totals"]["poles"] >= 1  # first on the grid: no qualifying stored in 1950
+    assert body["totals"]["fastest_laps"] is None  # no fastest-lap data before 2004
 
 
 def test_unknown_driver_is_404(db: None) -> None:

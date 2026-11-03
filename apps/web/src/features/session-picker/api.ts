@@ -11,7 +11,8 @@ export const TIMING_FIRST_SEASON = 2023;
 export function useSeasons() {
   return useQuery({
     queryKey: ["seasons"],
-    queryFn: async ({ signal }) => unwrap(await api.GET("/api/v1/seasons", { signal })),
+    queryFn: async ({ signal }) =>
+      unwrap(await api.GET("/api/v1/seasons", { params: { query: { limit: 100 } }, signal })),
     staleTime: 10 * 60_000,
   });
 }

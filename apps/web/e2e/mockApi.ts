@@ -2,6 +2,8 @@ import type { Page } from "@playwright/test";
 
 import { degradation } from "../src/test/fixtures/degradation";
 import { events } from "../src/test/fixtures/events";
+import { homeResponse } from "../src/test/fixtures/home";
+import { driver, driverResults, drivers } from "../src/test/fixtures/hub";
 import { model } from "../src/test/fixtures/model";
 import { pitExit } from "../src/test/fixtures/pitExit";
 import { pitLoss } from "../src/test/fixtures/pitLoss";
@@ -15,11 +17,12 @@ export const SESSION_ID = session.id;
 
 /**
  * Serves the recorded demo API to the browser so journeys run without a backend.
- * Official media URLs are aborted: tests never reach the network, and the UI must fall back
+ * Official media and Wikimedia URLs are aborted: tests never reach the network, and the UI must fall back
  * to its original illustrations.
  */
 export async function mockApi(page: Page) {
   await page.route("https://media.formula1.com/**", (route) => route.abort());
+  await page.route("https://*.wikimedia.org/**", (route) => route.abort());
   const json = (body: unknown) => ({ json: body });
   const routes: [string, unknown][] = [
     ["**/api/v1/health", { status: "ok", version: "0.1.0", database: "ok" }],
@@ -38,6 +41,10 @@ export async function mockApi(page: Page) {
     [`**/api/v1/sessions/${SESSION_ID}/track`, track],
     [`**/api/v1/sessions/${SESSION_ID}/replay`, replay],
     ["**/api/v1/model", model],
+    ["**/api/v1/home", homeResponse],
+    ["**/api/v1/drivers?*", drivers],
+    ["**/api/v1/drivers/norris", driver],
+    ["**/api/v1/drivers/norris/results*", driverResults],
   ];
   for (const [pattern, body] of routes) {
     await page.route(pattern, (route) => route.fulfill(json(body)));

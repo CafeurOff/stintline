@@ -284,7 +284,9 @@ class CareerTotalsSerializer(serializers.Serializer[Any]):
     wins = serializers.IntegerField()
     podiums = serializers.IntegerField()
     poles = serializers.IntegerField()
-    fastest_laps = serializers.IntegerField()
+    fastest_laps = serializers.IntegerField(
+        allow_null=True, help_text="Unknown (null) for careers starting before 2004"
+    )
     points = serializers.FloatField()
     championships = serializers.IntegerField()
     best_finish = serializers.IntegerField(allow_null=True)
@@ -309,6 +311,8 @@ class DriverCareerSerializer(serializers.Serializer[Any]):
 
 class DriverResultSerializer(serializers.ModelSerializer[SessionEntry]):
     session_id = serializers.IntegerField(source="session.id", read_only=True)
+    event_id = serializers.IntegerField(source="session.event.id", read_only=True)
+    has_data = serializers.SerializerMethodField(help_text="Lap timing stored for this session")
     kind = serializers.CharField(source="session.kind", read_only=True)
     season = serializers.IntegerField(source="session.event.season.year", read_only=True)
     round = serializers.IntegerField(source="session.event.round", read_only=True)
@@ -320,6 +324,8 @@ class DriverResultSerializer(serializers.ModelSerializer[SessionEntry]):
         model = SessionEntry
         fields = [
             "session_id",
+            "event_id",
+            "has_data",
             "kind",
             "season",
             "round",
@@ -334,6 +340,10 @@ class DriverResultSerializer(serializers.ModelSerializer[SessionEntry]):
             "points",
             "fastest_lap_rank",
         ]
+
+    def get_has_data(self, entry: SessionEntry) -> bool:
+        """Timing exists from 2023 for races and sprints (``Session.ingested_at``)."""
+        return entry.session.ingested_at is not None
 
 
 class StandingLineSerializer(serializers.ModelSerializer[Standing]):

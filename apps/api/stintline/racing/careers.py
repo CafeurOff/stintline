@@ -18,6 +18,9 @@ from stintline.racing.media import media_for
 from stintline.racing.models import Driver, SessionEntry, SessionKind, Standing
 
 NOT_STARTED = ("W", "F", "DNQ", "DNPQ", "EX")
+FASTEST_LAP_DATA_FROM = 2004
+"""First season with fastest-lap ranks in Jolpica. Careers starting earlier get ``None``
+rather than an undercount."""
 
 
 @dataclass
@@ -100,7 +103,11 @@ def driver_career(driver: Driver) -> dict[str, Any]:
             "wins": finishes.filter(finish_position=1).count(),
             "podiums": finishes.filter(finish_position__lte=3).count(),
             "poles": quali_poles + grid_poles,
-            "fastest_laps": races.filter(fastest_lap_rank=1).count(),
+            "fastest_laps": (
+                races.filter(fastest_lap_rank=1).count()
+                if years and years[0] >= FASTEST_LAP_DATA_FROM
+                else None
+            ),
             "points": round(sum(line.points for line in seasons.values()), 2),
             "championships": titles,
             "best_finish": finishes.order_by("finish_position")

@@ -767,6 +767,8 @@ components:
           type: integer
         fastest_laps:
           type: integer
+          nullable: true
+          description: Unknown (null) for careers starting before 2004
         points:
           type: number
           format: double
@@ -1141,6 +1143,13 @@ components:
         session_id:
           type: integer
           readOnly: true
+        event_id:
+          type: integer
+          readOnly: true
+        has_data:
+          type: boolean
+          description: Lap timing stored for this session
+          readOnly: true
         kind:
           type: string
           readOnly: true
@@ -1196,7 +1205,9 @@ components:
           nullable: true
       required:
       - car_number
+      - event_id
       - event_name
+      - has_data
       - kind
       - race_date
       - round

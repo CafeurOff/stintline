@@ -8,8 +8,11 @@ test.beforeEach(async ({ page }) => {
   await mockApi(page);
 });
 
-test("open the latest race and see where a driver rejoins after a stop", async ({ page }) => {
+test("open the last race from home and see where a driver rejoins after a stop", async ({
+  page,
+}) => {
   await page.goto("/");
+  await page.getByRole("link", { name: "Replay it on the circuit" }).click();
 
   await expect(page).toHaveURL(`/sessions/${SESSION_ID}`);
   const map = page.getByRole("group", { name: /Hungaroring: cars on track/ });
@@ -60,4 +63,18 @@ test("switch to the light theme and keep it after a reload", async ({ page }) =>
   await page.reload();
 
   await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+});
+
+test("find a driver and read their career", async ({ page }) => {
+  await page.goto("/");
+
+  await page
+    .getByRole("navigation", { name: "Main" })
+    .getByRole("link", { name: "Drivers" })
+    .click();
+  await page.getByRole("link", { name: /Norris/ }).click();
+
+  await expect(page.getByRole("heading", { name: "Norris" })).toBeVisible();
+  await expect(page.getByLabel("Career in numbers")).toContainText("Titles");
+  await expect(page.getByRole("heading", { name: "Results" })).toBeVisible();
 });

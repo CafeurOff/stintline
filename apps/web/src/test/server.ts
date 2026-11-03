@@ -4,6 +4,16 @@ import { setupServer } from "msw/node";
 
 import { degradation } from "./fixtures/degradation";
 import { events } from "./fixtures/events";
+import { homeResponse } from "./fixtures/home";
+import {
+  driver,
+  driverResults,
+  drivers,
+  progression,
+  standings,
+  team,
+  teams,
+} from "./fixtures/hub";
 import { model } from "./fixtures/model";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
@@ -21,6 +31,8 @@ export const healthyResponse: Schema<"Health"> = {
 
 /** The recorded demo session (Hungarian Grand Prix 2025). */
 export const SESSION_ID = session.id;
+
+export { homeResponse };
 
 export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   count: 1,
@@ -53,6 +65,24 @@ export const handlers = [
   http.post("*/api/v1/sessions/:id/simulate/undercut", () => HttpResponse.json(undercut)),
   http.post("*/api/v1/sessions/:id/simulate/pit-exit", () => HttpResponse.json(pitExit)),
   http.get("*/api/v1/model", () => HttpResponse.json(model)),
+  http.get("*/api/v1/home", () => HttpResponse.json(homeResponse)),
+  http.get("*/api/v1/events/:id", ({ params }) => {
+    const event = events.results.find((e) => e.id === Number(params.id));
+    return event ? HttpResponse.json(event) : problem(404, "not_found", "Not found");
+  }),
+  http.get("*/api/v1/drivers", () => HttpResponse.json(drivers)),
+  http.get("*/api/v1/drivers/:ref", ({ params }) =>
+    params.ref === driver.driver.ref
+      ? HttpResponse.json(driver)
+      : problem(404, "not_found", "Not found"),
+  ),
+  http.get("*/api/v1/drivers/:ref/results", () => HttpResponse.json(driverResults)),
+  http.get("*/api/v1/teams", () => HttpResponse.json(teams)),
+  http.get("*/api/v1/teams/:ref", ({ params }) =>
+    params.ref === team.team.ref ? HttpResponse.json(team) : problem(404, "not_found", "Not found"),
+  ),
+  http.get("*/api/v1/seasons/:year/standings", () => HttpResponse.json(standings)),
+  http.get("*/api/v1/seasons/:year/standings/progression", () => HttpResponse.json(progression)),
 ];
 
 /** Shared MSW server. Unhandled requests fail the test: no network in tests. */

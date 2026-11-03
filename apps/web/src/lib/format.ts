@@ -10,7 +10,7 @@ export interface Formatters {
   delta: (value: number, digits?: number) => string;
   /** `45 ms`. */
   millis: (seconds: number) => string;
-  /** `1:20.642` / `1:20,642`. */
+  /** `1:20.642` / `1:20,642`; race times get hours: `1:35:21.231`. */
   lapTime: (value: number | null | undefined) => string;
   /** Clamped at the ends: `<1%` / `<1 %`. */
   probability: (p: number) => string;
@@ -53,8 +53,12 @@ export function createFormatters(locale: Locale): Formatters {
     millis: (value) => `${Math.round(value * 1000)}${unitSpace}ms`,
     lapTime(value) {
       if (value == null || !Number.isFinite(value)) return EM_DASH;
-      const minutes = Math.floor(value / 60);
-      const rest = number(value - minutes * 60, 3);
+      const hours = Math.floor(value / 3600);
+      const minutes = Math.floor((value - hours * 3600) / 60);
+      const rest = number(value - hours * 3600 - minutes * 60, 3);
+      if (hours > 0) {
+        return `${hours}:${String(minutes).padStart(2, "0")}:${rest.padStart(6, "0")}`;
+      }
       return minutes > 0 ? `${minutes}:${rest.padStart(6, "0")}` : rest;
     },
     probability(p) {

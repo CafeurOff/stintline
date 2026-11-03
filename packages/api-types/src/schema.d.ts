@@ -433,7 +433,8 @@ export interface components {
       wins: number;
       podiums: number;
       poles: number;
-      fastest_laps: number;
+      /** @description Unknown (null) for careers starting before 2004 */
+      fastest_laps: number | null;
       /** Format: double */
       points: number;
       championships: number;
@@ -564,6 +565,9 @@ export interface components {
     };
     DriverResult: {
       readonly session_id: number;
+      readonly event_id: number;
+      /** @description Lap timing stored for this session */
+      readonly has_data: boolean;
       readonly kind: string;
       readonly season: number;
       readonly round: number;

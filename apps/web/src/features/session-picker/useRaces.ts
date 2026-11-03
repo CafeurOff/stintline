@@ -1,49 +1,48 @@
+import type { Schema } from "@stintline/api-types";
+
 import { TIMING_FIRST_SEASON, useSeasons, useTimedSeasonsEvents } from "./api";
 
-export interface RaceOption {
-  sessionId: number;
-  eventName: string;
+export type EventItem = Schema<"Event">;
+
+export interface SeasonEvents {
   year: number;
-  round: number;
-  kind: "R" | "SPRINT";
+  events: EventItem[];
 }
 
-/** Races and sprints with timing data in every timed season, most recent first. */
-export function useRaces() {
+/** Race and sprint sessions of an event that have lap timing (the replay works). */
+export function timedSessions(event: EventItem) {
+  return event.sessions.filter((s) => s.has_data && (s.kind === "R" || s.kind === "SPRINT"));
+}
+
+/** Calendars of every season with timing data, newest season first. */
+export function useTimedEvents() {
   const seasons = useSeasons();
   const years = (seasons.data?.results ?? [])
     .map((s) => s.year)
     .filter((year) => year >= TIMING_FIRST_SEASON)
     .sort((a, b) => b - a);
-  const events = useTimedSeasonsEvents(years);
+  const queries = useTimedSeasonsEvents(years);
+  const failed = queries.find((q) => q.isError);
 
-  const races: RaceOption[] = [];
-  for (const query of events) {
-    for (const event of query.data?.results ?? []) {
-      for (const session of event.sessions) {
-        if (!session.has_data || (session.kind !== "R" && session.kind !== "SPRINT")) continue;
-        races.push({
-          sessionId: session.id,
-          eventName: event.name,
-          year: event.season,
-          round: event.round,
-          kind: session.kind,
-        });
-      }
-    }
-  }
-  races.sort((a, b) => b.year - a.year || b.round - a.round || (a.kind === "R" ? -1 : 1));
-  const failed = events.find((q) => q.isError);
+  const data: SeasonEvents[] = years.map((year, index) => ({
+    year,
+    events: queries[index]?.data?.results ?? [],
+  }));
+  const latestSessionId =
+    data
+      .flatMap((s) => [...s.events].reverse())
+      .map((event) => timedSessions(event).find((s) => s.kind === "R"))
+      .find((s) => s !== undefined)?.id ?? null;
 
   return {
-    races,
-    isPending: seasons.isPending || events.some((q) => q.isPending),
+    seasons: data,
+    latestSessionId,
+    isPending: seasons.isPending || queries.some((q) => q.isPending),
     isError: seasons.isError || failed !== undefined,
     error: seasons.error ?? failed?.error ?? null,
-    noSeason: seasons.isSuccess && years.length === 0,
     refetch: () => {
       void seasons.refetch();
-      for (const q of events) void q.refetch();
+      for (const q of queries) void q.refetch();
     },
   };
 }

@@ -90,3 +90,22 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Results tables: quiet rows, numbers aligned, readable on phones (the wrapper scrolls). */
+@layer components {
+  .data-table {
+    @apply w-full border-collapse text-left;
+  }
+  .data-table th {
+    @apply border-b border-line-strong px-2 py-2 text-xs font-semibold tracking-wide text-muted uppercase;
+  }
+  .data-table td {
+    @apply border-b border-line px-2 py-2 align-middle;
+  }
+  .data-table tbody tr:hover {
+    @apply bg-raised;
+  }
+  .data-table .num {
+    @apply text-right tabular-nums;
+  }
+}

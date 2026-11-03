@@ -20,6 +20,7 @@ describe("createFormatters", () => {
     expect(en.lapTime(80.642)).toBe("1:20.642");
     expect(fr.lapTime(65.1)).toBe("1:05,100");
     expect(en.lapTime(21.3)).toBe("21.300");
+    expect(fr.lapTime(5721.231)).toBe("1:35:21,231");
     expect(en.lapTime(undefined)).toBe("—");
   });
 

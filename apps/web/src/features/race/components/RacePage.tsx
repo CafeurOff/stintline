@@ -1,9 +1,9 @@
 import type { Schema } from "@stintline/api-types";
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
@@ -15,7 +15,7 @@ import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
-import { byFinish, driverCode, driverName, entriesByCar, type Entry } from "../entries";
+import { byFinish, driverCode, driverName, entriesByCar, type Entry, entryPhoto } from "../entries";
 import {
   buildClock,
   type CarClock,
@@ -29,6 +29,7 @@ import {
 import { type PitExitRequest, type UndercutRequest, usePitExit, useUndercut } from "../simulations";
 import { useSessionId } from "../useSessionId";
 import { useReplayClock } from "../useReplayClock";
+import { DriverPicker } from "./DriverPicker";
 import { ReplayBar } from "./ReplayBar";
 import { StopPanel } from "./StopPanel";
 import { type Ghost, TrackMap, type CarMarker } from "./TrackMap";
@@ -55,6 +56,10 @@ function RaceLoader({ sessionId }: { sessionId: number }) {
 
   const error = session.error ?? replay.error ?? track.error;
   if (error instanceof ApiError && error.status === 404) return <NotFoundPage />;
+  // The replay needs lap timing: practice, qualifying and races before 2023 have none.
+  if (session.data && replay.error instanceof ApiError && replay.error.status === 400) {
+    return <NoTiming eventId={session.data.event.id} name={session.data.event.name} />;
+  }
   if (session.isError || replay.isError || track.isError) {
     return (
       <ErrorState
@@ -263,10 +268,10 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
           />
           <div className="flex items-center gap-3">
             <DriverAvatar
-              carNumber={entry.car_number}
+              label={entry.car_number}
               name={driverName(entry)}
               colour={entry.team_colour}
-              imageUrl={entry.media?.driver_image_url}
+              imageUrl={entryPhoto(entry)}
             />
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-bold">{driverName(entry)}</p>
@@ -281,23 +286,12 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
               </p>
             </div>
           </div>
-          <Select
-            label={t("panel.driver")}
-            hideLabel
-            value={selected}
-            onChange={(event) => {
-              selectCar(Number(event.target.value));
-            }}
-          >
-            {order.map((r, index) => {
-              const e = byCar.get(r.carNumber);
-              return e ? (
-                <option key={r.carNumber} value={r.carNumber}>
-                  {index + 1}. {driverName(e)}
-                </option>
-              ) : null;
-            })}
-          </Select>
+          <DriverPicker
+            order={order.map((r) => r.carNumber)}
+            byCar={byCar}
+            selected={selected}
+            onSelect={selectCar}
+          />
 
           {mode === "stop" ? (
             <>
@@ -363,6 +357,21 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
         </aside>
       )}
     </div>
+  );
+}
+
+function NoTiming({ eventId, name }: { eventId: number; name: string }) {
+  const { t, locale } = useI18n();
+  return (
+    <EmptyState title={eventName(name, locale)}>
+      <p>{t("race.noTiming")}</p>
+      <Link
+        to={`/events/${eventId}`}
+        className="mt-2 inline-block font-semibold text-mark-text underline"
+      >
+        {t("race.seeResults")}
+      </Link>
+    </EmptyState>
   );
 }
 

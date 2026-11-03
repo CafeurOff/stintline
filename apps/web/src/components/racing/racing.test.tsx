@@ -9,7 +9,7 @@ describe("DriverAvatar", () => {
   it("shows the official portrait without leaking the referrer", () => {
     renderWithProviders(
       <DriverAvatar
-        carNumber={4}
+        label={4}
         name="Lando Norris"
         colour="F47600"
         imageUrl="https://example.test/nor.webp"
@@ -26,12 +26,12 @@ describe("DriverAvatar", () => {
     renderWithProviders(
       <>
         <DriverAvatar
-          carNumber={4}
+          label={4}
           name="Lando Norris"
           colour="F47600"
           imageUrl="https://example.test/nor.webp"
         />
-        <DriverAvatar carNumber={43} name="Franco Colapinto" colour="00A1E8" imageUrl={null} />
+        <DriverAvatar label={43} name="Franco Colapinto" colour="00A1E8" imageUrl={null} />
       </>,
     );
 
