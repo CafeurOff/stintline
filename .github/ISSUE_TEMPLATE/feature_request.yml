@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a new capability or model improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or strategy question
+      description: Which race-strategy decision would this help with?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: data
+    attributes:
+      label: Data needed
+      description: Which data source or fields (see docs/data-sources.md)? Is it available without authentication?
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

@@ -1,0 +1,43 @@
+name: Bug report
+description: Something is broken or produces wrong numbers
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Include the session (season, Grand Prix, session) and drivers or laps involved if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. make up
+        2. Open ...
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Strategy model, Ingestion / data, API, Web UI, Live / replay, Infra / CI, Docs]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Commit SHA or version

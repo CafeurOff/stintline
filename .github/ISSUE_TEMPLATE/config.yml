@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Strategy model documentation
+    url: https://github.com/CafeurOff/stintline/blob/main/docs/model.md
+    about: Read the model assumptions and backtest results before reporting a modelling issue.
