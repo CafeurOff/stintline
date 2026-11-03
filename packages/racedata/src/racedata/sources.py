@@ -10,7 +10,7 @@ from racedata.cache import FileCache, ResponseCache
 from racedata.config import JOLPICA, OPENF1, ProviderConfig
 from racedata.fixtures import FIXTURES_ROOT, FixtureTransport
 from racedata.http import HttpClient
-from racedata.providers.base import ResultsSource, ScheduleSource, TimingSource
+from racedata.providers.base import HistorySource, ResultsSource, ScheduleSource, TimingSource
 from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
 
@@ -21,6 +21,8 @@ class Sources:
     results: ResultsSource
     timing: TimingSource
     clients: tuple[HttpClient, ...]
+    history: HistorySource | None = None
+    """Season-wide results and reference data. ``None`` in minimal test doubles."""
 
     def close(self) -> None:
         for client in self.clients:
@@ -50,7 +52,9 @@ def build_http_sources(
     openf1 = _http_client(OPENF1, openf1_base_url, cache)
     jolpica = _http_client(JOLPICA, jolpica_base_url, cache)
     jolpica_source = JolpicaSource(jolpica)
-    return Sources(jolpica_source, jolpica_source, OpenF1Source(openf1), (openf1, jolpica))
+    return Sources(
+        jolpica_source, jolpica_source, OpenF1Source(openf1), (openf1, jolpica), jolpica_source
+    )
 
 
 def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
@@ -59,4 +63,6 @@ def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
     openf1 = _fixture_client(OPENF1, root)
     jolpica = _fixture_client(JOLPICA, root)
     jolpica_source = JolpicaSource(jolpica)
-    return Sources(jolpica_source, jolpica_source, OpenF1Source(openf1), (openf1, jolpica))
+    return Sources(
+        jolpica_source, jolpica_source, OpenF1Source(openf1), (openf1, jolpica), jolpica_source
+    )

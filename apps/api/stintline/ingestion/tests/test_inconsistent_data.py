@@ -22,6 +22,7 @@ from racedata.models import (
     ResultRecord,
     ScheduledSession,
     StintRecord,
+    TeamRadioRecord,
     TimingSession,
     WeatherRecord,
 )
@@ -89,6 +90,7 @@ class FakeData:
     events: list[EventInfo] = field(default_factory=list)
     timing_sessions: list[TimingSession] = field(default_factory=list)
     locations: list[PositionSample] = field(default_factory=list)
+    team_radio: list[TeamRadioRecord] = field(default_factory=list)
 
 
 class FakeSource:
@@ -129,6 +131,9 @@ class FakeSource:
         self, session_key: int, driver_number: int, start: dt.datetime, end: dt.datetime
     ) -> list[PositionSample]:
         return self.d.locations
+
+    def team_radio(self, session_key: int) -> list[TeamRadioRecord]:
+        return self.d.team_radio
 
 
 def fake_sources(data: FakeData) -> Sources:

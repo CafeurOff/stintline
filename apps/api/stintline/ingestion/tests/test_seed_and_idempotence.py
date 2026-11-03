@@ -4,7 +4,6 @@ from io import StringIO
 
 import pytest
 from django.core.management import call_command
-from django.db.models import Count
 
 from stintline.racing.models import (
     Event,
@@ -55,7 +54,10 @@ def test_seed_demo_loads_three_reference_races() -> None:
         "Italian Grand Prix",
     ]
     assert Event.objects.filter(season__year=2025).count() == 24  # full calendar
-    assert SessionEntry.objects.values("session").annotate(n=Count("id")).filter(n=20).count() == 3
+    timed = SessionEntry.objects.filter(laps__isnull=False).values("session").distinct()
+    assert timed.count() == 3
+    race_results = SessionEntry.objects.filter(session__kind=SessionKind.RACE)
+    assert race_results.values("session").distinct().count() == 24  # every 2025 result
     assert Lap.objects.count() == 1129 + 1369 + 976
     assert PitStop.objects.count() == 42 + 29 + 19
 

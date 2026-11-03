@@ -12,4 +12,11 @@ urlpatterns = [
         "sessions/<int:session_id>/stints", views.SessionStintsView.as_view(), name="session-stints"
     ),
     path("sessions/<int:session_id>/track", views.SessionTrackView.as_view(), name="session-track"),
+    path("sessions/<int:session_id>/radio", views.SessionRadioView.as_view(), name="session-radio"),
+    path(
+        "seasons/<int:year>/standings", views.SeasonStandingsView.as_view(), name="season-standings"
+    ),
+    path("drivers", views.DriverListView.as_view(), name="drivers"),
+    path("drivers/<slug:ref>", views.DriverCareerView.as_view(), name="driver"),
+    path("drivers/<slug:ref>/results", views.DriverResultsView.as_view(), name="driver-results"),
 ]

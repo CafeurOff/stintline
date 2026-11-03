@@ -1,0 +1,12 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/qualifying",
+  "params": {
+    "limit": "100",
+    "offset": "400"
+  },
+  "recorded_at": "2026-11-03T13:50:07+00:00",
+  "sha256": "1a6a0fffc377dc426a329237af0708eb53ababa26a052df7be00828f2b15c8d1",
+  "bytes": 52351,
+  "dropped_fields": []
+}

@@ -6,7 +6,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
 
-from stintline.ingestion import services
+from stintline.ingestion import history, services
 from stintline.ingestion.sources import MODE_FIXTURES, open_sources
 from stintline.racing.models import Session, SessionKind
 
@@ -39,4 +39,8 @@ class Command(BaseCommand):
             for session in races:
                 report = services.ingest_session(session, sources)
                 self.stdout.write(f"{session.event.name}: {report.counts}")
+            reference = history.ingest_reference(sources)
+            self.stdout.write(f"Drivers, teams and circuits: {reference.counts}")
+            results = history.ingest_season_results(DEMO_SEASON, sources)
+            self.stdout.write(f"{DEMO_SEASON} results and standings: {results.counts}")
         self.stdout.write(self.style.SUCCESS(f"Demo data loaded ({len(rounds)} races)"))

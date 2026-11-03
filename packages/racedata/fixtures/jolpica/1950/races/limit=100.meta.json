@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/1950/races",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T13:50:25+00:00",
+  "sha256": "170df49d8532e84a10cb5781a608350f3e4f7b575f35beea93293c1f4db364cc",
+  "bytes": 3663,
+  "dropped_fields": []
+}

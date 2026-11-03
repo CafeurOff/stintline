@@ -20,6 +20,7 @@ from racedata.models import (
     RaceControlRecord,
     SessionKind,
     StintRecord,
+    TeamRadioRecord,
     TimingSession,
     WeatherRecord,
 )
@@ -114,6 +115,10 @@ class OpenF1Source:
         rows = self._rows("weather", {"session_key": session_key})
         return self._parse_all("weather", rows, _weather)
 
+    def team_radio(self, session_key: int) -> list[TeamRadioRecord]:
+        rows = self._rows("team_radio", {"session_key": session_key})
+        return sorted(self._parse_all("team_radio", rows, _team_radio), key=lambda r: r.recorded_at)
+
     def locations(
         self, session_key: int, driver_number: int, start: datetime, end: datetime
     ) -> list[PositionSample]:
@@ -128,6 +133,17 @@ class OpenF1Source:
         rows = self._rows("location", params)
         samples = self._parse_all("location", rows, _location)
         return sorted(samples, key=lambda s: s.at)
+
+
+def _team_radio(r: dict[str, Any]) -> TeamRadioRecord:
+    url = r.get("recording_url")
+    if not isinstance(url, str) or not url.startswith("https://"):
+        raise InvalidPayloadError(PROVIDER, "team radio without an https recording_url")
+    return TeamRadioRecord(
+        driver_number=int(r["driver_number"]),
+        recorded_at=parse_datetime(PROVIDER, r["date"]),
+        url=url,
+    )
 
 
 def _openf1_instant(value: datetime) -> str:

@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/circuits",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T13:50:24+00:00",
+  "sha256": "1f07af10668bec348518d48fb25cb659babf1ed5e4f4d06447a19572a78358ca",
+  "bytes": 22531,
+  "dropped_fields": []
+}

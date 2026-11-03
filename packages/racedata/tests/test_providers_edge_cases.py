@@ -213,3 +213,84 @@ def test_jolpica_sprint_results_and_empty_tables() -> None:
     assert sprint[0].grid is None  # pit-lane start
     assert sprint[0].code is None
     assert source.pit_stops(2025, 7) == []
+
+
+def test_jolpica_skips_malformed_history_rows() -> None:
+    standings = {
+        "MRData": {
+            "total": "2",
+            "StandingsTable": {
+                "StandingsLists": [
+                    {
+                        "season": "1960",
+                        "round": "10",
+                        "DriverStandings": [
+                            {
+                                "position": "1",
+                                "points": "43",
+                                "wins": "5",
+                                "Driver": {"driverId": "brabham"},
+                            },
+                            {"position": "2", "points": "34"},
+                        ],
+                    }
+                ]
+            },
+        }
+    }
+    drivers = {
+        "MRData": {
+            "total": "2",
+            "DriverTable": {
+                "Drivers": [
+                    {
+                        "driverId": "a",
+                        "givenName": "A",
+                        "familyName": "B",
+                        "dateOfBirth": "1930-01-01",
+                    },
+                    {"driverId": "broken"},
+                ]
+            },
+        }
+    }
+    quali = {
+        "MRData": {
+            "total": "1",
+            "RaceTable": {
+                "Races": [{"round": "1", "QualifyingResults": [{"number": "x", "Driver": {}}]}]
+            },
+        }
+    }
+    source = JolpicaSource(
+        jolpica_client(
+            {"1960/driverstandings": standings, "drivers": drivers, "1960/qualifying": quali}
+        )
+    )
+
+    table = source.standings(1960, None, constructors=False)
+
+    assert [r.competitor_id for r in table] == ["brabham"]
+    assert [d.driver_id for d in source.drivers()] == ["a"]
+    assert source.season_qualifying(1960) == {1: []}
+
+
+def test_jolpica_list_with_unexpected_shape_raises() -> None:
+    source = JolpicaSource(jolpica_client({"constructors": {"MRData": {"total": "1"}}}))
+
+    with pytest.raises(InvalidPayloadError):
+        source.constructors()
+
+
+def test_openf1_team_radio_requires_an_https_recording() -> None:
+    rows = [
+        {
+            "driver_number": 4,
+            "date": "2025-08-03T13:17:53+00:00",
+            "recording_url": "https://x/a.mp3",
+        },
+        {"driver_number": 4, "date": "2025-08-03T13:18:53+00:00", "recording_url": "ftp://x/b.mp3"},
+    ]
+    radio = OpenF1Source(client_returning({"team_radio": rows})).team_radio(1)
+
+    assert [r.url for r in radio] == ["https://x/a.mp3"]

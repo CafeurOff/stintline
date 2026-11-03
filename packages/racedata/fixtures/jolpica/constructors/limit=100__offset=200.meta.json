@@ -1,0 +1,12 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/constructors",
+  "params": {
+    "limit": "100",
+    "offset": "200"
+  },
+  "recorded_at": "2026-11-03T13:50:24+00:00",
+  "sha256": "124bcadc6baa2744eb8d66cf101db75f96807214fa4e968d84792a5025fd2c1e",
+  "bytes": 2472,
+  "dropped_fields": []
+}

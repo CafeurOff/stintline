@@ -47,6 +47,9 @@ class TrackStatusKind(models.TextChoices):
 
 class Season(models.Model):
     year = models.PositiveSmallIntegerField(unique=True)
+    results_ingested_at = models.DateTimeField(
+        null=True, blank=True, help_text="Last full import of results, qualifying and standings"
+    )
 
     class Meta:
         ordering = ["-year"]
@@ -61,6 +64,9 @@ class Circuit(models.Model):
     locality = models.CharField(max_length=128)
     country = models.CharField(max_length=64)
     openf1_circuit_key = models.PositiveIntegerField(null=True, blank=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    wikipedia_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ["name"]
@@ -112,6 +118,8 @@ class Session(models.Model):
 class Team(models.Model):
     ref = models.SlugField(max_length=64, unique=True, help_text="Jolpica constructorId")
     name = models.CharField(max_length=128)
+    nationality = models.CharField(max_length=64, blank=True)
+    wikipedia_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ["name"]
@@ -125,6 +133,10 @@ class Driver(models.Model):
     code = models.CharField(max_length=3, blank=True)
     given_name = models.CharField(max_length=64)
     family_name = models.CharField(max_length=64)
+    permanent_number = models.PositiveSmallIntegerField(null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    nationality = models.CharField(max_length=64, blank=True)
+    wikipedia_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ["family_name", "given_name"]
@@ -153,6 +165,14 @@ class SessionEntry(models.Model):
     status = models.CharField(max_length=64, blank=True)
     points = models.FloatField(default=0.0)
     laps_completed = models.PositiveSmallIntegerField(default=0)
+    race_time_s = models.FloatField(
+        null=True, blank=True, help_text="Total race time when classified on the lead lap"
+    )
+    fastest_lap_rank = models.PositiveSmallIntegerField(null=True, blank=True)
+    fastest_lap_s = models.FloatField(null=True, blank=True)
+    q1_s = models.FloatField(null=True, blank=True, help_text="Qualifying sessions only")
+    q2_s = models.FloatField(null=True, blank=True)
+    q3_s = models.FloatField(null=True, blank=True)
 
     class Meta:
         ordering = ["session", "finish_position", "car_number"]
@@ -331,3 +351,61 @@ class TrackOutline(models.Model):
 
     def __str__(self) -> str:
         return f"{self.session} outline (car {self.car_number}, lap {self.lap_number})"
+
+
+class Standing(models.Model):
+    """Championship table line after a round (drivers' or constructors')."""
+
+    season = models.ForeignKey(Season, on_delete=models.CASCADE, related_name="standings")
+    round = models.PositiveSmallIntegerField()
+    driver = models.ForeignKey(
+        Driver, on_delete=models.CASCADE, null=True, blank=True, related_name="standings"
+    )
+    team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, null=True, blank=True, related_name="standings"
+    )
+    position = models.PositiveSmallIntegerField(null=True, blank=True)
+    position_text = models.CharField(max_length=8, blank=True)
+    points = models.FloatField(default=0.0)
+    wins = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        ordering = ["season", "round", "position"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["season", "round", "driver"],
+                condition=models.Q(driver__isnull=False),
+                name="standing_unique_driver",
+            ),
+            models.UniqueConstraint(
+                fields=["season", "round", "team"],
+                condition=models.Q(team__isnull=False),
+                name="standing_unique_team",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(driver__isnull=True) ^ models.Q(team__isnull=True),
+                name="standing_driver_xor_team",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        who = self.driver or self.team
+        return f"{self.season} R{self.round} P{self.position} {who}"
+
+
+class TeamRadio(models.Model):
+    """A team radio message: a reference to the official recording, never re-hosted."""
+
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="team_radio")
+    car_number = models.PositiveSmallIntegerField()
+    recorded_at = models.DateTimeField()
+    url = models.URLField(max_length=300)
+
+    class Meta:
+        ordering = ["session", "recorded_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["session", "url"], name="radio_unique_session_url"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.session} #{self.car_number} {self.recorded_at:%H:%M:%S}"

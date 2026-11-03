@@ -14,8 +14,10 @@ from stintline.racing.models import (
     Season,
     Session,
     SessionEntry,
+    Standing,
     Stint,
     Team,
+    TeamRadio,
     TrackStatus,
 )
 
@@ -94,6 +96,12 @@ class EntrySerializer(serializers.ModelSerializer[SessionEntry]):
             "status",
             "points",
             "laps_completed",
+            "race_time_s",
+            "fastest_lap_rank",
+            "fastest_lap_s",
+            "q1_s",
+            "q2_s",
+            "q3_s",
             "media",
         ]
 
@@ -171,3 +179,110 @@ class TrackSerializer(serializers.Serializer[Any]):
     points = serializers.ListField(
         child=serializers.ListField(child=serializers.FloatField(), min_length=2, max_length=2)
     )
+
+
+class DriverBioSerializer(serializers.ModelSerializer[Driver]):
+    class Meta:
+        model = Driver
+        fields = [
+            "ref",
+            "code",
+            "given_name",
+            "family_name",
+            "permanent_number",
+            "date_of_birth",
+            "nationality",
+            "wikipedia_url",
+        ]
+
+
+class CareerTotalsSerializer(serializers.Serializer[Any]):
+    seasons = serializers.IntegerField()
+    first_season = serializers.IntegerField(allow_null=True)
+    last_season = serializers.IntegerField(allow_null=True)
+    starts = serializers.IntegerField()
+    wins = serializers.IntegerField()
+    podiums = serializers.IntegerField()
+    poles = serializers.IntegerField()
+    fastest_laps = serializers.IntegerField()
+    points = serializers.FloatField()
+    championships = serializers.IntegerField()
+    best_finish = serializers.IntegerField(allow_null=True)
+
+
+class SeasonLineSerializer(serializers.Serializer[Any]):
+    year = serializers.IntegerField()
+    teams = serializers.ListField(child=serializers.CharField())
+    starts = serializers.IntegerField()
+    wins = serializers.IntegerField()
+    podiums = serializers.IntegerField()
+    points = serializers.FloatField()
+    championship_position = serializers.IntegerField(allow_null=True)
+
+
+class DriverCareerSerializer(serializers.Serializer[Any]):
+    driver = DriverBioSerializer()
+    media = MediaSerializer(allow_null=True)
+    totals = CareerTotalsSerializer()
+    seasons = SeasonLineSerializer(many=True)
+
+
+class DriverResultSerializer(serializers.ModelSerializer[SessionEntry]):
+    session_id = serializers.IntegerField(source="session.id", read_only=True)
+    kind = serializers.CharField(source="session.kind", read_only=True)
+    season = serializers.IntegerField(source="session.event.season.year", read_only=True)
+    round = serializers.IntegerField(source="session.event.round", read_only=True)
+    event_name = serializers.CharField(source="session.event.name", read_only=True)
+    race_date = serializers.DateField(source="session.event.race_date", read_only=True)
+    team = TeamSerializer(read_only=True)
+
+    class Meta:
+        model = SessionEntry
+        fields = [
+            "session_id",
+            "kind",
+            "season",
+            "round",
+            "event_name",
+            "race_date",
+            "team",
+            "car_number",
+            "grid_position",
+            "finish_position",
+            "classification",
+            "status",
+            "points",
+            "fastest_lap_rank",
+        ]
+
+
+class StandingLineSerializer(serializers.ModelSerializer[Standing]):
+    driver = DriverSerializer(read_only=True, allow_null=True)
+    team = TeamSerializer(read_only=True, allow_null=True)
+
+    class Meta:
+        model = Standing
+        fields = ["position", "position_text", "points", "wins", "driver", "team"]
+
+
+class StandingsSerializer(serializers.Serializer[Any]):
+    season = serializers.IntegerField()
+    round = serializers.IntegerField(allow_null=True)
+    rounds = serializers.ListField(child=serializers.IntegerField())
+    drivers = StandingLineSerializer(many=True)
+    constructors = StandingLineSerializer(many=True)
+
+
+class TeamRadioSerializer(serializers.ModelSerializer[TeamRadio]):
+    class Meta:
+        model = TeamRadio
+        fields = ["car_number", "recorded_at", "url"]
+
+
+class DriverQuerySerializer(serializers.Serializer[Any]):
+    search = serializers.CharField(required=False, max_length=64)
+    season = serializers.IntegerField(required=False, min_value=1950, max_value=2100)
+
+
+class RoundQuerySerializer(serializers.Serializer[Any]):
+    round = serializers.IntegerField(required=False, min_value=1, max_value=40)

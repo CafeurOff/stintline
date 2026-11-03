@@ -118,3 +118,44 @@ def test_reference_lap_trace_is_parsed_in_time_order(sources: Sources) -> None:
     assert samples == sorted(samples, key=lambda s: s.at)
     assert lap.started_at <= samples[0].at
     assert samples[-1].at < end
+
+
+def test_season_results_qualifying_and_standings_from_jolpica(sources: Sources) -> None:
+    history = sources.history
+    assert history is not None
+
+    races = history.season_results(2025, SessionKind.RACE)
+    sprints = history.season_results(2025, SessionKind.SPRINT)
+    quali = history.season_qualifying(2025)
+    final = history.standings(2025, None, constructors=False)
+    teams = history.standings(2025, 14, constructors=True)
+
+    assert sorted(races) == list(range(1, 25))
+    assert len(sprints) == 6
+    hungary_winner = next(r for r in races[14] if r.position == 1)
+    assert hungary_winner.driver_id == "norris"
+    assert hungary_winner.race_time_s is not None
+    assert next(q for q in quali[14] if q.position == 1).q3_s is not None
+    assert (final[0].competitor_id, final[0].points, final[0].round) == ("norris", 423.0, 24)
+    assert teams[0].competitor_id == "mclaren"
+
+
+def test_reference_tables_from_jolpica(sources: Sources) -> None:
+    history = sources.history
+    assert history is not None
+
+    drivers = {d.driver_id: d for d in history.drivers()}
+    circuits = {c.circuit_id: c for c in history.circuits()}
+
+    assert len(drivers) == 884
+    assert drivers["fangio"].nationality == "Argentine"
+    assert len(history.constructors()) == 214
+    assert circuits["monza"].latitude is not None
+
+
+def test_team_radio_is_parsed_in_time_order(sources: Sources) -> None:
+    radio = sources.timing.team_radio(HUNGARY)
+
+    assert len(radio) > 30
+    assert radio == sorted(radio, key=lambda r: r.recorded_at)
+    assert all(r.url.endswith(".mp3") for r in radio)

@@ -27,9 +27,11 @@ from racedata.models import (
     LapRecord,
     PitRecord,
     PositionSample,
+    QualifyingRecord,
     RaceControlRecord,
     ResultRecord,
     StintRecord,
+    TeamRadioRecord,
     TimingSession,
     WeatherRecord,
 )
@@ -49,6 +51,7 @@ from stintline.racing.models import (
     SessionKind,
     Stint,
     Team,
+    TeamRadio,
     TrackOutline,
     TrackStatus,
     WeatherSample,
@@ -148,6 +151,7 @@ class _SessionPayload:
     race_control: list[RaceControlRecord]
     weather: list[WeatherRecord]
     outline: _Outline | None
+    team_radio: list[TeamRadioRecord] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -194,6 +198,7 @@ def ingest_session(session: Session, sources: Sources) -> IngestReport:
         outline=None,
     )
     payload = _with_outline(payload, key, sources, report)
+    payload = _with_team_radio(payload, key, sources, report)
     with transaction.atomic():
         _write_session(session, payload, report)
         session.ingested_at = timezone.now()
@@ -221,6 +226,18 @@ def _with_outline(
         report.skipped.append(f"track outline: only {len(samples)} samples")
         return payload
     return _SessionPayload(**{**payload.__dict__, "outline": _Outline(lap, samples)})
+
+
+def _with_team_radio(
+    payload: _SessionPayload, key: int, sources: Sources, report: IngestReport
+) -> _SessionPayload:
+    """Radio references are optional: their absence never blocks timing data."""
+    try:
+        radio = sources.timing.team_radio(key)
+    except (ProviderError, MissingFixtureError) as exc:
+        report.skipped.append(f"team radio: {type(exc).__name__}")
+        return payload
+    return _SessionPayload(**{**payload.__dict__, "team_radio": radio})
 
 
 MIN_OUTLINE_SAMPLES = 100
@@ -332,6 +349,20 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
         for period in track_status_periods(p.race_control)
     )
     report.add("track_status", len(periods))
+    by_car = {e.car_number for e in entries}
+    _upsert(
+        TeamRadio,
+        [
+            TeamRadio(
+                session=session, car_number=r.driver_number, recorded_at=r.recorded_at, url=r.url
+            )
+            for r in p.team_radio
+            if r.driver_number in by_car
+        ],
+        unique=["session", "url"],
+        report=report,
+        name="team_radio",
+    )
     if p.outline is not None:
         TrackOutline.objects.update_or_create(
             session=session,
@@ -343,6 +374,61 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
             },
         )
         report.add("track_outline", 1)
+
+
+def upsert_driver_and_team(r: ResultRecord | QualifyingRecord) -> tuple[Driver, Team]:
+    """Identity from a classification row. Biography fields are only ever filled in, never
+    blanked, so a sparse row cannot erase what the reference import stored."""
+    bio: dict[str, object] = {}
+    if isinstance(r, ResultRecord):
+        bio = {
+            k: v
+            for k, v in {
+                "nationality": r.nationality,
+                "date_of_birth": r.date_of_birth,
+                "permanent_number": r.permanent_number,
+                "wikipedia_url": r.driver_url,
+            }.items()
+            if v
+        }
+    driver, _ = Driver.objects.update_or_create(
+        ref=r.driver_id,
+        defaults={
+            "code": r.code or "",
+            "given_name": r.given_name,
+            "family_name": r.family_name,
+            **bio,
+        },
+    )
+    team_bio: dict[str, object] = {}
+    if isinstance(r, ResultRecord):
+        team_bio = {
+            k: v
+            for k, v in {
+                "nationality": r.constructor_nationality,
+                "wikipedia_url": r.constructor_url,
+            }.items()
+            if v
+        }
+    team, _ = Team.objects.update_or_create(
+        ref=r.constructor_id, defaults={"name": r.constructor_name, **team_bio}
+    )
+    return driver, team
+
+
+def result_fields(r: ResultRecord) -> dict[str, object]:
+    """Classification columns of a race or sprint entry."""
+    return {
+        "grid_position": r.grid,
+        "finish_position": r.position,
+        "classification": r.position_text,
+        "status": r.status,
+        "points": r.points,
+        "laps_completed": r.laps_completed,
+        "race_time_s": r.race_time_s,
+        "fastest_lap_rank": r.fastest_lap_rank,
+        "fastest_lap_s": r.fastest_lap_s,
+    }
 
 
 def _upsert_entries(
@@ -357,17 +443,7 @@ def _upsert_entries(
     colours = {d.driver_number: d.team_colour or "" for d in drivers}
     entries: list[SessionEntry] = []
     for r in results:
-        driver, _ = Driver.objects.update_or_create(
-            ref=r.driver_id,
-            defaults={
-                "code": r.code or "",
-                "given_name": r.given_name,
-                "family_name": r.family_name,
-            },
-        )
-        team, _ = Team.objects.update_or_create(
-            ref=r.constructor_id, defaults={"name": r.constructor_name}
-        )
+        driver, team = upsert_driver_and_team(r)
         entry, _ = SessionEntry.objects.update_or_create(
             session=session,
             driver=driver,
@@ -379,12 +455,7 @@ def _upsert_entries(
                     (by_car[r.car_number].team_name or "") if r.car_number in by_car else ""
                 ),
                 "media_id": (by_car[r.car_number].media_id or "") if r.car_number in by_car else "",
-                "grid_position": r.grid,
-                "finish_position": r.position,
-                "classification": r.position_text,
-                "status": r.status,
-                "points": r.points,
-                "laps_completed": r.laps_completed,
+                **result_fields(r),
             },
         )
         entries.append(entry)
@@ -454,7 +525,7 @@ def _digest(m: RaceControlRecord) -> str:
     return hashlib.sha256(identity.encode()).hexdigest()
 
 
-def _upsert[M: (Lap, Stint, PitStop, RaceControlMessage, WeatherSample)](
+def _upsert[M: (Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TeamRadio)](
     model: type[M], objs: list[M], *, unique: list[str], report: IngestReport, name: str
 ) -> None:
     if not objs:

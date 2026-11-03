@@ -6,7 +6,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
 
-from stintline.ingestion import services, tasks
+from stintline.ingestion import history, services, tasks
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import Session
 
@@ -41,4 +41,6 @@ class Command(BaseCommand):
                 if services.is_ingestable(session):
                     report = services.ingest_session(session, sources)
                     self.stdout.write(f"{session}: {report.counts}")
+            results = history.ingest_season_results(season, sources)
+            self.stdout.write(f"{season} results and standings: {results.counts}")
         self.stdout.write(self.style.SUCCESS(f"Ingested {len(events)} event(s) for {season}"))

@@ -1,0 +1,12 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/drivers",
+  "params": {
+    "limit": "100",
+    "offset": "500"
+  },
+  "recorded_at": "2026-11-03T13:50:11+00:00",
+  "sha256": "2cdf3c1050d7e5ed41e5228a3fe7a7f017a1cbc7bc6db3498011cb33973b0816",
+  "bytes": 22854,
+  "dropped_fields": []
+}

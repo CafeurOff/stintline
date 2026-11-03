@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/21/driverstandings",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T13:55:55+00:00",
+  "sha256": "1d67118f24ce0770961859d93d14aedc71f1a23d4beb5a71d7875a5b3da72960",
+  "bytes": 14330,
+  "dropped_fields": []
+}

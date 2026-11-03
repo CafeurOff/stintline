@@ -98,6 +98,17 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    # Import races and sprints shortly after they finish (stintline.ingestion.tasks).
+    "refresh-recent-sessions": {
+        "task": "stintline.ingestion.tasks.refresh_recent",
+        "schedule": 30 * 60,
+    },
+    "refresh-calendar": {
+        "task": "stintline.ingestion.tasks.refresh_calendar",
+        "schedule": 24 * 60 * 60,
+    },
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},

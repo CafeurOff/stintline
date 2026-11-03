@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/23/constructorstandings",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T13:56:59+00:00",
+  "sha256": "2cd2c90449c40b2e27dc2dbdcbb9226365aa3e0a4eda7baaac7e7b574755287c",
+  "bytes": 3452,
+  "dropped_fields": []
+}

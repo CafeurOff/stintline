@@ -6,6 +6,107 @@ info:
     pit loss, undercut and pit-exit simulation. Unofficial project, not associated
     with Formula 1, the FIA or any team.'
 paths:
+  /api/v1/drivers:
+    get:
+      operationId: drivers_list
+      description: Every driver since 1950, searchable by name or code, optionally
+        limited to a season.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      tags:
+      - drivers
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDriverBioList'
+          description: ''
+  /api/v1/drivers/{ref}:
+    get:
+      operationId: driver_retrieve
+      summary: Driver biography, career totals and season-by-season record
+      parameters:
+      - in: path
+        name: ref
+        schema:
+          type: string
+        required: true
+      tags:
+      - drivers
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverCareer'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/drivers/{ref}/results:
+    get:
+      operationId: driver_results_list
+      description: Race and sprint results of a driver, most recent first.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: path
+        name: ref
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: season
+        schema:
+          type: integer
+      tags:
+      - drivers
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDriverResultList'
+          description: ''
   /api/v1/health:
     get:
       operationId: health_retrieve
@@ -104,6 +205,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedEventList'
+          description: ''
+  /api/v1/seasons/{year}/standings:
+    get:
+      operationId: season_standings_retrieve
+      summary: 'Drivers'' and constructors'' championships after a round (default:
+        latest)'
+      parameters:
+      - in: query
+        name: round
+        schema:
+          type: integer
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standings'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
           description: ''
   /api/v1/sessions/{session_id}:
     get:
@@ -276,6 +409,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/radio:
+    get:
+      operationId: session_radio_list
+      summary: Team radio messages (references to the official recordings)
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TeamRadio'
           description: ''
   /api/v1/sessions/{session_id}/replay:
     get:
@@ -457,6 +613,47 @@ components:
       - group
       - name
       - value
+    CareerTotals:
+      type: object
+      properties:
+        seasons:
+          type: integer
+        first_season:
+          type: integer
+          nullable: true
+        last_season:
+          type: integer
+          nullable: true
+        starts:
+          type: integer
+        wins:
+          type: integer
+        podiums:
+          type: integer
+        poles:
+          type: integer
+        fastest_laps:
+          type: integer
+        points:
+          type: number
+          format: double
+        championships:
+          type: integer
+        best_finish:
+          type: integer
+          nullable: true
+      required:
+      - best_finish
+      - championships
+      - fastest_laps
+      - first_season
+      - last_season
+      - podiums
+      - points
+      - poles
+      - seasons
+      - starts
+      - wins
     Circuit:
       type: object
       properties:
@@ -638,6 +835,135 @@ components:
       - family_name
       - given_name
       - ref
+    DriverBio:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica driverId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        code:
+          type: string
+          maxLength: 3
+        given_name:
+          type: string
+          maxLength: 64
+        family_name:
+          type: string
+          maxLength: 64
+        permanent_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        nationality:
+          type: string
+          maxLength: 64
+        wikipedia_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+      required:
+      - family_name
+      - given_name
+      - ref
+    DriverCareer:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/DriverBio'
+        media:
+          allOf:
+          - $ref: '#/components/schemas/Media'
+          nullable: true
+        totals:
+          $ref: '#/components/schemas/CareerTotals'
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeasonLine'
+      required:
+      - driver
+      - media
+      - seasons
+      - totals
+    DriverResult:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+        season:
+          type: integer
+          readOnly: true
+        round:
+          type: integer
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        race_date:
+          type: string
+          format: date
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          readOnly: true
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        grid_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        finish_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        classification:
+          type: string
+          description: positionText
+          maxLength: 8
+        status:
+          type: string
+          maxLength: 64
+        points:
+          type: number
+          format: double
+        fastest_lap_rank:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+      required:
+      - car_number
+      - event_name
+      - kind
+      - race_date
+      - round
+      - season
+      - session_id
+      - team
     Entry:
       type: object
       properties:
@@ -689,6 +1015,34 @@ components:
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+        race_time_s:
+          type: number
+          format: double
+          nullable: true
+          description: Total race time when classified on the lead lap
+        fastest_lap_rank:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        fastest_lap_s:
+          type: number
+          format: double
+          nullable: true
+        q1_s:
+          type: number
+          format: double
+          nullable: true
+          description: Qualifying sessions only
+        q2_s:
+          type: number
+          format: double
+          nullable: true
+        q3_s:
+          type: number
+          format: double
+          nullable: true
         media:
           allOf:
           - $ref: '#/components/schemas/Media'
@@ -1013,6 +1367,52 @@ components:
     NullEnum:
       enum:
       - null
+    PaginatedDriverBioList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DriverBio'
+    PaginatedDriverResultList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DriverResult'
     PaginatedEventList:
       type: object
       required:
@@ -1306,6 +1706,35 @@ components:
       required:
       - events_count
       - year
+    SeasonLine:
+      type: object
+      properties:
+        year:
+          type: integer
+        teams:
+          type: array
+          items:
+            type: string
+        starts:
+          type: integer
+        wins:
+          type: integer
+        podiums:
+          type: integer
+        points:
+          type: number
+          format: double
+        championship_position:
+          type: integer
+          nullable: true
+      required:
+      - championship_position
+      - podiums
+      - points
+      - starts
+      - teams
+      - wins
+      - year
     SessionDetail:
       type: object
       properties:
@@ -1362,6 +1791,65 @@ components:
       - has_data
       - id
       - kind
+    StandingLine:
+      type: object
+      properties:
+        position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        position_text:
+          type: string
+          maxLength: 8
+        points:
+          type: number
+          format: double
+        wins:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+          nullable: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          readOnly: true
+          nullable: true
+      required:
+      - driver
+      - team
+    Standings:
+      type: object
+      properties:
+        season:
+          type: integer
+        round:
+          type: integer
+          nullable: true
+        rounds:
+          type: array
+          items:
+            type: integer
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/StandingLine'
+        constructors:
+          type: array
+          items:
+            $ref: '#/components/schemas/StandingLine'
+      required:
+      - constructors
+      - drivers
+      - round
+      - rounds
+      - season
     Stint:
       type: object
       properties:
@@ -1479,6 +1967,25 @@ components:
       required:
       - name
       - ref
+    TeamRadio:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        recorded_at:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: uri
+          maxLength: 300
+      required:
+      - car_number
+      - recorded_at
+      - url
     Track:
       type: object
       description: Circuit outline in screen coordinates, samples evenly spaced in

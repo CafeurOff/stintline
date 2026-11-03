@@ -1,0 +1,98 @@
+{
+ "MRData": {
+  "ConstructorTable": {
+   "Constructors": [
+    {
+     "constructorId": "toyota",
+     "name": "Toyota",
+     "nationality": "Japanese",
+     "url": "https://en.wikipedia.org/wiki/Toyota_Racing"
+    },
+    {
+     "constructorId": "trevis",
+     "name": "Trevis",
+     "nationality": "American",
+     "url": "https://en.wikipedia.org/wiki/Trevis"
+    },
+    {
+     "constructorId": "trojan",
+     "name": "Trojan",
+     "nationality": "British",
+     "url": "https://en.wikipedia.org/wiki/Trojan\u2013Tauranac_Racing"
+    },
+    {
+     "constructorId": "turner",
+     "name": "Turner",
+     "nationality": "American",
+     "url": "https://en.wikipedia.org/wiki/Turner_(constructor)"
+    },
+    {
+     "constructorId": "tyrrell",
+     "name": "Tyrrell",
+     "nationality": "British",
+     "url": "https://en.wikipedia.org/wiki/Tyrrell_Racing"
+    },
+    {
+     "constructorId": "vanwall",
+     "name": "Vanwall",
+     "nationality": "British",
+     "url": "https://en.wikipedia.org/wiki/Vanwall"
+    },
+    {
+     "constructorId": "veritas",
+     "name": "Veritas",
+     "nationality": "German",
+     "url": "https://en.wikipedia.org/wiki/Veritas_(automobile)"
+    },
+    {
+     "constructorId": "vhristensen",
+     "name": "Christensen",
+     "nationality": "American",
+     "url": "https://en.wikipedia.org/wiki/Christensen_(constructor)"
+    },
+    {
+     "constructorId": "virgin",
+     "name": "Virgin",
+     "nationality": "British",
+     "url": "https://en.wikipedia.org/wiki/Virgin_Racing"
+    },
+    {
+     "constructorId": "watson",
+     "name": "Watson",
+     "nationality": "American",
+     "url": "https://en.wikipedia.org/wiki/A._J._Watson"
+    },
+    {
+     "constructorId": "wetteroth",
+     "name": "Wetteroth",
+     "nationality": "American",
+     "url": "https://en.wikipedia.org/wiki/Wetteroth"
+    },
+    {
+     "constructorId": "williams",
+     "name": "Williams",
+     "nationality": "British",
+     "url": "https://en.wikipedia.org/wiki/Williams_Racing"
+    },
+    {
+     "constructorId": "wolf",
+     "name": "Wolf",
+     "nationality": "Canadian",
+     "url": "https://en.wikipedia.org/wiki/Walter_Wolf_Racing"
+    },
+    {
+     "constructorId": "zakspeed",
+     "name": "Zakspeed",
+     "nationality": "German",
+     "url": "https://en.wikipedia.org/wiki/Zakspeed"
+    }
+   ]
+  },
+  "limit": "100",
+  "offset": "200",
+  "series": "f1",
+  "total": "214",
+  "url": "https://api.jolpi.ca/ergast/f1/constructors/",
+  "xmlns": ""
+ }
+}

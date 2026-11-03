@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+  "/api/v1/drivers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Every driver since 1950, searchable by name or code, optionally limited to a season. */
+    get: operations["drivers_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/drivers/{ref}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Driver biography, career totals and season-by-season record */
+    get: operations["driver_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/drivers/{ref}/results": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Race and sprint results of a driver, most recent first. */
+    get: operations["driver_results_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/health": {
     parameters: {
       query?: never;
@@ -67,6 +118,23 @@ export interface paths {
     };
     /** @description Grands Prix of a season with their sessions (``has_data`` = timing ingested). */
     get: operations["season_events_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/seasons/{year}/standings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Drivers' and constructors' championships after a round (default: latest) */
+    get: operations["season_standings_retrieve"];
     put?: never;
     post?: never;
     delete?: never;
@@ -152,6 +220,23 @@ export interface paths {
     };
     /** Pit loss measured from the session's stops */
     get: operations["session_pit_loss_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/radio": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Team radio messages (references to the official recordings) */
+    get: operations["session_radio_list"];
     put?: never;
     post?: never;
     delete?: never;
@@ -255,6 +340,20 @@ export interface components {
       value: string;
       description: string;
     };
+    CareerTotals: {
+      seasons: number;
+      first_season: number | null;
+      last_season: number | null;
+      starts: number;
+      wins: number;
+      podiums: number;
+      poles: number;
+      fastest_laps: number;
+      /** Format: double */
+      points: number;
+      championships: number;
+      best_finish: number | null;
+    };
     Circuit: {
       /** @description Jolpica circuitId */
       ref: string;
@@ -329,6 +428,48 @@ export interface components {
       given_name: string;
       family_name: string;
     };
+    DriverBio: {
+      /** @description Jolpica driverId */
+      ref: string;
+      code?: string;
+      given_name: string;
+      family_name: string;
+      /** Format: int64 */
+      permanent_number?: number | null;
+      /** Format: date */
+      date_of_birth?: string | null;
+      nationality?: string;
+      wikipedia_url?: string;
+    };
+    DriverCareer: {
+      driver: components["schemas"]["DriverBio"];
+      media: components["schemas"]["Media"] | null;
+      totals: components["schemas"]["CareerTotals"];
+      seasons: components["schemas"]["SeasonLine"][];
+    };
+    DriverResult: {
+      readonly session_id: number;
+      readonly kind: string;
+      readonly season: number;
+      readonly round: number;
+      readonly event_name: string;
+      /** Format: date */
+      readonly race_date: string;
+      readonly team: components["schemas"]["Team"];
+      /** Format: int64 */
+      car_number: number;
+      /** Format: int64 */
+      grid_position?: number | null;
+      /** Format: int64 */
+      finish_position?: number | null;
+      /** @description positionText */
+      classification?: string;
+      status?: string;
+      /** Format: double */
+      points?: number;
+      /** Format: int64 */
+      fastest_lap_rank?: number | null;
+    };
     Entry: {
       /** Format: int64 */
       car_number: number;
@@ -349,6 +490,24 @@ export interface components {
       points?: number;
       /** Format: int64 */
       laps_completed?: number;
+      /**
+       * Format: double
+       * @description Total race time when classified on the lead lap
+       */
+      race_time_s?: number | null;
+      /** Format: int64 */
+      fastest_lap_rank?: number | null;
+      /** Format: double */
+      fastest_lap_s?: number | null;
+      /**
+       * Format: double
+       * @description Qualifying sessions only
+       */
+      q1_s?: number | null;
+      /** Format: double */
+      q2_s?: number | null;
+      /** Format: double */
+      q3_s?: number | null;
       readonly media: components["schemas"]["Media"] | null;
     };
     EntryStints: {
@@ -484,6 +643,36 @@ export interface components {
     };
     /** @enum {unknown} */
     NullEnum: null;
+    PaginatedDriverBioList: {
+      /** @example 123 */
+      count: number;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=400&limit=100
+       */
+      next?: string | null;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=200&limit=100
+       */
+      previous?: string | null;
+      results: components["schemas"]["DriverBio"][];
+    };
+    PaginatedDriverResultList: {
+      /** @example 123 */
+      count: number;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=400&limit=100
+       */
+      next?: string | null;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=200&limit=100
+       */
+      previous?: string | null;
+      results: components["schemas"]["DriverResult"][];
+    };
     PaginatedEventList: {
       /** @example 123 */
       count: number;
@@ -611,6 +800,16 @@ export interface components {
       year: number;
       readonly events_count: number;
     };
+    SeasonLine: {
+      year: number;
+      teams: string[];
+      starts: number;
+      wins: number;
+      podiums: number;
+      /** Format: double */
+      points: number;
+      championship_position: number | null;
+    };
     SessionDetail: {
       readonly id: number;
       kind: components["schemas"]["KindEnum"];
@@ -627,6 +826,24 @@ export interface components {
       /** Format: date-time */
       scheduled_start?: string | null;
       readonly has_data: boolean;
+    };
+    StandingLine: {
+      /** Format: int64 */
+      position?: number | null;
+      position_text?: string;
+      /** Format: double */
+      points?: number;
+      /** Format: int64 */
+      wins?: number;
+      readonly driver: components["schemas"]["Driver"] | null;
+      readonly team: components["schemas"]["Team"] | null;
+    };
+    Standings: {
+      season: number;
+      round: number | null;
+      rounds: number[];
+      drivers: components["schemas"]["StandingLine"][];
+      constructors: components["schemas"]["StandingLine"][];
     };
     Stint: {
       /** Format: int64 */
@@ -670,6 +887,14 @@ export interface components {
       /** @description Jolpica constructorId */
       ref: string;
       name: string;
+    };
+    TeamRadio: {
+      /** Format: int64 */
+      car_number: number;
+      /** Format: date-time */
+      recorded_at: string;
+      /** Format: uri */
+      url: string;
     };
     /** @description Circuit outline in screen coordinates, samples evenly spaced in time over one lap. */
     Track: {
@@ -725,6 +950,88 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  drivers_list: {
+    parameters: {
+      query?: {
+        /** @description Number of results to return per page. */
+        limit?: number;
+        /** @description The initial index from which to return the results. */
+        offset?: number;
+        search?: string;
+        season?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedDriverBioList"];
+        };
+      };
+    };
+  };
+  driver_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DriverCareer"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  driver_results_list: {
+    parameters: {
+      query?: {
+        /** @description Number of results to return per page. */
+        limit?: number;
+        /** @description The initial index from which to return the results. */
+        offset?: number;
+        season?: number;
+      };
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedDriverResultList"];
+        };
+      };
+    };
+  };
   health_retrieve: {
     parameters: {
       query?: never;
@@ -817,6 +1124,37 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["PaginatedEventList"];
+        };
+      };
+    };
+  };
+  season_standings_retrieve: {
+    parameters: {
+      query?: {
+        round?: number;
+      };
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Standings"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
     };
@@ -994,6 +1332,27 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_radio_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TeamRadio"][];
         };
       };
     };

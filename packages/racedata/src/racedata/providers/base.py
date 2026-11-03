@@ -8,16 +8,22 @@ from datetime import datetime
 from typing import Protocol
 
 from racedata.models import (
+    CircuitInfo,
+    ConstructorInfo,
     DriverEntry,
+    DriverInfo,
     EventInfo,
     JolpicaPitStop,
     LapRecord,
     PitRecord,
     PositionSample,
+    QualifyingRecord,
     RaceControlRecord,
     ResultRecord,
     SessionKind,
+    StandingRecord,
     StintRecord,
+    TeamRadioRecord,
     TimingSession,
     WeatherRecord,
 )
@@ -51,3 +57,25 @@ class TimingSource(Protocol):
     def locations(
         self, session_key: int, driver_number: int, start: datetime, end: datetime
     ) -> list[PositionSample]: ...
+
+    def team_radio(self, session_key: int) -> list[TeamRadioRecord]: ...
+
+
+class HistorySource(Protocol):
+    """Season-wide results and reference data back to 1950 (Jolpica)."""
+
+    def season_events(self, season: int) -> list[EventInfo]: ...
+
+    def season_results(self, season: int, kind: SessionKind) -> dict[int, list[ResultRecord]]: ...
+
+    def season_qualifying(self, season: int) -> dict[int, list[QualifyingRecord]]: ...
+
+    def standings(
+        self, season: int, round_: int | None, constructors: bool
+    ) -> list[StandingRecord]: ...
+
+    def drivers(self) -> list[DriverInfo]: ...
+
+    def constructors(self) -> list[ConstructorInfo]: ...
+
+    def circuits(self) -> list[CircuitInfo]: ...

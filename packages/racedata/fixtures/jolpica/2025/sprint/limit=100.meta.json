@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/sprint",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T13:49:52+00:00",
+  "sha256": "a32fd67e9e1067eab70cf0c0ad25b94726b18d3c38d915fc6826a8b9bb882261",
+  "bytes": 92376,
+  "dropped_fields": []
+}

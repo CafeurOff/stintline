@@ -68,6 +68,9 @@ class CircuitInfo(_DTO):
     name: str
     locality: str
     country: str
+    latitude: float | None = None
+    longitude: float | None = None
+    url: str | None = None
 
 
 class ScheduledSession(_DTO):
@@ -107,6 +110,16 @@ class ResultRecord(_DTO):
     status: str
     points: float
     laps_completed: int
+    nationality: str | None = None
+    date_of_birth: date | None = None
+    permanent_number: int | None = None
+    driver_url: str | None = None
+    constructor_nationality: str | None = None
+    constructor_url: str | None = None
+    race_time_s: float | None = None
+    """Winner's total time, or this car's own total when classified on the lead lap."""
+    fastest_lap_rank: int | None = None
+    fastest_lap_s: float | None = None
 
 
 class JolpicaPitStop(_DTO):
@@ -220,3 +233,59 @@ class TrackStatusPeriod(_DTO):
     ended_at: datetime | None
     lap_start: int | None
     lap_end: int | None
+
+
+class DriverInfo(_DTO):
+    """Driver biography (Jolpica ``drivers``), for profiles. Covers 1950 to today."""
+
+    driver_id: str
+    code: str | None
+    permanent_number: int | None
+    given_name: str
+    family_name: str
+    date_of_birth: date | None
+    nationality: str | None
+    url: str | None
+
+
+class ConstructorInfo(_DTO):
+    constructor_id: str
+    name: str
+    nationality: str | None
+    url: str | None
+
+
+class QualifyingRecord(_DTO):
+    driver_id: str
+    code: str | None
+    given_name: str
+    family_name: str
+    car_number: int
+    constructor_id: str
+    constructor_name: str
+    position: int | None
+    q1_s: float | None
+    q2_s: float | None
+    q3_s: float | None
+
+
+class StandingRecord(_DTO):
+    """One line of a championship table after ``round``. ``competitor_id`` is a Jolpica
+    driverId for the drivers' table, a constructorId for the constructors' table."""
+
+    season: int
+    round: int
+    competitor_id: str
+    position: int | None
+    position_text: str
+    points: float
+    wins: int
+
+
+class TeamRadioRecord(_DTO):
+    """A team radio message. ``url`` points at the official recording (a reference,
+    never downloaded or re-hosted)."""
+
+    driver_number: int
+    recorded_at: datetime
+    url: str

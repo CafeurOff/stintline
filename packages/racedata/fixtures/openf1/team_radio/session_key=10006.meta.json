@@ -1,0 +1,11 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/team_radio",
+  "params": {
+    "session_key": "10006"
+  },
+  "recorded_at": "2026-11-03T13:49:48+00:00",
+  "sha256": "0a01ca4a4556cd60d8656fd3dfed74cab2c09106859a3fde866c1909b2ef1b3f",
+  "bytes": 8093,
+  "dropped_fields": []
+}

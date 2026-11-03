@@ -1,0 +1,14 @@
+{
+ "MRData": {
+  "RaceTable": {
+   "Races": [],
+   "season": "1950"
+  },
+  "limit": "100",
+  "offset": "0",
+  "series": "f1",
+  "total": "0",
+  "url": "https://api.jolpi.ca/ergast/f1/1950/qualifying/",
+  "xmlns": ""
+ }
+}
