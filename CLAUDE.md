@@ -67,7 +67,8 @@ Hard boundaries:
 - Conventional Commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`, `refactor:`, `ci:`, `build:`, `perf:`). Small, focused commits in English. No vague messages ("update", "wip", "try").
 - A commit is made only when lint, type check and tests pass.
 - **No AI attribution:** never add `Co-Authored-By` lines, "Generated with Claude Code" or session links to commits or PRs, unless the maintainer explicitly asks for a specific commit. `.claude/settings.json` disables automatic attribution (`attribution`, `includeCoAuthoredBy`).
-- Never `git push`, force-push, rewrite history or delete branches. The maintainer does that. Never `rm -rf` outside files you just generated.
+- **Push policy (foundation stage, granted by the maintainer on 2026-11-03):** a plain `git push origin main` is allowed once checks pass. Never force-push, rewrite history, delete branches or tags, or push tags. This permission ends when the maintainer says the foundation stage is over. From then on, work goes through branches and PRs.
+- Never `rm -rf` outside files you just generated.
 
 ## Definition of Done
 1. Lint, strict type checks and tests pass locally (`make check`) and in CI.
