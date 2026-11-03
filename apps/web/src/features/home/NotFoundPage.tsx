@@ -6,7 +6,7 @@ export function NotFoundPage() {
       <h1 id="not-found-title" className="text-3xl font-bold">
         Page not found
       </h1>
-      <Link to="/" className="text-accent underline underline-offset-4">
+      <Link to="/" className="text-accent-text underline underline-offset-4">
         Back to home
       </Link>
     </section>

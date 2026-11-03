@@ -26,6 +26,12 @@ importers:
       '@visx/axis':
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.3.0)(react@19.3.1)
+      '@visx/curve':
+        specifier: ^4.0.0
+        version: 4.0.0
+      '@visx/grid':
+        specifier: ^4.0.0
+        version: 4.0.0(@types/react@19.3.0)(react@19.3.1)
       '@visx/group':
         specifier: ^4.0.0
         version: 4.0.0(@types/react@19.3.0)(react@19.3.1)
@@ -1055,6 +1061,15 @@ packages:
 
   '@visx/curve@4.0.0':
     resolution: {integrity: sha512-bXrOSd2BzVCxR7kBE7gPTSU4plxzYN75w7erdHYabwn3vzP+xFk1o0gg3NOHEPJzt5tXqf0Ecm5YqHACOnipTA==}
+
+  '@visx/grid@4.0.0':
+    resolution: {integrity: sha512-BUnznqYo8jyn3zXRWZiF0zwg1VQl6w5kYqZ+XMY+cPXtAHZZbwGXBChMpPefH5Lj1+P1b4Pf3QihKG8zjL9PCw==}
+    peerDependencies:
+      '@types/react': ^18.0.0 || ^19.0.0
+      react: ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
 
   '@visx/group@4.0.0':
     resolution: {integrity: sha512-HGAq8BCqn5x0t94CJOLJeKtWss9LFpF3HY69HbuO1PlR+B9c4aVT9xbjfudmU8wGQZLT6JNt+PJvxbO2aJ+1aA==}
@@ -3599,6 +3614,18 @@ snapshots:
   '@visx/curve@4.0.0':
     dependencies:
       '@visx/vendor': 4.0.0
+
+  '@visx/grid@4.0.0(@types/react@19.3.0)(react@19.3.1)':
+    dependencies:
+      '@visx/curve': 4.0.0
+      '@visx/group': 4.0.0(@types/react@19.3.0)(react@19.3.1)
+      '@visx/point': 4.0.0
+      '@visx/scale': 4.0.0
+      '@visx/shape': 4.0.0(@types/react@19.3.0)(react@19.3.1)
+      classnames: 2.5.1
+      react: 19.3.1
+    optionalDependencies:
+      '@types/react': 19.3.0
 
   '@visx/group@4.0.0(@types/react@19.3.0)(react@19.3.1)':
     dependencies:

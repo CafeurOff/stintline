@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +8,18 @@
       content="StintLine: race strategy analysis for Formula 1 timing data. Unofficial project."
     />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#1c1b19" />
     <title>StintLine</title>
+    <script>
+      // Apply the stored theme before first paint (dark is the default). Mirrors src/lib/theme.ts.
+      try {
+        if (localStorage.getItem("stintline-theme") === "light") {
+          document.documentElement.dataset.theme = "light";
+        }
+      } catch {
+        // Storage unavailable: keep the default theme.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -47,6 +47,8 @@
     "@stintline/api-types": "workspace:*",
     "@tanstack/react-query": "^5.105.3",
     "@visx/axis": "^4.0.0",
+    "@visx/curve": "^4.0.0",
+    "@visx/grid": "^4.0.0",
     "@visx/group": "^4.0.0",
     "@visx/scale": "^4.0.0",
     "@visx/shape": "^4.0.0",

@@ -14,7 +14,7 @@ describe("ApiStatus", () => {
   it("shows a checking state while the request is pending", () => {
     renderRoute();
 
-    expect(screen.getByRole("status")).toHaveTextContent("Checking API…");
+    expect(screen.getByText("Checking API…")).toHaveAttribute("role", "status");
   });
 
   it("explains a degraded API using the 503 body", async () => {
