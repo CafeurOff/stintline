@@ -25,11 +25,17 @@ export function RaceSelect({ sessionId, view }: { sessionId: number; view: strin
         }}
         className="[field-sizing:content] max-w-[60vw] cursor-pointer truncate rounded-md bg-transparent py-1 font-bold text-ink"
       >
-        {races.map((race) => (
-          <option key={race.sessionId} value={race.sessionId} className="bg-panel">
-            {eventName(race.eventName, locale)} {race.year}
-            {race.kind === "SPRINT" ? " · Sprint" : ""}
-          </option>
+        {[...new Set(races.map((race) => race.year))].map((year) => (
+          <optgroup key={year} label={String(year)} className="bg-panel">
+            {races
+              .filter((race) => race.year === year)
+              .map((race) => (
+                <option key={race.sessionId} value={race.sessionId} className="bg-panel">
+                  {eventName(race.eventName, locale)} {race.year}
+                  {race.kind === "SPRINT" ? " · Sprint" : ""}
+                </option>
+              ))}
+          </optgroup>
         ))}
       </select>
     </>
