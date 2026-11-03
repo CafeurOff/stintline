@@ -9,7 +9,7 @@ from typing import Any, TypeVar
 
 import structlog
 
-from racedata.errors import InvalidPayloadError
+from racedata.errors import InvalidPayloadError, NotFoundError
 from racedata.http import HttpClient
 from racedata.models import (
     Compound,
@@ -58,7 +58,13 @@ class OpenF1Source:
         self._client = client
 
     def _rows(self, endpoint: str, params: dict[str, str | int]) -> list[dict[str, Any]]:
-        data = self._client.get_json(endpoint, params)
+        try:
+            data = self._client.get_json(endpoint, params)
+        except NotFoundError:
+            # OpenF1 answers an empty result set with HTTP 404 {"detail": "No results found."}
+            # (e.g. `pit` for a sprint without stops). That is data, not a failure.
+            log.info("openf1_empty_result", endpoint=endpoint)
+            return []
         if not isinstance(data, list) or not all(isinstance(r, dict) for r in data):
             raise InvalidPayloadError(PROVIDER, f"{endpoint}: expected a list of objects")
         return data

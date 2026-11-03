@@ -42,6 +42,15 @@ def test_openf1_rejects_non_list_payloads() -> None:
         source.laps(1)
 
 
+def test_openf1_treats_no_results_404_as_an_empty_list() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, content=b'{"detail":"No results found."}')
+
+    client = HttpClient("t", "https://api.test/v1", transport=httpx.MockTransport(handler))
+
+    assert OpenF1Source(client).pit(9969) == []
+
+
 def test_openf1_skips_malformed_rows_but_keeps_valid_ones() -> None:
     rows = [
         {"driver_number": 1, "lap_number": 1, "lap_duration": None, "date_start": None},
