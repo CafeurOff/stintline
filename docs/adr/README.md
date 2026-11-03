@@ -11,3 +11,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0005](0005-numerical-stack-numpy-scipy.md) | Numerical stack for the strategy engine: numpy and scipy | Accepted |
 | [0006](0006-official-media-references.md) | Official driver and car images as URL references | Accepted |
 | [0007](0007-circuit-map-and-bilingual-ui.md) | Circuit-first interface and bilingual UI | Accepted |
+| [0008](0008-fan-hub-scope-and-full-data.md) | StintLine becomes a fan hub, built on every public season | Accepted |

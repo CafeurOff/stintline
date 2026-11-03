@@ -1,12 +1,13 @@
 # StintLine — guide for contributors and AI sessions
 
 ## What this is
-StintLine is a race strategy decision-support tool built on Formula 1 timing data. It covers stint analysis, fuel-corrected tyre degradation, pit loss per circuit, undercut/overcut simulation and pit-exit position prediction, backtested against real races.
-It is **not** a live timing dashboard (f1-dash, MultiViewer and F1ReplayTiming already exist), not a results or standings site, and not affiliated with Formula 1, the FIA or any team.
+StintLine is a hub for Formula 1 fans built on public timing and results data (ADR 0008). Its core is race strategy: stint analysis, fuel-corrected tyre degradation, pit loss per circuit, undercut/overcut simulation and pit-exit prediction, backtested against real races, shown on the circuit. Around it: every Grand Prix since 1950, driver careers and championship tables, and later a what-if strategy replay, a live mode with team radio and a news page.
+It must stay accessible to casual fans first, with deeper charts for hardcore fans. It is not affiliated with Formula 1, the FIA or any team.
 
 ## Status
 - Phases 0–5 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (see `docs/model.md`), versioned API (`/api/v1`) and a bilingual (EN/FR) web UI built around the circuit: cars replayed on the real track, pit-stop and undercut simulations drawn on it, tyres and model pages (ADR 0007, `apps/web/CLAUDE.md`).
-- Next: Phase 6 (live and replay). Directories marked *(planned)* below do not exist yet.
+- Phase 6 done: every season stored (timing from 2023, results, qualifying, standings and biographies from 1950), team radio references, automatic import after each Grand Prix (Celery beat), driver, standings and radio endpoints (ADR 0008).
+- Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
 ```
@@ -59,7 +60,8 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | OpenAPI + TS types | `make types` (export `apps/api/openapi.yaml`, regenerate `packages/api-types`) · drift check: `make types-check` |
 | Demo data | `make seed` (`manage.py seed_demo`: 2025 calendar plus Bahrain, Hungary and Italy races from fixtures, no network, idempotent) |
 | Backtest | `manage.py seed_demo --backtest` then `manage.py backtest [--rounds 3 9 ...] [--json out.json]` |
-| Ingest real data | `manage.py ingest --season 2025 [--round 14] [--sync]` (queues Celery tasks unless `--sync`) |
+| Ingest real data | `manage.py ingest --season 2025 [--round 14] [--sync]` (queues Celery tasks unless `--sync`; also imports the season's results and standings) |
+| Ingest history | `manage.py ingest_history [--from 1950] [--to 2022] [--force]` (biographies, results, qualifying, standings; resumable) |
 | Record a fixture | `uv run python -m racedata.tools.record_fixture openf1 laps session_key=9928` |
 | Pre-commit | `pre-commit run --all-files` |
 
@@ -94,7 +96,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 ## Known pitfalls
 - **Toolchain pins.** TypeScript stays on 5.9 (openapi-typescript and typescript-eslint do not support 7 yet). ESLint stays on 9 (jsx-a11y). jsdom stays on 28 (29+ needs Node ≥ 22.13 and 30 needs Node ≥ 22.22). The API client resolves `fetch` at call time so MSW can intercept it.
 - **Strategy engine.** Stints can start on used tyres (`tyre_age_at_start` > 0). Pit loss already includes the out-lap new-tyre effect, so do not add it twice. Statistical tests assert calibration over many seeds, never single-seed CI containment (flaky by design).
-- **Ingestion.** Only finished races and sprints get timing data (ADR 0004). Driver identity comes from Jolpica results joined on the car number raced that weekend. The Celery worker runs with `--concurrency=1` because rate limiting is in-process.
+- **Ingestion.** Only finished races and sprints get timing data (ADR 0004). Results, qualifying and standings come from Jolpica for every season (`stintline/ingestion/history.py`); never write timing-only columns (team colour, media id) from that path. OpenF1 answers empty result sets with HTTP 404: the provider turns it into an empty list. History import: `manage.py ingest_history` (resumable, a few hours because of Jolpica's limit). Celery beat runs `refresh_recent` (30 min) and `refresh_calendar` (daily). Driver identity comes from Jolpica results joined on the car number raced that weekend. The Celery worker runs with `--concurrency=1` because rate limiting is in-process.
 - **Coverage config** lives in the root `pyproject.toml` (coverage reads it from the working directory). Run pytest from the repository root.
 - **Rate limits.** OpenF1 free tier allows 3 req/s and 30 req/min. Jolpica allows ~4 req/s burst and ~500 req/hour, and paginates with `limit` ≤ 100. Always go through the `racedata` HTTP client.
 - **Data access.** Since Oct 2026 the official static archive (and therefore FastF1) needs an F1 TV account. We do not use FastF1. The live SignalR feed works without auth except `CarData.z` and `Position.z`, but only from a home connection (cloud IPs blocked) and for personal use. The public demo is replay-only. See `docs/adr/0002-data-sources-and-live-strategy.md`.
