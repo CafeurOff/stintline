@@ -43,6 +43,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**" = ["S101", "PLR2004", "S106", "PLC0415"]
 "apps/api/manage.py" = ["PLC0415"]
+# Django declares Meta options and admin options as mutable class attributes by design.
+"**/models.py" = ["RUF012"]
+"**/admin.py" = ["RUF012"]
 ".claude/hooks/*.py" = ["S603", "S607", "T20"]
 
 [tool.ruff.lint.isort]
@@ -69,5 +72,27 @@ explicit_package_bases = true
 django_settings_module = "config.settings.test"
 
 [[tool.mypy.overrides]]
-module = ["factory.*", "environ.*", "celery.*", "channels.*", "signalrcore.*"]
+# factory_boy declarations are untyped; only test modules use them.
+module = ["stintline.*.tests.*"]
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = ["factory.*", "environ.*", "channels.*", "signalrcore.*"]
 ignore_missing_imports = true
+
+# ---------------------------------------------------------------- coverage
+# Coverage reads its configuration from the working directory (the repository root), so
+# it lives here for every package. Per-package gates are set with --cov-fail-under.
+[tool.coverage.run]
+branch = true
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/config/wsgi.py",
+    "*/manage.py",
+    "*/config/settings/dev.py",
+    "*/config/settings/prod.py",
+]
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "\\.\\.\\."]

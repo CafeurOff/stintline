@@ -20,6 +20,3 @@ addopts = [
     "--cov-report=term-missing:skip-covered",
     "--cov-fail-under=90",
 ]
-
-[tool.coverage.run]
-branch = true
