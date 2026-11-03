@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/15/pitstops",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T01:02:54+00:00",
+  "sha256": "421c7fc5b2e46ad04489ed2f635ad87d856b362cf5fd4c61c802b21c90e3b088",
+  "bytes": 6481,
+  "dropped_fields": []
+}

@@ -1,0 +1,11 @@
+{
+  "provider": "jolpica",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/24/results",
+  "params": {
+    "limit": "100"
+  },
+  "recorded_at": "2026-11-03T01:03:30+00:00",
+  "sha256": "b3e1d49075fe677e788a9e5e57c0e8d5128889a8ae27cab4e9a550b3292447d8",
+  "bytes": 18990,
+  "dropped_fields": []
+}

@@ -1,0 +1,226 @@
+{
+ "MRData": {
+  "RaceTable": {
+   "Races": [
+    {
+     "Circuit": {
+      "Location": {
+       "country": "Mexico",
+       "lat": "19.4042",
+       "locality": "Mexico City",
+       "long": "-99.0907"
+      },
+      "circuitId": "rodriguez",
+      "circuitName": "Aut\u00f3dromo Hermanos Rodr\u00edguez",
+      "url": "https://en.wikipedia.org/wiki/Aut%C3%B3dromo_Hermanos_Rodr%C3%ADguez"
+     },
+     "PitStops": [
+      {
+       "driverId": "lawson",
+       "duration": "34.212",
+       "lap": "2",
+       "stop": "1",
+       "time": "14:06:17"
+      },
+      {
+       "driverId": "sainz",
+       "duration": "22.502",
+       "lap": "17",
+       "stop": "1",
+       "time": "14:27:14"
+      },
+      {
+       "driverId": "alonso",
+       "duration": "26.816",
+       "lap": "20",
+       "stop": "1",
+       "time": "14:31:29"
+      },
+      {
+       "driverId": "antonelli",
+       "duration": "22.476",
+       "lap": "22",
+       "stop": "1",
+       "time": "14:33:56"
+      },
+      {
+       "driverId": "hamilton",
+       "duration": "33.308",
+       "lap": "23",
+       "stop": "1",
+       "time": "14:35:15"
+      },
+      {
+       "driverId": "bearman",
+       "duration": "22.647",
+       "lap": "24",
+       "stop": "1",
+       "time": "14:36:39"
+      },
+      {
+       "driverId": "piastri",
+       "duration": "23.211",
+       "lap": "24",
+       "stop": "1",
+       "time": "14:36:46"
+      },
+      {
+       "driverId": "russell",
+       "duration": "22.347",
+       "lap": "25",
+       "stop": "1",
+       "time": "14:38:08"
+      },
+      {
+       "driverId": "stroll",
+       "duration": "22.071",
+       "lap": "26",
+       "stop": "1",
+       "time": "14:39:51"
+      },
+      {
+       "driverId": "ocon",
+       "duration": "23.203",
+       "lap": "27",
+       "stop": "1",
+       "time": "14:41:07"
+      },
+      {
+       "driverId": "leclerc",
+       "duration": "22.215",
+       "lap": "31",
+       "stop": "1",
+       "time": "14:46:14"
+      },
+      {
+       "driverId": "gasly",
+       "duration": "22.834",
+       "lap": "33",
+       "stop": "1",
+       "time": "14:50:02"
+      },
+      {
+       "driverId": "norris",
+       "duration": "22.567",
+       "lap": "34",
+       "stop": "1",
+       "time": "14:50:05"
+      },
+      {
+       "driverId": "hadjar",
+       "duration": "22.196",
+       "lap": "34",
+       "stop": "1",
+       "time": "14:51:00"
+      },
+      {
+       "driverId": "tsunoda",
+       "duration": "31.630",
+       "lap": "36",
+       "stop": "1",
+       "time": "14:53:42"
+      },
+      {
+       "driverId": "max_verstappen",
+       "duration": "22.762",
+       "lap": "37",
+       "stop": "1",
+       "time": "14:54:47"
+      },
+      {
+       "driverId": "bortoleto",
+       "duration": "22.410",
+       "lap": "37",
+       "stop": "1",
+       "time": "14:55:13"
+      },
+      {
+       "driverId": "albon",
+       "duration": "22.040",
+       "lap": "41",
+       "stop": "1",
+       "time": "15:00:56"
+      },
+      {
+       "driverId": "stroll",
+       "duration": "23.713",
+       "lap": "43",
+       "stop": "2",
+       "time": "15:03:36"
+      },
+      {
+       "driverId": "sainz",
+       "duration": "30.546",
+       "lap": "46",
+       "stop": "2",
+       "time": "15:07:34"
+      },
+      {
+       "driverId": "antonelli",
+       "duration": "24.523",
+       "lap": "47",
+       "stop": "2",
+       "time": "15:08:41"
+      },
+      {
+       "driverId": "piastri",
+       "duration": "22.159",
+       "lap": "47",
+       "stop": "2",
+       "time": "15:08:42"
+      },
+      {
+       "driverId": "hamilton",
+       "duration": "23.342",
+       "lap": "47",
+       "stop": "2",
+       "time": "15:08:45"
+      },
+      {
+       "driverId": "bearman",
+       "duration": "22.174",
+       "lap": "48",
+       "stop": "2",
+       "time": "15:09:59"
+      },
+      {
+       "driverId": "russell",
+       "duration": "22.470",
+       "lap": "48",
+       "stop": "2",
+       "time": "15:10:01"
+      },
+      {
+       "driverId": "colapinto",
+       "duration": "22.789",
+       "lap": "48",
+       "stop": "1",
+       "time": "15:11:05"
+      },
+      {
+       "driverId": "sainz",
+       "duration": "17.969",
+       "lap": "56",
+       "stop": "3",
+       "time": "15:21:35"
+      }
+     ],
+     "date": "2025-10-26",
+     "raceName": "Mexico City Grand Prix",
+     "round": "20",
+     "season": "2025",
+     "time": "20:00:00Z",
+     "url": "https://en.wikipedia.org/wiki/2025_Mexico_City_Grand_Prix"
+    }
+   ],
+   "round": "20",
+   "season": "2025"
+  },
+  "limit": "100",
+  "offset": "0",
+  "series": "f1",
+  "total": "27",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/20/pitstops/",
+  "xmlns": ""
+ }
+}

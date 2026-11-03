@@ -1,0 +1,11 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/race_control",
+  "params": {
+    "session_key": "9877"
+  },
+  "recorded_at": "2026-11-03T01:02:56+00:00",
+  "sha256": "c3df90556841e540c6c7a90a3702f9290cd5a549828d2ec3fe94f82cfebecaa5",
+  "bytes": 20998,
+  "dropped_fields": []
+}

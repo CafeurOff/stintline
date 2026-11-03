@@ -1,0 +1,184 @@
+{
+ "MRData": {
+  "RaceTable": {
+   "Races": [
+    {
+     "Circuit": {
+      "Location": {
+       "country": "Japan",
+       "lat": "34.8431",
+       "locality": "Suzuka",
+       "long": "136.541"
+      },
+      "circuitId": "suzuka",
+      "circuitName": "Suzuka Circuit",
+      "url": "https://en.wikipedia.org/wiki/Suzuka_International_Racing_Course"
+     },
+     "PitStops": [
+      {
+       "driverId": "stroll",
+       "duration": "23.724",
+       "lap": "9",
+       "stop": "1",
+       "time": "14:18:18"
+      },
+      {
+       "driverId": "doohan",
+       "duration": "23.382",
+       "lap": "15",
+       "stop": "1",
+       "time": "14:27:46"
+      },
+      {
+       "driverId": "russell",
+       "duration": "23.184",
+       "lap": "19",
+       "stop": "1",
+       "time": "14:33:35"
+      },
+      {
+       "driverId": "piastri",
+       "duration": "23.037",
+       "lap": "20",
+       "stop": "1",
+       "time": "14:35:03"
+      },
+      {
+       "driverId": "max_verstappen",
+       "duration": "24.397",
+       "lap": "21",
+       "stop": "1",
+       "time": "14:36:32"
+      },
+      {
+       "driverId": "norris",
+       "duration": "23.222",
+       "lap": "21",
+       "stop": "1",
+       "time": "14:36:33"
+      },
+      {
+       "driverId": "leclerc",
+       "duration": "23.346",
+       "lap": "21",
+       "stop": "1",
+       "time": "14:36:40"
+      },
+      {
+       "driverId": "hulkenberg",
+       "duration": "23.515",
+       "lap": "22",
+       "stop": "1",
+       "time": "14:38:44"
+      },
+      {
+       "driverId": "bearman",
+       "duration": "24.834",
+       "lap": "23",
+       "stop": "1",
+       "time": "14:40:07"
+      },
+      {
+       "driverId": "tsunoda",
+       "duration": "24.181",
+       "lap": "23",
+       "stop": "1",
+       "time": "14:40:13"
+      },
+      {
+       "driverId": "albon",
+       "duration": "23.093",
+       "lap": "24",
+       "stop": "1",
+       "time": "14:41:36"
+      },
+      {
+       "driverId": "alonso",
+       "duration": "25.708",
+       "lap": "24",
+       "stop": "1",
+       "time": "14:41:45"
+      },
+      {
+       "driverId": "gasly",
+       "duration": "26.041",
+       "lap": "24",
+       "stop": "1",
+       "time": "14:41:48"
+      },
+      {
+       "driverId": "hadjar",
+       "duration": "23.333",
+       "lap": "25",
+       "stop": "1",
+       "time": "14:43:05"
+      },
+      {
+       "driverId": "hamilton",
+       "duration": "22.937",
+       "lap": "30",
+       "stop": "1",
+       "time": "14:50:48"
+      },
+      {
+       "driverId": "stroll",
+       "duration": "23.608",
+       "lap": "30",
+       "stop": "2",
+       "time": "14:51:42"
+      },
+      {
+       "driverId": "antonelli",
+       "duration": "24.380",
+       "lap": "31",
+       "stop": "1",
+       "time": "14:52:16"
+      },
+      {
+       "driverId": "bortoleto",
+       "duration": "23.419",
+       "lap": "31",
+       "stop": "1",
+       "time": "14:52:58"
+      },
+      {
+       "driverId": "ocon",
+       "duration": "24.464",
+       "lap": "32",
+       "stop": "1",
+       "time": "14:54:29"
+      },
+      {
+       "driverId": "lawson",
+       "duration": "23.662",
+       "lap": "33",
+       "stop": "1",
+       "time": "14:56:01"
+      },
+      {
+       "driverId": "sainz",
+       "duration": "23.337",
+       "lap": "33",
+       "stop": "1",
+       "time": "14:56:03"
+      }
+     ],
+     "date": "2025-04-06",
+     "raceName": "Japanese Grand Prix",
+     "round": "3",
+     "season": "2025",
+     "time": "05:00:00Z",
+     "url": "https://en.wikipedia.org/wiki/2025_Japanese_Grand_Prix"
+    }
+   ],
+   "round": "3",
+   "season": "2025"
+  },
+  "limit": "100",
+  "offset": "0",
+  "series": "f1",
+  "total": "21",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/3/pitstops/",
+  "xmlns": ""
+ }
+}

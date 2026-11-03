@@ -1,0 +1,226 @@
+{
+ "MRData": {
+  "RaceTable": {
+   "Races": [
+    {
+     "Circuit": {
+      "Location": {
+       "country": "UAE",
+       "lat": "24.4672",
+       "locality": "Abu Dhabi",
+       "long": "54.6031"
+      },
+      "circuitId": "yas_marina",
+      "circuitName": "Yas Marina Circuit",
+      "url": "https://en.wikipedia.org/wiki/Yas_Marina_Circuit"
+     },
+     "PitStops": [
+      {
+       "driverId": "hulkenberg",
+       "duration": "21.619",
+       "lap": "7",
+       "stop": "1",
+       "time": "17:14:13"
+      },
+      {
+       "driverId": "hamilton",
+       "duration": "21.601",
+       "lap": "8",
+       "stop": "1",
+       "time": "17:15:40"
+      },
+      {
+       "driverId": "albon",
+       "duration": "21.551",
+       "lap": "8",
+       "stop": "1",
+       "time": "17:15:41"
+      },
+      {
+       "driverId": "gasly",
+       "duration": "22.585",
+       "lap": "13",
+       "stop": "1",
+       "time": "17:23:21"
+      },
+      {
+       "driverId": "russell",
+       "duration": "21.979",
+       "lap": "14",
+       "stop": "1",
+       "time": "17:24:34"
+      },
+      {
+       "driverId": "hadjar",
+       "duration": "21.932",
+       "lap": "14",
+       "stop": "1",
+       "time": "17:24:41"
+      },
+      {
+       "driverId": "bearman",
+       "duration": "22.263",
+       "lap": "14",
+       "stop": "1",
+       "time": "17:24:45"
+      },
+      {
+       "driverId": "bortoleto",
+       "duration": "22.121",
+       "lap": "15",
+       "stop": "1",
+       "time": "17:26:07"
+      },
+      {
+       "driverId": "colapinto",
+       "duration": "21.953",
+       "lap": "15",
+       "stop": "1",
+       "time": "17:26:25"
+      },
+      {
+       "driverId": "norris",
+       "duration": "21.323",
+       "lap": "16",
+       "stop": "1",
+       "time": "17:27:28"
+      },
+      {
+       "driverId": "leclerc",
+       "duration": "21.692",
+       "lap": "16",
+       "stop": "1",
+       "time": "17:27:30"
+      },
+      {
+       "driverId": "alonso",
+       "duration": "23.267",
+       "lap": "16",
+       "stop": "1",
+       "time": "17:27:35"
+      },
+      {
+       "driverId": "sainz",
+       "duration": "21.799",
+       "lap": "18",
+       "stop": "1",
+       "time": "17:30:51"
+      },
+      {
+       "driverId": "ocon",
+       "duration": "22.254",
+       "lap": "19",
+       "stop": "1",
+       "time": "17:32:16"
+      },
+      {
+       "driverId": "lawson",
+       "duration": "28.369",
+       "lap": "21",
+       "stop": "1",
+       "time": "17:35:27"
+      },
+      {
+       "driverId": "max_verstappen",
+       "duration": "21.703",
+       "lap": "23",
+       "stop": "1",
+       "time": "17:37:49"
+      },
+      {
+       "driverId": "hamilton",
+       "duration": "21.417",
+       "lap": "31",
+       "stop": "2",
+       "time": "17:50:26"
+      },
+      {
+       "driverId": "tsunoda",
+       "duration": "27.041",
+       "lap": "32",
+       "stop": "1",
+       "time": "17:51:52"
+      },
+      {
+       "driverId": "antonelli",
+       "duration": "22.155",
+       "lap": "32",
+       "stop": "1",
+       "time": "17:52:04"
+      },
+      {
+       "driverId": "albon",
+       "duration": "21.495",
+       "lap": "33",
+       "stop": "2",
+       "time": "17:53:36"
+      },
+      {
+       "driverId": "leclerc",
+       "duration": "20.902",
+       "lap": "39",
+       "stop": "2",
+       "time": "18:01:53"
+      },
+      {
+       "driverId": "norris",
+       "duration": "21.407",
+       "lap": "40",
+       "stop": "2",
+       "time": "18:03:15"
+      },
+      {
+       "driverId": "gasly",
+       "duration": "22.234",
+       "lap": "40",
+       "stop": "2",
+       "time": "18:04:14"
+      },
+      {
+       "driverId": "colapinto",
+       "duration": "22.955",
+       "lap": "40",
+       "stop": "2",
+       "time": "18:04:20"
+      },
+      {
+       "driverId": "piastri",
+       "duration": "21.565",
+       "lap": "41",
+       "stop": "1",
+       "time": "18:04:39"
+      },
+      {
+       "driverId": "stroll",
+       "duration": "21.535",
+       "lap": "42",
+       "stop": "1",
+       "time": "18:06:56"
+      },
+      {
+       "driverId": "hulkenberg",
+       "duration": "21.468",
+       "lap": "42",
+       "stop": "2",
+       "time": "18:07:04"
+      }
+     ],
+     "date": "2025-12-07",
+     "raceName": "Abu Dhabi Grand Prix",
+     "round": "24",
+     "season": "2025",
+     "time": "13:00:00Z",
+     "url": "https://en.wikipedia.org/wiki/2025_Abu_Dhabi_Grand_Prix"
+    }
+   ],
+   "round": "24",
+   "season": "2025"
+  },
+  "limit": "100",
+  "offset": "0",
+  "series": "f1",
+  "total": "27",
+  "url": "https://api.jolpi.ca/ergast/f1/2025/24/pitstops/",
+  "xmlns": ""
+ }
+}
