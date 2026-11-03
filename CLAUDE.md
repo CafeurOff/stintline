@@ -5,8 +5,8 @@ StintLine is a race strategy decision-support tool built on Formula 1 timing dat
 It is **not** a live timing dashboard (f1-dash, MultiViewer and F1ReplayTiming already exist), not a results or standings site, and not affiliated with Formula 1, the FIA or any team.
 
 ## Status
-- Phases 0–4 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (cleaning, fuel, degradation, pit loss, pit exit, undercut/overcut, pit window, backtest; see `docs/model.md`).
-- Next: Phase 5 (API and UI). Directories marked *(planned)* below do not exist yet.
+- Phases 0–5 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and ingestion, strategy engine (see `docs/model.md`), versioned API (`/api/v1`) and web UI (race picker, stint timeline, degradation, undercut and pit-exit simulators, model page; see `apps/web/CLAUDE.md`).
+- Next: Phase 6 (live and replay). Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
 ```
@@ -16,10 +16,10 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
   stintline/racing/      ORM models: Season, Event, Session, Team, Driver, SessionEntry,
                          Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TrackStatus
   stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
-  stintline/strategy_api/ ORM to engine adapter (`adapters.py`), `backtest` command; DRF views planned (Phase 5)
+  stintline/strategy_api/ ORM to engine adapter (`adapters.py`), strategy endpoints and model card, `backtest` command
   stintline/live/        (planned) Channels consumers, live worker, replay engine
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
-  src/app/ (router, providers)  src/features/<feature>/  src/components/ui/  src/lib/
+  src/app/ (router, layout, theme)  src/features/<feature>/  src/components/{ui,racing}/  src/lib/
 packages/racedata/   Pure Python, import `racedata`. Capability protocols (schedule, results, timing),
                      adapters (openf1, jolpica; livetiming planned), HTTP client (rate limit, retry,
                      cache, timeout), DTOs, derive/matching helpers, fixture recorder
