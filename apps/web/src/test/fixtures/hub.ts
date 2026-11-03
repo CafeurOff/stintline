@@ -29,6 +29,11 @@ export const drivers = {
         name: "Ferrari",
         colour: "ED1131",
       },
+      season: {
+        car_number: 44,
+        position: 6,
+        points: 156.0,
+      },
     },
     {
       ref: "leclerc",
@@ -52,6 +57,11 @@ export const drivers = {
         ref: "ferrari",
         name: "Ferrari",
         colour: "ED1131",
+      },
+      season: {
+        car_number: 16,
+        position: 5,
+        points: 242.0,
       },
     },
     {
@@ -77,6 +87,11 @@ export const drivers = {
         name: "McLaren",
         colour: "F47600",
       },
+      season: {
+        car_number: 4,
+        position: 1,
+        points: 423.0,
+      },
     },
     {
       ref: "piastri",
@@ -100,6 +115,11 @@ export const drivers = {
         ref: "mclaren",
         name: "McLaren",
         colour: "F47600",
+      },
+      season: {
+        car_number: 81,
+        position: 3,
+        points: 410.0,
       },
     },
   ],
@@ -127,20 +147,26 @@ export const driver = {
   },
   media: {
     driver_image_url:
-      "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/mclaren/lannor01/2025mclarenlannor01right.webp",
+      "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2026/mclaren/lannor01/2026mclarenlannor01right.webp",
     car_image_url:
-      "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/mclaren/2025mclarencarright.webp",
+      "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2026/mclaren/2026mclarencarright.webp",
   },
+  latest_team: {
+    ref: "mclaren",
+    name: "McLaren",
+    colour: "F47600",
+  },
+  latest_car_number: 1,
   totals: {
-    seasons: 3,
+    seasons: 4,
     first_season: 2023,
-    last_season: 2025,
-    starts: 70,
+    last_season: 2026,
+    starts: 77,
     wins: 11,
-    podiums: 38,
+    podiums: 40,
     poles: 15,
-    fastest_laps: 13,
-    points: 1002.0,
+    fastest_laps: 14,
+    points: 1087.0,
     championships: 1,
     best_finish: 1,
   },
@@ -171,6 +197,15 @@ export const driver = {
       podiums: 18,
       points: 423.0,
       championship_position: 1,
+    },
+    {
+      year: 2026,
+      teams: ["McLaren"],
+      starts: 7,
+      wins: 0,
+      podiums: 2,
+      points: 85.0,
+      championship_position: null,
     },
   ],
 } satisfies Schema<"DriverCareer">;
@@ -278,6 +313,48 @@ export const teams = {
       nationality: "Italian",
       wikipedia_url: "https://en.wikipedia.org/wiki/Scuderia_Ferrari",
       colour: "ED1131",
+      season: {
+        lineup: [
+          {
+            car_number: 16,
+            driver: {
+              ref: "leclerc",
+              code: "LEC",
+              given_name: "Charles",
+              family_name: "Leclerc",
+              portrait_url:
+                "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/Charles_Leclerc_at_the_2026_Cannes_Film_Festival_%28cropped%29.jpg/500px-Charles_Leclerc_at_the_2026_Cannes_Film_Festival_%28cropped%29.jpg",
+            },
+            media: {
+              driver_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/ferrari/chalec01/2025ferrarichalec01right.webp",
+              car_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/ferrari/2025ferraricarright.webp",
+            },
+          },
+          {
+            car_number: 44,
+            driver: {
+              ref: "hamilton",
+              code: "HAM",
+              given_name: "Lewis",
+              family_name: "Hamilton",
+              portrait_url:
+                "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Prime_Minister_Keir_Starmer_meets_Sir_Lewis_Hamilton_%2854566928382%29_%28cropped%29.jpg/500px-Prime_Minister_Keir_Starmer_meets_Sir_Lewis_Hamilton_%2854566928382%29_%28cropped%29.jpg",
+            },
+            media: {
+              driver_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/ferrari/lewham01/2025ferrarilewham01right.webp",
+              car_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/ferrari/2025ferraricarright.webp",
+            },
+          },
+        ],
+        position: 4,
+        points: 398.0,
+        car_image_url:
+          "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/ferrari/2025ferraricarright.webp",
+      },
     },
     {
       ref: "mclaren",
@@ -285,6 +362,48 @@ export const teams = {
       nationality: "British",
       wikipedia_url: "https://en.wikipedia.org/wiki/McLaren",
       colour: "F47600",
+      season: {
+        lineup: [
+          {
+            car_number: 81,
+            driver: {
+              ref: "piastri",
+              code: "PIA",
+              given_name: "Oscar",
+              family_name: "Piastri",
+              portrait_url:
+                "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg/500px-2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg",
+            },
+            media: {
+              driver_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/mclaren/oscpia01/2025mclarenoscpia01right.webp",
+              car_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/mclaren/2025mclarencarright.webp",
+            },
+          },
+          {
+            car_number: 4,
+            driver: {
+              ref: "norris",
+              code: "NOR",
+              given_name: "Lando",
+              family_name: "Norris",
+              portrait_url:
+                "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_%28cropped2%29.jpg/500px-2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_%28cropped2%29.jpg",
+            },
+            media: {
+              driver_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/mclaren/lannor01/2025mclarenlannor01right.webp",
+              car_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/mclaren/2025mclarencarright.webp",
+            },
+          },
+        ],
+        position: 1,
+        points: 833.0,
+        car_image_url:
+          "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/mclaren/2025mclarencarright.webp",
+      },
     },
     {
       ref: "red_bull",
@@ -292,6 +411,48 @@ export const teams = {
       nationality: "Austrian",
       wikipedia_url: "https://en.wikipedia.org/wiki/Red_Bull_Racing",
       colour: "4781D7",
+      season: {
+        lineup: [
+          {
+            car_number: 1,
+            driver: {
+              ref: "max_verstappen",
+              code: "VER",
+              given_name: "Max",
+              family_name: "Verstappen",
+              portrait_url:
+                "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/52/2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3973_by_Stepro_%28medium_crop%29.jpg/500px-2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3973_by_Stepro_%28medium_crop%29.jpg",
+            },
+            media: {
+              driver_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/redbullracing/maxver01/2025redbullracingmaxver01right.webp",
+              car_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/redbullracing/2025redbullracingcarright.webp",
+            },
+          },
+          {
+            car_number: 22,
+            driver: {
+              ref: "tsunoda",
+              code: "TSU",
+              given_name: "Yuki",
+              family_name: "Tsunoda",
+              portrait_url:
+                "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Yuki_Tsunoda_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_%28028A8096%29.jpg/500px-Yuki_Tsunoda_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_%28028A8096%29.jpg",
+            },
+            media: {
+              driver_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,w_320/q_auto/v1740000001/common/f1/2025/redbullracing/yuktsu01/2025redbullracingyuktsu01right.webp",
+              car_image_url:
+                "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/redbullracing/2025redbullracingcarright.webp",
+            },
+          },
+        ],
+        position: 3,
+        points: 451.0,
+        car_image_url:
+          "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2025/redbullracing/2025redbullracingcarright.webp",
+      },
     },
   ],
 } satisfies Schema<"PaginatedTeamListList">;
@@ -303,20 +464,49 @@ export const team = {
     nationality: "British",
     wikipedia_url: "https://en.wikipedia.org/wiki/McLaren",
     colour: null,
+    season: null,
   },
   colour: "F47600",
+  car_image_url:
+    "https://media.formula1.com/image/upload/c_lfill,h_224/q_auto/v1740000001/common/f1/2026/mclaren/2026mclarencarright.webp",
   totals: {
-    seasons: 25,
+    seasons: 26,
     first_season: 1968,
-    last_season: 2025,
-    starts: 389,
+    last_season: 2026,
+    starts: 396,
     wins: 110,
-    podiums: 273,
+    podiums: 277,
     poles: 98,
-    points: 3431.5,
+    points: 3600.5,
     championships: 9,
   },
   seasons: [
+    {
+      year: 2026,
+      drivers: [
+        {
+          ref: "norris",
+          code: "NOR",
+          given_name: "Lando",
+          family_name: "Norris",
+          portrait_url:
+            "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_%28cropped2%29.jpg/500px-2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_%28cropped2%29.jpg",
+        },
+        {
+          ref: "piastri",
+          code: "PIA",
+          given_name: "Oscar",
+          family_name: "Piastri",
+          portrait_url:
+            "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg/500px-2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg",
+        },
+      ],
+      starts: 13,
+      wins: 0,
+      podiums: 4,
+      points: 169.0,
+      championship_position: null,
+    },
     {
       year: 2025,
       drivers: [
@@ -341,32 +531,6 @@ export const team = {
       wins: 14,
       podiums: 34,
       points: 833.0,
-      championship_position: 1,
-    },
-    {
-      year: 2024,
-      drivers: [
-        {
-          ref: "norris",
-          code: "NOR",
-          given_name: "Lando",
-          family_name: "Norris",
-          portrait_url:
-            "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_%28cropped2%29.jpg/500px-2024-08-25_Motorsport%2C_Formel_1%2C_Gro%C3%9Fer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_%28cropped2%29.jpg",
-        },
-        {
-          ref: "piastri",
-          code: "PIA",
-          given_name: "Oscar",
-          family_name: "Piastri",
-          portrait_url:
-            "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg/500px-2026_Chinese_GP_-_Oscar_Piastri_%28cropped%29_%28cropped%29.jpg",
-        },
-      ],
-      starts: 48,
-      wins: 6,
-      podiums: 21,
-      points: 666.0,
       championship_position: 1,
     },
   ],
@@ -667,3 +831,146 @@ export const progression = {
     },
   ],
 } satisfies Schema<"Progression">;
+
+export const sectors = [
+  {
+    car_number: 63,
+    best_lap_s: 79.409,
+    best_sectors_s: [28.834, 28.136, 22.243],
+    ideal_lap_s: 79.213,
+    top_speed_kph: 312,
+  },
+  {
+    car_number: 81,
+    best_lap_s: 79.412,
+    best_sectors_s: [28.557, 27.94, 22.273],
+    ideal_lap_s: 78.77,
+    top_speed_kph: 315,
+  },
+  {
+    car_number: 1,
+    best_lap_s: 79.576,
+    best_sectors_s: [28.773, 28.166, 22.388],
+    ideal_lap_s: 79.327,
+    top_speed_kph: 311,
+  },
+  {
+    car_number: 55,
+    best_lap_s: 79.79,
+    best_sectors_s: [28.716, 28.589, 22.395],
+    ideal_lap_s: 79.7,
+    top_speed_kph: 316,
+  },
+  {
+    car_number: 4,
+    best_lap_s: 79.918,
+    best_sectors_s: [28.951, 28.214, 22.556],
+    ideal_lap_s: 79.721,
+    top_speed_kph: 307,
+  },
+  {
+    car_number: 27,
+    best_lap_s: 80.013,
+    best_sectors_s: [28.77, 28.58, 22.573],
+    ideal_lap_s: 79.923,
+    top_speed_kph: 319,
+  },
+  {
+    car_number: 44,
+    best_lap_s: 80.022,
+    best_sectors_s: [28.747, 28.419, 22.573],
+    ideal_lap_s: 79.739,
+    top_speed_kph: 312,
+  },
+  {
+    car_number: 14,
+    best_lap_s: 80.113,
+    best_sectors_s: [29.071, 28.298, 22.559],
+    ideal_lap_s: 79.928,
+    top_speed_kph: 290,
+  },
+  {
+    car_number: 16,
+    best_lap_s: 80.44,
+    best_sectors_s: [29.099, 28.318, 22.708],
+    ideal_lap_s: 80.125,
+    top_speed_kph: 305,
+  },
+  {
+    car_number: 30,
+    best_lap_s: 80.457,
+    best_sectors_s: [29.094, 28.636, 22.637],
+    ideal_lap_s: 80.367,
+    top_speed_kph: 304,
+  },
+  {
+    car_number: 5,
+    best_lap_s: 80.705,
+    best_sectors_s: [29.061, 28.649, 22.706],
+    ideal_lap_s: 80.416,
+    top_speed_kph: 303,
+  },
+  {
+    car_number: 18,
+    best_lap_s: 80.708,
+    best_sectors_s: [29.147, 28.667, 22.699],
+    ideal_lap_s: 80.513,
+    top_speed_kph: 309,
+  },
+  {
+    car_number: 12,
+    best_lap_s: 80.745,
+    best_sectors_s: [29.186, 28.654, 22.753],
+    ideal_lap_s: 80.593,
+    top_speed_kph: 312,
+  },
+  {
+    car_number: 23,
+    best_lap_s: 80.779,
+    best_sectors_s: [28.863, 28.896, 22.7],
+    ideal_lap_s: 80.459,
+    top_speed_kph: 310,
+  },
+  {
+    car_number: 6,
+    best_lap_s: 80.802,
+    best_sectors_s: [29.086, 28.686, 22.735],
+    ideal_lap_s: 80.507,
+    top_speed_kph: 308,
+  },
+  {
+    car_number: 43,
+    best_lap_s: 80.827,
+    best_sectors_s: [29.225, 28.765, 22.776],
+    ideal_lap_s: 80.766,
+    top_speed_kph: 309,
+  },
+  {
+    car_number: 22,
+    best_lap_s: 81.18,
+    best_sectors_s: [29.297, 28.937, 22.832],
+    ideal_lap_s: 81.066,
+    top_speed_kph: 312,
+  },
+  {
+    car_number: 10,
+    best_lap_s: 81.433,
+    best_sectors_s: [29.272, 29.182, 22.705],
+    ideal_lap_s: 81.159,
+    top_speed_kph: 310,
+  },
+  {
+    car_number: 31,
+    best_lap_s: 81.916,
+    best_sectors_s: [29.424, 29.236, 22.873],
+    ideal_lap_s: 81.533,
+    top_speed_kph: 308,
+  },
+  {
+    car_number: 87,
+    best_lap_s: 81.989,
+    best_sectors_s: [29.539, 29.236, 22.838],
+    ideal_lap_s: 81.613,
+    top_speed_kph: 308,
+  },
+] satisfies Schema<"Sectors">[];

@@ -224,6 +224,58 @@ export const en = {
   "standings.chartLabel": "Championship points after each round of the {year} season",
   "standings.round": "Round",
 
+  "common.points": "{n} pts",
+  "common.showAll": "Show all ({n} more)",
+  "common.showLess": "Show fewer",
+  "calendar.next": "Next",
+  "calendar.progress":
+    "{done} of {total} Grands Prix run. Open one for its results, or replay it on the circuit.",
+  "drivers.titleSeason": "{year} drivers",
+  "teams.titleSeason": "{year} teams",
+  "driver.chartLabel": "Points scored by {name} each season, with the championship place",
+  "team.since": "racing {span}",
+  "team.lastPlace": "{year}: {place} in the constructors' championship, {points} points",
+  "team.lastSeason": "Last season: {year}",
+  "team.lineup": "{year} line-up",
+  "team.chartNote":
+    "Points each season; the place in the constructors' championship (from 1958) is written above. Title seasons are in full colour.",
+  "team.chartLabel": "Points scored by {name} each season, with the championship place",
+  "analysis.title": "Race analysis",
+  "analysis.intro": "The race in a few facts, then lap by lap.",
+  "analysis.facts": "Key facts",
+  "analysis.fact.win": "{winner} wins, {gap} ahead of {second}.",
+  "analysis.fact.gainer":
+    "Biggest climb: {name}, {n} places gained ({grid} on the grid, {finish} at the flag).",
+  "analysis.fact.fastest": "Fastest lap: {name} in {time}.",
+  "analysis.fact.clean": "No safety car, virtual safety car or red flag.",
+  "analysis.fact.neutralised":
+    "Neutralised: {sc} safety car, {vsc} virtual safety car, {red} red flag.",
+  "analysis.fact.stops": "{n} pit stops in total.",
+  "analysis.chart": "Chart",
+  "analysis.tab.positions": "Positions",
+  "analysis.tab.gaps": "Gaps",
+  "analysis.tab.pace": "Lap times",
+  "analysis.tab.tyres": "Tyres",
+  "analysis.tab.sectors": "Sectors",
+  "analysis.pick": "Drivers to highlight",
+  "analysis.pickFirst": "Pick at least one driver above.",
+  "analysis.lap": "Lap",
+  "analysis.positionsNote":
+    "Position at the end of each lap. Team-mates share a colour; the second one is dashed.",
+  "analysis.positionsLabel": "Position of each driver at the end of every lap",
+  "analysis.gapsNote":
+    "Seconds behind the leader at the end of each lap. Lapped cars leave the chart.",
+  "analysis.gapsLabel": "Gap of each driver to the leader at the end of every lap",
+  "analysis.paceNote":
+    "Clean laps only: no first lap, pit laps or laps under safety car. Up to {n} drivers.",
+  "analysis.paceLabel": "Lap times of the highlighted drivers",
+  "analysis.noPace": "No clean laps for these drivers.",
+  "analysis.sectorsNote":
+    "Best times of the race. The ideal lap adds up each driver's three best sectors. Best of the field in red.",
+  "analysis.bestLap": "Best lap",
+  "analysis.ideal": "Ideal lap",
+  "analysis.topSpeed": "Top speed",
+
   "compound.SOFT": "Soft",
   "compound.MEDIUM": "Medium",
   "compound.HARD": "Hard",

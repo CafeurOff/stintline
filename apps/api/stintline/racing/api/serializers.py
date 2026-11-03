@@ -255,13 +255,27 @@ class LatestTeamSerializer(serializers.Serializer[Any]):
     colour = serializers.CharField(allow_null=True)
 
 
+class SeasonDriverSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    position = serializers.IntegerField(allow_null=True)
+    points = serializers.FloatField(allow_null=True)
+
+
 class DriverListItemSerializer(DriverBioSerializer):
     team = serializers.SerializerMethodField(
         help_text="Team of the latest race (in the requested season, if any)"
     )
+    season = serializers.SerializerMethodField(
+        help_text="Car number and championship place in the requested season"
+    )
 
     class Meta(DriverBioSerializer.Meta):
-        fields = [*DriverBioSerializer.Meta.fields, "team"]
+        fields = [*DriverBioSerializer.Meta.fields, "team", "season"]
+
+    @extend_schema_field(SeasonDriverSerializer(allow_null=True))
+    def get_season(self, driver: Driver) -> dict[str, Any] | None:
+        card = self.context.get("season_drivers", {}).get(driver.pk)
+        return None if card is None else SeasonDriverSerializer(card).data
 
     @extend_schema_field(LatestTeamSerializer(allow_null=True))
     def get_team(self, driver: Driver) -> dict[str, Any] | None:
@@ -305,6 +319,8 @@ class SeasonLineSerializer(serializers.Serializer[Any]):
 class DriverCareerSerializer(serializers.Serializer[Any]):
     driver = DriverBioSerializer()
     media = MediaSerializer(allow_null=True)
+    latest_team = LatestTeamSerializer(allow_null=True, help_text="Team of the latest race")
+    latest_car_number = serializers.IntegerField(allow_null=True)
     totals = CareerTotalsSerializer()
     seasons = SeasonLineSerializer(many=True)
 
@@ -378,14 +394,43 @@ class RoundQuerySerializer(serializers.Serializer[Any]):
     round = serializers.IntegerField(required=False, min_value=1, max_value=40)
 
 
+class LineupSerializer(serializers.ModelSerializer[SessionEntry]):
+    driver = DriverSerializer(read_only=True)
+    media = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SessionEntry
+        fields = ["car_number", "driver", "media"]
+
+    @extend_schema_field(MediaSerializer(allow_null=True))
+    def get_media(self, entry: SessionEntry) -> dict[str, Any] | None:
+        media = media_for(entry.session.event.season.year, entry.team_display_name, entry.media_id)
+        return None if media is None else MediaSerializer(media).data
+
+
+class SeasonTeamSerializer(serializers.Serializer[Any]):
+    lineup = LineupSerializer(many=True, help_text="Drivers of the season's latest race")
+    position = serializers.IntegerField(allow_null=True)
+    points = serializers.FloatField(allow_null=True)
+    car_image_url = serializers.URLField(allow_null=True, help_text="Official render (ADR 0006)")
+
+
 class TeamListSerializer(serializers.ModelSerializer[Team]):
     colour = serializers.CharField(
         read_only=True, allow_null=True, help_text="Latest timing colour (2023+), hex RGB"
     )
+    season = serializers.SerializerMethodField(
+        help_text="Line-up, car and championship place in the requested season"
+    )
 
     class Meta:
         model = Team
-        fields = ["ref", "name", "nationality", "wikipedia_url", "colour"]
+        fields = ["ref", "name", "nationality", "wikipedia_url", "colour", "season"]
+
+    @extend_schema_field(SeasonTeamSerializer(allow_null=True))
+    def get_season(self, team: Team) -> dict[str, Any] | None:
+        card = self.context.get("season_teams", {}).get(team.pk)
+        return None if card is None else SeasonTeamSerializer(card).data
 
 
 class TeamTotalsSerializer(serializers.Serializer[Any]):
@@ -413,6 +458,9 @@ class TeamSeasonSerializer(serializers.Serializer[Any]):
 class TeamCareerSerializer(serializers.Serializer[Any]):
     team = TeamListSerializer()
     colour = serializers.CharField(allow_null=True)
+    car_image_url = serializers.URLField(
+        allow_null=True, help_text="Official render of the latest car (ADR 0006)"
+    )
     totals = TeamTotalsSerializer()
     seasons = TeamSeasonSerializer(many=True, help_text="Most recent first")
 
@@ -463,3 +511,15 @@ class ProgressionSerializer(serializers.Serializer[Any]):
 class TeamQuerySerializer(serializers.Serializer[Any]):
     search = serializers.CharField(required=False, max_length=64)
     season = serializers.IntegerField(required=False, min_value=1950, max_value=2100)
+
+
+class SectorsSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    best_lap_s = serializers.FloatField(allow_null=True)
+    best_sectors_s = serializers.ListField(
+        child=serializers.FloatField(allow_null=True), min_length=3, max_length=3
+    )
+    ideal_lap_s = serializers.FloatField(
+        allow_null=True, help_text="Sum of the three best sectors, from any laps"
+    )
+    top_speed_kph = serializers.IntegerField(allow_null=True, help_text="Speed trap maximum")

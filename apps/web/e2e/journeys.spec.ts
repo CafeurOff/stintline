@@ -46,7 +46,7 @@ test("pick a driver on the map and simulate an undercut", async ({ page }) => {
 test("read the tyres page and the explanation in French", async ({ page }) => {
   await page.goto(`/sessions/${SESSION_ID}`);
 
-  await page.getByRole("button", { name: "fr" }).click();
+  await page.getByRole("button", { name: "fr", exact: true }).click();
   await page.getByRole("link", { name: "Pneus" }).click();
   await expect(page.getByText("Durs")).toBeVisible();
 
@@ -72,7 +72,12 @@ test("find a driver and read their career", async ({ page }) => {
     .getByRole("navigation", { name: "Main" })
     .getByRole("link", { name: "Drivers" })
     .click();
-  await page.getByRole("link", { name: /Norris/ }).click();
+  await expect(page).toHaveURL("/drivers");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/drivers/i);
+  await page
+    .getByRole("main")
+    .getByRole("link", { name: /Norris/ })
+    .click();
 
   await expect(page.getByRole("heading", { name: "Norris" })).toBeVisible();
   await expect(page.getByLabel("Career in numbers")).toContainText("Titles");

@@ -57,6 +57,10 @@ const EVENT_NAMES_FR: Record<string, string> = {
   "Tuscan Grand Prix": "Grand Prix de Toscane",
   "United States Grand Prix West": "Grand Prix des États-Unis Ouest",
   "70th Anniversary Grand Prix": "Grand Prix du 70e anniversaire",
+  // New names from 2026.
+  "Barcelona Grand Prix": "Grand Prix de Barcelone",
+  "Madrid Grand Prix": "Grand Prix de Madrid",
+  "Bahrain Grand Prix in Malaysia": "Grand Prix de Bahreïn en Malaisie",
 };
 
 /** Event name in the reader's language, falling back to the API name. */

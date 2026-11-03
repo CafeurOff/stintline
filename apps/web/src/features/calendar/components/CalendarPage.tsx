@@ -1,8 +1,10 @@
+import type { Schema } from "@stintline/api-types";
 import { Link, useNavigate, useParams } from "react-router";
 
-import { DriverName } from "@/components/hub/DriverName";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
+import { DriverAvatar } from "@/components/racing/DriverAvatar";
+import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useSeasonEvents } from "@/features/hub/api";
@@ -11,17 +13,25 @@ import { timedSessions } from "@/features/session-picker/useRaces";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
+import { teamColour, teamTint } from "@/lib/teams";
+import { useNow } from "@/lib/useNow";
 
-/** Every Grand Prix of a season, with its winner and a way into the race replay. */
+type EventItem = Schema<"Event">;
+const DAY_MS = 86_400_000;
+
+/** Every Grand Prix of a season as cards: who won, what comes next, what can be replayed. */
 export function CalendarPage() {
-  const { t, f, locale } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const params = useParams();
   const current = useCurrentSeason();
+  const now = useNow();
   const fromUrl = params.year && /^\d{4}$/.test(params.year) ? Number(params.year) : null;
   const year = fromUrl ?? current.season;
   const events = useSeasonEvents(year);
-  const today = new Date().toISOString().slice(0, 10);
+  const list = events.data?.results ?? [];
+  const nextId = list.find((e) => !e.winner && Date.parse(`${e.race_date}T23:59:59Z`) >= now)?.id;
+  const done = list.filter((e) => e.winner).length;
 
   return (
     <div>
@@ -31,85 +41,112 @@ export function CalendarPage() {
           <SeasonSelect
             value={year}
             onChange={(value) => {
-              if (value !== null) void navigate(`/calendar/${value}`);
+              if (value !== null) void navigate(`/calendar/${String(value)}`);
             }}
           />
         }
       >
-        {t("calendar.intro")}
+        {list.length > 0
+          ? t("calendar.progress", { done, total: list.length })
+          : t("calendar.intro")}
       </PageHeader>
       {events.isError ? (
         <ErrorState error={events.error} onRetry={() => void events.refetch()} />
       ) : !events.data ? (
         <Skeleton className="h-96" />
-      ) : events.data.results.length === 0 ? (
+      ) : list.length === 0 ? (
         <EmptyState title={t("calendar.empty")} />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <caption className="sr-only">{t("calendar.season", { year: year ?? "" })}</caption>
-            <thead>
-              <tr>
-                <th className="num">{t("col.round")}</th>
-                <th>{t("col.date")}</th>
-                <th>{t("col.grandPrix")}</th>
-                <th className="hidden md:table-cell">{t("col.circuit")}</th>
-                <th>{t("col.winner")}</th>
-                <th>
-                  <span className="sr-only">{t("col.replay")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {events.data.results.map((event) => {
-                const race = timedSessions(event).find((s) => s.kind === "R");
-                const upcoming = event.race_date >= today && !event.winner;
-                return (
-                  <tr key={event.id} className={upcoming ? "text-muted" : ""}>
-                    <td className="num text-muted">{event.round}</td>
-                    <td className="whitespace-nowrap">{f.date(event.race_date)}</td>
-                    <td>
-                      <Link to={`/events/${event.id}`} className="font-semibold hover:underline">
-                        {eventName(event.name, locale)}
-                      </Link>
-                      {event.format === "sprint" && (
-                        <span className="ml-2 text-xs text-muted">{t("picker.sprint")}</span>
-                      )}
-                    </td>
-                    <td className="hidden text-muted md:table-cell">
-                      {event.circuit.locality} · {countryName(event.circuit.country, locale)}
-                    </td>
-                    <td>
-                      {event.winner ? (
-                        <DriverName
-                          driver={event.winner.driver}
-                          colour={event.winner.team_colour}
-                          avatar="xs"
-                        />
-                      ) : (
-                        <span className="text-sm">{upcoming ? t("picker.upcoming") : "—"}</span>
-                      )}
-                    </td>
-                    <td className="text-right">
-                      {race && (
-                        <Link
-                          to={`/sessions/${race.id}`}
-                          className="text-sm font-semibold whitespace-nowrap text-mark-text hover:underline"
-                          aria-label={t("calendar.replayOf", {
-                            name: eventName(event.name, locale),
-                          })}
-                        >
-                          {t("col.replay")} →
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {list.map((event) => (
+            <li key={event.id}>
+              <EventCard event={event} isNext={event.id === nextId} now={now} />
+            </li>
+          ))}
+        </ol>
       )}
+      <p className="mt-6 text-sm text-muted">{t("calendar.intro")}</p>
     </div>
+  );
+}
+
+function EventCard({ event, isNext, now }: { event: EventItem; isNext: boolean; now: number }) {
+  const { t, f, locale } = useI18n();
+  const name = eventName(event.name, locale);
+  const race = timedSessions(event).find((s) => s.kind === "R");
+  const winner = event.winner;
+  const days = Math.max(0, Math.ceil((Date.parse(`${event.race_date}T12:00:00Z`) - now) / DAY_MS));
+  const relative = new Intl.RelativeTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
+    numeric: "auto",
+  });
+
+  return (
+    <article
+      className={`relative flex h-full flex-col gap-3 rounded-2xl border p-4 transition hover:border-ink ${
+        isNext ? "border-mark" : "border-line"
+      } ${winner || isNext ? "" : "opacity-75"}`}
+      style={winner ? { backgroundColor: teamTint(winner.team_colour, 10) } : undefined}
+    >
+      <header className="flex items-baseline justify-between gap-2 text-sm text-muted">
+        <span className="font-semibold tabular-nums">
+          {t("picker.round", { round: event.round })}
+        </span>
+        <span>{f.date(event.race_date)}</span>
+      </header>
+      <h2 className="text-lg leading-tight font-bold">
+        <Link
+          to={`/events/${String(event.id)}`}
+          className="after:absolute after:inset-0 hover:underline"
+        >
+          {name}
+        </Link>
+      </h2>
+      <p className="-mt-2 text-sm text-muted">
+        {event.circuit.locality} · {countryName(event.circuit.country, locale)}
+        {event.format === "sprint" && ` · ${t("picker.sprint")}`}
+      </p>
+      <div className="mt-auto flex items-center justify-between gap-2">
+        {winner ? (
+          <span className="flex min-w-0 items-center gap-2">
+            <DriverAvatar
+              label={
+                winner.driver.code ?? initials(winner.driver.given_name, winner.driver.family_name)
+              }
+              name={`${winner.driver.given_name} ${winner.driver.family_name}`}
+              colour={winner.team_colour}
+              imageUrl={winner.driver.portrait_url}
+              size="sm"
+              decorative
+            />
+            <span className="min-w-0 leading-tight">
+              <span className="block text-xs text-muted">{t("col.winner")}</span>
+              <span className="flex items-center gap-1.5 truncate font-semibold">
+                <span
+                  aria-hidden="true"
+                  className="h-3 w-1 rounded-full"
+                  style={{ backgroundColor: teamColour(winner.team_colour) }}
+                />
+                {winner.driver.family_name}
+              </span>
+            </span>
+          </span>
+        ) : (
+          <span className={`text-sm font-semibold ${isNext ? "text-mark-text" : "text-muted"}`}>
+            {isNext
+              ? `${t("calendar.next")} · ${relative.format(days, "day")}`
+              : t("picker.upcoming")}
+          </span>
+        )}
+        {race && (
+          <Link
+            to={`/sessions/${String(race.id)}`}
+            className="relative z-10 shrink-0 rounded-md border border-line-strong px-2 py-1 text-sm font-semibold hover:border-ink"
+            aria-label={t("calendar.replayOf", { name })}
+          >
+            {t("col.replay")}
+          </Link>
+        )}
+      </div>
+    </article>
   );
 }

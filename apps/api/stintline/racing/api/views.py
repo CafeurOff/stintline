@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from django.db.models import Max, QuerySet
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -24,6 +26,7 @@ from stintline.racing.api.serializers import (
     ProgressionSerializer,
     RoundQuerySerializer,
     SeasonSerializer,
+    SectorsSerializer,
     SessionDetailSerializer,
     StandingsSerializer,
     TeamCareerSerializer,
@@ -68,6 +71,12 @@ class SeasonEventListView(generics.ListAPIView[Event]):
     @extend_schema(operation_id="season_events_list", tags=["racing"])
     def get(self, request: Request, *args: object, **kwargs: object) -> Response:
         return super().get(request, *args, **kwargs)
+
+
+def _season_param(request: Request) -> int | None:
+    """The validated ``season`` query parameter (the list view already rejected bad ones)."""
+    raw = request.query_params.get("season", "")
+    return int(raw) if raw.isdigit() else None
 
 
 def _session_or_404(session_id: int) -> Session:
@@ -140,6 +149,13 @@ class DriverListView(generics.ListAPIView[Driver]):
         return hub.with_latest_team(
             careers.search_drivers(params.validated_data.get("search"), season), season
         )
+
+    def get_serializer_context(self) -> dict[str, Any]:
+        context = super().get_serializer_context()
+        season = _season_param(self.request)
+        if season is not None:
+            context["season_drivers"] = hub.season_drivers(season)
+        return context
 
     @extend_schema(
         operation_id="drivers_list",
@@ -263,6 +279,13 @@ class TeamListView(generics.ListAPIView[Team]):
             params.validated_data.get("search"), params.validated_data.get("season")
         )
 
+    def get_serializer_context(self) -> dict[str, Any]:
+        context = super().get_serializer_context()
+        season = _season_param(self.request)
+        if season is not None:
+            context["season_teams"] = hub.season_teams(season)
+        return context
+
     @extend_schema(
         operation_id="teams_list",
         parameters=[
@@ -315,3 +338,16 @@ class SeasonProgressionView(APIView):
         return cached_response(
             request, ProgressionSerializer(data).data, "progression", year, _data_stamp()
         )
+
+
+class SessionSectorsView(APIView):
+    @extend_schema(
+        operation_id="session_sectors_list",
+        summary="Best lap, best sectors, ideal lap and top speed of every car",
+        responses=SectorsSerializer(many=True),
+        tags=["racing"],
+    )
+    def get(self, request: Request, session_id: int) -> Response:
+        stamp = _session_or_404(session_id).ingested_at
+        data = SectorsSerializer(selectors.session_sectors(session_id), many=True).data
+        return cached_response(request, data, "sectors", session_id, stamp)

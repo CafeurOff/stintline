@@ -228,6 +228,59 @@ export const fr: Record<MessageKey, string> = {
   "standings.chartLabel": "Points au championnat après chaque manche de la saison {year}",
   "standings.round": "Manche",
 
+  "common.points": "{n} pts",
+  "common.showAll": "Tout afficher ({n} de plus)",
+  "common.showLess": "Afficher moins",
+  "calendar.next": "Prochaine course",
+  "calendar.progress":
+    "{done} Grands Prix courus sur {total}. Ouvrez-en un pour ses résultats, ou revivez-le sur le circuit.",
+  "drivers.titleSeason": "Pilotes {year}",
+  "teams.titleSeason": "Écuries {year}",
+  "driver.chartLabel":
+    "Points marqués par {name} chaque saison, avec son classement au championnat",
+  "team.since": "en course {span}",
+  "team.lastPlace": "{year} : {place} au championnat constructeurs, {points} points",
+  "team.lastSeason": "Dernière saison : {year}",
+  "team.lineup": "Pilotes {year}",
+  "team.chartNote":
+    "Points chaque saison ; la place au championnat constructeurs (depuis 1958) est écrite au-dessus. Les saisons titrées sont en couleur pleine.",
+  "team.chartLabel": "Points marqués par {name} chaque saison, avec son classement au championnat",
+  "analysis.title": "Analyse de la course",
+  "analysis.intro": "La course en quelques faits, puis tour par tour.",
+  "analysis.facts": "Faits marquants",
+  "analysis.fact.win": "{winner} gagne avec {gap} d'avance sur {second}.",
+  "analysis.fact.gainer":
+    "Plus belle remontée : {name}, {n} places gagnées ({grid} sur la grille, {finish} à l'arrivée).",
+  "analysis.fact.fastest": "Meilleur tour : {name} en {time}.",
+  "analysis.fact.clean": "Aucune voiture de sécurité, VSC ni drapeau rouge.",
+  "analysis.fact.neutralised":
+    "Neutralisations : {sc} voiture de sécurité, {vsc} VSC, {red} drapeau rouge.",
+  "analysis.fact.stops": "{n} arrêts au stand au total.",
+  "analysis.chart": "Graphique",
+  "analysis.tab.positions": "Positions",
+  "analysis.tab.gaps": "Écarts",
+  "analysis.tab.pace": "Temps au tour",
+  "analysis.tab.tyres": "Pneus",
+  "analysis.tab.sectors": "Secteurs",
+  "analysis.pick": "Pilotes à mettre en avant",
+  "analysis.pickFirst": "Choisissez au moins un pilote ci-dessus.",
+  "analysis.lap": "Tour",
+  "analysis.positionsNote":
+    "Position à la fin de chaque tour. Les coéquipiers partagent une couleur ; le second est en pointillés.",
+  "analysis.positionsLabel": "Position de chaque pilote à la fin de chaque tour",
+  "analysis.gapsNote":
+    "Secondes de retard sur le leader à la fin de chaque tour. Les voitures prises d'un tour sortent du graphique.",
+  "analysis.gapsLabel": "Écart de chaque pilote au leader à la fin de chaque tour",
+  "analysis.paceNote":
+    "Tours propres uniquement : sans le premier tour, les tours d'arrêt ni ceux sous voiture de sécurité. Jusqu'à {n} pilotes.",
+  "analysis.paceLabel": "Temps au tour des pilotes mis en avant",
+  "analysis.noPace": "Aucun tour propre pour ces pilotes.",
+  "analysis.sectorsNote":
+    "Meilleurs temps de la course. Le tour idéal additionne les trois meilleurs secteurs de chaque pilote. Le meilleur du plateau est en rouge.",
+  "analysis.bestLap": "Meilleur tour",
+  "analysis.ideal": "Tour idéal",
+  "analysis.topSpeed": "Vitesse max.",
+
   "compound.SOFT": "Tendre",
   "compound.MEDIUM": "Médium",
   "compound.HARD": "Dur",

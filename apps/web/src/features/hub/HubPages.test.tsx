@@ -12,11 +12,13 @@ describe("Hub pages", () => {
     renderRoute("/calendar/2025");
 
     expect(await screen.findByRole("heading", { name: "2025 season" })).toBeVisible();
-    const table = await screen.findByRole("table");
-    const hungary = within(table).getByRole("row", { name: /Hungarian Grand Prix/ });
     expect(
-      within(hungary).getByRole("link", { name: "Replay the Hungarian Grand Prix" }),
+      await screen.findByRole("link", { name: "Replay the Hungarian Grand Prix" }),
     ).toHaveAttribute("href", `/sessions/${SESSION_ID}`);
+    expect(screen.getByRole("link", { name: "Hungarian Grand Prix" })).toHaveAttribute(
+      "href",
+      "/events/14",
+    );
   });
 
   it("shows a Grand Prix's results and switches to qualifying", async () => {

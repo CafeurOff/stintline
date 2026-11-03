@@ -1,9 +1,12 @@
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
+import { ShowAll } from "@/components/hub/Collapsible";
 import { KeyFigures } from "@/components/hub/KeyFigures";
+import { SeasonBars } from "@/components/hub/SeasonBars";
+import { useCollapsed } from "@/components/hub/useCollapsed";
 import { TeamName } from "@/components/hub/TeamName";
-import { DriverAvatar } from "@/components/racing/DriverAvatar";
+import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { initials } from "@/components/racing/initials";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -14,9 +17,13 @@ import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
+import { teamColour, teamTint } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 type Career = Schema<"DriverCareer">;
+
+/** Seasons listed before "show all". */
+const SEASONS_SHOWN = 10;
 
 export function DriverPage() {
   const { ref = "" } = useParams();
@@ -77,77 +84,106 @@ function age(isoDate: string): number {
 
 function DriverHeader({ career }: { career: Career }) {
   const { t, f, locale } = useI18n();
-  const { driver, media } = career;
-  const name = `${driver.given_name} ${driver.family_name}`;
+  const { driver, media, latest_team: team } = career;
   const official = media?.driver_image_url;
   const portrait = official ? null : driver.portrait;
+  const number = driver.permanent_number ?? career.latest_car_number;
+  const colour = team?.colour;
 
   return (
-    <header className="flex flex-wrap items-center gap-6">
-      <figure className="flex flex-col items-center gap-2">
-        <DriverAvatar
-          label={driver.code ?? initials(driver.given_name, driver.family_name)}
-          name={name}
-          colour={null}
-          imageUrl={official ?? portrait?.image_url}
-          size="xl"
-        />
-        {portrait && (
-          <figcaption className="max-w-40 text-center text-xs text-muted">
-            <a href={portrait.file_page_url} target="_blank" rel="noreferrer" className="underline">
-              {t("driver.photo", { artist: portrait.artist })}
-            </a>
-            {", "}
-            {portrait.license_url ? (
-              <a href={portrait.license_url} target="_blank" rel="noreferrer" className="underline">
-                {portrait.license}
-              </a>
-            ) : (
-              portrait.license
-            )}
-          </figcaption>
-        )}
-      </figure>
-      <div className="min-w-0">
-        <p className="text-muted">{driver.given_name}</p>
-        <h1 className="text-4xl leading-none font-bold sm:text-5xl">{driver.family_name}</h1>
-        <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-          {driver.permanent_number != null && (
-            <div className="flex gap-1">
-              <dt className="text-muted">{t("driver.number")}</dt>
-              <dd className="font-semibold tabular-nums">{driver.permanent_number}</dd>
-            </div>
-          )}
-          {driver.nationality && (
-            <div className="flex gap-1">
-              <dt className="text-muted">{t("driver.nationality")}</dt>
-              <dd className="font-semibold">{nationalityCountry(driver.nationality, locale)}</dd>
-            </div>
-          )}
-          {driver.date_of_birth && (
-            <div className="flex gap-1">
-              <dt className="text-muted">{t("driver.born")}</dt>
-              <dd className="font-semibold">
-                {f.date(driver.date_of_birth)}
-                {career.totals.last_season !== null &&
-                  career.totals.last_season >= new Date().getUTCFullYear() - 1 &&
-                  ` (${t("driver.age", { n: age(driver.date_of_birth) })})`}
-              </dd>
-            </div>
-          )}
-          {driver.wikipedia_url && (
-            <div>
+    <header
+      className="relative overflow-hidden rounded-3xl border-t-4"
+      style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 22) }}
+    >
+      {number != null && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-6 right-4 text-[10rem] leading-none font-bold opacity-20 sm:text-[14rem]"
+          style={{ color: teamColour(colour) }}
+        >
+          {number}
+        </span>
+      )}
+      <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:p-10">
+        <figure className="flex shrink-0 flex-col gap-2">
+          <DriverPhoto
+            imageUrl={official ?? portrait?.image_url}
+            label={driver.code ?? initials(driver.given_name, driver.family_name)}
+            colour={colour}
+            className="h-56 w-44 rounded-2xl"
+          />
+          {portrait && (
+            <figcaption className="max-w-44 text-xs text-muted">
               <a
-                href={driver.wikipedia_url}
+                href={portrait.file_page_url}
                 target="_blank"
                 rel="noreferrer"
-                className="font-semibold text-mark-text underline"
+                className="underline"
               >
-                {t("driver.wikipedia")}
+                {t("driver.photo", { artist: portrait.artist })}
               </a>
-            </div>
+              {", "}
+              {portrait.license_url ? (
+                <a
+                  href={portrait.license_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  {portrait.license}
+                </a>
+              ) : (
+                portrait.license
+              )}
+            </figcaption>
           )}
-        </dl>
+        </figure>
+        <div className="min-w-0 pb-2">
+          <p className="text-xl text-muted">{driver.given_name}</p>
+          <h1 className="text-5xl leading-none font-bold sm:text-7xl">{driver.family_name}</h1>
+          {team && (
+            <p className="mt-3 text-lg">
+              <TeamName team={team} colour={colour} />
+            </p>
+          )}
+          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+            {driver.nationality && (
+              <div className="flex gap-1">
+                <dt className="text-muted">{t("driver.nationality")}</dt>
+                <dd className="font-semibold">{nationalityCountry(driver.nationality, locale)}</dd>
+              </div>
+            )}
+            {driver.date_of_birth && (
+              <div className="flex gap-1">
+                <dt className="text-muted">{t("driver.born")}</dt>
+                <dd className="font-semibold">
+                  {f.date(driver.date_of_birth)}
+                  {career.totals.last_season !== null &&
+                    career.totals.last_season >= new Date().getUTCFullYear() - 1 &&
+                    ` (${t("driver.age", { n: age(driver.date_of_birth) })})`}
+                </dd>
+              </div>
+            )}
+            {number != null && (
+              <div className="flex gap-1">
+                <dt className="text-muted">{t("driver.number")}</dt>
+                <dd className="font-semibold tabular-nums">{number}</dd>
+              </div>
+            )}
+            {driver.wikipedia_url && (
+              <div>
+                <a
+                  href={driver.wikipedia_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-mark-text underline"
+                >
+                  {t("driver.wikipedia")}
+                </a>
+              </div>
+            )}
+          </dl>
+        </div>
       </div>
     </header>
   );
@@ -156,12 +192,27 @@ function DriverHeader({ career }: { career: Career }) {
 function SeasonsTable({ career }: { career: Career }) {
   const { t, f } = useI18n();
   const max = Math.max(1, ...career.seasons.map((s) => s.points));
-  const seasons = [...career.seasons].reverse();
+  const all = [...career.seasons].reverse();
+  const collapsed = useCollapsed(all, SEASONS_SHOWN);
+  const seasons = collapsed.shown;
   return (
     <section aria-labelledby="driver-seasons" className="flex flex-col gap-3">
       <h2 id="driver-seasons" className="text-xl font-bold">
         {t("driver.bySeason")}
       </h2>
+      {all.length > 1 && (
+        <SeasonBars
+          colour={career.latest_team?.colour}
+          label={t("driver.chartLabel", {
+            name: `${career.driver.given_name} ${career.driver.family_name}`,
+          })}
+          seasons={all.map((s) => ({
+            year: s.year,
+            points: s.points,
+            position: s.championship_position,
+          }))}
+        />
+      )}
       <div className="overflow-x-auto">
         <table className="data-table">
           <thead>
@@ -207,6 +258,13 @@ function SeasonsTable({ career }: { career: Career }) {
           </tbody>
         </table>
       </div>
+      <ShowAll
+        hidden={collapsed.hidden}
+        open={collapsed.open}
+        onToggle={() => {
+          collapsed.setOpen(!collapsed.open);
+        }}
+      />
     </section>
   );
 }

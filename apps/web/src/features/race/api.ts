@@ -6,8 +6,9 @@ import { ApiError, unwrap } from "@/lib/errors";
 /** Finished sessions do not change: cache for the page lifetime. */
 const HISTORICAL = { staleTime: Infinity } as const;
 
-export function useSessionDetail(sessionId: number) {
+export function useSessionDetail(sessionId: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["session", sessionId],
     queryFn: async ({ signal }) =>
       unwrap(
@@ -49,8 +50,9 @@ export function usePitLoss(sessionId: number) {
 }
 
 /** Circuit outline, or `null` when none was recorded for this race (the map is optional). */
-export function useTrack(sessionId: number) {
+export function useTrack(sessionId: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["session", sessionId, "track"],
     queryFn: async ({ signal }) => {
       try {

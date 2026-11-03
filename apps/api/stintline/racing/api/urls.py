@@ -12,6 +12,11 @@ urlpatterns = [
         "sessions/<int:session_id>/stints", views.SessionStintsView.as_view(), name="session-stints"
     ),
     path("sessions/<int:session_id>/track", views.SessionTrackView.as_view(), name="session-track"),
+    path(
+        "sessions/<int:session_id>/sectors",
+        views.SessionSectorsView.as_view(),
+        name="session-sectors",
+    ),
     path("sessions/<int:session_id>/radio", views.SessionRadioView.as_view(), name="session-radio"),
     path(
         "seasons/<int:year>/standings", views.SeasonStandingsView.as_view(), name="season-standings"

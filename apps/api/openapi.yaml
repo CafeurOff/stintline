@@ -536,6 +536,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/sessions/{session_id}/sectors:
+    get:
+      operationId: session_sectors_list
+      summary: Best lap, best sectors, ideal lap and top speed of every car
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sectors'
+          description: ''
   /api/v1/sessions/{session_id}/simulate/pit-exit:
     post:
       operationId: simulate_pit_exit
@@ -1048,6 +1071,14 @@ components:
           allOf:
           - $ref: '#/components/schemas/Media'
           nullable: true
+        latest_team:
+          allOf:
+          - $ref: '#/components/schemas/LatestTeam'
+          nullable: true
+          description: Team of the latest race
+        latest_car_number:
+          type: integer
+          nullable: true
         totals:
           $ref: '#/components/schemas/CareerTotals'
         seasons:
@@ -1056,6 +1087,8 @@ components:
             $ref: '#/components/schemas/SeasonLine'
       required:
       - driver
+      - latest_car_number
+      - latest_team
       - media
       - seasons
       - totals
@@ -1107,11 +1140,18 @@ components:
           nullable: true
           readOnly: true
           description: Team of the latest race (in the requested season, if any)
+        season:
+          allOf:
+          - $ref: '#/components/schemas/SeasonDriver'
+          nullable: true
+          readOnly: true
+          description: Car number and championship place in the requested season
       required:
       - family_name
       - given_name
       - portrait
       - ref
+      - season
       - team
     DriverProgression:
       type: object
@@ -1595,6 +1635,27 @@ components:
       - colour
       - name
       - ref
+    Lineup:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+        media:
+          allOf:
+          - $ref: '#/components/schemas/Media'
+          nullable: true
+          readOnly: true
+      required:
+      - car_number
+      - driver
+      - media
     Media:
       type: object
       properties:
@@ -2112,6 +2173,22 @@ components:
       required:
       - events_count
       - year
+    SeasonDriver:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        position:
+          type: integer
+          nullable: true
+        points:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - car_number
+      - points
+      - position
     SeasonLine:
       type: object
       properties:
@@ -2141,6 +2218,63 @@ components:
       - teams
       - wins
       - year
+    SeasonTeam:
+      type: object
+      properties:
+        lineup:
+          type: array
+          items:
+            $ref: '#/components/schemas/Lineup'
+          description: Drivers of the season's latest race
+        position:
+          type: integer
+          nullable: true
+        points:
+          type: number
+          format: double
+          nullable: true
+        car_image_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Official render (ADR 0006)
+      required:
+      - car_image_url
+      - lineup
+      - points
+      - position
+    Sectors:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        best_lap_s:
+          type: number
+          format: double
+          nullable: true
+        best_sectors_s:
+          type: array
+          items:
+            type: number
+            format: double
+            nullable: true
+          maxItems: 3
+          minItems: 3
+        ideal_lap_s:
+          type: number
+          format: double
+          nullable: true
+          description: Sum of the three best sectors, from any laps
+        top_speed_kph:
+          type: integer
+          nullable: true
+          description: Speed trap maximum
+      required:
+      - best_lap_s
+      - best_sectors_s
+      - car_number
+      - ideal_lap_s
+      - top_speed_kph
     SessionDetail:
       type: object
       properties:
@@ -2381,6 +2515,11 @@ components:
         colour:
           type: string
           nullable: true
+        car_image_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Official render of the latest car (ADR 0006)
         totals:
           $ref: '#/components/schemas/TeamTotals'
         seasons:
@@ -2389,6 +2528,7 @@ components:
             $ref: '#/components/schemas/TeamSeason'
           description: Most recent first
       required:
+      - car_image_url
       - colour
       - seasons
       - team
@@ -2419,10 +2559,17 @@ components:
           readOnly: true
           nullable: true
           description: Latest timing colour (2023+), hex RGB
+        season:
+          allOf:
+          - $ref: '#/components/schemas/SeasonTeam'
+          nullable: true
+          readOnly: true
+          description: Line-up, car and championship place in the requested season
       required:
       - colour
       - name
       - ref
+      - season
     TeamProgression:
       type: object
       properties:

@@ -10,6 +10,7 @@ import {
   driverResults,
   drivers,
   progression,
+  sectors,
   standings,
   team,
   teams,
@@ -41,6 +42,29 @@ export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   results: [{ year: 2025, events_count: events.count }],
 };
 
+/** Lap rows derived from the recorded replay (lap 1 excluded, as the engine does). */
+export const lapsResponse: Schema<"Lap">[] = replay.cars.flatMap((car) =>
+  car.line_times_s.flatMap((time, index) => {
+    const before = index === 0 ? 0 : car.line_times_s[index - 1];
+    if (time == null || before == null) return [];
+    return [
+      {
+        car_number: car.car_number,
+        lap: index + 1,
+        time_s: time - before,
+        corrected_time_s: null,
+        compound: car.compounds[index] ?? "UNKNOWN",
+        tyre_age: car.tyre_ages[index] ?? null,
+        stint: null,
+        is_pit_in: false,
+        is_pit_out: false,
+        race_time_s: time,
+        excluded: index === 0 ? "first_lap" : null,
+      },
+    ];
+  }),
+);
+
 export function problem(status: number, code: string, title: string, detail = title) {
   return HttpResponse.json(
     { type: "about:blank", title, status, detail, code } satisfies Schema<"Problem">,
@@ -60,6 +84,11 @@ export const handlers = [
   http.get("*/api/v1/sessions/:id/stints", () => HttpResponse.json(stints)),
   http.get("*/api/v1/sessions/:id/track", () => HttpResponse.json(track)),
   http.get("*/api/v1/sessions/:id/replay", () => HttpResponse.json(replay)),
+  http.get("*/api/v1/sessions/:id/sectors", () => HttpResponse.json(sectors)),
+  http.get("*/api/v1/sessions/:id/laps", ({ request }) => {
+    const cars = (new URL(request.url).searchParams.get("cars") ?? "").split(",").map(Number);
+    return HttpResponse.json(lapsResponse.filter((lap) => cars.includes(lap.car_number)));
+  }),
   http.get("*/api/v1/sessions/:id/pit-loss", () => HttpResponse.json(pitLoss)),
   http.get("*/api/v1/sessions/:id/degradation", () => HttpResponse.json(degradation)),
   http.post("*/api/v1/sessions/:id/simulate/undercut", () => HttpResponse.json(undercut)),

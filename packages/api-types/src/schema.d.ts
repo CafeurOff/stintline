@@ -313,6 +313,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/sessions/{session_id}/sectors": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Best lap, best sectors, ideal lap and top speed of every car */
+    get: operations["session_sectors_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}/simulate/pit-exit": {
     parameters: {
       query?: never;
@@ -538,6 +555,9 @@ export interface components {
     DriverCareer: {
       driver: components["schemas"]["DriverBio"];
       media: components["schemas"]["Media"] | null;
+      /** @description Team of the latest race */
+      latest_team: components["schemas"]["LatestTeam"] | null;
+      latest_car_number: number | null;
       totals: components["schemas"]["CareerTotals"];
       seasons: components["schemas"]["SeasonLine"][];
     };
@@ -556,6 +576,8 @@ export interface components {
       readonly portrait: components["schemas"]["Portrait"] | null;
       /** @description Team of the latest race (in the requested season, if any) */
       readonly team: components["schemas"]["LatestTeam"] | null;
+      /** @description Car number and championship place in the requested season */
+      readonly season: components["schemas"]["SeasonDriver"] | null;
     };
     DriverProgression: {
       driver: components["schemas"]["Driver"];
@@ -735,6 +757,12 @@ export interface components {
       ref: string;
       name: string;
       colour: string | null;
+    };
+    Lineup: {
+      /** Format: int64 */
+      car_number: number;
+      readonly driver: components["schemas"]["Driver"];
+      readonly media: components["schemas"]["Media"] | null;
     };
     Media: {
       /** Format: uri */
@@ -976,6 +1004,12 @@ export interface components {
       year: number;
       readonly events_count: number;
     };
+    SeasonDriver: {
+      car_number: number;
+      position: number | null;
+      /** Format: double */
+      points: number | null;
+    };
     SeasonLine: {
       year: number;
       teams: string[];
@@ -985,6 +1019,31 @@ export interface components {
       /** Format: double */
       points: number;
       championship_position: number | null;
+    };
+    SeasonTeam: {
+      /** @description Drivers of the season's latest race */
+      lineup: components["schemas"]["Lineup"][];
+      position: number | null;
+      /** Format: double */
+      points: number | null;
+      /**
+       * Format: uri
+       * @description Official render (ADR 0006)
+       */
+      car_image_url: string | null;
+    };
+    Sectors: {
+      car_number: number;
+      /** Format: double */
+      best_lap_s: number | null;
+      best_sectors_s: (number | null)[];
+      /**
+       * Format: double
+       * @description Sum of the three best sectors, from any laps
+       */
+      ideal_lap_s: number | null;
+      /** @description Speed trap maximum */
+      top_speed_kph: number | null;
     };
     SessionDetail: {
       readonly id: number;
@@ -1067,6 +1126,11 @@ export interface components {
     TeamCareer: {
       team: components["schemas"]["TeamList"];
       colour: string | null;
+      /**
+       * Format: uri
+       * @description Official render of the latest car (ADR 0006)
+       */
+      car_image_url: string | null;
       totals: components["schemas"]["TeamTotals"];
       /** @description Most recent first */
       seasons: components["schemas"]["TeamSeason"][];
@@ -1079,6 +1143,8 @@ export interface components {
       wikipedia_url?: string;
       /** @description Latest timing colour (2023+), hex RGB */
       readonly colour: string | null;
+      /** @description Line-up, car and championship place in the requested season */
+      readonly season: components["schemas"]["SeasonTeam"] | null;
     };
     TeamProgression: {
       team: components["schemas"]["Team"];
@@ -1696,6 +1762,27 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_sectors_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Sectors"][];
         };
       };
     };

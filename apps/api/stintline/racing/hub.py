@@ -13,6 +13,7 @@ from typing import Any
 from django.db.models import Case, Exists, OuterRef, QuerySet, Subquery, When
 
 from stintline.racing.careers import NOT_STARTED
+from stintline.racing.media import media_for
 from stintline.racing.models import (
     Driver,
     Event,
@@ -121,9 +122,22 @@ def team_career(team: Team) -> dict[str, Any]:
         .values_list("team_colour", flat=True)
         .first()
     )
+    latest = (
+        SessionEntry.objects.filter(team=team)
+        .exclude(team_display_name="")
+        .select_related("session__event__season")
+        .order_by("-session__event__race_date")
+        .first()
+    )
+    media = (
+        media_for(latest.session.event.season.year, latest.team_display_name, "")
+        if latest
+        else None
+    )
     return {
         "team": team,
         "colour": colour,
+        "car_image_url": media.car_image_url if media else None,
         "totals": {
             "seasons": len(years),
             "first_season": years[0] if years else None,
@@ -267,3 +281,85 @@ def progression(season: int) -> dict[str, Any] | None:
         "drivers": series("driver"),
         "constructors": series("team"),
     }
+
+
+@dataclass
+class SeasonTeam:
+    """A team's line-up, car and championship place in one season (team list cards)."""
+
+    lineup: list[SessionEntry]
+    position: int | None
+    points: float | None
+    car_image_url: str | None
+
+
+@dataclass
+class SeasonDriver:
+    car_number: int
+    position: int | None
+    points: float | None
+
+
+def _latest_race_entries(season: int) -> list[SessionEntry]:
+    """Entries of the season's latest race with a classification: the current line-ups."""
+    race = (
+        Session.objects.filter(event__season__year=season, kind=SessionKind.RACE)
+        .filter(Exists(SessionEntry.objects.filter(session=OuterRef("pk"))))
+        .order_by("-event__race_date")
+        .first()
+    )
+    if race is None:
+        return []
+    return list(
+        race.entries.select_related("driver__portrait", "team", "session__event__season").order_by(
+            *ENTRY_ORDER
+        )
+    )
+
+
+def _final_table(season: int) -> list[Standing]:
+    rows = Standing.objects.filter(season__year=season)
+    last = rows.order_by("-round").values_list("round", flat=True).first()
+    return [] if last is None else list(rows.filter(round=last))
+
+
+def _display_names(season: int) -> dict[int, str]:
+    """Timing name of each team in ``season`` (empty for races imported from results only)."""
+    return dict(
+        SessionEntry.objects.filter(session__event__season__year=season)
+        .exclude(team_display_name="")
+        .order_by("session__event__race_date")
+        .values_list("team_id", "team_display_name")
+    )
+
+
+def season_teams(season: int) -> dict[int, SeasonTeam]:
+    table = {row.team_id: row for row in _final_table(season) if row.team_id is not None}
+    names = _display_names(season)
+    out: dict[int, SeasonTeam] = {}
+    for entry in _latest_race_entries(season):
+        card = out.get(entry.team_id)
+        if card is None:
+            standing = table.get(entry.team_id)
+            media = media_for(season, names.get(entry.team_id, ""), "")
+            card = out[entry.team_id] = SeasonTeam(
+                lineup=[],
+                position=standing.position if standing else None,
+                points=standing.points if standing else None,
+                car_image_url=media.car_image_url if media else None,
+            )
+        card.lineup.append(entry)
+    return out
+
+
+def season_drivers(season: int) -> dict[int, SeasonDriver]:
+    table = {row.driver_id: row for row in _final_table(season) if row.driver_id is not None}
+    out: dict[int, SeasonDriver] = {}
+    for entry in _latest_race_entries(season):
+        standing = table.get(entry.driver_id)
+        out[entry.driver_id] = SeasonDriver(
+            car_number=entry.car_number,
+            position=standing.position if standing else None,
+            points=standing.points if standing else None,
+        )
+    return out

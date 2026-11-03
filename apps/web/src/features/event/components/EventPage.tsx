@@ -2,14 +2,15 @@ import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
 import { DriverName } from "@/components/hub/DriverName";
-import { PageHeader } from "@/components/hub/PageHeader";
+import { CircuitOutline } from "@/components/racing/CircuitOutline";
 import { TeamName } from "@/components/hub/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useEvent } from "@/features/hub/api";
-import { useSessionDetail } from "@/features/race/api";
+import { RaceAnalysis } from "@/features/analysis/components/RaceAnalysis";
+import { useSessionDetail, useTrack } from "@/features/race/api";
 import { byFinish } from "@/features/race/entries";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
@@ -30,7 +31,7 @@ export function EventPage() {
 }
 
 function EventLoader({ eventId }: { eventId: number }) {
-  const { t, f, locale } = useI18n();
+  const { t } = useI18n();
   const event = useEvent(eventId);
   const [params, update] = useSearchParamsState();
 
@@ -45,40 +46,16 @@ function EventLoader({ eventId }: { eventId: number }) {
   const wanted = params.get("session");
   const shown = sessions.find((s) => s.kind === wanted) ?? sessions[0];
   const replays = sessions.filter((s) => s.has_data && (s.kind === "R" || s.kind === "SPRINT"));
-  const name = eventName(data.name, locale);
+  const race = sessions.find((s) => s.kind === "R");
 
   return (
-    <div>
-      <PageHeader
-        eyebrow={
-          <Link to={`/calendar/${data.season}`} className="hover:underline">
-            {t("event.eyebrow", { season: data.season, round: data.round })}
-          </Link>
-        }
-        title={name}
-        actions={replays.map((s) => (
-          <Link
-            key={s.id}
-            to={`/sessions/${s.id}`}
-            className={
-              s.kind === "R"
-                ? "rounded-lg bg-action px-4 py-3 font-bold text-white hover:brightness-110"
-                : "rounded-lg border border-line-strong px-4 py-3 font-bold hover:border-ink"
-            }
-          >
-            {s.kind === "R" ? t("event.replay") : t("event.replaySprint")}
-          </Link>
-        ))}
-      >
-        {data.circuit.name} · {data.circuit.locality}, {countryName(data.circuit.country, locale)} ·{" "}
-        {f.date(data.race_date)}
-      </PageHeader>
-
+    <div className="flex flex-col gap-10">
+      <EventHero event={data} replays={replays} raceId={race?.id ?? null} />
       {!shown ? (
         <EmptyState title={t("event.noResults")} />
       ) : (
         <section aria-labelledby="event-results" className="flex flex-col gap-4">
-          <h2 id="event-results" className="sr-only">
+          <h2 id="event-results" className="text-2xl font-bold">
             {t("event.results")}
           </h2>
           {sessions.length > 1 && (
@@ -95,7 +72,97 @@ function EventLoader({ eventId }: { eventId: number }) {
           <SessionResults key={shown.id} sessionId={shown.id} kind={shown.kind as Kind} />
         </section>
       )}
+      {shown && shown.has_data && shown.kind !== "Q" && (
+        <AnalysisLoader key={`analysis-${String(shown.id)}`} sessionId={shown.id} />
+      )}
     </div>
+  );
+}
+
+function EventHero({
+  event,
+  replays,
+  raceId,
+}: {
+  event: Schema<"Event">;
+  replays: Schema<"Event">["sessions"];
+  raceId: number | null;
+}) {
+  const { t, f, locale } = useI18n();
+  const track = useTrack(raceId ?? 0, raceId !== null);
+  const podium = useSessionDetail(raceId ?? 0, raceId !== null);
+  const top3 = [...(podium.data?.entries ?? [])]
+    .sort(byFinish)
+    .filter((e) => e.finish_position != null)
+    .slice(0, 3);
+
+  return (
+    <header className="grid gap-8 rounded-3xl bg-panel p-6 sm:p-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="flex flex-col gap-4">
+        <div>
+          <p className="text-sm text-muted">
+            <Link to={`/calendar/${String(event.season)}`} className="hover:underline">
+              {t("event.eyebrow", { season: event.season, round: event.round })}
+            </Link>
+          </p>
+          <h1 className="text-4xl leading-none font-bold sm:text-6xl">
+            {eventName(event.name, locale)}
+          </h1>
+          <p className="mt-2 text-muted">
+            {event.circuit.name} · {event.circuit.locality},{" "}
+            {countryName(event.circuit.country, locale)} · {f.date(event.race_date)}
+          </p>
+        </div>
+        {top3.length > 0 && (
+          <ol aria-label={t("home.podium")} className="flex flex-wrap gap-x-6 gap-y-3">
+            {top3.map((entry, index) => (
+              <li key={entry.car_number} className="flex items-center gap-3">
+                <span className="text-2xl font-bold text-muted tabular-nums">{index + 1}</span>
+                <DriverName
+                  driver={entry.driver}
+                  colour={entry.team_colour}
+                  imageUrl={entry.media?.driver_image_url}
+                />
+              </li>
+            ))}
+          </ol>
+        )}
+        {replays.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {replays.map((s) => (
+              <Link
+                key={s.id}
+                to={`/sessions/${String(s.id)}`}
+                className={
+                  s.kind === "R"
+                    ? "rounded-lg bg-action px-4 py-3 font-bold text-white hover:brightness-110"
+                    : "rounded-lg border border-line-strong px-4 py-3 font-bold hover:border-ink"
+                }
+              >
+                {s.kind === "R" ? t("event.replay") : t("event.replaySprint")}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+      {track.data && (
+        <CircuitOutline track={track.data} className="h-48 w-full self-center lg:h-64" />
+      )}
+    </header>
+  );
+}
+
+function AnalysisLoader({ sessionId }: { sessionId: number }) {
+  const session = useSessionDetail(sessionId);
+  if (!session.data) return null;
+  const entries = [...session.data.entries].sort(byFinish);
+  return (
+    <RaceAnalysis
+      sessionId={sessionId}
+      entries={entries}
+      neutralisations={session.data.neutralisations}
+      totalLaps={session.data.total_laps ?? 0}
+    />
   );
 }
 

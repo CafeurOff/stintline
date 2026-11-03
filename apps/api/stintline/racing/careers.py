@@ -92,9 +92,28 @@ def driver_career(driver: Driver) -> dict[str, Any]:
         else None
     )
     years = sorted(seasons)
+    latest = (
+        SessionEntry.objects.filter(
+            driver=driver, session__kind__in=[SessionKind.RACE, SessionKind.SPRINT]
+        )
+        .select_related("team")
+        .order_by("-session__event__race_date")
+        .first()
+    )
+    colour = (
+        SessionEntry.objects.filter(driver=driver)
+        .exclude(team_colour="")
+        .order_by("-session__event__race_date")
+        .values_list("team_colour", flat=True)
+        .first()
+    )
     return {
         "driver": driver,
         "media": media,
+        "latest_team": (
+            {"ref": latest.team.ref, "name": latest.team.name, "colour": colour} if latest else None
+        ),
+        "latest_car_number": latest.car_number if latest else None,
         "totals": {
             "seasons": len(years),
             "first_season": years[0] if years else None,

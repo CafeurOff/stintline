@@ -130,3 +130,44 @@ def test_progression_lists_points_after_every_round(seeded: None) -> None:
 
 def test_progression_of_an_empty_season_is_404(db: None) -> None:
     assert APIClient().get("/api/v1/seasons/1900/standings/progression").status_code == 404
+
+
+def test_team_list_of_a_season_shows_line_up_car_and_place(seeded: None) -> None:
+    body = get("teams", season=2025)
+
+    mclaren = next(t for t in body["results"] if t["ref"] == "mclaren")
+    assert mclaren["season"]["position"] == 1
+    assert sorted(e["driver"]["code"] for e in mclaren["season"]["lineup"]) == ["NOR", "PIA"]
+    assert mclaren["season"]["car_image_url"].startswith("https://media.formula1.com/")
+    assert get("teams")["results"][0]["season"] is None
+
+
+def test_driver_list_of_a_season_shows_number_and_place(seeded: None) -> None:
+    body = get("drivers", season=2025)
+
+    norris = next(d for d in body["results"] if d["ref"] == "norris")
+    assert norris["season"] == {"car_number": 4, "position": 1, "points": 423.0}
+
+
+def test_driver_career_names_the_latest_team(seeded: None) -> None:
+    body = get("drivers/hamilton")
+
+    assert body["latest_team"]["ref"] == "ferrari"
+    assert body["latest_team"]["colour"]
+    assert body["latest_car_number"] == 44
+
+
+def test_team_career_shows_the_latest_car(seeded: None) -> None:
+    assert get("teams/ferrari")["car_image_url"].startswith("https://media.formula1.com/")
+
+
+def test_sectors_rank_cars_by_best_lap(seeded: None) -> None:
+    hungary = Event.objects.get(season__year=2025, round=14).sessions.get(kind="R")
+
+    rows = get(f"sessions/{hungary.pk}/sectors")
+
+    assert len(rows) == 20
+    best = rows[0]
+    assert best["best_lap_s"] <= rows[1]["best_lap_s"]
+    assert best["ideal_lap_s"] <= best["best_lap_s"]
+    assert best["top_speed_kph"] > 250

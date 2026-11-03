@@ -21,7 +21,7 @@ export function Layout() {
   const sessionId = raw && /^\d+$/.test(raw) ? Number(raw) : null;
 
   return (
-    <div className="flex min-h-screen flex-col px-4">
+    <div className="mx-auto flex min-h-screen w-full max-w-[1360px] flex-col px-4 sm:px-6">
       <a
         href="#main"
         className="sr-only z-50 rounded-md bg-panel px-3 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2"

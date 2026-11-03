@@ -41,6 +41,7 @@ export const session = {
       classification: "1",
       status: "Finished",
       points: 25.0,
+      race_time_s: 5721.231,
       laps_completed: 70,
       media: {
         driver_image_url:
@@ -69,6 +70,7 @@ export const session = {
       classification: "2",
       status: "Finished",
       points: 18.0,
+      race_time_s: 5721.929,
       laps_completed: 70,
       media: {
         driver_image_url:
@@ -97,6 +99,9 @@ export const session = {
       classification: "3",
       status: "Finished",
       points: 15.0,
+      race_time_s: 5743.147,
+      fastest_lap_rank: 1,
+      fastest_lap_s: 79.409,
       laps_completed: 70,
       media: {
         driver_image_url:

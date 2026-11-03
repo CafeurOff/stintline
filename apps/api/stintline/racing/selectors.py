@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from django.db.models import Count, Exists, F, OuterRef, Prefetch, QuerySet
+from django.db.models import Count, Exists, F, Max, Min, OuterRef, Prefetch, QuerySet
 
 from stintline.racing.models import (
     Event,
@@ -67,3 +67,35 @@ def session_stints(session_id: int) -> QuerySet[SessionEntry]:
 
 def track_outline(session_id: int) -> TrackOutline | None:
     return TrackOutline.objects.filter(session_id=session_id).first()
+
+
+def session_sectors(session_id: int) -> list[dict[str, object]]:
+    """Best lap, best sector times and top speed of every car (rows without timing skipped).
+
+    The ideal lap is the sum of the three best sectors, possibly from different laps.
+    """
+    rows = (
+        Lap.objects.filter(entry__session_id=session_id)
+        .values("entry__car_number")
+        .annotate(
+            best_lap_s=Min("lap_time_s"),
+            best_s1=Min("sector_1_s"),
+            best_s2=Min("sector_2_s"),
+            best_s3=Min("sector_3_s"),
+            top_speed_kph=Max("speed_trap_kph"),
+        )
+        .order_by("best_lap_s")
+    )
+    out: list[dict[str, object]] = []
+    for row in rows:
+        sectors = [row["best_s1"], row["best_s2"], row["best_s3"]]
+        out.append(
+            {
+                "car_number": row["entry__car_number"],
+                "best_lap_s": row["best_lap_s"],
+                "best_sectors_s": sectors,
+                "ideal_lap_s": None if None in sectors else round(sum(sectors), 3),
+                "top_speed_kph": row["top_speed_kph"],
+            }
+        )
+    return out
