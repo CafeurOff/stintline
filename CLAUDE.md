@@ -5,23 +5,25 @@ StintLine is a race strategy decision-support tool built on Formula 1 timing dat
 It is **not** a live timing dashboard (f1-dash, MultiViewer and F1ReplayTiming already exist), not a results or standings site, and not affiliated with Formula 1, the FIA or any team.
 
 ## Status
-- Phases 0–2 done: v1 audit, data-source survey, repo baseline, monorepo skeleton (API health endpoint, web shell, typed contract, docker compose, CI).
-- Next: Phase 3 (data model and ingestion). Directories marked *(planned)* below do not exist yet.
+- Phases 0–3 done: v1 audit, data-source survey, repo baseline, monorepo skeleton, data model and idempotent ingestion (OpenF1 and Jolpica adapters, Celery tasks, offline `seed_demo`).
+- Next: Phase 4 (strategy engine). Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
 ```
 apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion, live
   config/            settings (base/dev/test/prod), urls, asgi, celery app
   stintline/core/        health endpoint, problem-style errors, shared API utilities
-  stintline/racing/      (planned) ORM models: Season, Event, Session, Team, Driver, SessionEntry,
+  stintline/racing/      ORM models: Season, Event, Session, Team, Driver, SessionEntry,
                          Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TrackStatus
-  stintline/ingestion/   (planned) Celery tasks: racedata DTOs -> idempotent upserts
+  stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
   stintline/strategy_api/ (planned) DRF views/serializers (/api/v1/), call packages/strategy
   stintline/live/        (planned) Channels consumers, live worker, replay engine
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, providers)  src/features/<feature>/  src/components/ui/  src/lib/
-packages/racedata/   Pure Python, import `racedata`. Provider adapters (openf1, jolpica, livetiming) behind one
-                     interface, HTTP client (rate limit, retry, cache, timeout), DTOs, recorder
+packages/racedata/   Pure Python, import `racedata`. Capability protocols (schedule, results, timing),
+                     adapters (openf1, jolpica; livetiming planned), HTTP client (rate limit, retry,
+                     cache, timeout), DTOs, derive/matching helpers, fixture recorder
+  fixtures/          recorded upstream responses (tests + offline demo)
 packages/strategy/   Pure Python strategy engine, import `stintline_strategy` (no Django, no I/O)
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
 infra/               docker compose, Dockerfiles, nginx, deploy config
@@ -52,7 +54,9 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Type check | `uv run mypy` · `pnpm -r typecheck` |
 | Migrations | `make makemigrations` · `make migrate` |
 | OpenAPI + TS types | `make types` (export `apps/api/openapi.yaml`, regenerate `packages/api-types`) · drift check: `make types-check` |
-| Demo data | `make seed` (`manage.py seed_demo`, loads 3 reference 2025 races from fixtures, no network). Available from Phase 3 |
+| Demo data | `make seed` (`manage.py seed_demo`: 2025 calendar plus Bahrain, Hungary and Italy races from fixtures, no network, idempotent) |
+| Ingest real data | `manage.py ingest --season 2025 [--round 14] [--sync]` (queues Celery tasks unless `--sync`) |
+| Record a fixture | `uv run python -m racedata.tools.record_fixture openf1 laps session_key=9928` |
 | Pre-commit | `pre-commit run --all-files` |
 
 ## Conventions
@@ -64,7 +68,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Logs:** `structlog` with JSON in prod and console in dev. Log events are snake_case verbs (`ingest_session_started`) with key/value context (`session_key=…`). No `print`.
 - **Time:** all datetimes are timezone-aware UTC in storage and APIs. Local circuit time is derived from the event timezone at display time only.
 - **Assumptions:** every modelling assumption is a named, documented parameter with a justified default (no magic numbers). See `docs/model.md`.
-- **Tests:** pytest with Arrange/Act/Assert, one behaviour per test, names like `test_<unit>_<behaviour>`. factory_boy for ORM data. Vitest and Testing Library for components, Playwright for 2–3 user journeys. **No network in tests**: upstream responses are recorded fixtures under `tests/fixtures/<provider>/` (`/new-provider-fixture`).
+- **Tests:** pytest with Arrange/Act/Assert, one behaviour per test, names like `test_<unit>_<behaviour>`. factory_boy for ORM data. Vitest and Testing Library for components, Playwright for 2–3 user journeys. **No network in tests**: upstream responses are recorded fixtures under `packages/racedata/fixtures/` served by `FixtureTransport` (`/new-provider-fixture`). Test doubles (`FakeClock`, `sequence_transport`) live in `racedata.testing`.
 - **Architecture decisions:** add an ADR (`/adr`) and update this file in the same PR.
 
 ## Git rules (mandatory for every session)
@@ -85,6 +89,8 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 
 ## Known pitfalls
 - **Toolchain pins.** TypeScript stays on 5.9 (openapi-typescript and typescript-eslint do not support 7 yet). ESLint stays on 9 (jsx-a11y). jsdom stays on 28 (29+ needs Node ≥ 22.13 and 30 needs Node ≥ 22.22). The API client resolves `fetch` at call time so MSW can intercept it.
+- **Ingestion.** Only finished races and sprints get timing data (ADR 0004). Driver identity comes from Jolpica results joined on the car number raced that weekend. The Celery worker runs with `--concurrency=1` because rate limiting is in-process.
+- **Coverage config** lives in the root `pyproject.toml` (coverage reads it from the working directory). Run pytest from the repository root.
 - **Rate limits.** OpenF1 free tier allows 3 req/s and 30 req/min. Jolpica allows ~4 req/s burst and ~500 req/hour, and paginates with `limit` ≤ 100. Always go through the `racedata` HTTP client.
 - **Data access.** Since Oct 2026 the official static archive (and therefore FastF1) needs an F1 TV account. We do not use FastF1. The live SignalR feed works without auth except `CarData.z` and `Position.z`, but only from a home connection (cloud IPs blocked) and for personal use. The public demo is replay-only. See `docs/adr/0002-data-sources-and-live-strategy.md`.
 - **Time zones.** OpenF1 and Jolpica are UTC. Live timing `SessionInfo.StartDate` is circuit-local, with a separate `GmtOffset`. Some live timestamps are UTC. Convert at the provider boundary.
