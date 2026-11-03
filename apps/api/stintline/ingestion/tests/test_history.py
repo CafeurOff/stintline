@@ -127,6 +127,7 @@ def test_refresh_recent_queues_finished_sessions_once_per_window() -> None:
         ingested_at=now - timedelta(hours=1),
     )
     with (
+        mock.patch.object(tasks, "_sync_calendar_if_stale"),
         mock.patch.object(tasks.ingest_session, "delay") as session_delay,
         mock.patch.object(tasks.ingest_season_results, "delay") as results_delay,
     ):
@@ -135,6 +136,80 @@ def test_refresh_recent_queues_finished_sessions_once_per_window() -> None:
     assert queued == [due.pk]
     session_delay.assert_called_once_with(due.pk)
     results_delay.assert_called_once_with(due.event.season.year)
+
+
+def test_refresh_recent_catches_up_on_sessions_missed_long_ago() -> None:
+    now = datetime(2026, 11, 3, 18, tzinfo=UTC)
+    missed = SessionFactory.create(
+        kind=SessionKind.RACE, openf1_session_key=1, ends_at=now - timedelta(days=120)
+    )
+    SessionFactory.create(  # imported long ago and outside the refresh window: final
+        kind=SessionKind.RACE,
+        openf1_session_key=2,
+        ends_at=now - timedelta(days=60),
+        ingested_at=now - timedelta(days=59),
+    )
+    with (
+        mock.patch.object(tasks, "_sync_calendar_if_stale"),
+        mock.patch.object(tasks.ingest_session, "delay") as session_delay,
+        mock.patch.object(tasks.ingest_season_results, "delay"),
+    ):
+        queued = tasks.refresh_recent(now.isoformat())
+
+    assert queued == [missed.pk]
+    session_delay.assert_called_once_with(missed.pk)
+
+
+def test_refresh_recent_refreshes_results_of_the_current_season_when_stale() -> None:
+    now = datetime(2026, 11, 3, 18, tzinfo=UTC)
+    race = SessionFactory.create(
+        kind=SessionKind.RACE,
+        openf1_session_key=1,
+        ends_at=now - timedelta(days=10),
+        ingested_at=now - timedelta(days=9),
+        event__season__year=2026,
+    )
+    Season.objects.filter(pk=race.event.season.pk).update(
+        results_ingested_at=now - timedelta(days=20)
+    )
+    with (
+        mock.patch.object(tasks, "_sync_calendar_if_stale"),
+        mock.patch.object(tasks.ingest_season_results, "delay") as results_delay,
+    ):
+        tasks.refresh_recent(now.isoformat())
+
+    results_delay.assert_called_once_with(2026)
+
+
+def test_calendar_is_synced_when_missing_then_left_alone_while_fresh() -> None:
+    now = datetime(2026, 11, 3, 18, tzinfo=UTC)
+
+    def calendar(season: int, sources: Sources) -> list[object]:
+        Season.objects.get_or_create(year=season)
+        return []
+
+    with (
+        mock.patch.object(tasks, "open_sources", side_effect=FixtureSources),
+        mock.patch.object(services, "ingest_calendar", side_effect=calendar) as sync,
+    ):
+        tasks._sync_calendar_if_stale(2026, now)
+        tasks._sync_calendar_if_stale(2026, now + timedelta(hours=1))
+        tasks._sync_calendar_if_stale(2026, now + timedelta(hours=13))
+
+    assert sync.call_count == 2
+    assert Season.objects.get(year=2026).calendar_synced_at == now + timedelta(hours=13)
+
+
+def test_calendar_sync_failure_is_logged_not_raised() -> None:
+    with (
+        mock.patch.object(tasks, "open_sources", side_effect=FixtureSources),
+        mock.patch.object(
+            services, "ingest_calendar", side_effect=UpstreamUnavailableError("jolpica", "down")
+        ),
+    ):
+        tasks._sync_calendar_if_stale(2026, datetime(2026, 11, 3, tzinfo=UTC))
+
+    assert not Season.objects.filter(year=2026, calendar_synced_at__isnull=False).exists()
 
 
 def test_season_task_queues_results_import() -> None:

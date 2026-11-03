@@ -7,13 +7,13 @@ from datetime import datetime, timedelta
 
 import structlog
 from celery import shared_task
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.utils import timezone
 
-from racedata.errors import RateLimitedError, UpstreamUnavailableError
+from racedata.errors import ProviderError, RateLimitedError, UpstreamUnavailableError
 from stintline.ingestion import history, portraits, services
 from stintline.ingestion.sources import open_sources
-from stintline.racing.models import RACE_KINDS, Event, Session
+from stintline.racing.models import RACE_KINDS, Event, Season, Session
 
 log = structlog.get_logger(__name__)
 
@@ -112,29 +112,72 @@ def ingest_season_results(season: int) -> dict[str, int]:
     acks_late=True,
 )
 def refresh_calendar() -> int:
-    """Daily: keep the current season's calendar and OpenF1 session links up to date."""
+    """On demand: refresh the current season's calendar and OpenF1 session links now."""
+    now = timezone.now()
     with open_sources() as sources:
-        return len(services.ingest_calendar(timezone.now().year, sources))
+        events = services.ingest_calendar(now.year, sources)
+    Season.objects.filter(year=now.year).update(calendar_synced_at=now)
+    return len(events)
+
+
+CALENDAR_MAX_AGE = timedelta(hours=12)
+"""The current season's calendar is refreshed at least this often (dates move, sprint
+weekends are announced, OpenF1 links appear once a session exists)."""
+
+
+def _sync_calendar_if_stale(year: int, now: datetime) -> None:
+    season = Season.objects.filter(year=year).first()
+    synced = season.calendar_synced_at if season else None
+    if synced is not None and synced > now - CALENDAR_MAX_AGE:
+        return
+    try:
+        with open_sources() as sources:
+            services.ingest_calendar(year, sources)
+    except ProviderError as exc:
+        log.warning("calendar_sync_failed", season=year, error=type(exc).__name__)
+        return
+    Season.objects.filter(year=year).update(calendar_synced_at=now)
 
 
 @shared_task(acks_late=True)
 def refresh_recent(now_iso: str | None = None) -> list[int]:
-    """Every 30 minutes: import races and sprints that finished recently, then refresh the
-    season's results and standings. Safe to run often: imports are idempotent and a
-    session is not re-imported more than once per ``REFRESH_EVERY``."""
+    """Every 30 minutes, and when a worker starts: keep the data up to date.
+
+    1. Refresh the current season's calendar when it is older than ``CALENDAR_MAX_AGE``.
+    2. Import every finished race and sprint never imported (catch-up after downtime),
+       and re-import those that finished within ``REFRESH_WINDOW`` (penalties arrive late),
+       at most once per ``REFRESH_EVERY``.
+    3. Re-import results and standings of seasons with new sessions, and of the current
+       season when a race finished after its last results import.
+
+    Idempotent: safe to run as often as needed.
+    """
     now = datetime.fromisoformat(now_iso) if now_iso else timezone.now()
-    due = Session.objects.filter(
+    _sync_calendar_if_stale(now.year, now)
+
+    finished = Session.objects.filter(
         kind__in=RACE_KINDS,
         openf1_session_key__isnull=False,
         ends_at__lte=now - RESULTS_DELAY,
-        ends_at__gte=now - REFRESH_WINDOW,
-    ).filter(Q(ingested_at__isnull=True) | Q(ingested_at__lte=now - REFRESH_EVERY))
+    )
+    missing = Q(ingested_at__isnull=True)
+    stale = Q(ends_at__gte=now - REFRESH_WINDOW, ingested_at__lte=now - REFRESH_EVERY)
+    due = finished.filter(missing | stale).select_related("event__season").order_by("ends_at")
     queued = []
     seasons: set[int] = set()
-    for session in due.select_related("event__season"):
+    for session in due:
         ingest_session.delay(session.pk)
         queued.append(session.pk)
         seasons.add(session.event.season.year)
+
+    last_end = finished.filter(event__season__year=now.year).aggregate(last=Max("ends_at"))["last"]
+    current = Season.objects.filter(year=now.year).first()
+    if (
+        last_end is not None
+        and current is not None
+        and (current.results_ingested_at is None or current.results_ingested_at < last_end)
+    ):
+        seasons.add(now.year)
     for season in sorted(seasons):
         ingest_season_results.delay(season)
     log.info("refresh_recent_queued", sessions=len(queued), seasons=sorted(seasons))

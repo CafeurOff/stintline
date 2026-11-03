@@ -50,6 +50,9 @@ class Season(models.Model):
     results_ingested_at = models.DateTimeField(
         null=True, blank=True, help_text="Last full import of results, qualifying and standings"
     )
+    calendar_synced_at = models.DateTimeField(
+        null=True, blank=True, help_text="Last calendar refresh (events, sessions, OpenF1 links)"
+    )
 
     class Meta:
         ordering = ["-year"]
