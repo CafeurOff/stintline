@@ -303,6 +303,7 @@ def _upsert_entries(
 ) -> list[SessionEntry]:
     """Driver identity comes from the classification (Jolpica), joined to timing data
     (OpenF1) on the car number raced that weekend."""
+    by_car = {d.driver_number: d for d in drivers}
     colours = {d.driver_number: d.team_colour or "" for d in drivers}
     entries: list[SessionEntry] = []
     for r in results:
@@ -324,6 +325,10 @@ def _upsert_entries(
                 "team": team,
                 "car_number": r.car_number,
                 "team_colour": colours.get(r.car_number, ""),
+                "team_display_name": (
+                    (by_car[r.car_number].team_name or "") if r.car_number in by_car else ""
+                ),
+                "media_id": (by_car[r.car_number].media_id or "") if r.car_number in by_car else "",
                 "grid_position": r.grid,
                 "finish_position": r.position,
                 "classification": r.position_text,

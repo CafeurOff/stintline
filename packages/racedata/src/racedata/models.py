@@ -147,6 +147,9 @@ class DriverEntry(_DTO):
     team_name: str | None
     team_colour: str | None
     """Hex RGB without ``#`` (e.g. ``"4781D7"``), when published."""
+    media_id: str | None = None
+    """Official media identifier of the driver (e.g. ``"lannor01"``), parsed from the
+    headshot URL. A reference only: images are never downloaded (ADR 0006)."""
 
 
 class LapRecord(_DTO):

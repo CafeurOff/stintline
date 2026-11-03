@@ -23,11 +23,10 @@ from racedata.config import PROVIDERS
 from racedata.fixtures import FIXTURES_ROOT, fixture_path
 from racedata.http import HttpClient
 
-# Fields removed before saving: mini-sector arrays are large and unused, and media URLs
-# point at official imagery we must not redistribute.
+# Fields removed before saving: mini-sector arrays are large and unused. Media URLs are
+# kept as plain references (never downloaded or stored, see ADR 0006).
 DROPPED_FIELDS: dict[tuple[str, str], frozenset[str]] = {
     ("openf1", "laps"): frozenset({"segments_sector_1", "segments_sector_2", "segments_sector_3"}),
-    ("openf1", "drivers"): frozenset({"headshot_url"}),
 }
 MAX_FIXTURE_BYTES = 750_000
 

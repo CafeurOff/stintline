@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from typing import Any, TypeVar
 
@@ -121,6 +122,17 @@ def _session(r: dict[str, Any]) -> TimingSession:
     )
 
 
+_MEDIA_ID = re.compile(r"/drivers/[A-Z]/([A-Z]{6}\d{2})_", re.IGNORECASE)
+
+
+def media_id_from_headshot(url: Any) -> str | None:
+    """``.../drivers/L/LANNOR01_Lando_Norris/...`` -> ``"lannor01"``."""
+    if not isinstance(url, str):
+        return None
+    match = _MEDIA_ID.search(url)
+    return match.group(1).lower() if match else None
+
+
 def _driver(r: dict[str, Any]) -> DriverEntry:
     colour = r.get("team_colour")
     return DriverEntry(
@@ -130,6 +142,7 @@ def _driver(r: dict[str, Any]) -> DriverEntry:
         last_name=r.get("last_name"),
         team_name=r.get("team_name"),
         team_colour=colour.upper().lstrip("#") if isinstance(colour, str) and colour else None,
+        media_id=media_id_from_headshot(r.get("headshot_url")),
     )
 
 

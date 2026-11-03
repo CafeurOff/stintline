@@ -99,6 +99,24 @@ def test_openf1_pit_falls_back_to_pit_duration_and_drivers_without_colour() -> N
     assert source.pit(1)[0].pit_lane_duration_s == pytest.approx(22.4)
     assert source.pit(1)[0].stationary_duration_s is None
     assert source.drivers(1)[0].team_colour is None
+    assert source.drivers(1)[0].media_id is None
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        (
+            "https://x/content/dam/fom-website/drivers/L/LANNOR01_Lando_Norris/lannor01.png",
+            "lannor01",
+        ),
+        ("https://x/elsewhere.png", None),
+        (None, None),
+    ],
+)
+def test_media_id_from_headshot(url: str | None, expected: str | None) -> None:
+    from racedata.providers.openf1 import media_id_from_headshot
+
+    assert media_id_from_headshot(url) == expected
 
 
 def _mr(table: dict[str, Any], total: int) -> dict[str, Any]:

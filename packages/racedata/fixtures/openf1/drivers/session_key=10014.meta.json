@@ -4,10 +4,8 @@
   "params": {
     "session_key": "10014"
   },
-  "recorded_at": "2026-11-03T00:34:21+00:00",
-  "sha256": "dee09bb5323500723e27caf45cdd562c0955060f03e935547c049a204796c2fa",
-  "bytes": 5002,
-  "dropped_fields": [
-    "headshot_url"
-  ]
+  "recorded_at": "2026-11-03T01:24:57+00:00",
+  "sha256": "b743bf33b19d10449ac21fa1c4ecf472d5808a24efe2bcf729f3325a09f4f4d0",
+  "bytes": 8357,
+  "dropped_fields": []
 }

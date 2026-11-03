@@ -141,6 +141,12 @@ class SessionEntry(models.Model):
     team = models.ForeignKey(Team, on_delete=models.PROTECT, related_name="entries")
     car_number = models.PositiveSmallIntegerField()
     team_colour = models.CharField(max_length=6, blank=True, help_text="Hex RGB without #")
+    team_display_name = models.CharField(
+        max_length=64, blank=True, help_text="Team name as shown in timing (e.g. Red Bull Racing)"
+    )
+    media_id = models.CharField(
+        max_length=16, blank=True, help_text="Official driver media id, a reference only (ADR 0006)"
+    )
     grid_position = models.PositiveSmallIntegerField(null=True, blank=True)
     finish_position = models.PositiveSmallIntegerField(null=True, blank=True)
     classification = models.CharField(max_length=8, blank=True, help_text="positionText")

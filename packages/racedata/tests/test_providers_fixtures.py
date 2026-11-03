@@ -60,13 +60,14 @@ def test_pit_lane_and_stationary_durations_are_separate(sources: Sources) -> Non
     assert all(p.pit_lane_duration_s is None or p.pit_lane_duration_s > 15 for p in pits)
 
 
-def test_drivers_team_colour_and_no_media_urls(sources: Sources) -> None:
+def test_drivers_team_colour_and_media_id(sources: Sources) -> None:
     drivers = sources.timing.drivers(HUNGARY)
 
     verstappen = next(d for d in drivers if d.driver_number == 1)
     assert verstappen.acronym == "VER"
     assert verstappen.team_colour == "4781D7"
-    assert not hasattr(verstappen, "headshot_url")
+    assert verstappen.team_name == "Red Bull Racing"
+    assert verstappen.media_id == "maxver01"
 
 
 def test_weather_and_race_control(sources: Sources) -> None:

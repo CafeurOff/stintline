@@ -55,6 +55,7 @@ def test_record_refuses_oversized_payloads(
 
 def test_serialise_handles_objects_and_untrimmed_endpoints() -> None:
     assert record_fixture.serialise({"a": 1}).startswith("{")
+    assert record_fixture.trim("openf1", "drivers", [{"headshot_url": "u"}])[1] == []
     data, dropped = record_fixture.trim("jolpica", "2025/races", {"MRData": {}})
     assert dropped == []
     assert data == {"MRData": {}}
