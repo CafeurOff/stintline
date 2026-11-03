@@ -1,0 +1,73 @@
+[project]
+name = "stintline"
+version = "0.1.0"
+description = "Race strategy tool for Formula 1 data (workspace root)"
+requires-python = ">=3.13"
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["apps/api", "packages/strategy", "packages/racedata"]
+
+[tool.uv.sources]
+stintline-strategy = { workspace = true }
+stintline-racedata = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17",
+    "mypy>=1.13",
+    "pytest>=9",
+    "pytest-cov>=7",
+    "pytest-socket>=0.8",
+]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["**/migrations/*.py"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F", "I", "B", "UP", "SIM", "C4", "RET", "PTH", "N", "S",
+    "DTZ", "T20", "PT", "RUF", "ERA", "PL", "TRY", "DJ",
+]
+ignore = [
+    "PLR2004",  # magic values in comparisons are fine in tests; domain code uses named params
+    "TRY003",   # long messages in exceptions are acceptable
+    "PLR0913",  # explicit keyword-heavy signatures are preferred over config dicts
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "PLR2004", "S106", "PLC0415"]
+"apps/api/manage.py" = ["PLC0415"]
+".claude/hooks/*.py" = ["S603", "S607", "T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "stintline", "stintline_strategy", "racedata"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+mypy_path = ["apps/api", "packages/strategy/src", "packages/racedata/src"]
+files = [
+    "apps/api",
+    "packages/strategy/src",
+    "packages/strategy/tests",
+    "packages/racedata/src",
+    "packages/racedata/tests",
+]
+exclude = ["/migrations/"]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+explicit_package_bases = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.test"
+
+[[tool.mypy.overrides]]
+module = ["factory.*", "environ.*", "celery.*", "channels.*", "signalrcore.*"]
+ignore_missing_imports = true

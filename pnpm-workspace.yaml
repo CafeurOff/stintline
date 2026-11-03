@@ -1,0 +1,11 @@
+packages:
+  - apps/web
+  - packages/api-types
+
+# Packages allowed to run install scripts (supply-chain hardening: everything else is blocked).
+onlyBuiltDependencies:
+  - esbuild
+
+# msw's postinstall only copies the service worker for browser mocking; tests use msw/node.
+ignoredBuiltDependencies:
+  - msw
