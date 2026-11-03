@@ -193,3 +193,52 @@ class ModelCardView(APIView):
     def get(self, request: Request) -> Response:
         card = services.model_card()
         return cached_response(request, card, "model", card["engine_version"])
+
+
+def _plan(start: str, stops: tuple[tuple[int, str], ...]) -> dict[str, Any]:
+    return {
+        "start_compound": str(start),
+        "stops": [{"lap": lap, "compound": str(compound)} for lap, compound in stops],
+    }
+
+
+class StrategyView(APIView):
+    throttle_scope = "simulate"
+
+    @extend_schema(
+        operation_id="simulate_strategy",
+        summary="Replay a car's whole race with another tyre strategy",
+        request=s.StrategyRequestSerializer,
+        responses={200: s.StrategyResultSerializer, **ERRORS},
+        tags=TAG,
+    )
+    def post(self, request: Request, session_id: int) -> Response:
+        body = s.StrategyRequestSerializer(data=request.data)
+        body.is_valid(raise_exception=True)
+        session, context = _context(session_id)
+        outcome = _run(services.simulate_strategy, session, context, **body.validated_data)
+        r, points = outcome.result, outcome.points_by_position
+        data = {
+            "car": r.car,
+            "laps": r.laps,
+            "real_strategy": _plan(r.real_strategy.start_compound, r.real_strategy.stops),
+            "strategy": _plan(r.strategy.start_compound, r.strategy.stops),
+            "line_times_s": list(r.line_times_s),
+            "compounds": [str(t.compound) for t in r.tyres],
+            "tyre_ages": [t.age for t in r.tyres],
+            "deltas_s": list(r.deltas_s),
+            "real_time_s": r.real_time_s,
+            "final_time_s": r.final_time_s,
+            "gain_s": r.gain_s,
+            "sigma_s": r.sigma_s,
+            "real_position": r.real_position,
+            "position": r.position,
+            "real_points": points.get(r.real_position, 0.0),
+            "points": points.get(r.position, 0.0),
+            "chances": [
+                {"position": p, "probability": v, "points": points.get(p, 0.0)}
+                for p, v in sorted(r.position_probabilities.items())
+            ],
+            "warnings": [str(w) for w in r.warnings],
+        }
+        return Response(s.StrategyResultSerializer(data).data, status=status.HTTP_200_OK)

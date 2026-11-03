@@ -35,6 +35,13 @@ from stintline_strategy.pace import PaceModel, build_pace_model
 from stintline_strategy.pit_exit import PitExitConfig, PitExitPrediction, predict_pit_exit
 from stintline_strategy.pit_loss import PitLossConfig, PitLossEstimate, estimate_pit_loss
 from stintline_strategy.undercut import CarState, ExchangeResult, undercut
+from stintline_strategy.whatif import (
+    Strategy,
+    WhatIfConfig,
+    WhatIfError,
+    WhatIfResult,
+    replay_strategy,
+)
 from stintline_strategy.window import WindowConfig
 
 log = structlog.get_logger(__name__)
@@ -331,6 +338,58 @@ def simulate_pit_exit(
         raise StrategyInputError(str(exc)) from exc
 
 
+@dataclass(frozen=True)
+class StrategyOutcome:
+    result: WhatIfResult
+    points_by_position: dict[int, float]
+
+
+def simulate_strategy(
+    session: Session,
+    context: RaceContext,
+    *,
+    car: int,
+    start_compound: str,
+    stops: list[dict[str, Any]],
+) -> StrategyOutcome:
+    """Replay ``car``'s race with another tyre strategy (``stintline_strategy.whatif``).
+
+    The finishing order uses the official classification (race times include time
+    penalties); cars without an official time keep their timing.
+    """
+    _require_cars(context, [car])
+    entries = list(session.entries.all())
+    results = {
+        e.car_number: (e.laps_completed, e.race_time_s)
+        for e in entries
+        if e.race_time_s is not None and e.laps_completed
+    }
+    timing = {
+        c: (laps[-1].lap, laps[-1].end_time_s)
+        for c in context.race.cars
+        for laps in [[x for x in context.race.laps_of(c) if x.end_time_s is not None]]
+        if laps and laps[-1].end_time_s is not None
+    }
+    merged = {**timing, **results}
+    strategy = Strategy(
+        Compound(start_compound),
+        tuple((stop["lap"], Compound(stop["compound"])) for stop in stops),
+    )
+    try:
+        result = replay_strategy(
+            context.race,
+            car,
+            strategy,
+            context.pace,
+            _require_pit_loss(context),
+            results=merged,
+        )
+    except WhatIfError as exc:
+        raise StrategyInputError(str(exc)) from exc
+    points = {e.finish_position: e.points for e in entries if e.finish_position is not None}
+    return StrategyOutcome(result=result, points_by_position=points)
+
+
 # ------------------------------------------------------------------------- model card
 
 # Python 3.13 dedents docstrings: attribute names sit at 0-4 spaces, continuations deeper.
@@ -360,6 +419,7 @@ CONFIG_CLASSES: tuple[tuple[str, type], ...] = (
     ("Pit loss", PitLossConfig),
     ("Pit exit", PitExitConfig),
     ("Pit window", WindowConfig),
+    ("What-if", WhatIfConfig),
 )
 
 

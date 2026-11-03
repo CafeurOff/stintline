@@ -598,6 +598,45 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/sessions/{session_id}/simulate/strategy:
+    post:
+      operationId: simulate_strategy
+      summary: Replay a car's whole race with another tyre strategy
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StrategyRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StrategyResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/sessions/{session_id}/simulate/undercut:
     post:
       operationId: simulate_undercut
@@ -943,22 +982,6 @@ components:
       - new_tyre_pace_s
       - slope_ci
       - slope_s_per_lap
-    CompoundEnum:
-      enum:
-      - SOFT
-      - MEDIUM
-      - HARD
-      - INTERMEDIATE
-      - WET
-      - UNKNOWN
-      type: string
-      description: |-
-        * `SOFT` - Soft
-        * `MEDIUM` - Medium
-        * `HARD` - Hard
-        * `INTERMEDIATE` - Intermediate
-        * `WET` - Wet
-        * `UNKNOWN` - Unknown
     Degradation:
       type: object
       properties:
@@ -1994,6 +2017,30 @@ components:
           description: Duration published by Jolpica
       required:
       - lap_number
+    PlannedStop:
+      type: object
+      properties:
+        lap:
+          type: integer
+          minimum: 1
+          description: 'In-lap: new tyres from the next lap'
+        compound:
+          $ref: '#/components/schemas/TyreCompoundEnum'
+      required:
+      - compound
+      - lap
+    PlannedStopRequest:
+      type: object
+      properties:
+        lap:
+          type: integer
+          minimum: 1
+          description: 'In-lap: new tyres from the next lap'
+        compound:
+          $ref: '#/components/schemas/TyreCompoundEnum'
+      required:
+      - compound
+      - lap
     Portrait:
       type: object
       description: Freely licensed image with the credit its licence requires (ADR
@@ -2025,6 +2072,22 @@ components:
       - file_page_url
       - image_url
       - license
+    PositionChance:
+      type: object
+      properties:
+        position:
+          type: integer
+        probability:
+          type: number
+          format: double
+        points:
+          type: number
+          format: double
+          description: Points scored at that position in this race
+      required:
+      - points
+      - position
+      - probability
     Problem:
       type: object
       description: Error body returned by every endpoint (inspired by RFC 9457 problem
@@ -2399,7 +2462,7 @@ components:
           minimum: 0
           format: int64
         compound:
-          $ref: '#/components/schemas/CompoundEnum'
+          $ref: '#/components/schemas/StintCompoundEnum'
         lap_start:
           type: integer
           maximum: 9223372036854775807
@@ -2422,6 +2485,22 @@ components:
       required:
       - compound
       - stint_number
+    StintCompoundEnum:
+      enum:
+      - SOFT
+      - MEDIUM
+      - HARD
+      - INTERMEDIATE
+      - WET
+      - UNKNOWN
+      type: string
+      description: |-
+        * `SOFT` - Soft
+        * `MEDIUM` - Medium
+        * `HARD` - Hard
+        * `INTERMEDIATE` - Intermediate
+        * `WET` - Wet
+        * `UNKNOWN` - Unknown
     StintFit:
       type: object
       properties:
@@ -2493,6 +2572,118 @@ components:
       - loss_s
       - neutralisation
       - outlier
+    StrategyPlan:
+      type: object
+      properties:
+        start_compound:
+          type: string
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedStop'
+      required:
+      - start_compound
+      - stops
+    StrategyRequestRequest:
+      type: object
+      properties:
+        car:
+          type: integer
+          maximum: 99
+          minimum: 1
+        start_compound:
+          $ref: '#/components/schemas/TyreCompoundEnum'
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedStopRequest'
+      required:
+      - car
+      - start_compound
+      - stops
+    StrategyResult:
+      type: object
+      properties:
+        car:
+          type: integer
+        laps:
+          type: integer
+        real_strategy:
+          $ref: '#/components/schemas/StrategyPlan'
+        strategy:
+          $ref: '#/components/schemas/StrategyPlan'
+        line_times_s:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Alternative race time at each line (lap - 1)
+        compounds:
+          type: array
+          items:
+            type: string
+        tyre_ages:
+          type: array
+          items:
+            type: integer
+        deltas_s:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Cumulative gain (< 0) or loss per lap
+        real_time_s:
+          type: number
+          format: double
+        final_time_s:
+          type: number
+          format: double
+        gain_s:
+          type: number
+          format: double
+          description: '> 0: the alternative is faster'
+        sigma_s:
+          type: number
+          format: double
+        real_position:
+          type: integer
+        position:
+          type: integer
+          description: Most likely finishing position
+        real_points:
+          type: number
+          format: double
+        points:
+          type: number
+          format: double
+          description: Points at the most likely position
+        chances:
+          type: array
+          items:
+            $ref: '#/components/schemas/PositionChance'
+        warnings:
+          type: array
+          items:
+            type: string
+      required:
+      - car
+      - chances
+      - compounds
+      - deltas_s
+      - final_time_s
+      - gain_s
+      - laps
+      - line_times_s
+      - points
+      - position
+      - real_points
+      - real_position
+      - real_strategy
+      - real_time_s
+      - sigma_s
+      - strategy
+      - tyre_ages
+      - warnings
     Team:
       type: object
       properties:

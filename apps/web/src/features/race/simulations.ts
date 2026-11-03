@@ -6,6 +6,7 @@ import { unwrap } from "@/lib/errors";
 
 export type UndercutRequest = Schema<"UndercutRequestRequest">;
 export type PitExitRequest = Schema<"PitExitRequestRequest">;
+export type StrategyRequest = Schema<"StrategyRequestRequest">;
 
 /**
  * Simulations are pure functions of their inputs, so they are queries keyed by the request,
@@ -38,6 +39,25 @@ export function usePitExit(sessionId: number, request: PitExitRequest | null) {
       ? async ({ signal }) =>
           unwrap(
             await api.POST("/api/v1/sessions/{session_id}/simulate/pit-exit", {
+              params: { path: { session_id: sessionId } },
+              body: request,
+              signal,
+            }),
+          )
+      : skipToken,
+    placeholderData: keepPreviousData,
+    staleTime: Infinity,
+    retry: false,
+  });
+}
+
+export function useStrategy(sessionId: number, request: StrategyRequest | null) {
+  return useQuery({
+    queryKey: ["session", sessionId, "strategy", request],
+    queryFn: request
+      ? async ({ signal }) =>
+          unwrap(
+            await api.POST("/api/v1/sessions/{session_id}/simulate/strategy", {
               params: { path: { session_id: sessionId } },
               body: request,
               signal,

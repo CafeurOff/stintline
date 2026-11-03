@@ -20,5 +20,10 @@ urlpatterns = [
     path(
         "sessions/<int:session_id>/simulate/pit-exit", views.PitExitView.as_view(), name="pit-exit"
     ),
+    path(
+        "sessions/<int:session_id>/simulate/strategy",
+        views.StrategyView.as_view(),
+        name="strategy",
+    ),
     path("model", views.ModelCardView.as_view(), name="model"),
 ]

@@ -83,3 +83,19 @@ test("find a driver and read their career", async ({ page }) => {
   await expect(page.getByLabel("Career in numbers")).toContainText("Titles");
   await expect(page.getByRole("heading", { name: "Results" })).toBeVisible();
 });
+
+test("replay a race with another strategy and watch the new result", async ({ page }) => {
+  await page.goto(`/sessions/${SESSION_ID}?lap=30&car=81`);
+
+  const panel = page.getByRole("complementary");
+  await panel.getByText("Strategy", { exact: true }).click();
+  await panel
+    .getByRole("group", { name: "Starting tyres" })
+    .locator("label", { hasText: "Hard" })
+    .click();
+  await panel.getByRole("button", { name: "Replay the race" }).click();
+
+  await expect(panel.getByText("Piastri would finish 1st instead of 2nd.")).toBeVisible();
+  await expect(page).toHaveURL(/mode=strategy/);
+  await expect(page).toHaveURL(/plan=H/);
+});

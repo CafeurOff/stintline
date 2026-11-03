@@ -75,6 +75,7 @@ const GROUPS_FR: Record<string, string> = {
   "Pit loss": "Perte au stand",
   "Pit exit": "Sortie des stands",
   "Pit window": "Fenêtre d'arrêt",
+  "What-if": "Et si",
 };
 
 /**
@@ -128,6 +129,12 @@ const ASSUMPTIONS_FR: Record<string, string> = {
     "Relais le plus court autorisé : plus court, il n'a jamais d'intérêt stratégique.",
   "Pit window/max_stint_laps":
     "Relais le plus long autorisé (limites de pneus imposées, comme au Qatar 2023). Aucune limite par défaut.",
+  "What-if/min_stint_laps":
+    "Relais le plus court accepté dans une stratégie rejouée : s'arrêter tous les deux tours n'a jamais de sens.",
+  "What-if/long_stint_margin_laps":
+    "Marge au-delà du plus long relais couru avec une gomme dans la course : plus long, l'usure est extrapolée et un avertissement s'affiche.",
+  "What-if/require_two_dry_compounds":
+    "Règle des courses sur le sec : une stratégie avec une seule gomme est signalée comme interdite.",
   "Pit window/require_two_dry_compounds":
     "Règle des courses sur le sec : deux gommes différentes doivent être utilisées.",
 };

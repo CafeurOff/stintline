@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 import { degradation } from "../src/test/fixtures/degradation";
 import { events } from "../src/test/fixtures/events";
 import { homeResponse } from "../src/test/fixtures/home";
+import { strategyResponse, type StrategyRequest } from "../src/test/fixtures/strategy";
 import { driver, driverResults, drivers } from "../src/test/fixtures/hub";
 import { model } from "../src/test/fixtures/model";
 import { pitExit } from "../src/test/fixtures/pitExit";
@@ -51,6 +52,9 @@ export async function mockApi(page: Page) {
   }
   await page.route(`**/api/v1/sessions/${SESSION_ID}/simulate/pit-exit`, (route) =>
     route.fulfill(json(pitExit)),
+  );
+  await page.route(`**/api/v1/sessions/${SESSION_ID}/simulate/strategy`, (route) =>
+    route.fulfill(json(strategyResponse(route.request().postDataJSON() as StrategyRequest))),
   );
   /** The undercut echoes the requested stop lap so a test can see the slider take effect. */
   await page.route(`**/api/v1/sessions/${SESSION_ID}/simulate/undercut`, (route) => {

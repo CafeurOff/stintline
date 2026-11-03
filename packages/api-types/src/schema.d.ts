@@ -347,6 +347,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/sessions/{session_id}/simulate/strategy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Replay a car's whole race with another tyre strategy */
+    post: operations["simulate_strategy"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}/simulate/undercut": {
     parameters: {
       query?: never;
@@ -509,16 +526,6 @@ export interface components {
       new_tyre_pace_s: number;
       low_confidence: boolean;
     };
-    /**
-     * @description * `SOFT` - Soft
-     *     * `MEDIUM` - Medium
-     *     * `HARD` - Hard
-     *     * `INTERMEDIATE` - Intermediate
-     *     * `WET` - Wet
-     *     * `UNKNOWN` - Unknown
-     * @enum {string}
-     */
-    CompoundEnum: "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET" | "UNKNOWN";
     Degradation: {
       compounds: components["schemas"]["CompoundDegradation"][];
       stints: components["schemas"]["StintFit"][];
@@ -942,6 +949,16 @@ export interface components {
        */
       reported_duration_s?: number | null;
     };
+    PlannedStop: {
+      /** @description In-lap: new tyres from the next lap */
+      lap: number;
+      compound: components["schemas"]["TyreCompoundEnum"];
+    };
+    PlannedStopRequest: {
+      /** @description In-lap: new tyres from the next lap */
+      lap: number;
+      compound: components["schemas"]["TyreCompoundEnum"];
+    };
     /** @description Freely licensed image with the credit its licence requires (ADR 0009). */
     Portrait: {
       /** Format: uri */
@@ -951,6 +968,16 @@ export interface components {
       license_url?: string;
       /** Format: uri */
       file_page_url: string;
+    };
+    PositionChance: {
+      position: number;
+      /** Format: double */
+      probability: number;
+      /**
+       * Format: double
+       * @description Points scored at that position in this race
+       */
+      points: number;
     };
     /** @description Error body returned by every endpoint (inspired by RFC 9457 problem details). */
     Problem: {
@@ -1083,7 +1110,7 @@ export interface components {
     Stint: {
       /** Format: int64 */
       stint_number: number;
-      compound: components["schemas"]["CompoundEnum"];
+      compound: components["schemas"]["StintCompoundEnum"];
       /** Format: int64 */
       lap_start?: number | null;
       /** Format: int64 */
@@ -1094,6 +1121,16 @@ export interface components {
        */
       tyre_age_at_start?: number | null;
     };
+    /**
+     * @description * `SOFT` - Soft
+     *     * `MEDIUM` - Medium
+     *     * `HARD` - Hard
+     *     * `INTERMEDIATE` - Intermediate
+     *     * `WET` - Wet
+     *     * `UNKNOWN` - Unknown
+     * @enum {string}
+     */
+    StintCompoundEnum: "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET" | "UNKNOWN";
     StintFit: {
       car_number: number;
       stint: number;
@@ -1117,6 +1154,50 @@ export interface components {
       loss_s: number;
       neutralisation: string | null;
       outlier: boolean;
+    };
+    StrategyPlan: {
+      start_compound: string;
+      stops: components["schemas"]["PlannedStop"][];
+    };
+    StrategyRequestRequest: {
+      car: number;
+      start_compound: components["schemas"]["TyreCompoundEnum"];
+      stops: components["schemas"]["PlannedStopRequest"][];
+    };
+    StrategyResult: {
+      car: number;
+      laps: number;
+      real_strategy: components["schemas"]["StrategyPlan"];
+      strategy: components["schemas"]["StrategyPlan"];
+      /** @description Alternative race time at each line (lap - 1) */
+      line_times_s: number[];
+      compounds: string[];
+      tyre_ages: number[];
+      /** @description Cumulative gain (< 0) or loss per lap */
+      deltas_s: number[];
+      /** Format: double */
+      real_time_s: number;
+      /** Format: double */
+      final_time_s: number;
+      /**
+       * Format: double
+       * @description > 0: the alternative is faster
+       */
+      gain_s: number;
+      /** Format: double */
+      sigma_s: number;
+      real_position: number;
+      /** @description Most likely finishing position */
+      position: number;
+      /** Format: double */
+      real_points: number;
+      /**
+       * Format: double
+       * @description Points at the most likely position
+       */
+      points: number;
+      chances: components["schemas"]["PositionChance"][];
+      warnings: string[];
     };
     Team: {
       /** @description Jolpica constructorId */
@@ -1808,6 +1889,47 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["PitExitResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  simulate_strategy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StrategyRequestRequest"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["StrategyResult"];
         };
       };
       400: {

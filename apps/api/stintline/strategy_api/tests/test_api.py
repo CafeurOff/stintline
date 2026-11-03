@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from rest_framework.test import APIClient
 
@@ -176,3 +178,68 @@ def test_replay_lists_line_times_and_tyres_per_lap(seeded: None) -> None:
     assert norris["compounds"][0] == "MEDIUM"
     assert norris["compounds"][40] == "HARD"
     assert response["ETag"]
+
+
+def simulate_strategy(payload: dict[str, object]) -> Any:
+    return APIClient().post(
+        f"/api/v1/sessions/{race_id(14)}/simulate/strategy", payload, format="json"
+    )
+
+
+def test_strategy_replay_of_the_real_plan_changes_nothing(seeded: None) -> None:
+    payload = {"car": 4, "start_compound": "MEDIUM", "stops": [{"lap": 31, "compound": "HARD"}]}
+
+    body = simulate_strategy(payload).json()
+
+    assert body["real_strategy"] == {
+        "start_compound": "MEDIUM",
+        "stops": [{"lap": 31, "compound": "HARD"}],
+    }
+    assert body["gain_s"] == pytest.approx(0.0)
+    assert body["position"] == body["real_position"] == 1
+    assert body["points"] == body["real_points"] == 25.0
+    assert len(body["line_times_s"]) == len(body["compounds"]) == body["laps"] == 70
+
+
+def test_strategy_replay_of_another_plan(seeded: None) -> None:
+    payload = {
+        "car": 81,
+        "start_compound": "MEDIUM",
+        "stops": [{"lap": 30, "compound": "HARD"}],
+    }
+
+    response = simulate_strategy(payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["sigma_s"] > 0
+    assert sum(c["probability"] for c in body["chances"]) == pytest.approx(1.0, abs=0.03)
+    assert body["compounds"][30] == "HARD"
+    assert body["tyre_ages"][30] == 0
+    assert body["deltas_s"][-1] == pytest.approx(-body["gain_s"])
+
+
+def test_strategy_replay_warns_about_the_two_compound_rule(seeded: None) -> None:
+    body = simulate_strategy({"car": 4, "start_compound": "MEDIUM", "stops": []}).json()
+
+    assert "two_compound_rule" in body["warnings"]
+
+
+@pytest.mark.parametrize(
+    ("override", "message"),
+    [
+        ({"car": 99}, "unknown car"),
+        ({"stops": [{"lap": 80, "compound": "HARD"}]}, "outside the race"),
+        ({"stops": [{"lap": 40, "compound": "HARD"}, {"lap": 20, "compound": "HARD"}]}, "order"),
+        ({"stops": [{"lap": 20 + i, "compound": "HARD"} for i in range(0, 60, 10)]}, "at most"),
+    ],
+)
+def test_strategy_replay_rejects_impossible_plans(
+    seeded: None, override: dict[str, object], message: str
+) -> None:
+    payload = {"car": 4, "start_compound": "MEDIUM", "stops": [], **override}
+
+    response = simulate_strategy(payload)
+
+    assert response.status_code == 400
+    assert message in str(response.json())

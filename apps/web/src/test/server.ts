@@ -5,6 +5,7 @@ import { setupServer } from "msw/node";
 import { degradation } from "./fixtures/degradation";
 import { events } from "./fixtures/events";
 import { homeResponse } from "./fixtures/home";
+import { strategyResponse } from "./fixtures/strategy";
 import {
   driver,
   driverResults,
@@ -33,7 +34,7 @@ export const healthyResponse: Schema<"Health"> = {
 /** The recorded demo session (Hungarian Grand Prix 2025). */
 export const SESSION_ID = session.id;
 
-export { homeResponse };
+export { homeResponse, strategyResponse };
 
 export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   count: 1,
@@ -94,6 +95,9 @@ export const handlers = [
   http.post("*/api/v1/sessions/:id/simulate/undercut", () => HttpResponse.json(undercut)),
   http.post("*/api/v1/sessions/:id/simulate/pit-exit", () => HttpResponse.json(pitExit)),
   http.get("*/api/v1/model", () => HttpResponse.json(model)),
+  http.post("*/api/v1/sessions/:id/simulate/strategy", async ({ request }) =>
+    HttpResponse.json(strategyResponse((await request.json()) as Schema<"StrategyRequestRequest">)),
+  ),
   http.get("*/api/v1/home", () => HttpResponse.json(homeResponse)),
   http.get("*/api/v1/events/:id", ({ params }) => {
     const event = events.results.find((e) => e.id === Number(params.id));

@@ -10,7 +10,8 @@ import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
-import { compoundInfo } from "@/lib/compounds";
+import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
+import { useDegradation } from "@/features/tyres/api";
 import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
@@ -26,11 +27,20 @@ import {
   raceEndTime,
   runningOrder,
 } from "../replay";
-import { type PitExitRequest, type UndercutRequest, usePitExit, useUndercut } from "../simulations";
+import {
+  type PitExitRequest,
+  type StrategyRequest,
+  type UndercutRequest,
+  usePitExit,
+  useStrategy,
+  useUndercut,
+} from "../simulations";
+import { decodePlan, encodePlan, type RaceCompound, realPlan, samePlan } from "../strategy";
 import { useSessionId } from "../useSessionId";
 import { useReplayClock } from "../useReplayClock";
 import { DriverPicker } from "./DriverPicker";
 import { ReplayBar } from "./ReplayBar";
+import { StrategyPanel } from "./StrategyPanel";
 import { StopPanel } from "./StopPanel";
 import { type Ghost, TrackMap, type CarMarker } from "./TrackMap";
 import { UndercutPanel } from "./UndercutPanel";
@@ -41,7 +51,12 @@ const DEFAULT_LAP_SHARE = 0.4;
 /** Points used to draw the uncertainty zone along the track. */
 const ZONE_STEPS = 16;
 
-type Mode = "stop" | "undercut";
+type Mode = "stop" | "undercut" | "strategy";
+const MODES: readonly Mode[] = ["stop", "undercut", "strategy"];
+/** Dry compounds offered when the race has no tyre model yet (the server checks). */
+const DRY: readonly RaceCompound[] = ["SOFT", "MEDIUM", "HARD"];
+/** Speed used to watch a replayed strategy from the start. */
+const WATCH_SPEED = 30;
 
 export function RacePage() {
   const sessionId = useSessionId();
@@ -122,7 +137,7 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
   const firstCar = entries[0]?.car_number ?? 0;
   const selectedParam = intParam(params, "car");
   const selected = selectedParam !== null && byCar.has(selectedParam) ? selectedParam : firstCar;
-  const mode: Mode = params.get("mode") === "undercut" ? "undercut" : "stop";
+  const mode: Mode = MODES.find((m) => m === params.get("mode")) ?? "stop";
   const entry = byCar.get(selected);
 
   // A simulation is pinned to the instant it was asked for; moving on clears it.
@@ -134,6 +149,27 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     undercut?.time === time && undercut.request.attacker === selected ? undercut : null;
   const stopResult = usePitExit(sessionId, stopActive?.request ?? null);
   const undercutResult = useUndercut(sessionId, undercutActive?.request ?? null);
+
+  // ---- what-if strategy: the plan lives in the address, the real one is the default
+  const selectedReplay = replayByCar.get(selected);
+  const real = selectedReplay ? realPlan(selectedReplay) : null;
+  const plan = decodePlan(params.get("plan")) ?? real;
+  const degradation = useDegradation(sessionId);
+  const modelled = (degradation.data?.compounds ?? [])
+    .map((c) => c.compound)
+    .filter((c): c is RaceCompound => (RACE_COMPOUNDS as readonly string[]).includes(c))
+    .sort((a, b) => RACE_COMPOUNDS.indexOf(a) - RACE_COMPOUNDS.indexOf(b));
+  const compounds = modelled.length > 0 ? modelled : DRY;
+  const [strategyRequest, setStrategyRequest] = useState<StrategyRequest | null>(null);
+  const strategyActive =
+    mode === "strategy" &&
+    plan !== null &&
+    strategyRequest?.car === selected &&
+    strategyRequest.start_compound === plan.start &&
+    JSON.stringify(strategyRequest.stops) === JSON.stringify(plan.stops)
+      ? strategyRequest
+      : null;
+  const strategyResult = useStrategy(sessionId, strategyActive);
 
   const selectedProgress = progressAt(clockByCar.get(selected) ?? emptyClock(selected), time);
   const lapInProgress = selectedProgress === null ? null : Math.floor(selectedProgress) + 1;
@@ -153,7 +189,7 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
         : { defender: targets[0]?.car_number ?? 0, compound: "HARD", reaction: "1" };
 
   const selectCar = (car: number) => {
-    update({ car });
+    update({ car, plan: null });
     setChoice(null);
   };
   const setLap = (value: number) => {
@@ -168,7 +204,21 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     let reference: CarClock | undefined;
     let lag = 0;
     let sigma = 0;
-    if (stopActive && stopResult.data) {
+    if (strategyActive && strategyResult.data) {
+      const result = strategyResult.data;
+      reference = buildClock(
+        {
+          car_number: selected,
+          line_times_s: result.line_times_s,
+          compounds: [],
+          tyre_ages: [],
+          pit_in_laps: [],
+        },
+        true,
+      );
+      // The margin grows over the race: scale the final sigma by the share of laps run.
+      sigma = result.sigma_s * Math.min(lap / Math.max(result.laps, 1), 1);
+    } else if (stopActive && stopResult.data) {
       reference = clockByCar.get(selected);
       lag = stopResult.data.pit_loss_s;
       sigma = stopResult.data.sigma_s;
@@ -260,6 +310,7 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
             options={[
               { value: "stop", label: t("panel.mode.stop") },
               { value: "undercut", label: t("panel.mode.undercut") },
+              { value: "strategy", label: t("panel.mode.strategy") },
             ]}
             value={mode}
             onChange={(value) => {
@@ -293,7 +344,39 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
             onSelect={selectCar}
           />
 
-          {mode === "stop" ? (
+          {mode === "strategy" ? (
+            real && plan ? (
+              <StrategyPanel
+                entry={entry}
+                totalLaps={totalLaps}
+                real={real}
+                plan={plan}
+                compounds={compounds}
+                submitted={strategyActive !== null}
+                result={strategyResult.data}
+                isError={strategyResult.isError}
+                error={strategyResult.error}
+                onChange={(next) => {
+                  update({ plan: samePlan(next, real) ? null : encodePlan(next) });
+                }}
+                onSimulate={() => {
+                  setStrategyRequest({
+                    car: selected,
+                    start_compound: plan.start,
+                    stops: plan.stops.map((stop) => ({ ...stop })),
+                  });
+                }}
+                onWatch={() => {
+                  clock.setTime(0);
+                  clock.setSpeed(WATCH_SPEED);
+                  clock.play();
+                }}
+                onRetry={() => void strategyResult.refetch()}
+              />
+            ) : (
+              <p className="text-muted">{t("whatif.unavailable")}</p>
+            )
+          ) : mode === "stop" ? (
             <>
               <h2 className="text-xl leading-tight font-bold">
                 {t("stop.question", { name: entry.driver.family_name })}

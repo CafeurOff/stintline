@@ -218,3 +218,62 @@ class ReplayCarSerializer(serializers.Serializer[Any]):
 class ReplaySerializer(serializers.Serializer[Any]):
     total_laps = serializers.IntegerField()
     cars = ReplayCarSerializer(many=True)
+
+
+class PlannedStopSerializer(serializers.Serializer[Any]):
+    lap = serializers.IntegerField(min_value=1, help_text="In-lap: new tyres from the next lap")
+    compound = serializers.ChoiceField(choices=COMPOUND_CHOICES)
+
+
+MAX_STOPS = 5
+"""No race has needed more planned stops; more is a typing slip, not a strategy."""
+
+
+class StrategyRequestSerializer(serializers.Serializer[Any]):
+    car = serializers.IntegerField(min_value=1, max_value=99)
+    start_compound = serializers.ChoiceField(choices=COMPOUND_CHOICES)
+    stops = PlannedStopSerializer(many=True)
+
+    def validate_stops(self, stops: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        if len(stops) > MAX_STOPS:
+            raise serializers.ValidationError(f"at most {MAX_STOPS} stops")
+        laps = [stop["lap"] for stop in stops]
+        if laps != sorted(set(laps)):
+            raise serializers.ValidationError("stops must be on different laps, in order")
+        return stops
+
+
+class StrategyPlanSerializer(serializers.Serializer[Any]):
+    start_compound = serializers.CharField()
+    stops = PlannedStopSerializer(many=True)
+
+
+class PositionChanceSerializer(serializers.Serializer[Any]):
+    position = serializers.IntegerField()
+    probability = serializers.FloatField()
+    points = serializers.FloatField(help_text="Points scored at that position in this race")
+
+
+class StrategyResultSerializer(serializers.Serializer[Any]):
+    car = serializers.IntegerField()
+    laps = serializers.IntegerField()
+    real_strategy = StrategyPlanSerializer()
+    strategy = StrategyPlanSerializer()
+    line_times_s = serializers.ListField(
+        child=serializers.FloatField(), help_text="Alternative race time at each line (lap - 1)"
+    )
+    compounds = serializers.ListField(child=serializers.CharField())
+    tyre_ages = serializers.ListField(child=serializers.IntegerField())
+    deltas_s = serializers.ListField(
+        child=serializers.FloatField(), help_text="Cumulative gain (< 0) or loss per lap"
+    )
+    real_time_s = serializers.FloatField()
+    final_time_s = serializers.FloatField()
+    gain_s = serializers.FloatField(help_text="> 0: the alternative is faster")
+    sigma_s = serializers.FloatField()
+    real_position = serializers.IntegerField()
+    position = serializers.IntegerField(help_text="Most likely finishing position")
+    real_points = serializers.FloatField()
+    points = serializers.FloatField(help_text="Points at the most likely position")
+    chances = PositionChanceSerializer(many=True)
+    warnings = serializers.ListField(child=serializers.CharField())
