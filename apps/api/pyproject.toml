@@ -1,0 +1,58 @@
+[project]
+name = "stintline-api"
+version = "0.1.0"
+description = "StintLine HTTP API, ingestion workers and live channel (Django)"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.2.18,<5.3",
+    "djangorestframework>=3.16",
+    "drf-spectacular>=0.28",
+    "django-environ>=0.12",
+    "django-cors-headers>=4.6",
+    "psycopg[binary]>=3.2",
+    "celery[redis]>=5.5",
+    "channels>=4.2",
+    "channels-redis>=4.2",
+    "redis>=5.2",
+    "structlog>=25.1",
+    "uvicorn[standard]>=0.34",
+    "whitenoise>=6.8",
+    "stintline-strategy",
+    "stintline-racedata",
+]
+
+[dependency-groups]
+dev = [
+    "pytest-django>=4.9",
+    "factory-boy>=3.3",
+    "django-stubs[compatible-mypy]>=5.2,<5.3",
+    "djangorestframework-stubs[compatible-mypy]>=3.16",
+    "celery-types>=0.23",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+stintline-strategy = { workspace = true }
+stintline-racedata = { workspace = true }
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+pythonpath = ["."]
+testpaths = ["stintline", "config"]
+python_files = ["test_*.py"]
+filterwarnings = ["error"]
+addopts = [
+    "--strict-markers",
+    "--disable-socket",
+    "--allow-unix-socket",
+    "--cov=stintline",
+    "--cov=config",
+    "--cov-report=term-missing:skip-covered",
+    "--cov-fail-under=80",
+]
+
+[tool.coverage.run]
+branch = true
+omit = ["*/migrations/*", "*/config/wsgi.py", "*/manage.py", "*/config/settings/dev.py", "*/config/settings/prod.py"]

@@ -1,0 +1,53 @@
+openapi: 3.0.3
+info:
+  title: StintLine API
+  version: 1.0.0
+  description: 'Race strategy analysis for Formula 1 timing data: stints, tyre degradation,
+    pit loss, undercut and pit-exit simulation. Unofficial project, not associated
+    with Formula 1, the FIA or any team.'
+paths:
+  /api/v1/health:
+    get:
+      operationId: health_retrieve
+      description: Liveness and readiness of the API and its database.
+      summary: API health
+      tags:
+      - core
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+components:
+  schemas:
+    ComponentStatusEnum:
+      enum:
+      - ok
+      - unavailable
+      type: string
+      description: |-
+        * `ok` - ok
+        * `unavailable` - unavailable
+    Health:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/ComponentStatusEnum'
+        version:
+          type: string
+        database:
+          $ref: '#/components/schemas/ComponentStatusEnum'
+      required:
+      - database
+      - status
+      - version
