@@ -24,20 +24,640 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/model": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Model assumptions and backtest results */
+    get: operations["model_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/seasons": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Seasons with stored events, most recent first. */
+    get: operations["seasons_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/seasons/{year}/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Grands Prix of a season with their sessions (``has_data`` = timing ingested). */
+    get: operations["season_events_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Session with entries, media and neutralised periods */
+    get: operations["session_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/compare": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Lap-by-lap comparison of two cars */
+    get: operations["session_compare_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/degradation": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Tyre degradation per compound and per stint */
+    get: operations["session_degradation_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/laps": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Laps with fuel-corrected times and exclusion reasons */
+    get: operations["session_laps_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/pit-loss": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Pit loss measured from the session's stops */
+    get: operations["session_pit_loss_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/simulate/pit-exit": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Predict where a car rejoins after pitting on a given lap */
+    post: operations["simulate_pit_exit"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/simulate/undercut": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Simulate an undercut: attacker pits first, defender reacts */
+    post: operations["simulate_undercut"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/stints": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Stints and pit stops of every car, in classification order */
+    get: operations["session_stints_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
+    Assumption: {
+      group: string;
+      name: string;
+      value: string;
+      description: string;
+    };
+    Circuit: {
+      /** @description Jolpica circuitId */
+      ref: string;
+      name: string;
+      locality: string;
+      country: string;
+    };
+    Compare: {
+      car_a: number;
+      car_b: number;
+      laps: components["schemas"]["CompareLap"][];
+      /** Format: double */
+      pace_offset_a_s: number | null;
+      /** Format: double */
+      pace_offset_b_s: number | null;
+    };
+    CompareLap: {
+      lap: number;
+      /** Format: double */
+      time_a_s: number | null;
+      /** Format: double */
+      time_b_s: number | null;
+      /**
+       * Format: double
+       * @description B race time minus A (> 0: A ahead)
+       */
+      gap_s: number | null;
+      compound_a: string;
+      compound_b: string;
+    };
     /**
      * @description * `ok` - ok
      *     * `unavailable` - unavailable
      * @enum {string}
      */
     ComponentStatusEnum: "ok" | "unavailable";
+    CompoundDegradation: {
+      compound: string;
+      /** Format: double */
+      slope_s_per_lap: number;
+      slope_ci: number[];
+      n_laps: number;
+      n_stints: number;
+      /** Format: double */
+      new_tyre_pace_s: number;
+      low_confidence: boolean;
+    };
+    /**
+     * @description * `SOFT` - Soft
+     *     * `MEDIUM` - Medium
+     *     * `HARD` - Hard
+     *     * `INTERMEDIATE` - Intermediate
+     *     * `WET` - Wet
+     *     * `UNKNOWN` - Unknown
+     * @enum {string}
+     */
+    CompoundEnum: "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET" | "UNKNOWN";
+    Degradation: {
+      compounds: components["schemas"]["CompoundDegradation"][];
+      stints: components["schemas"]["StintFit"][];
+      fuel: components["schemas"]["Fuel"];
+    };
+    DegradationPoint: {
+      tyre_age: number;
+      /** Format: double */
+      corrected_time_s: number;
+    };
+    Driver: {
+      /** @description Jolpica driverId */
+      ref: string;
+      code?: string;
+      given_name: string;
+      family_name: string;
+    };
+    Entry: {
+      /** Format: int64 */
+      car_number: number;
+      readonly driver: components["schemas"]["Driver"];
+      readonly team: components["schemas"]["Team"];
+      /** @description Team name as shown in timing (e.g. Red Bull Racing) */
+      team_display_name?: string;
+      /** @description Hex RGB without # */
+      team_colour?: string;
+      /** Format: int64 */
+      grid_position?: number | null;
+      /** Format: int64 */
+      finish_position?: number | null;
+      /** @description positionText */
+      classification?: string;
+      status?: string;
+      /** Format: double */
+      points?: number;
+      /** Format: int64 */
+      laps_completed?: number;
+      readonly media: components["schemas"]["Media"] | null;
+    };
+    EntryStints: {
+      /** Format: int64 */
+      car_number: number;
+      readonly driver: components["schemas"]["Driver"];
+      /** @description Hex RGB without # */
+      team_colour?: string;
+      /** Format: int64 */
+      finish_position?: number | null;
+      /** @description positionText */
+      classification?: string;
+      readonly stints: components["schemas"]["Stint"][];
+      readonly pit_stops: components["schemas"]["PitStop"][];
+    };
+    Event: {
+      readonly id: number;
+      readonly season: number;
+      /** Format: int64 */
+      round: number;
+      name: string;
+      /** Format: date */
+      race_date: string;
+      format: components["schemas"]["FormatEnum"];
+      readonly circuit: components["schemas"]["Circuit"];
+      readonly sessions: components["schemas"]["SessionSummary"][];
+    };
+    EventSummary: {
+      readonly id: number;
+      readonly season: number;
+      /** Format: int64 */
+      round: number;
+      name: string;
+      /** Format: date */
+      race_date: string;
+      format: components["schemas"]["FormatEnum"];
+      readonly circuit: components["schemas"]["Circuit"];
+    };
+    /**
+     * @description * `conventional` - Conventional
+     *     * `sprint` - Sprint weekend
+     * @enum {string}
+     */
+    FormatEnum: "conventional" | "sprint";
+    Fuel: {
+      /** Format: double */
+      seconds_per_kg: number;
+      /** Format: double */
+      gain_per_lap_s: number;
+    };
     Health: {
       status: components["schemas"]["ComponentStatusEnum"];
       version: string;
       database: components["schemas"]["ComponentStatusEnum"];
+    };
+    /**
+     * @description * `FP1` - Practice 1
+     *     * `FP2` - Practice 2
+     *     * `FP3` - Practice 3
+     *     * `SQ` - Sprint Qualifying
+     *     * `SPRINT` - Sprint
+     *     * `Q` - Qualifying
+     *     * `R` - Race
+     * @enum {string}
+     */
+    KindEnum: "FP1" | "FP2" | "FP3" | "SQ" | "SPRINT" | "Q" | "R";
+    Lap: {
+      car_number: number;
+      lap: number;
+      /** Format: double */
+      time_s: number | null;
+      /** Format: double */
+      corrected_time_s: number | null;
+      compound: string;
+      tyre_age: number | null;
+      stint: number | null;
+      is_pit_in: boolean;
+      is_pit_out: boolean;
+      /** Format: double */
+      race_time_s: number | null;
+      /** @description Exclusion reason, null if kept */
+      excluded: string | null;
+    };
+    LapGap: {
+      lap: number;
+      /** Format: double */
+      gap_s: number;
+    };
+    Media: {
+      /** Format: uri */
+      driver_image_url: string | null;
+      /** Format: uri */
+      car_image_url: string | null;
+    };
+    ModelCard: {
+      engine_version: string;
+      assumptions: components["schemas"]["Assumption"][];
+      /** @description Backtest metrics per set (reference, held-out) and mode */
+      backtest: {
+        [key: string]: unknown;
+      };
+    };
+    /**
+     * @description * `linear` - linear
+     *     * `quadratic` - quadratic
+     * @enum {string}
+     */
+    ModelEnum: "linear" | "quadratic";
+    Neutralisation: {
+      status: components["schemas"]["NeutralisationStatusEnum"];
+      /** Format: int64 */
+      lap_start?: number | null;
+      /** Format: int64 */
+      lap_end?: number | null;
+    };
+    /**
+     * @description * `SC` - SC
+     *     * `VSC` - VSC
+     * @enum {string}
+     */
+    NeutralisationEnum: "SC" | "VSC";
+    /**
+     * @description * `SC` - Safety Car
+     *     * `VSC` - Virtual Safety Car
+     *     * `RED` - Red flag
+     * @enum {string}
+     */
+    NeutralisationStatusEnum: "SC" | "VSC" | "RED";
+    NeutralisedLoss: {
+      status: string;
+      /** Format: double */
+      loss_s: number;
+    };
+    /** @enum {unknown} */
+    NullEnum: null;
+    PaginatedEventList: {
+      /** @example 123 */
+      count: number;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=400&limit=100
+       */
+      next?: string | null;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=200&limit=100
+       */
+      previous?: string | null;
+      results: components["schemas"]["Event"][];
+    };
+    PaginatedSeasonList: {
+      /** @example 123 */
+      count: number;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=400&limit=100
+       */
+      next?: string | null;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=200&limit=100
+       */
+      previous?: string | null;
+      results: components["schemas"]["Season"][];
+    };
+    PitExitRequestRequest: {
+      car: number;
+      pit_lap: number;
+      neutralisation?:
+        (components["schemas"]["NeutralisationEnum"] | components["schemas"]["NullEnum"]) | null;
+      rival_stops?: components["schemas"]["RivalStopRequest"][];
+    };
+    PitExitResult: {
+      car: number;
+      pit_lap: number;
+      /** Format: double */
+      pit_loss_s: number;
+      /** Format: double */
+      sigma_s: number;
+      position_before: number;
+      /** Format: double */
+      expected_position: number;
+      most_likely_position: number;
+      interval: number[];
+      distribution: number[];
+      rivals: components["schemas"]["RivalOutcome"][];
+    };
+    PitLoss: {
+      /** Format: double */
+      green_s: number;
+      /** Format: double */
+      green_sigma_s: number;
+      n_green: number;
+      neutralised: components["schemas"]["NeutralisedLoss"][];
+      /** Format: double */
+      assumed_sc_s: number;
+      /** Format: double */
+      assumed_vsc_s: number;
+      stops: components["schemas"]["StopLoss"][];
+    };
+    PitStop: {
+      /**
+       * Format: int64
+       * @description Lap on which the car entered the pits
+       */
+      lap_number: number;
+      /** Format: int64 */
+      stop_number?: number | null;
+      /**
+       * Format: double
+       * @description OpenF1 lane time
+       */
+      pit_lane_duration_s?: number | null;
+      /** Format: double */
+      stationary_duration_s?: number | null;
+      /**
+       * Format: double
+       * @description Duration published by Jolpica
+       */
+      reported_duration_s?: number | null;
+    };
+    /** @description Error body returned by every endpoint (inspired by RFC 9457 problem details). */
+    Problem: {
+      type: string;
+      title: string;
+      status: number;
+      detail: string;
+      code: string;
+      invalid_params?: {
+        [key: string]: unknown;
+      };
+    };
+    RivalOutcome: {
+      car: number;
+      /** Format: double */
+      gap_s: number;
+      /** Format: double */
+      margin_s: number;
+      /** Format: double */
+      p_pitting_car_ahead: number;
+    };
+    RivalStopRequest: {
+      car: number;
+      lap: number;
+    };
+    Season: {
+      /** Format: int64 */
+      year: number;
+      readonly events_count: number;
+    };
+    SessionDetail: {
+      readonly id: number;
+      kind: components["schemas"]["KindEnum"];
+      /** Format: date-time */
+      starts_at?: string | null;
+      readonly event: components["schemas"]["EventSummary"];
+      readonly total_laps: number | null;
+      readonly entries: components["schemas"]["Entry"][];
+      readonly neutralisations: components["schemas"]["Neutralisation"][];
+    };
+    SessionSummary: {
+      readonly id: number;
+      kind: components["schemas"]["KindEnum"];
+      /** Format: date-time */
+      scheduled_start?: string | null;
+      readonly has_data: boolean;
+    };
+    Stint: {
+      /** Format: int64 */
+      stint_number: number;
+      compound: components["schemas"]["CompoundEnum"];
+      /** Format: int64 */
+      lap_start?: number | null;
+      /** Format: int64 */
+      lap_end?: number | null;
+      /**
+       * Format: int64
+       * @description Laps already on the set when fitted (0 = new)
+       */
+      tyre_age_at_start?: number | null;
+    };
+    StintFit: {
+      car_number: number;
+      stint: number;
+      compound: string;
+      model: components["schemas"]["ModelEnum"];
+      coefficients: number[];
+      /** Format: double */
+      slope_s_per_lap: number;
+      slope_ci: number[];
+      /** Format: double */
+      r_squared: number;
+      /** Format: double */
+      rmse_s: number;
+      n_laps: number;
+      points: components["schemas"]["DegradationPoint"][];
+    };
+    StopLoss: {
+      car_number: number;
+      lap: number;
+      /** Format: double */
+      loss_s: number;
+      neutralisation: string | null;
+      outlier: boolean;
+    };
+    Team: {
+      /** @description Jolpica constructorId */
+      ref: string;
+      name: string;
+    };
+    /**
+     * @description * `SOFT` - SOFT
+     *     * `MEDIUM` - MEDIUM
+     *     * `HARD` - HARD
+     *     * `INTERMEDIATE` - INTERMEDIATE
+     *     * `WET` - WET
+     * @enum {string}
+     */
+    TyreCompoundEnum: "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET";
+    UndercutRequestRequest: {
+      /** @description Car behind, pitting first */
+      attacker: number;
+      defender: number;
+      /** @description Attacker's in-lap */
+      stop_lap: number;
+      attacker_compound: components["schemas"]["TyreCompoundEnum"];
+      defender_compound: components["schemas"]["TyreCompoundEnum"];
+      /** @default 1 */
+      defender_reaction_laps: number;
+    };
+    UndercutResult: {
+      /** Format: double */
+      gap_before_s: number;
+      /** Format: double */
+      gap_after_s: number;
+      /** Format: double */
+      net_gain_s: number;
+      /** Format: double */
+      sigma_s: number;
+      /** Format: double */
+      p_attacker_ahead: number;
+      attacker_ahead: boolean;
+      lap_gaps: components["schemas"]["LapGap"][];
     };
   };
   responses: never;
@@ -71,6 +691,355 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Health"];
+        };
+      };
+    };
+  };
+  model_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ModelCard"];
+        };
+      };
+    };
+  };
+  seasons_list: {
+    parameters: {
+      query?: {
+        /** @description Number of results to return per page. */
+        limit?: number;
+        /** @description The initial index from which to return the results. */
+        offset?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedSeasonList"];
+        };
+      };
+    };
+  };
+  season_events_list: {
+    parameters: {
+      query?: {
+        /** @description Number of results to return per page. */
+        limit?: number;
+        /** @description The initial index from which to return the results. */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedEventList"];
+        };
+      };
+    };
+  };
+  session_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SessionDetail"];
+        };
+      };
+    };
+  };
+  session_compare_retrieve: {
+    parameters: {
+      query?: {
+        a?: number;
+        b?: number;
+      };
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Compare"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_degradation_retrieve: {
+    parameters: {
+      query?: {
+        cars?: string;
+      };
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Degradation"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_laps_list: {
+    parameters: {
+      query?: {
+        /** @description Comma-separated car numbers, e.g. `1,4` */
+        cars?: string;
+      };
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Lap"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_pit_loss_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PitLoss"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  simulate_pit_exit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PitExitRequestRequest"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PitExitResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  simulate_undercut: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UndercutRequestRequest"];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UndercutResult"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_stints_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EntryStints"][];
         };
       };
     };

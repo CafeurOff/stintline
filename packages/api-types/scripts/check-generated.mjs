@@ -2,10 +2,10 @@
 // CI runs this so a schema change without regeneration breaks the build.
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const dir = mkdtempSync(join(tmpdir(), "api-types-"));
+// Inside the package so Prettier resolves the repository config (as `generate` does).
+const dir = mkdtempSync(join(process.cwd(), ".check-"));
 const fresh = join(dir, "schema.d.ts");
 try {
   execFileSync(
