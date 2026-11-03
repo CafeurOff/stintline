@@ -8,6 +8,7 @@ exits 0. Formatting is skipped silently when the toolchain is not installed yet
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shutil
@@ -31,18 +32,12 @@ API_CONTRACT_FILES = ("serializers.py", "views.py", "urls.py")
 
 
 def run(cmd: list[str], cwd: Path) -> None:
-    try:
+    with contextlib.suppress(OSError, subprocess.TimeoutExpired):
         subprocess.run(cmd, cwd=cwd, capture_output=True, timeout=45, check=False)
-    except (OSError, subprocess.TimeoutExpired):
-        pass
 
 
 def format_file(root: Path, rel: str, path: Path) -> None:
-    if (
-        path.suffix == ".py"
-        and shutil.which("uv")
-        and (root / "pyproject.toml").exists()
-    ):
+    if path.suffix == ".py" and shutil.which("uv") and (root / "pyproject.toml").exists():
         run(["uv", "run", "--quiet", "ruff", "format", str(path)], root)
         run(
             ["uv", "run", "--quiet", "ruff", "check", "--fix", "--quiet", str(path)],
@@ -84,9 +79,7 @@ def main() -> None:
     except (json.JSONDecodeError, ValueError):
         return
     file_path = (payload.get("tool_input") or {}).get("file_path")
-    root = Path(
-        os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or "."
-    ).resolve()
+    root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or payload.get("cwd") or ".").resolve()
     if not file_path:
         return
     path = Path(file_path).resolve()

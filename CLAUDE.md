@@ -5,23 +5,24 @@ StintLine is a race strategy decision-support tool built on Formula 1 timing dat
 It is **not** a live timing dashboard (f1-dash, MultiViewer and F1ReplayTiming already exist), not a results or standings site, and not affiliated with Formula 1, the FIA or any team.
 
 ## Status
-- Phases 0–1 done: v1 audit, data-source survey, repo baseline (this file, `.claude/`, docs, quality tooling).
-- **Phase 2 has not run yet.** The code directories below and the `make` targets are the agreed target layout. Until Phase 2 lands, only `pre-commit` and the docs exist.
+- Phases 0–2 done: v1 audit, data-source survey, repo baseline, monorepo skeleton (API health endpoint, web shell, typed contract, docker compose, CI).
+- Next: Phase 3 (data model and ingestion). Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
 ```
 apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion, live
   config/            settings (base/dev/test/prod), urls, asgi, celery app
-  stintline/racing/      ORM models: Season, Event, Session, Team, Driver, SessionEntry,
+  stintline/core/        health endpoint, problem-style errors, shared API utilities
+  stintline/racing/      (planned) ORM models: Season, Event, Session, Team, Driver, SessionEntry,
                          Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TrackStatus
-  stintline/ingestion/   Celery tasks: racedata DTOs -> idempotent upserts
-  stintline/strategy_api/ DRF views/serializers (/api/v1/), call packages/strategy
-  stintline/live/        Channels consumers, live worker, replay engine
+  stintline/ingestion/   (planned) Celery tasks: racedata DTOs -> idempotent upserts
+  stintline/strategy_api/ (planned) DRF views/serializers (/api/v1/), call packages/strategy
+  stintline/live/        (planned) Channels consumers, live worker, replay engine
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, providers)  src/features/<feature>/  src/components/ui/  src/lib/
-packages/racedata/   Pure Python. Provider adapters (openf1, jolpica, livetiming) behind one
+packages/racedata/   Pure Python, import `racedata`. Provider adapters (openf1, jolpica, livetiming) behind one
                      interface, HTTP client (rate limit, retry, cache, timeout), DTOs, recorder
-packages/strategy/   Pure Python strategy engine (no Django, no I/O)
+packages/strategy/   Pure Python strategy engine, import `stintline_strategy` (no Django, no I/O)
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
 infra/               docker compose, Dockerfiles, nginx, deploy config
 docs/                architecture, data sources, model, ADRs, research
@@ -36,25 +37,28 @@ Hard boundaries:
 - `packages/strategy` never imports Django or `racedata`. It takes plain typed inputs.
 - `packages/api-types` is generated output.
 
-## Commands (valid from Phase 2)
+## Commands
+Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. `make help` lists every target.
+
 | Task | Command |
 | --- | --- |
-| Install everything | `make setup` (`uv sync --all-packages` + `pnpm install` + `pre-commit install`) |
-| Run the full stack | `make up` (`docker compose -f infra/docker-compose.yml up --build`) |
-| API dev server | `make dev-api` (`uv run --package stintline-api python apps/api/manage.py runserver`) |
+| Install everything | `make setup` (`uv sync --all-packages`, `pnpm install`, Playwright Chromium, `pre-commit install`, `.env`) |
+| Run the full stack | `make up` → web http://localhost:5173, API http://localhost:8000/api/v1/health, docs http://localhost:8000/api/docs/ |
+| API dev server | `make deps` (Postgres + Redis in Docker), then `make dev-api` (migrate + uvicorn on :8000) |
 | Web dev server | `make dev-web` (`pnpm --filter web dev`) |
-| All checks | `make check` (lint + typecheck + tests, back and front) or `/check` |
+| All checks | `make check` (lint + typecheck + tests + schema/types drift) or `/check` |
 | Tests | `make test` · `uv run pytest packages/strategy` · `uv run pytest packages/racedata` · `uv run pytest apps/api` · `pnpm --filter web test` · `pnpm --filter web e2e` |
 | Lint / format | `uv run ruff check .` · `uv run ruff format .` · `pnpm -r lint` · `pnpm -r format` |
 | Type check | `uv run mypy` · `pnpm -r typecheck` |
 | Migrations | `make makemigrations` · `make migrate` |
-| OpenAPI + TS types | `make types` (`manage.py spectacular --file apps/api/openapi.yaml` then `pnpm --filter api-types generate`) |
-| Demo data | `make seed` (`manage.py seed_demo`, loads 3 reference 2025 races from fixtures, no network) |
+| OpenAPI + TS types | `make types` (export `apps/api/openapi.yaml`, regenerate `packages/api-types`) · drift check: `make types-check` |
+| Demo data | `make seed` (`manage.py seed_demo`, loads 3 reference 2025 races from fixtures, no network). Available from Phase 3 |
 | Pre-commit | `pre-commit run --all-files` |
 
 ## Conventions
 - **Language:** code, comments, identifiers, docs and commit messages in English.
 - **Python:** ruff (lint + format, line length 100) and mypy strict. Modules are `snake_case`. Small modules with one responsibility. Type hints everywhere. Domain values are frozen dataclasses or pydantic models, never raw dicts past the provider boundary.
+- **Charts:** visx (ADR 0003).
 - **TypeScript:** strict mode, no `any`. Feature folders. Components are `PascalCase.tsx`, hooks are `useX.ts`. API calls go only through the client typed by `packages/api-types` and TanStack Query.
 - **Errors:** providers raise typed exceptions (`ProviderError`, `RateLimited`, `UpstreamUnavailable`, `InvalidPayload`). The API maps them to RFC 7807-style JSON problems. Never return `str(exc)` to clients, never use a bare `except`.
 - **Logs:** `structlog` with JSON in prod and console in dev. Log events are snake_case verbs (`ingest_session_started`) with key/value context (`session_key=…`). No `print`.
@@ -80,6 +84,7 @@ Hard boundaries:
 7. Clean Conventional Commit history with no AI attribution.
 
 ## Known pitfalls
+- **Toolchain pins.** TypeScript stays on 5.9 (openapi-typescript and typescript-eslint do not support 7 yet). ESLint stays on 9 (jsx-a11y). jsdom stays on 28 (29+ needs Node ≥ 22.13 and 30 needs Node ≥ 22.22). The API client resolves `fetch` at call time so MSW can intercept it.
 - **Rate limits.** OpenF1 free tier allows 3 req/s and 30 req/min. Jolpica allows ~4 req/s burst and ~500 req/hour, and paginates with `limit` ≤ 100. Always go through the `racedata` HTTP client.
 - **Data access.** Since Oct 2026 the official static archive (and therefore FastF1) needs an F1 TV account. We do not use FastF1. The live SignalR feed works without auth except `CarData.z` and `Position.z`, but only from a home connection (cloud IPs blocked) and for personal use. The public demo is replay-only. See `docs/adr/0002-data-sources-and-live-strategy.md`.
 - **Time zones.** OpenF1 and Jolpica are UTC. Live timing `SessionInfo.StartDate` is circuit-local, with a separate `GmtOffset`. Some live timestamps are UTC. Convert at the provider boundary.
