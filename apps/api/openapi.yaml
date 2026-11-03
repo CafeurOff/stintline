@@ -41,7 +41,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedDriverBioList'
+                $ref: '#/components/schemas/PaginatedDriverListItemList'
           description: ''
   /api/v1/drivers/{ref}:
     get:
@@ -107,6 +107,33 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedDriverResultList'
           description: ''
+  /api/v1/events/{event_id}:
+    get:
+      operationId: event_retrieve
+      summary: A Grand Prix weekend with its sessions and race winner
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/health:
     get:
       operationId: health_retrieve
@@ -128,6 +155,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+          description: ''
+  /api/v1/home:
+    get:
+      operationId: home_retrieve
+      summary: Next Grand Prix, last race podium and championship leaders
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Home'
           description: ''
   /api/v1/model:
     get:
@@ -231,6 +273,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Standings'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/seasons/{year}/standings/progression:
+    get:
+      operationId: season_progression_retrieve
+      summary: Championship points of every driver and team after each round
+      parameters:
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progression'
           description: ''
         '404':
           content:
@@ -595,6 +664,70 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/teams:
+    get:
+      operationId: teams_list
+      description: Every constructor since 1950, searchable by name, optionally limited
+        to a season.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: season
+        schema:
+          type: integer
+      tags:
+      - teams
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTeamListList'
+          description: ''
+  /api/v1/teams/{ref}:
+    get:
+      operationId: team_retrieve
+      summary: 'Constructor record: totals and season-by-season results'
+      parameters:
+      - in: path
+        name: ref
+        schema:
+          type: string
+        required: true
+      tags:
+      - teams
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamCareer'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
 components:
   schemas:
     Assumption:
@@ -671,6 +804,21 @@ components:
         country:
           type: string
           maxLength: 64
+        latitude:
+          type: number
+          format: double
+          nullable: true
+        longitude:
+          type: number
+          format: double
+          nullable: true
+        wikipedia_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
       required:
       - country
       - locality
@@ -831,9 +979,16 @@ components:
         family_name:
           type: string
           maxLength: 64
+        portrait_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Wikipedia portrait (ADR 0009); official media take precedence
+            when present
       required:
       - family_name
       - given_name
+      - portrait_url
       - ref
     DriverBio:
       type: object
@@ -872,9 +1027,15 @@ components:
             maxLength: 200
           - type: string
             maxLength: 0
+        portrait:
+          allOf:
+          - $ref: '#/components/schemas/Portrait'
+          nullable: true
+          readOnly: true
       required:
       - family_name
       - given_name
+      - portrait
       - ref
     DriverCareer:
       type: object
@@ -896,6 +1057,84 @@ components:
       - media
       - seasons
       - totals
+    DriverListItem:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica driverId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        code:
+          type: string
+          maxLength: 3
+        given_name:
+          type: string
+          maxLength: 64
+        family_name:
+          type: string
+          maxLength: 64
+        permanent_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        nationality:
+          type: string
+          maxLength: 64
+        wikipedia_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        portrait:
+          allOf:
+          - $ref: '#/components/schemas/Portrait'
+          nullable: true
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/LatestTeam'
+          nullable: true
+          readOnly: true
+          description: Team of the latest race (in the requested season, if any)
+      required:
+      - family_name
+      - given_name
+      - portrait
+      - ref
+      - team
+    DriverProgression:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        colour:
+          type: string
+          nullable: true
+        points:
+          type: array
+          items:
+            type: number
+            format: double
+            nullable: true
+        positions:
+          type: array
+          items:
+            type: integer
+            nullable: true
+      required:
+      - colour
+      - driver
+      - points
+      - positions
     DriverResult:
       type: object
       properties:
@@ -1125,6 +1364,12 @@ components:
           items:
             $ref: '#/components/schemas/SessionSummary'
           readOnly: true
+        winner:
+          allOf:
+          - $ref: '#/components/schemas/Winner'
+          nullable: true
+          readOnly: true
+          description: Race winner, once classified
       required:
       - circuit
       - format
@@ -1134,6 +1379,7 @@ components:
       - round
       - season
       - sessions
+      - winner
     EventSummary:
       type: object
       properties:
@@ -1201,6 +1447,34 @@ components:
       - database
       - status
       - version
+    Home:
+      type: object
+      properties:
+        season:
+          type: integer
+          nullable: true
+        next_event:
+          allOf:
+          - $ref: '#/components/schemas/Event'
+          nullable: true
+        last_race:
+          allOf:
+          - $ref: '#/components/schemas/LastRace'
+          nullable: true
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/StandingLine'
+        constructors:
+          type: array
+          items:
+            $ref: '#/components/schemas/StandingLine'
+      required:
+      - constructors
+      - drivers
+      - last_race
+      - next_event
+      - season
     KindEnum:
       enum:
       - FP1
@@ -1277,6 +1551,39 @@ components:
       required:
       - gap_s
       - lap
+    LastRace:
+      type: object
+      properties:
+        session_id:
+          type: integer
+        event:
+          $ref: '#/components/schemas/EventSummary'
+        has_data:
+          type: boolean
+          description: 'Lap timing stored: the circuit replay works'
+        podium:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+      required:
+      - event
+      - has_data
+      - podium
+      - session_id
+    LatestTeam:
+      type: object
+      properties:
+        ref:
+          type: string
+        name:
+          type: string
+        colour:
+          type: string
+          nullable: true
+      required:
+      - colour
+      - name
+      - ref
     Media:
       type: object
       properties:
@@ -1367,7 +1674,7 @@ components:
     NullEnum:
       enum:
       - null
-    PaginatedDriverBioList:
+    PaginatedDriverListItemList:
       type: object
       required:
       - count
@@ -1389,7 +1696,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/DriverBio'
+            $ref: '#/components/schemas/DriverListItem'
     PaginatedDriverResultList:
       type: object
       required:
@@ -1459,6 +1766,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Season'
+    PaginatedTeamListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamList'
     PitExitRequestRequest:
       type: object
       properties:
@@ -1592,6 +1922,37 @@ components:
           description: Duration published by Jolpica
       required:
       - lap_number
+    Portrait:
+      type: object
+      description: Freely licensed image with the credit its licence requires (ADR
+        0009).
+      properties:
+        image_url:
+          type: string
+          format: uri
+          maxLength: 500
+        artist:
+          type: string
+          maxLength: 200
+        license:
+          type: string
+          maxLength: 64
+        license_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 300
+          - type: string
+            maxLength: 0
+        file_page_url:
+          type: string
+          format: uri
+          maxLength: 500
+      required:
+      - artist
+      - file_page_url
+      - image_url
+      - license
     Problem:
       type: object
       description: Error body returned by every endpoint (inspired by RFC 9457 problem
@@ -1616,6 +1977,30 @@ components:
       - status
       - title
       - type
+    Progression:
+      type: object
+      description: Championship after each stored round (every round from 2023, the
+        final table before).
+      properties:
+        season:
+          type: integer
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Round'
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/DriverProgression'
+        constructors:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamProgression'
+      required:
+      - constructors
+      - drivers
+      - rounds
+      - season
     Replay:
       type: object
       properties:
@@ -1692,6 +2077,16 @@ components:
       required:
       - car
       - lap
+    Round:
+      type: object
+      properties:
+        round:
+          type: integer
+        name:
+          type: string
+      required:
+      - name
+      - round
     Season:
       type: object
       properties:
@@ -1967,6 +2362,80 @@ components:
       required:
       - name
       - ref
+    TeamCareer:
+      type: object
+      properties:
+        team:
+          $ref: '#/components/schemas/TeamList'
+        colour:
+          type: string
+          nullable: true
+        totals:
+          $ref: '#/components/schemas/TeamTotals'
+        seasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamSeason'
+          description: Most recent first
+      required:
+      - colour
+      - seasons
+      - team
+      - totals
+    TeamList:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica constructorId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          maxLength: 128
+        nationality:
+          type: string
+          maxLength: 64
+        wikipedia_url:
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        colour:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Latest timing colour (2023+), hex RGB
+      required:
+      - colour
+      - name
+      - ref
+    TeamProgression:
+      type: object
+      properties:
+        team:
+          $ref: '#/components/schemas/Team'
+        colour:
+          type: string
+          nullable: true
+        points:
+          type: array
+          items:
+            type: number
+            format: double
+            nullable: true
+        positions:
+          type: array
+          items:
+            type: integer
+            nullable: true
+      required:
+      - colour
+      - points
+      - positions
+      - team
     TeamRadio:
       type: object
       properties:
@@ -1986,6 +2455,70 @@ components:
       - car_number
       - recorded_at
       - url
+    TeamSeason:
+      type: object
+      properties:
+        year:
+          type: integer
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Driver'
+        starts:
+          type: integer
+        wins:
+          type: integer
+        podiums:
+          type: integer
+        points:
+          type: number
+          format: double
+        championship_position:
+          type: integer
+          nullable: true
+      required:
+      - championship_position
+      - drivers
+      - podiums
+      - points
+      - starts
+      - wins
+      - year
+    TeamTotals:
+      type: object
+      properties:
+        seasons:
+          type: integer
+        first_season:
+          type: integer
+          nullable: true
+        last_season:
+          type: integer
+          nullable: true
+        starts:
+          type: integer
+          description: Races with at least one car starting
+        wins:
+          type: integer
+        podiums:
+          type: integer
+        poles:
+          type: integer
+        points:
+          type: number
+          format: double
+        championships:
+          type: integer
+      required:
+      - championships
+      - first_season
+      - last_season
+      - podiums
+      - points
+      - poles
+      - seasons
+      - starts
+      - wins
     Track:
       type: object
       description: Circuit outline in screen coordinates, samples evenly spaced in
@@ -2096,3 +2629,27 @@ components:
       - net_gain_s
       - p_attacker_ahead
       - sigma_s
+    Winner:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          readOnly: true
+        team_colour:
+          type: string
+          description: 'Hex RGB without #'
+          maxLength: 6
+      required:
+      - car_number
+      - driver
+      - team

@@ -19,6 +19,7 @@ export const events = {
         locality: "Melbourne",
         country: "Australia",
       },
+      winner: null,
       sessions: [
         {
           id: 1,
@@ -65,6 +66,7 @@ export const events = {
         locality: "Sakhir",
         country: "Bahrain",
       },
+      winner: null,
       sessions: [
         {
           id: 16,
@@ -111,6 +113,7 @@ export const events = {
         locality: "Budapest",
         country: "Hungary",
       },
+      winner: null,
       sessions: [
         {
           id: 66,
@@ -157,6 +160,7 @@ export const events = {
         locality: "Monza",
         country: "Italy",
       },
+      winner: null,
       sessions: [
         {
           id: 76,

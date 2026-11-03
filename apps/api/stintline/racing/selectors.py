@@ -25,9 +25,14 @@ def seasons() -> QuerySet[Season]:
 
 
 def season_events(year: int) -> QuerySet[Event]:
-    sessions = Session.objects.annotate(
-        has_data=Exists(Lap.objects.filter(entry__session=OuterRef("pk")))
-    ).order_by("scheduled_start")
+    winners = SessionEntry.objects.filter(finish_position=1).select_related(
+        "driver__portrait", "team", "session__event__season"
+    )
+    sessions = (
+        Session.objects.annotate(has_data=Exists(Lap.objects.filter(entry__session=OuterRef("pk"))))
+        .prefetch_related(Prefetch("entries", queryset=winners, to_attr="winners"))
+        .order_by("scheduled_start")
+    )
     return (
         Event.objects.filter(season__year=year)
         .select_related("circuit", "season")
@@ -37,7 +42,7 @@ def season_events(year: int) -> QuerySet[Event]:
 
 
 def session_detail(session_id: int) -> Session:
-    entries = SessionEntry.objects.select_related("driver", "team").order_by(*ENTRY_ORDER)
+    entries = SessionEntry.objects.select_related("driver__portrait", "team").order_by(*ENTRY_ORDER)
     return (
         Session.objects.select_related("event__season", "event__circuit")
         .prefetch_related(
@@ -51,7 +56,7 @@ def session_detail(session_id: int) -> Session:
 def session_stints(session_id: int) -> QuerySet[SessionEntry]:
     return (
         SessionEntry.objects.filter(session_id=session_id)
-        .select_related("driver", "team")
+        .select_related("driver__portrait", "team")
         .prefetch_related(
             Prefetch("stints", queryset=Stint.objects.order_by("stint_number")),
             Prefetch("pit_stops", queryset=PitStop.objects.order_by("lap_number")),

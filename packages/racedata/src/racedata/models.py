@@ -289,3 +289,18 @@ class TeamRadioRecord(_DTO):
     driver_number: int
     recorded_at: datetime
     url: str
+
+
+class WikiPortrait(_DTO):
+    """Lead image of a Wikipedia article, freely licensed (Wikimedia Commons or local).
+
+    ``image_url`` is a thumbnail on upload.wikimedia.org: a reference, never downloaded.
+    ``artist`` and ``license`` are what the licence requires us to show next to it.
+    """
+
+    title: str
+    image_url: str
+    file_page_url: str
+    artist: str
+    license: str
+    license_url: str

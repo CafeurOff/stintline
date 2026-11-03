@@ -108,6 +108,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "stintline.ingestion.tasks.refresh_calendar",
         "schedule": 24 * 60 * 60,
     },
+    "refresh-portraits": {
+        "task": "stintline.ingestion.tasks.refresh_portraits",
+        "schedule": 7 * 24 * 60 * 60,
+    },
 }
 
 AUTH_PASSWORD_VALIDATORS = [

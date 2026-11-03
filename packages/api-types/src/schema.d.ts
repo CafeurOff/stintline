@@ -55,6 +55,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/events/{event_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** A Grand Prix weekend with its sessions and race winner */
+    get: operations["event_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/health": {
     parameters: {
       query?: never;
@@ -67,6 +84,23 @@ export interface paths {
      * @description Liveness and readiness of the API and its database.
      */
     get: operations["health_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/home": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Next Grand Prix, last race podium and championship leaders */
+    get: operations["home_retrieve"];
     put?: never;
     post?: never;
     delete?: never;
@@ -135,6 +169,23 @@ export interface paths {
     };
     /** Drivers' and constructors' championships after a round (default: latest) */
     get: operations["season_standings_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/seasons/{year}/standings/progression": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Championship points of every driver and team after each round */
+    get: operations["season_progression_retrieve"];
     put?: never;
     post?: never;
     delete?: never;
@@ -330,6 +381,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/teams": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Every constructor since 1950, searchable by name, optionally limited to a season. */
+    get: operations["teams_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/teams/{ref}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Constructor record: totals and season-by-season results */
+    get: operations["team_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -360,6 +445,11 @@ export interface components {
       name: string;
       locality: string;
       country: string;
+      /** Format: double */
+      latitude?: number | null;
+      /** Format: double */
+      longitude?: number | null;
+      wikipedia_url?: string;
     };
     Compare: {
       car_a: number;
@@ -427,6 +517,8 @@ export interface components {
       code?: string;
       given_name: string;
       family_name: string;
+      /** @description Wikipedia portrait (ADR 0009); official media take precedence when present */
+      readonly portrait_url: string | null;
     };
     DriverBio: {
       /** @description Jolpica driverId */
@@ -440,12 +532,35 @@ export interface components {
       date_of_birth?: string | null;
       nationality?: string;
       wikipedia_url?: string;
+      readonly portrait: components["schemas"]["Portrait"] | null;
     };
     DriverCareer: {
       driver: components["schemas"]["DriverBio"];
       media: components["schemas"]["Media"] | null;
       totals: components["schemas"]["CareerTotals"];
       seasons: components["schemas"]["SeasonLine"][];
+    };
+    DriverListItem: {
+      /** @description Jolpica driverId */
+      ref: string;
+      code?: string;
+      given_name: string;
+      family_name: string;
+      /** Format: int64 */
+      permanent_number?: number | null;
+      /** Format: date */
+      date_of_birth?: string | null;
+      nationality?: string;
+      wikipedia_url?: string;
+      readonly portrait: components["schemas"]["Portrait"] | null;
+      /** @description Team of the latest race (in the requested season, if any) */
+      readonly team: components["schemas"]["LatestTeam"] | null;
+    };
+    DriverProgression: {
+      driver: components["schemas"]["Driver"];
+      colour: string | null;
+      points: (number | null)[];
+      positions: (number | null)[];
     };
     DriverResult: {
       readonly session_id: number;
@@ -534,6 +649,8 @@ export interface components {
       format: components["schemas"]["FormatEnum"];
       readonly circuit: components["schemas"]["Circuit"];
       readonly sessions: components["schemas"]["SessionSummary"][];
+      /** @description Race winner, once classified */
+      readonly winner: components["schemas"]["Winner"] | null;
     };
     EventSummary: {
       readonly id: number;
@@ -562,6 +679,13 @@ export interface components {
       status: components["schemas"]["ComponentStatusEnum"];
       version: string;
       database: components["schemas"]["ComponentStatusEnum"];
+    };
+    Home: {
+      season: number | null;
+      next_event: components["schemas"]["Event"] | null;
+      last_race: components["schemas"]["LastRace"] | null;
+      drivers: components["schemas"]["StandingLine"][];
+      constructors: components["schemas"]["StandingLine"][];
     };
     /**
      * @description * `FP1` - Practice 1
@@ -595,6 +719,18 @@ export interface components {
       lap: number;
       /** Format: double */
       gap_s: number;
+    };
+    LastRace: {
+      session_id: number;
+      event: components["schemas"]["EventSummary"];
+      /** @description Lap timing stored: the circuit replay works */
+      has_data: boolean;
+      podium: components["schemas"]["Entry"][];
+    };
+    LatestTeam: {
+      ref: string;
+      name: string;
+      colour: string | null;
     };
     Media: {
       /** Format: uri */
@@ -643,7 +779,7 @@ export interface components {
     };
     /** @enum {unknown} */
     NullEnum: null;
-    PaginatedDriverBioList: {
+    PaginatedDriverListItemList: {
       /** @example 123 */
       count: number;
       /**
@@ -656,7 +792,7 @@ export interface components {
        * @example http://api.example.org/accounts/?offset=200&limit=100
        */
       previous?: string | null;
-      results: components["schemas"]["DriverBio"][];
+      results: components["schemas"]["DriverListItem"][];
     };
     PaginatedDriverResultList: {
       /** @example 123 */
@@ -702,6 +838,21 @@ export interface components {
        */
       previous?: string | null;
       results: components["schemas"]["Season"][];
+    };
+    PaginatedTeamListList: {
+      /** @example 123 */
+      count: number;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=400&limit=100
+       */
+      next?: string | null;
+      /**
+       * Format: uri
+       * @example http://api.example.org/accounts/?offset=200&limit=100
+       */
+      previous?: string | null;
+      results: components["schemas"]["TeamList"][];
     };
     PitExitRequestRequest: {
       car: number;
@@ -759,6 +910,16 @@ export interface components {
        */
       reported_duration_s?: number | null;
     };
+    /** @description Freely licensed image with the credit its licence requires (ADR 0009). */
+    Portrait: {
+      /** Format: uri */
+      image_url: string;
+      artist: string;
+      license: string;
+      license_url?: string;
+      /** Format: uri */
+      file_page_url: string;
+    };
     /** @description Error body returned by every endpoint (inspired by RFC 9457 problem details). */
     Problem: {
       type: string;
@@ -769,6 +930,13 @@ export interface components {
       invalid_params?: {
         [key: string]: unknown;
       };
+    };
+    /** @description Championship after each stored round (every round from 2023, the final table before). */
+    Progression: {
+      season: number;
+      rounds: components["schemas"]["Round"][];
+      drivers: components["schemas"]["DriverProgression"][];
+      constructors: components["schemas"]["TeamProgression"][];
     };
     Replay: {
       total_laps: number;
@@ -794,6 +962,10 @@ export interface components {
     RivalStopRequest: {
       car: number;
       lap: number;
+    };
+    Round: {
+      round: number;
+      name: string;
     };
     Season: {
       /** Format: int64 */
@@ -888,6 +1060,28 @@ export interface components {
       ref: string;
       name: string;
     };
+    TeamCareer: {
+      team: components["schemas"]["TeamList"];
+      colour: string | null;
+      totals: components["schemas"]["TeamTotals"];
+      /** @description Most recent first */
+      seasons: components["schemas"]["TeamSeason"][];
+    };
+    TeamList: {
+      /** @description Jolpica constructorId */
+      ref: string;
+      name: string;
+      nationality?: string;
+      wikipedia_url?: string;
+      /** @description Latest timing colour (2023+), hex RGB */
+      readonly colour: string | null;
+    };
+    TeamProgression: {
+      team: components["schemas"]["Team"];
+      colour: string | null;
+      points: (number | null)[];
+      positions: (number | null)[];
+    };
     TeamRadio: {
       /** Format: int64 */
       car_number: number;
@@ -895,6 +1089,29 @@ export interface components {
       recorded_at: string;
       /** Format: uri */
       url: string;
+    };
+    TeamSeason: {
+      year: number;
+      drivers: components["schemas"]["Driver"][];
+      starts: number;
+      wins: number;
+      podiums: number;
+      /** Format: double */
+      points: number;
+      championship_position: number | null;
+    };
+    TeamTotals: {
+      seasons: number;
+      first_season: number | null;
+      last_season: number | null;
+      /** @description Races with at least one car starting */
+      starts: number;
+      wins: number;
+      podiums: number;
+      poles: number;
+      /** Format: double */
+      points: number;
+      championships: number;
     };
     /** @description Circuit outline in screen coordinates, samples evenly spaced in time over one lap. */
     Track: {
@@ -941,6 +1158,14 @@ export interface components {
       attacker_ahead: boolean;
       lap_gaps: components["schemas"]["LapGap"][];
     };
+    Winner: {
+      /** Format: int64 */
+      car_number: number;
+      readonly driver: components["schemas"]["Driver"];
+      readonly team: components["schemas"]["Team"];
+      /** @description Hex RGB without # */
+      team_colour?: string;
+    };
   };
   responses: never;
   parameters: never;
@@ -971,7 +1196,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["PaginatedDriverBioList"];
+          "application/json": components["schemas"]["PaginatedDriverListItemList"];
         };
       };
     };
@@ -1032,6 +1257,35 @@ export interface operations {
       };
     };
   };
+  event_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        event_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Event"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   health_retrieve: {
     parameters: {
       query?: never;
@@ -1055,6 +1309,25 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Health"];
+        };
+      };
+    };
+  };
+  home_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Home"];
         };
       };
     };
@@ -1147,6 +1420,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Standings"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  season_progression_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Progression"];
         };
       };
       404: {
@@ -1514,6 +1816,61 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Track"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  teams_list: {
+    parameters: {
+      query?: {
+        /** @description Number of results to return per page. */
+        limit?: number;
+        /** @description The initial index from which to return the results. */
+        offset?: number;
+        search?: string;
+        season?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedTeamListList"];
+        };
+      };
+    };
+  };
+  team_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TeamCareer"];
         };
       };
       404: {

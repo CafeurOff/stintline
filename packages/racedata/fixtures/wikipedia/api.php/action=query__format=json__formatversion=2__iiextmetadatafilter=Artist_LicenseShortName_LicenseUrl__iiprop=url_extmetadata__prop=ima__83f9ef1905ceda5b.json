@@ -1,0 +1,103 @@
+{
+ "batchcomplete": true,
+ "query": {
+  "normalized": [
+   {
+    "from": "File:Fangio_in_1955_(cropped).jpg",
+    "fromencoded": false,
+    "to": "File:Fangio in 1955 (cropped).jpg"
+   },
+   {
+    "from": "File:Giuseppe_Farina_-_El_Gr\u00e1fico_1750.jpg",
+    "fromencoded": false,
+    "to": "File:Giuseppe Farina - El Gr\u00e1fico 1750.jpg"
+   },
+   {
+    "from": "File:Johnnie_Parsons_USAC_circa_1957.jpg",
+    "fromencoded": false,
+    "to": "File:Johnnie Parsons USAC circa 1957.jpg"
+   }
+  ],
+  "pages": [
+   {
+    "imageinfo": [
+     {
+      "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=147573378",
+      "descriptionurl": "https://commons.wikimedia.org/wiki/File:Johnnie_Parsons_USAC_circa_1957.jpg",
+      "extmetadata": {
+       "Artist": {
+        "source": "commons-desc-page",
+        "value": "Trenton International Speedway"
+       },
+       "LicenseShortName": {
+        "hidden": "",
+        "source": "commons-desc-page",
+        "value": "Public domain"
+       }
+      },
+      "url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Johnnie_Parsons_USAC_circa_1957.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original"
+     }
+    ],
+    "imagerepository": "shared",
+    "known": true,
+    "missing": true,
+    "ns": 6,
+    "title": "File:Johnnie Parsons USAC circa 1957.jpg"
+   },
+   {
+    "imageinfo": [
+     {
+      "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=53892284",
+      "descriptionurl": "https://commons.wikimedia.org/wiki/File:Giuseppe_Farina_-_El_Gr%C3%A1fico_1750.jpg",
+      "extmetadata": {
+       "Artist": {
+        "source": "commons-desc-page",
+        "value": "El Gr\u00e1fico"
+       },
+       "LicenseShortName": {
+        "hidden": "",
+        "source": "commons-desc-page",
+        "value": "Public domain"
+       }
+      },
+      "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Giuseppe_Farina_-_El_Gr%C3%A1fico_1750.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original"
+     }
+    ],
+    "imagerepository": "shared",
+    "known": true,
+    "missing": true,
+    "ns": 6,
+    "title": "File:Giuseppe Farina - El Gr\u00e1fico 1750.jpg"
+   },
+   {
+    "imageinfo": [
+     {
+      "descriptionshorturl": "https://commons.wikimedia.org/w/index.php?curid=93952267",
+      "descriptionurl": "https://commons.wikimedia.org/wiki/File:Fangio_in_1955_(cropped).jpg",
+      "extmetadata": {
+       "Artist": {
+        "source": "commons-desc-page",
+        "value": "<bdi><a href=\"https://www.wikidata.org/wiki/Q11961360\" class=\"extiw\" title=\"d:Q11961360\"><span title=\"Norwegian photographer (1928-2015)\">Bj\u00f8rn Fj\u00f8rtoft</span></a></bdi>"
+       },
+       "LicenseShortName": {
+        "hidden": "",
+        "source": "commons-desc-page",
+        "value": "CC BY 4.0"
+       },
+       "LicenseUrl": {
+        "source": "commons-desc-page",
+        "value": "https://creativecommons.org/licenses/by/4.0"
+       }
+      },
+      "url": "https://upload.wikimedia.org/wikipedia/commons/2/20/Fangio_in_1955_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=imageinfo&utm_content=original"
+     }
+    ],
+    "imagerepository": "shared",
+    "known": true,
+    "missing": true,
+    "ns": 6,
+    "title": "File:Fangio in 1955 (cropped).jpg"
+   }
+  ]
+ }
+}

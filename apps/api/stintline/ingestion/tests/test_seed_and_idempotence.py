@@ -6,6 +6,7 @@ import pytest
 from django.core.management import call_command
 
 from stintline.racing.models import (
+    DriverPortrait,
     Event,
     Lap,
     PitStop,
@@ -21,6 +22,7 @@ from stintline.racing.models import (
 pytestmark = pytest.mark.django_db
 
 TABLES = (
+    DriverPortrait,
     Event,
     Session,
     SessionEntry,
@@ -60,6 +62,7 @@ def test_seed_demo_loads_three_reference_races() -> None:
     assert race_results.values("session").distinct().count() == 24  # every 2025 result
     assert Lap.objects.count() == 1129 + 1369 + 976
     assert PitStop.objects.count() == 42 + 29 + 19
+    assert DriverPortrait.objects.count() == 21  # the whole 2025 grid
 
 
 def test_seed_demo_is_idempotent() -> None:

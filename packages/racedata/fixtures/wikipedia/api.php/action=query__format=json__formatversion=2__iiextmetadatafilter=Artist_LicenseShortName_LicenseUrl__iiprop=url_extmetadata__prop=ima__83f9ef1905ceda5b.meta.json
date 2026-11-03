@@ -1,0 +1,17 @@
+{
+  "provider": "wikipedia",
+  "url": "https://en.wikipedia.org/w/api.php",
+  "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "prop": "imageinfo",
+    "iiprop": "url|extmetadata",
+    "iiextmetadatafilter": "Artist|LicenseShortName|LicenseUrl",
+    "titles": "File:Fangio_in_1955_(cropped).jpg|File:Giuseppe_Farina_-_El_Gr\u00e1fico_1750.jpg|File:Johnnie_Parsons_USAC_circa_1957.jpg"
+  },
+  "recorded_at": "2026-11-03T19:15:52+00:00",
+  "sha256": "b03169a251e71fcf4cb0e53815586843a4b375e8eb542e671a500b9b47c37610",
+  "bytes": 3323,
+  "dropped_fields": []
+}

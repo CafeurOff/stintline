@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from django.db.models import Max, Q, QuerySet
+from django.db.models import Case, Max, Q, QuerySet, When
 
 from stintline.racing.media import media_for
 from stintline.racing.models import Driver, SessionEntry, SessionKind, Standing
@@ -150,7 +150,15 @@ def search_drivers(text: str | None, season: int | None) -> QuerySet[Driver]:
             )
     if season is not None:
         drivers = drivers.filter(entries__session__event__season__year=season).distinct()
-    return drivers.order_by("family_name", "given_name")
+    order: list[Any] = ["family_name", "given_name"]
+    if text:
+        # Surnames starting with the first word come first ("Ham" -> Hamilton, not Graham).
+        first = text.split()[0]
+        drivers = drivers.annotate(
+            prefix=Case(When(family_name__istartswith=first, then=0), default=1)
+        )
+        order = ["prefix", *order]
+    return drivers.select_related("portrait").order_by(*order)
 
 
 def standings(season: int, round_: int | None) -> tuple[int | None, list[int], QuerySet[Standing]]:
@@ -163,5 +171,5 @@ def standings(season: int, round_: int | None) -> tuple[int | None, list[int], Q
     return (
         chosen,
         rounds,
-        rows.filter(round=chosen).select_related("driver", "team").order_by("position"),
+        rows.filter(round=chosen).select_related("driver__portrait", "team").order_by("position"),
     )

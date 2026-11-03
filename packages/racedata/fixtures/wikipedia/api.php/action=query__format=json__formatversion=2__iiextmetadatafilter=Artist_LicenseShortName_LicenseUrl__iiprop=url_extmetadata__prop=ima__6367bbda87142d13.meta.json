@@ -1,0 +1,17 @@
+{
+  "provider": "wikipedia",
+  "url": "https://en.wikipedia.org/w/api.php",
+  "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "prop": "imageinfo",
+    "iiprop": "url|extmetadata",
+    "iiextmetadatafilter": "Artist|LicenseShortName|LicenseUrl",
+    "titles": "File:2019_Formula_One_tests_Barcelona,_Hulkenberg_(40287128313).jpg|File:2024-08-25_Motorsport,_Formel_1,_Gro\u00dfer_Preis_der_Niederlande_2024_STP_3968_by_Stepro_(cropped2).jpg|File:2024-08-25_Motorsport,_Formel_1,_Gro\u00dfer_Preis_der_Niederlande_2024_STP_3973_by_Stepro_(medium_crop).jpg|File:2025_Japan_GP_-_Aston_Martin_-_Lance_Stroll_-_Fanzone_Stage_(cropped).jpg|File:2025_Japan_GP_-_Haas_-_Oliver_Bearman_-_Thursday_(cropped).jpg|File:2026-08-23_Motorsport,_Formel_1,_Gro\u00dfer_Preis_der_Niederlande_2026_STP_3010_(cropped2).jpg|File:2026_Chinese_GP_-_Oscar_Piastri_(cropped)_(cropped).jpg|File:Alex_Albon_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_(028A8626)_(cropped).jpg|File:Alonso-68_(24710447098).jpg|File:Carlos_Sainz_at_the_83rd_Venice_FILM_festival-9_(cropped).jpg|File:Charles_Leclerc_at_the_2026_Cannes_Film_Festival_(cropped).jpg|File:Esteban_Ocon_2024_Suzuka_(cropped).jpg|File:Franco_Colapinto_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_(028A8698)_cropped.jpg|File:Gabriel_Bortoleto_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_(028A8581)_cropped.jpg|File:Isack_Hadjar_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_(028A8753)_(cropped).jpg|File:Jack_Doohan_2023.jpg|File:KingsLeonSilverstne040724_(28_of_112)_(53838006028)_(cropped).jpg|File:Liam_Lawson_at_the_Red_Bull_Fan_Zone_\u2013_Crown_Riverwalk,_Melbourne_(028A7795).jpg|File:Pierre_Gasly_2017_Malaysia.jpg|File:Prime_Minister_Keir_Starmer_meets_Sir_Lewis_Hamilton_(54566928382)_(cropped).jpg|File:Yuki_Tsunoda_at_the_Melbourne_Walk_during_the_2026_Australian_Grand_Prix_(028A8096).jpg"
+  },
+  "recorded_at": "2026-11-03T19:15:40+00:00",
+  "sha256": "7cbed4e35f486966653a9354bce65c6097a32df7e3b2214d4038337e6b55d568",
+  "bytes": 29370,
+  "dropped_fields": []
+}

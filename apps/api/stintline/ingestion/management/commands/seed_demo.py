@@ -6,9 +6,9 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
 
-from stintline.ingestion import history, services
+from stintline.ingestion import history, portraits, services
 from stintline.ingestion.sources import MODE_FIXTURES, open_sources
-from stintline.racing.models import Session, SessionKind
+from stintline.racing.models import Driver, Session, SessionKind
 
 DEMO_SEASON = 2025
 DEMO_ROUNDS = (4, 14, 16)
@@ -43,4 +43,7 @@ class Command(BaseCommand):
             self.stdout.write(f"Drivers, teams and circuits: {reference.counts}")
             results = history.ingest_season_results(DEMO_SEASON, sources)
             self.stdout.write(f"{DEMO_SEASON} results and standings: {results.counts}")
+            grid = Driver.objects.filter(entries__session__event__season__year=DEMO_SEASON)
+            pictures = portraits.ingest_portraits(sources, grid.distinct())
+            self.stdout.write(f"Portraits: {pictures.counts}")
         self.stdout.write(self.style.SUCCESS(f"Demo data loaded ({len(rounds)} races)"))

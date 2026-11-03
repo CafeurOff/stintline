@@ -29,4 +29,12 @@ JOLPICA = ProviderConfig(
     limits=(RateLimit(max_calls=3, period_s=1.0), RateLimit(max_calls=450, period_s=3600.0)),
 )
 
-PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA)}
+WIKIPEDIA = ProviderConfig(
+    name="wikipedia",
+    base_url="https://en.wikipedia.org/w",
+    # No published limit for serial API calls; Wikimedia asks for a descriptive User-Agent
+    # and modest pace. One call per second is far below anything they throttle.
+    limits=(RateLimit(max_calls=1, period_s=1.0),),
+)
+
+PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA)}

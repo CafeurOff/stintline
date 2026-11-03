@@ -1,0 +1,19 @@
+{
+  "provider": "wikipedia",
+  "url": "https://en.wikipedia.org/w/api.php",
+  "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "prop": "pageimages",
+    "piprop": "thumbnail|name",
+    "pithumbsize": "500",
+    "pilicense": "free",
+    "redirects": "1",
+    "titles": "Alexander Albon|Andrea Kimi Antonelli|Carlos Sainz Jr.|Charles Leclerc|Esteban Ocon|Fernando Alonso|Franco Colapinto|Gabriel Bortoleto|George Russell (racing driver)|Isack Hadjar|Jack Doohan|Lance Stroll|Lando Norris|Lewis Hamilton|Liam Lawson|Max Verstappen|Nico H\u00fclkenberg|Oliver Bearman|Oscar Piastri|Pierre Gasly|Yuki Tsunoda"
+  },
+  "recorded_at": "2026-11-03T19:15:40+00:00",
+  "sha256": "f04fa2b1941ce1dc08d2c59821b32e4c0440fe1194f0ad96dd28ec7723c42abc",
+  "bytes": 11552,
+  "dropped_fields": []
+}

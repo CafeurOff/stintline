@@ -16,6 +16,15 @@ urlpatterns = [
     path(
         "seasons/<int:year>/standings", views.SeasonStandingsView.as_view(), name="season-standings"
     ),
+    path(
+        "seasons/<int:year>/standings/progression",
+        views.SeasonProgressionView.as_view(),
+        name="season-progression",
+    ),
+    path("events/<int:event_id>", views.EventDetailView.as_view(), name="event"),
+    path("home", views.HomeView.as_view(), name="home"),
+    path("teams", views.TeamListView.as_view(), name="teams"),
+    path("teams/<slug:ref>", views.TeamCareerView.as_view(), name="team"),
     path("drivers", views.DriverListView.as_view(), name="drivers"),
     path("drivers/<slug:ref>", views.DriverCareerView.as_view(), name="driver"),
     path("drivers/<slug:ref>/results", views.DriverResultsView.as_view(), name="driver-results"),

@@ -4,6 +4,7 @@ segregation): ingestion composes a schedule source, a results source and a timin
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Protocol
 
@@ -26,6 +27,7 @@ from racedata.models import (
     TeamRadioRecord,
     TimingSession,
     WeatherRecord,
+    WikiPortrait,
 )
 
 
@@ -79,3 +81,9 @@ class HistorySource(Protocol):
     def constructors(self) -> list[ConstructorInfo]: ...
 
     def circuits(self) -> list[CircuitInfo]: ...
+
+
+class PortraitSource(Protocol):
+    """Freely licensed portraits keyed by Wikipedia article title (ADR 0009)."""
+
+    def portraits(self, titles: Sequence[str]) -> dict[str, WikiPortrait]: ...

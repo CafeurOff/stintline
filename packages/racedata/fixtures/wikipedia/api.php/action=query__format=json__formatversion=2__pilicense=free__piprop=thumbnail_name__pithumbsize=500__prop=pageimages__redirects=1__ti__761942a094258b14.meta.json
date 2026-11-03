@@ -1,0 +1,19 @@
+{
+  "provider": "wikipedia",
+  "url": "https://en.wikipedia.org/w/api.php",
+  "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "prop": "pageimages",
+    "piprop": "thumbnail|name",
+    "pithumbsize": "500",
+    "pilicense": "free",
+    "redirects": "1",
+    "titles": "Johnnie Parsons|Juan Manuel Fangio|Nino Farina|Stintline nonexistent driver"
+  },
+  "recorded_at": "2026-11-03T19:15:52+00:00",
+  "sha256": "101867474a5f0e6599d97b0503fe08ecf0bc780dcd0611b378460104e59ad2a5",
+  "bytes": 1497,
+  "dropped_fields": []
+}

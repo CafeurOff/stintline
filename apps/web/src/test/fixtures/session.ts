@@ -28,6 +28,7 @@ export const session = {
         code: "NOR",
         given_name: "Lando",
         family_name: "Norris",
+        portrait_url: null,
       },
       team: {
         ref: "mclaren",
@@ -55,6 +56,7 @@ export const session = {
         code: "PIA",
         given_name: "Oscar",
         family_name: "Piastri",
+        portrait_url: null,
       },
       team: {
         ref: "mclaren",
@@ -82,6 +84,7 @@ export const session = {
         code: "RUS",
         given_name: "George",
         family_name: "Russell",
+        portrait_url: null,
       },
       team: {
         ref: "mercedes",
@@ -109,6 +112,7 @@ export const session = {
         code: "LEC",
         given_name: "Charles",
         family_name: "Leclerc",
+        portrait_url: null,
       },
       team: {
         ref: "ferrari",
@@ -136,6 +140,7 @@ export const session = {
         code: "ALO",
         given_name: "Fernando",
         family_name: "Alonso",
+        portrait_url: null,
       },
       team: {
         ref: "aston_martin",
@@ -163,6 +168,7 @@ export const session = {
         code: "BOR",
         given_name: "Gabriel",
         family_name: "Bortoleto",
+        portrait_url: null,
       },
       team: {
         ref: "sauber",
@@ -190,6 +196,7 @@ export const session = {
         code: "STR",
         given_name: "Lance",
         family_name: "Stroll",
+        portrait_url: null,
       },
       team: {
         ref: "aston_martin",
@@ -217,6 +224,7 @@ export const session = {
         code: "LAW",
         given_name: "Liam",
         family_name: "Lawson",
+        portrait_url: null,
       },
       team: {
         ref: "rb",
@@ -244,6 +252,7 @@ export const session = {
         code: "VER",
         given_name: "Max",
         family_name: "Verstappen",
+        portrait_url: null,
       },
       team: {
         ref: "red_bull",
@@ -271,6 +280,7 @@ export const session = {
         code: "ANT",
         given_name: "Andrea Kimi",
         family_name: "Antonelli",
+        portrait_url: null,
       },
       team: {
         ref: "mercedes",
@@ -298,6 +308,7 @@ export const session = {
         code: "HAD",
         given_name: "Isack",
         family_name: "Hadjar",
+        portrait_url: null,
       },
       team: {
         ref: "rb",
@@ -325,6 +336,7 @@ export const session = {
         code: "HAM",
         given_name: "Lewis",
         family_name: "Hamilton",
+        portrait_url: null,
       },
       team: {
         ref: "ferrari",
@@ -352,6 +364,7 @@ export const session = {
         code: "HUL",
         given_name: "Nico",
         family_name: "H\u00fclkenberg",
+        portrait_url: null,
       },
       team: {
         ref: "sauber",
@@ -379,6 +392,7 @@ export const session = {
         code: "SAI",
         given_name: "Carlos",
         family_name: "Sainz",
+        portrait_url: null,
       },
       team: {
         ref: "williams",
@@ -406,6 +420,7 @@ export const session = {
         code: "ALB",
         given_name: "Alexander",
         family_name: "Albon",
+        portrait_url: null,
       },
       team: {
         ref: "williams",
@@ -433,6 +448,7 @@ export const session = {
         code: "OCO",
         given_name: "Esteban",
         family_name: "Ocon",
+        portrait_url: null,
       },
       team: {
         ref: "haas",
@@ -460,6 +476,7 @@ export const session = {
         code: "TSU",
         given_name: "Yuki",
         family_name: "Tsunoda",
+        portrait_url: null,
       },
       team: {
         ref: "red_bull",
@@ -487,6 +504,7 @@ export const session = {
         code: "COL",
         given_name: "Franco",
         family_name: "Colapinto",
+        portrait_url: null,
       },
       team: {
         ref: "alpine",
@@ -513,6 +531,7 @@ export const session = {
         code: "GAS",
         given_name: "Pierre",
         family_name: "Gasly",
+        portrait_url: null,
       },
       team: {
         ref: "alpine",
@@ -540,6 +559,7 @@ export const session = {
         code: "BEA",
         given_name: "Oliver",
         family_name: "Bearman",
+        portrait_url: null,
       },
       team: {
         ref: "haas",

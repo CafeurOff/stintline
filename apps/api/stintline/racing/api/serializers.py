@@ -9,11 +9,13 @@ from stintline.racing.media import media_for
 from stintline.racing.models import (
     Circuit,
     Driver,
+    DriverPortrait,
     Event,
     PitStop,
     Season,
     Session,
     SessionEntry,
+    SessionKind,
     Standing,
     Stint,
     Team,
@@ -33,7 +35,52 @@ class SeasonSerializer(serializers.ModelSerializer[Season]):
 class CircuitSerializer(serializers.ModelSerializer[Circuit]):
     class Meta:
         model = Circuit
-        fields = ["ref", "name", "locality", "country"]
+        fields = ["ref", "name", "locality", "country", "latitude", "longitude", "wikipedia_url"]
+
+
+def portrait_of(driver: Driver) -> DriverPortrait | None:
+    """The driver's Wikipedia portrait, if any (select ``driver__portrait`` to avoid N+1)."""
+    try:
+        return driver.portrait
+    except DriverPortrait.DoesNotExist:
+        return None
+
+
+class PortraitSerializer(serializers.ModelSerializer[DriverPortrait]):
+    """Freely licensed image with the credit its licence requires (ADR 0009)."""
+
+    class Meta:
+        model = DriverPortrait
+        fields = ["image_url", "artist", "license", "license_url", "file_page_url"]
+
+
+class DriverSerializer(serializers.ModelSerializer[Driver]):
+    portrait_url = serializers.SerializerMethodField(
+        help_text="Wikipedia portrait (ADR 0009); official media take precedence when present"
+    )
+
+    class Meta:
+        model = Driver
+        fields = ["ref", "code", "given_name", "family_name", "portrait_url"]
+
+    def get_portrait_url(self, driver: Driver) -> str | None:
+        portrait = portrait_of(driver)
+        return portrait.image_url if portrait else None
+
+
+class TeamSerializer(serializers.ModelSerializer[Team]):
+    class Meta:
+        model = Team
+        fields = ["ref", "name"]
+
+
+class WinnerSerializer(serializers.ModelSerializer[SessionEntry]):
+    driver = DriverSerializer(read_only=True)
+    team = TeamSerializer(read_only=True)
+
+    class Meta:
+        model = SessionEntry
+        fields = ["car_number", "driver", "team", "team_colour"]
 
 
 class SessionSummarySerializer(serializers.ModelSerializer[Session]):
@@ -55,21 +102,19 @@ class EventSummarySerializer(serializers.ModelSerializer[Event]):
 
 class EventSerializer(EventSummarySerializer):
     sessions = SessionSummarySerializer(many=True, read_only=True)
+    winner = serializers.SerializerMethodField(help_text="Race winner, once classified")
 
     class Meta(EventSummarySerializer.Meta):
-        fields = [*EventSummarySerializer.Meta.fields, "sessions"]
+        fields = [*EventSummarySerializer.Meta.fields, "sessions", "winner"]
 
-
-class DriverSerializer(serializers.ModelSerializer[Driver]):
-    class Meta:
-        model = Driver
-        fields = ["ref", "code", "given_name", "family_name"]
-
-
-class TeamSerializer(serializers.ModelSerializer[Team]):
-    class Meta:
-        model = Team
-        fields = ["ref", "name"]
+    @extend_schema_field(WinnerSerializer(allow_null=True))
+    def get_winner(self, event: Event) -> dict[str, Any] | None:
+        """Needs ``selectors.season_events`` (sessions prefetched with ``winners``)."""
+        for session in event.sessions.all():
+            if session.kind == SessionKind.RACE:
+                winners = getattr(session, "winners", [])
+                return WinnerSerializer(winners[0]).data if winners else None
+        return None
 
 
 class MediaSerializer(serializers.Serializer[Any]):
@@ -182,6 +227,8 @@ class TrackSerializer(serializers.Serializer[Any]):
 
 
 class DriverBioSerializer(serializers.ModelSerializer[Driver]):
+    portrait = serializers.SerializerMethodField()
+
     class Meta:
         model = Driver
         fields = [
@@ -193,7 +240,40 @@ class DriverBioSerializer(serializers.ModelSerializer[Driver]):
             "date_of_birth",
             "nationality",
             "wikipedia_url",
+            "portrait",
         ]
+
+    @extend_schema_field(PortraitSerializer(allow_null=True))
+    def get_portrait(self, driver: Driver) -> dict[str, Any] | None:
+        portrait = portrait_of(driver)
+        return PortraitSerializer(portrait).data if portrait else None
+
+
+class LatestTeamSerializer(serializers.Serializer[Any]):
+    ref = serializers.CharField()
+    name = serializers.CharField()
+    colour = serializers.CharField(allow_null=True)
+
+
+class DriverListItemSerializer(DriverBioSerializer):
+    team = serializers.SerializerMethodField(
+        help_text="Team of the latest race (in the requested season, if any)"
+    )
+
+    class Meta(DriverBioSerializer.Meta):
+        fields = [*DriverBioSerializer.Meta.fields, "team"]
+
+    @extend_schema_field(LatestTeamSerializer(allow_null=True))
+    def get_team(self, driver: Driver) -> dict[str, Any] | None:
+        """Needs ``hub.with_latest_team`` annotations."""
+        ref = getattr(driver, "team_ref", None)
+        if ref is None:
+            return None
+        return {
+            "ref": ref,
+            "name": getattr(driver, "team_name", ""),
+            "colour": getattr(driver, "team_colour", None),
+        }
 
 
 class CareerTotalsSerializer(serializers.Serializer[Any]):
@@ -286,3 +366,90 @@ class DriverQuerySerializer(serializers.Serializer[Any]):
 
 class RoundQuerySerializer(serializers.Serializer[Any]):
     round = serializers.IntegerField(required=False, min_value=1, max_value=40)
+
+
+class TeamListSerializer(serializers.ModelSerializer[Team]):
+    colour = serializers.CharField(
+        read_only=True, allow_null=True, help_text="Latest timing colour (2023+), hex RGB"
+    )
+
+    class Meta:
+        model = Team
+        fields = ["ref", "name", "nationality", "wikipedia_url", "colour"]
+
+
+class TeamTotalsSerializer(serializers.Serializer[Any]):
+    seasons = serializers.IntegerField()
+    first_season = serializers.IntegerField(allow_null=True)
+    last_season = serializers.IntegerField(allow_null=True)
+    starts = serializers.IntegerField(help_text="Races with at least one car starting")
+    wins = serializers.IntegerField()
+    podiums = serializers.IntegerField()
+    poles = serializers.IntegerField()
+    points = serializers.FloatField()
+    championships = serializers.IntegerField()
+
+
+class TeamSeasonSerializer(serializers.Serializer[Any]):
+    year = serializers.IntegerField()
+    drivers = DriverSerializer(many=True)
+    starts = serializers.IntegerField()
+    wins = serializers.IntegerField()
+    podiums = serializers.IntegerField()
+    points = serializers.FloatField()
+    championship_position = serializers.IntegerField(allow_null=True)
+
+
+class TeamCareerSerializer(serializers.Serializer[Any]):
+    team = TeamListSerializer()
+    colour = serializers.CharField(allow_null=True)
+    totals = TeamTotalsSerializer()
+    seasons = TeamSeasonSerializer(many=True, help_text="Most recent first")
+
+
+class LastRaceSerializer(serializers.Serializer[Any]):
+    session_id = serializers.IntegerField()
+    event = EventSummarySerializer()
+    has_data = serializers.BooleanField(help_text="Lap timing stored: the circuit replay works")
+    podium = EntrySerializer(many=True)
+
+
+class HomeSerializer(serializers.Serializer[Any]):
+    season = serializers.IntegerField(allow_null=True)
+    next_event = EventSerializer(allow_null=True)
+    last_race = LastRaceSerializer(allow_null=True)
+    drivers = StandingLineSerializer(many=True)
+    constructors = StandingLineSerializer(many=True)
+
+
+class RoundSerializer(serializers.Serializer[Any]):
+    round = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class DriverProgressionSerializer(serializers.Serializer[Any]):
+    driver = DriverSerializer()
+    colour = serializers.CharField(allow_null=True)
+    points = serializers.ListField(child=serializers.FloatField(allow_null=True))
+    positions = serializers.ListField(child=serializers.IntegerField(allow_null=True))
+
+
+class TeamProgressionSerializer(serializers.Serializer[Any]):
+    team = TeamSerializer()
+    colour = serializers.CharField(allow_null=True)
+    points = serializers.ListField(child=serializers.FloatField(allow_null=True))
+    positions = serializers.ListField(child=serializers.IntegerField(allow_null=True))
+
+
+class ProgressionSerializer(serializers.Serializer[Any]):
+    """Championship after each stored round (every round from 2023, the final table before)."""
+
+    season = serializers.IntegerField()
+    rounds = RoundSerializer(many=True)
+    drivers = DriverProgressionSerializer(many=True)
+    constructors = TeamProgressionSerializer(many=True)
+
+
+class TeamQuerySerializer(serializers.Serializer[Any]):
+    search = serializers.CharField(required=False, max_length=64)
+    season = serializers.IntegerField(required=False, min_value=1950, max_value=2100)

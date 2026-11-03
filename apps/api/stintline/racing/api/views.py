@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.db.models import Max, QuerySet
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
@@ -11,23 +12,36 @@ from rest_framework.views import APIView
 
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
-from stintline.racing import careers, selectors
+from stintline.racing import careers, hub, selectors
 from stintline.racing.api.serializers import (
-    DriverBioSerializer,
     DriverCareerSerializer,
+    DriverListItemSerializer,
     DriverQuerySerializer,
     DriverResultSerializer,
     EntryStintsSerializer,
     EventSerializer,
+    HomeSerializer,
+    ProgressionSerializer,
     RoundQuerySerializer,
     SeasonSerializer,
     SessionDetailSerializer,
     StandingsSerializer,
+    TeamCareerSerializer,
+    TeamListSerializer,
+    TeamQuerySerializer,
     TeamRadioSerializer,
     TrackSerializer,
 )
 from stintline.racing.geometry import normalise_outline
-from stintline.racing.models import Driver, Event, Season, Session, SessionEntry, TeamRadio
+from stintline.racing.models import (
+    Driver,
+    Event,
+    Season,
+    Session,
+    SessionEntry,
+    Team,
+    TeamRadio,
+)
 
 
 class SeasonListView(generics.ListAPIView[Season]):
@@ -117,13 +131,14 @@ class SessionTrackView(APIView):
 class DriverListView(generics.ListAPIView[Driver]):
     """Every driver since 1950, searchable by name or code, optionally limited to a season."""
 
-    serializer_class = DriverBioSerializer
+    serializer_class = DriverListItemSerializer
 
     def get_queryset(self) -> QuerySet[Driver]:
         params = DriverQuerySerializer(data=self.request.query_params)
         params.is_valid(raise_exception=True)
-        return careers.search_drivers(
-            params.validated_data.get("search"), params.validated_data.get("season")
+        season = params.validated_data.get("season")
+        return hub.with_latest_team(
+            careers.search_drivers(params.validated_data.get("search"), season), season
         )
 
     @extend_schema(
@@ -216,4 +231,87 @@ class SessionRadioView(APIView):
         rows = TeamRadio.objects.filter(session_id=session_id).order_by("recorded_at")
         return cached_response(
             request, TeamRadioSerializer(rows, many=True).data, "radio", session_id, stamp
+        )
+
+
+class EventDetailView(APIView):
+    @extend_schema(
+        operation_id="event_retrieve",
+        summary="A Grand Prix weekend with its sessions and race winner",
+        responses={200: EventSerializer, 404: ProblemSerializer},
+        tags=["racing"],
+    )
+    def get(self, request: Request, event_id: int) -> Response:
+        try:
+            event = hub.event_detail(event_id)
+        except Event.DoesNotExist as exc:
+            raise NotFound("No such event.") from exc
+        return cached_response(
+            request, EventSerializer(event).data, "event", event_id, _data_stamp()
+        )
+
+
+class TeamListView(generics.ListAPIView[Team]):
+    """Every constructor since 1950, searchable by name, optionally limited to a season."""
+
+    serializer_class = TeamListSerializer
+
+    def get_queryset(self) -> QuerySet[Team]:
+        params = TeamQuerySerializer(data=self.request.query_params)
+        params.is_valid(raise_exception=True)
+        return hub.search_teams(
+            params.validated_data.get("search"), params.validated_data.get("season")
+        )
+
+    @extend_schema(
+        operation_id="teams_list",
+        parameters=[
+            OpenApiParameter("search", str, required=False),
+            OpenApiParameter("season", int, required=False),
+        ],
+        tags=["teams"],
+    )
+    def get(self, request: Request, *args: object, **kwargs: object) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class TeamCareerView(APIView):
+    @extend_schema(
+        operation_id="team_retrieve",
+        summary="Constructor record: totals and season-by-season results",
+        responses={200: TeamCareerSerializer, 404: ProblemSerializer},
+        tags=["teams"],
+    )
+    def get(self, request: Request, ref: str) -> Response:
+        team = get_object_or_404(Team, ref=ref)
+        data = TeamCareerSerializer(hub.team_career(team)).data
+        return cached_response(request, data, "team", ref, _data_stamp())
+
+
+class HomeView(APIView):
+    @extend_schema(
+        operation_id="home_retrieve",
+        summary="Next Grand Prix, last race podium and championship leaders",
+        responses=HomeSerializer,
+        tags=["racing"],
+    )
+    def get(self, request: Request) -> Response:
+        today = timezone.now().date()
+        data = HomeSerializer(hub.home(today)).data
+        return cached_response(request, data, "home", today.isoformat(), _data_stamp())
+
+
+class SeasonProgressionView(APIView):
+    @extend_schema(
+        operation_id="season_progression_retrieve",
+        summary="Championship points of every driver and team after each round",
+        responses={200: ProgressionSerializer, 404: ProblemSerializer},
+        tags=["racing"],
+    )
+    def get(self, request: Request, year: int) -> Response:
+        data = hub.progression(year)
+        if data is None:
+            raise NotFound("No standings for this season.")
+        return cached_response(
+            request, ProgressionSerializer(data).data, "progression", year, _data_stamp()
         )

@@ -145,6 +145,25 @@ class Driver(models.Model):
         return f"{self.given_name} {self.family_name}"
 
 
+class DriverPortrait(models.Model):
+    """Freely licensed lead image of the driver's Wikipedia article (ADR 0009).
+
+    Used when no official portrait applies (ADR 0006), mostly for past drivers. Only the
+    URL and the credit the licence requires are stored, never the image.
+    """
+
+    driver = models.OneToOneField(Driver, on_delete=models.CASCADE, related_name="portrait")
+    image_url = models.URLField(max_length=500)
+    file_page_url = models.URLField(max_length=500)
+    artist = models.CharField(max_length=200)
+    license = models.CharField(max_length=64)
+    license_url = models.URLField(max_length=300, blank=True)
+    fetched_at = models.DateTimeField()
+
+    def __str__(self) -> str:
+        return f"{self.driver} portrait ({self.license})"
+
+
 class SessionEntry(models.Model):
     """A driver taking part in a session for a team, with the car number raced."""
 

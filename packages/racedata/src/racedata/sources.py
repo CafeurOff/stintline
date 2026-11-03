@@ -7,12 +7,19 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from racedata.cache import FileCache, ResponseCache
-from racedata.config import JOLPICA, OPENF1, ProviderConfig
+from racedata.config import JOLPICA, OPENF1, WIKIPEDIA, ProviderConfig
 from racedata.fixtures import FIXTURES_ROOT, FixtureTransport
 from racedata.http import HttpClient
-from racedata.providers.base import HistorySource, ResultsSource, ScheduleSource, TimingSource
+from racedata.providers.base import (
+    HistorySource,
+    PortraitSource,
+    ResultsSource,
+    ScheduleSource,
+    TimingSource,
+)
 from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
+from racedata.providers.wikipedia import WikipediaSource
 
 
 @dataclass(frozen=True)
@@ -23,6 +30,8 @@ class Sources:
     clients: tuple[HttpClient, ...]
     history: HistorySource | None = None
     """Season-wide results and reference data. ``None`` in minimal test doubles."""
+    portraits: PortraitSource | None = None
+    """Wikipedia portraits (ADR 0009). ``None`` in minimal test doubles."""
 
     def close(self) -> None:
         for client in self.clients:
@@ -51,10 +60,8 @@ def build_http_sources(
     cache = FileCache(cache_dir) if cache_dir else None
     openf1 = _http_client(OPENF1, openf1_base_url, cache)
     jolpica = _http_client(JOLPICA, jolpica_base_url, cache)
-    jolpica_source = JolpicaSource(jolpica)
-    return Sources(
-        jolpica_source, jolpica_source, OpenF1Source(openf1), (openf1, jolpica), jolpica_source
-    )
+    wikipedia = _http_client(WIKIPEDIA, None, None)
+    return _sources(openf1, jolpica, wikipedia)
 
 
 def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
@@ -62,7 +69,17 @@ def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
     reaching the network."""
     openf1 = _fixture_client(OPENF1, root)
     jolpica = _fixture_client(JOLPICA, root)
+    wikipedia = _fixture_client(WIKIPEDIA, root)
+    return _sources(openf1, jolpica, wikipedia)
+
+
+def _sources(openf1: HttpClient, jolpica: HttpClient, wikipedia: HttpClient) -> Sources:
     jolpica_source = JolpicaSource(jolpica)
     return Sources(
-        jolpica_source, jolpica_source, OpenF1Source(openf1), (openf1, jolpica), jolpica_source
+        schedule=jolpica_source,
+        results=jolpica_source,
+        timing=OpenF1Source(openf1),
+        clients=(openf1, jolpica, wikipedia),
+        history=jolpica_source,
+        portraits=WikipediaSource(wikipedia),
     )

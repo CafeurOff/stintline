@@ -1,0 +1,51 @@
+{
+ "batchcomplete": true,
+ "query": {
+  "pages": [
+   {
+    "missing": true,
+    "ns": 0,
+    "title": "Stintline nonexistent driver"
+   },
+   {
+    "ns": 0,
+    "pageid": 48532,
+    "pageimage": "Fangio_in_1955_(cropped).jpg",
+    "thumbnail": {
+     "height": 667,
+     "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Fangio_in_1955_%28cropped%29.jpg/500px-Fangio_in_1955_%28cropped%29.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+     "width": 500
+    },
+    "title": "Juan Manuel Fangio"
+   },
+   {
+    "ns": 0,
+    "pageid": 342972,
+    "pageimage": "Giuseppe_Farina_-_El_Gr\u00e1fico_1750.jpg",
+    "thumbnail": {
+     "height": 678,
+     "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/Giuseppe_Farina_-_El_Gr%C3%A1fico_1750.jpg/500px-Giuseppe_Farina_-_El_Gr%C3%A1fico_1750.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+     "width": 500
+    },
+    "title": "Giuseppe Farina"
+   },
+   {
+    "ns": 0,
+    "pageid": 1252116,
+    "pageimage": "Johnnie_Parsons_USAC_circa_1957.jpg",
+    "thumbnail": {
+     "height": 631,
+     "source": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Johnnie_Parsons_USAC_circa_1957.jpg/500px-Johnnie_Parsons_USAC_circa_1957.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail",
+     "width": 500
+    },
+    "title": "Johnnie Parsons"
+   }
+  ],
+  "redirects": [
+   {
+    "from": "Nino Farina",
+    "to": "Giuseppe Farina"
+   }
+  ]
+ }
+}

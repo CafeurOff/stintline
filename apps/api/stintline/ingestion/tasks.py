@@ -11,7 +11,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from racedata.errors import RateLimitedError, UpstreamUnavailableError
-from stintline.ingestion import history, services
+from stintline.ingestion import history, portraits, services
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import RACE_KINDS, Event, Session
 
@@ -139,3 +139,17 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
         ingest_season_results.delay(season)
     log.info("refresh_recent_queued", sessions=len(queued), seasons=sorted(seasons))
     return queued
+
+
+@shared_task(
+    autoretry_for=RETRYABLE,
+    retry_backoff=RETRY_BACKOFF_S,
+    retry_backoff_max=RETRY_BACKOFF_MAX_S,
+    retry_jitter=True,
+    max_retries=MAX_RETRIES,
+    acks_late=True,
+)
+def refresh_portraits() -> dict[str, int]:
+    """Weekly: driver portraits from Wikipedia (new drivers, replaced photos)."""
+    with open_sources() as sources:
+        return portraits.ingest_portraits(sources).counts

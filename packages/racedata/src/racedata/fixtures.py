@@ -8,6 +8,7 @@ unknown request raises :class:`MissingFixtureError` instead.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping
@@ -26,6 +27,10 @@ class MissingFixtureError(LookupError):
     """A request was made in fixture mode but no recording matches it."""
 
 
+MAX_SLUG_CHARS = 150
+"""File names stay well under the usual 255-byte limit."""
+
+
 def _safe(text: str) -> str:
     """Filesystem-safe component: no separators and no ``..`` (path traversal)."""
     return _UNSAFE.sub("_", text).replace("..", "_")
@@ -37,6 +42,11 @@ def fixture_path(root: Path, provider: str, path: str, params: Mapping[str, str]
         _safe(part) for part in path.strip("/").split("/") if part not in ("", ".", "..")
     )
     slug = "__".join(_safe(f"{k}={v}") for k, v in sorted(params.items())) or "_"
+    if len(slug) > MAX_SLUG_CHARS:
+        # Long queries (50 Wikipedia titles) exceed file name limits: keep a readable
+        # prefix and make the name unique with a digest of the full query.
+        digest = hashlib.sha256(slug.encode()).hexdigest()[:16]
+        slug = f"{slug[: MAX_SLUG_CHARS - 18]}__{digest}"
     return root / provider / clean_path / f"{slug}.json"
 
 
