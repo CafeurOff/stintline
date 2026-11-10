@@ -8,7 +8,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 
 | Source | Used for | Freshness | Limits | Auth | Terms |
 | --- | --- | --- | --- | --- | --- |
-| OpenF1 REST (free) | Historical laps, stints, pit, race control, weather, intervals, drivers, sessions (2023+) | After the session (~30 min, to be measured) | 3 req/s, 30 req/min | None | Unofficial community API, free. Data originates from FOM timing |
+| OpenF1 REST (free) | Historical laps, stints, pit, race control, weather, intervals, drivers, sessions, and car data plus positions over each driver's fastest lap (2023+) | After the session (~30 min, to be measured) | 3 req/s, 30 req/min | None | Unofficial community API, free. Data originates from FOM timing |
 | Jolpica | Calendar, sessions schedule, results, pit stops, circuits (1950+) | After the session | ~4 req/s burst, ~500 req/hour (to confirm against jolpica-f1 docs). Pages of max 100 rows | None | Open-source Ergast successor, free |
 | Official live timing (SignalR Core) | Live mode only, run locally | Real time (sub-second deltas) | Unknown, single connection | None for the topics we use | formula1.com terms: personal, non-commercial use. Cloud IPs reportedly blocked |
 | FastF1 | **Not used** | — | Needs F1 TV account since Oct 2026 | F1 TV | — |
@@ -34,6 +34,11 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 - `car_data` is not ingested. `location` is fetched for one reference lap per race only (the fastest clean lap, about 320 samples) to draw the circuit (ADR 0007).
 - Free tier: no live data. Sponsor tier (live, MQTT or WebSocket) is not used (ADR 0002).
 - Pitfalls: `lap_duration` is null on some laps (lap 1, pit-out, deleted). `compound` can be `UNKNOWN`. Requests that are too large return errors, so query per session and per driver.
+
+### Car data (ADR 0013)
+- `car_data?session_key=…&driver_number=…&date>…&date<…`: `speed` (km/h), `throttle` (%), `brake` (0 or 100), `n_gear`, `rpm`, `drs`, about 3.7 Hz. Always bounded to one lap (~300 rows); a race is ~20,000 rows per car.
+- Paired with `location` over the same window. Fixtures: the Hungarian 2025 podium's fastest laps (`car_data/` and `location/`, session 9928, cars 4, 81 and 63).
+- 2026 cars have no DRS: the channel stays at 0.
 
 ## Jolpica
 - Base URL `https://api.jolpi.ca/ergast/f1`. Ergast-compatible schema (`MRData.RaceTable…`).

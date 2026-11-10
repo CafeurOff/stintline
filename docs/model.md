@@ -41,6 +41,13 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 | `WhatIfConfig.min_stint_laps` | 3 | `whatif.py` | A stop every two laps is never a plan; shorter stints are rejected. |
 | `WhatIfConfig.long_stint_margin_laps` | 3 | `whatif.py` | Stints longer than the longest run on that compound in the race (+ 3 laps) are extrapolated: a warning is shown. |
 | `WhatIfConfig.require_two_dry_compounds` | `True` | `whatif.py` | Dry-race rule: a single-compound plan is flagged as illegal (still simulated). |
+| `TelemetryConfig.step_m` | 10 m | `telemetry.py` | Resampling step: keeps the shortest braking zones (~40 m), 500 points for a 5 km lap. |
+| `TelemetryConfig.min_brake_s` | 0.3 s | `telemetry.py` | Shorter brake signals are dabs or noise (one sample is ~0.27 s at 3.7 Hz). |
+| `TelemetryConfig.merge_gap_m` | 30 m | `telemetry.py` | Release and re-apply in the same corner count as one braking zone. |
+| `TelemetryConfig.max_samples_gap_s` | 2 s | `telemetry.py` | A longer hole in the car data would misplace every later point: the lap is refused. |
+| Full throttle | ≥ 99 % | `telemetry.py`, web | The feed rarely reports exactly 100 % on straights. |
+| `MIN_START_GAIN` / `MIN_START_LOSS` | 2 / 3 places | `news/story.py` | Lap-1 moves worth a sentence in a race report. |
+| `UNDERCUT_WINDOW_LAPS` | 5 | `news/story.py` | The winner's stop counts as an undercut when it came at most 5 laps before the stop of the car it passed. |
 
 ## 3. Methods
 
@@ -61,6 +68,10 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 **Optimal window.** Exhaustive search over 1- and 2-stop plans, using the closed-form stint cost `n · pace₀ + slope · Σ ages`. It enforces the two-dry-compounds rule, optional maximum stint length, and returns every plan within 1 s of the best.
 
 **What-if replay of a whole race (ADR 0010).** The car's real race is kept and only the modelled effect of the change is added, lap by lap: `alt(lap) = real(lap) + Σ_{k ≤ lap} [tyre delta(k) + stop delta(k)]`. The tyre delta is the compound pace at the alternative age minus the pace at the real age (the car offset and fuel cancel), zero on neutralised laps. Each added stop adds the loss expected under that lap's conditions (`PitLossEstimate.under`), each removed real stop takes it back. Both schedules use the same convention: new set from the lap after the in-lap. The finishing order uses the official race times (with penalties) of the other cars, which do not change. σ² = Σ σ_pitloss² over the added and removed stops + Σ_compound (slope SE × net tyre age on that compound)², the slope error being shared by every lap on the compound. The finishing position is a distribution: P(between two rival times) from the Normal CDF.
+
+**Lap telemetry (ADR 0013).** One lap of car data (speed, throttle, brake on/off, gear, DRS, about 3.7 Hz) and positions. Distance is the trapezoidal integral of speed, the first sample extrapolated back to the line at its own speed and the last one forward to the end of the lap. Two laps are compared on the fraction of the lap, stretched to their mean length, so corners line up even though integrated lengths differ by up to ~1 %. Time at each point is interpolated on the same fraction; the gap between two drivers at a point is the difference of those times. Braking zones are runs of the brake channel, merged when closer than 30 m and kept when longer than 0.3 s; the apex speed is the lowest speed before the next full-throttle application. On the 2025 Hungarian Grand Prix the integrated lap is 4,342 m (official 4,381 m), Norris's fastest lap shows 10 braking zones (turn 1: 275 → 88 km/h) and the gap to Piastri ends at −0.506 s, the exact difference of their lap times.
+
+**Race story (ADR 0012, 0013).** The running order at the end of each lap comes from line-crossing times. Lead spells, laps led and lap-1 moves follow directly. The winner's last change of lead is classed as: led every lap; regained after the pit cycle (the winner led, stopped, and the car that stayed out stopped one or two laps before the lead came back); undercut (the winner stopped up to 5 laps before the stop of the car that led); inherited at a rival's stop; or on track.
 
 ## 4. Validation
 
@@ -132,4 +143,6 @@ Each ±0.011 s/kg shifts slopes by about ±0.019 s/lap. 0.022 s/kg yields negati
 - **Undercut and window** are verified on synthetic data and physically plausible inputs, but not yet backtested against observed undercut outcomes. This is planned once enough pairwise exchanges are labelled.
 - **What-if: the other cars do not react** to the new strategy, and overtaking on track costs nothing: a car that rejoins behind a slower one is assumed to pass at once. The car's own traffic and mistakes stay as they were in the real race. Retired cars, cars with gaps in their timing and wet races cannot be replayed.
 - **Pit loss under a Safety Car** can be overestimated when a stop's out-lap falls under the SC (the slow SC lap inflates the measured loss). Found with the what-if tests; affects circuits where the field pitted just before a Safety Car.
+- **Telemetry** is sampled at ~3.7 Hz: a brief lift or a short brake application can fall between two samples, and minimum speeds are rounded to the nearest sample. Integrated distance drifts by about 1 % per lap, which is why laps are compared by fraction of lap. Only the fastest clean lap of each driver is stored.
+- **Race story** classes the decisive moment from positions at the line only: an overtake in the pit lane or a position given back under orders reads as "on track".
 - **Sample size.** Nine dry 2025 races. Wet races, Qatar-style stint limits and sprint races are not part of the validation.
