@@ -8,6 +8,8 @@ import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useHome } from "@/features/hub/api";
+import { useHeadlines, useReports } from "@/features/news/api";
+import { HeadlineList, ReportCard } from "@/features/news/components/NewsParts";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
@@ -70,7 +72,34 @@ export function HomePage() {
           )}
         </div>
       </div>
+      <LatestNews />
     </div>
+  );
+}
+
+/** The latest race report and a few headlines in the page language. */
+function LatestNews() {
+  const { t, locale } = useI18n();
+  const reports = useReports(1);
+  const headlines = useHeadlines(locale, 5);
+  const report = reports.data?.[0];
+  const items = headlines.data ?? [];
+  if (!report && items.length === 0) return null;
+  return (
+    <section aria-labelledby="home-news" className="flex flex-col gap-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="home-news" className="text-xl font-bold">
+          {t("news.latest")}
+        </h2>
+        <Link to="/news" className="font-semibold text-mark-text">
+          {t("news.all")} →
+        </Link>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {report && <ReportCard report={report} lead />}
+        {items.length > 0 && <HeadlineList headlines={items} />}
+      </div>
+    </section>
   );
 }
 

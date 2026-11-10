@@ -17,6 +17,7 @@ import {
   teams,
 } from "./fixtures/hub";
 import { model } from "./fixtures/model";
+import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
 import { replay } from "./fixtures/replay";
@@ -107,6 +108,16 @@ export const handlers = [
   http.post("*/api/v1/sessions/:id/simulate/pit-exit", () => HttpResponse.json(pitExit)),
   http.get("*/api/v1/model", () => HttpResponse.json(model)),
   http.get("*/api/v1/live", () => HttpResponse.json(offlineLive)),
+  http.get("*/api/v1/news/headlines", ({ request }) => {
+    const lang = new URL(request.url).searchParams.get("lang");
+    return HttpResponse.json(headlines.filter((h) => !lang || h.language === lang));
+  }),
+  http.get("*/api/v1/news/reports", () => HttpResponse.json([hungaryReport, sprintReport])),
+  http.get("*/api/v1/news/reports/:id", ({ params }) =>
+    params.id === String(hungaryReport.session_id)
+      ? HttpResponse.json(hungaryReport)
+      : problem(404, "not_found", "Not found", "No report for this session."),
+  ),
   http.post("*/api/v1/sessions/:id/simulate/strategy", async ({ request }) =>
     HttpResponse.json(strategyResponse((await request.json()) as Schema<"StrategyRequestRequest">)),
   ),
