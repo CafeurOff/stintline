@@ -25,6 +25,15 @@ up: ## Build and start the whole stack (http://localhost:5173)
 	@test -f .env || cp .env.example .env
 	$(COMPOSE) up --build
 
+.PHONY: live
+live: ## Follow the live timing feed locally (personal use, home connection only)
+	docker compose -f infra/docker-compose.yml --profile live up -d live
+
+.PHONY: live-replay
+live-replay: ## Replay a recording as if live: make live-replay FILE=recordings/x.jsonl SPEED=10
+	docker compose -f infra/docker-compose.yml --profile live run --rm live \
+		python manage.py live --replay /app/$(FILE) --speed $(or $(SPEED),10)
+
 down: ## Stop the stack (keeps the database volume)
 	$(COMPOSE) down
 

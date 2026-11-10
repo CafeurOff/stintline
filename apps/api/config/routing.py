@@ -1,5 +1,9 @@
-"""WebSocket routes. Populated by the live/replay feature."""
+"""WebSocket routes."""
 
 from typing import Any
 
-websocket_urlpatterns: list[Any] = []
+from django.urls import path
+
+from stintline.live.consumers import LiveConsumer
+
+websocket_urlpatterns: list[Any] = [path("ws/live", LiveConsumer.as_asgi())]

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "stintline.racing",
     "stintline.ingestion",
     "stintline.strategy_api",
+    "stintline.live",
 ]
 
 MIDDLEWARE = [

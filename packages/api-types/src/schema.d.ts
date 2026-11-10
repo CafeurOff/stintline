@@ -109,6 +109,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/live": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Live session snapshot (local live mode) and the next session */
+    get: operations["live_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/model": {
     parameters: {
       query?: never;
@@ -771,6 +788,89 @@ export interface components {
       readonly driver: components["schemas"]["Driver"];
       readonly media: components["schemas"]["Media"] | null;
     };
+    LiveCar: {
+      number: number;
+      code: string;
+      first_name: string;
+      last_name: string;
+      team: string;
+      colour: string;
+      position: number | null;
+      /** Format: double */
+      gap_s: number | null;
+      laps_behind: number;
+      /** Format: double */
+      interval_s: number | null;
+      laps: number;
+      in_pit: boolean;
+      pit_out: boolean;
+      retired: boolean;
+      stopped: boolean;
+      pit_stops: number;
+      /** Format: double */
+      last_lap_s: number | null;
+      /** Format: double */
+      best_lap_s: number | null;
+      compound: string | null;
+      tyre_age: number | null;
+      tyre_new: boolean | null;
+      /**
+       * Format: double
+       * @description Share of the current lap completed
+       */
+      lap_progress: number;
+      /** @description Where the car rejoins if it pits now */
+      pit_now: components["schemas"]["PitNow"] | null;
+    };
+    LiveSession: {
+      key: number | null;
+      meeting: string;
+      name: string;
+      type: string;
+      circuit_key: number | null;
+      circuit: string;
+      country: string;
+      /** @description Inactive, Started, Aborted, Finished, Finalised, Ends */
+      status: string;
+      /** Format: date-time */
+      starts_at: string | null;
+    };
+    LiveSnapshot: {
+      session: components["schemas"]["LiveSession"];
+      lap: number | null;
+      total_laps: number | null;
+      /** @description clear, yellow, safety_car, virtual_safety_car, vsc_ending, red */
+      track_status: string;
+      remaining: string | null;
+      cars: components["schemas"]["LiveCar"][];
+      race_control: components["schemas"]["RaceControl"][];
+      team_radio: components["schemas"]["Radio"][];
+      weather: components["schemas"]["Weather"] | null;
+      /** @description Stored race at this circuit, for the circuit outline */
+      reference_session_id: number | null;
+      /** Format: double */
+      pit_loss_s: number | null;
+      /** Format: double */
+      pit_loss_sigma_s: number | null;
+      /**
+       * Format: double
+       * @description Unix time of this snapshot
+       */
+      updated_at: number;
+    };
+    LiveStatus: {
+      /**
+       * @description offline: the live process is not running or has nothing recent
+       *
+       *     * `offline` - offline
+       *     * `waiting` - waiting
+       *     * `live` - live
+       *     * `finished` - finished
+       */
+      state: components["schemas"]["StateEnum"];
+      snapshot: components["schemas"]["LiveSnapshot"] | null;
+      next_session: components["schemas"]["NextSession"] | null;
+    };
     Media: {
       /** Format: uri */
       driver_image_url: string | null;
@@ -815,6 +915,13 @@ export interface components {
       status: string;
       /** Format: double */
       loss_s: number;
+    };
+    NextSession: {
+      event_id: number;
+      event_name: string;
+      kind: string;
+      /** Format: date-time */
+      starts_at: string;
     };
     /** @enum {unknown} */
     NullEnum: null;
@@ -928,6 +1035,15 @@ export interface components {
       assumed_vsc_s: number;
       stops: components["schemas"]["StopLoss"][];
     };
+    PitNow: {
+      position: number;
+      ahead: number | null;
+      behind: number | null;
+      /** Format: double */
+      margin_ahead_s: number | null;
+      /** Format: double */
+      margin_behind_s: number | null;
+    };
     PitStop: {
       /**
        * Format: int64
@@ -996,6 +1112,24 @@ export interface components {
       rounds: components["schemas"]["Round"][];
       drivers: components["schemas"]["DriverProgression"][];
       constructors: components["schemas"]["TeamProgression"][];
+    };
+    RaceControl: {
+      /** Format: date-time */
+      at: string | null;
+      category: string;
+      flag: string;
+      message: string;
+      lap: number | null;
+    };
+    Radio: {
+      /** Format: date-time */
+      at: string | null;
+      number: number;
+      /**
+       * Format: uri
+       * @description Official recording, played from its source
+       */
+      url: string;
     };
     Replay: {
       total_laps: number;
@@ -1107,6 +1241,14 @@ export interface components {
       drivers: components["schemas"]["StandingLine"][];
       constructors: components["schemas"]["StandingLine"][];
     };
+    /**
+     * @description * `offline` - offline
+     *     * `waiting` - waiting
+     *     * `live` - live
+     *     * `finished` - finished
+     * @enum {string}
+     */
+    StateEnum: "offline" | "waiting" | "live" | "finished";
     Stint: {
       /** Format: int64 */
       stint_number: number;
@@ -1309,6 +1451,17 @@ export interface components {
       attacker_ahead: boolean;
       lap_gaps: components["schemas"]["LapGap"][];
     };
+    Weather: {
+      /** Format: double */
+      air_c: number | null;
+      /** Format: double */
+      track_c: number | null;
+      /** Format: double */
+      humidity_pct: number | null;
+      rain: boolean;
+      /** Format: double */
+      wind_ms: number | null;
+    };
     Winner: {
       /** Format: int64 */
       car_number: number;
@@ -1479,6 +1632,25 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Home"];
+        };
+      };
+    };
+  };
+  live_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["LiveStatus"];
         };
       };
     };

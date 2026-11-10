@@ -171,6 +171,21 @@ paths:
               schema:
                 $ref: '#/components/schemas/Home'
           description: ''
+  /api/v1/live:
+    get:
+      operationId: live_retrieve
+      summary: Live session snapshot (local live mode) and the next session
+      tags:
+      - live
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveStatus'
+          description: ''
   /api/v1/model:
     get:
       operationId: model_retrieve
@@ -1679,6 +1694,221 @@ components:
       - car_number
       - driver
       - media
+    LiveCar:
+      type: object
+      properties:
+        number:
+          type: integer
+        code:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        team:
+          type: string
+        colour:
+          type: string
+        position:
+          type: integer
+          nullable: true
+        gap_s:
+          type: number
+          format: double
+          nullable: true
+        laps_behind:
+          type: integer
+        interval_s:
+          type: number
+          format: double
+          nullable: true
+        laps:
+          type: integer
+        in_pit:
+          type: boolean
+        pit_out:
+          type: boolean
+        retired:
+          type: boolean
+        stopped:
+          type: boolean
+        pit_stops:
+          type: integer
+        last_lap_s:
+          type: number
+          format: double
+          nullable: true
+        best_lap_s:
+          type: number
+          format: double
+          nullable: true
+        compound:
+          type: string
+          nullable: true
+        tyre_age:
+          type: integer
+          nullable: true
+        tyre_new:
+          type: boolean
+          nullable: true
+        lap_progress:
+          type: number
+          format: double
+          description: Share of the current lap completed
+        pit_now:
+          allOf:
+          - $ref: '#/components/schemas/PitNow'
+          nullable: true
+          description: Where the car rejoins if it pits now
+      required:
+      - best_lap_s
+      - code
+      - colour
+      - compound
+      - first_name
+      - gap_s
+      - in_pit
+      - interval_s
+      - lap_progress
+      - laps
+      - laps_behind
+      - last_lap_s
+      - last_name
+      - number
+      - pit_now
+      - pit_out
+      - pit_stops
+      - position
+      - retired
+      - stopped
+      - team
+      - tyre_age
+      - tyre_new
+    LiveSession:
+      type: object
+      properties:
+        key:
+          type: integer
+          nullable: true
+        meeting:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        circuit_key:
+          type: integer
+          nullable: true
+        circuit:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          description: Inactive, Started, Aborted, Finished, Finalised, Ends
+        starts_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - circuit
+      - circuit_key
+      - country
+      - key
+      - meeting
+      - name
+      - starts_at
+      - status
+      - type
+    LiveSnapshot:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/LiveSession'
+        lap:
+          type: integer
+          nullable: true
+        total_laps:
+          type: integer
+          nullable: true
+        track_status:
+          type: string
+          description: clear, yellow, safety_car, virtual_safety_car, vsc_ending,
+            red
+        remaining:
+          type: string
+          nullable: true
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveCar'
+        race_control:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceControl'
+        team_radio:
+          type: array
+          items:
+            $ref: '#/components/schemas/Radio'
+        weather:
+          allOf:
+          - $ref: '#/components/schemas/Weather'
+          nullable: true
+        reference_session_id:
+          type: integer
+          nullable: true
+          description: Stored race at this circuit, for the circuit outline
+        pit_loss_s:
+          type: number
+          format: double
+          nullable: true
+        pit_loss_sigma_s:
+          type: number
+          format: double
+          nullable: true
+        updated_at:
+          type: number
+          format: double
+          description: Unix time of this snapshot
+      required:
+      - cars
+      - lap
+      - pit_loss_s
+      - pit_loss_sigma_s
+      - race_control
+      - reference_session_id
+      - remaining
+      - session
+      - team_radio
+      - total_laps
+      - track_status
+      - updated_at
+      - weather
+    LiveStatus:
+      type: object
+      properties:
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          description: |-
+            offline: the live process is not running or has nothing recent
+
+            * `offline` - offline
+            * `waiting` - waiting
+            * `live` - live
+            * `finished` - finished
+        snapshot:
+          allOf:
+          - $ref: '#/components/schemas/LiveSnapshot'
+          nullable: true
+        next_session:
+          allOf:
+          - $ref: '#/components/schemas/NextSession'
+          nullable: true
+      required:
+      - next_session
+      - snapshot
+      - state
     Media:
       type: object
       properties:
@@ -1766,6 +1996,23 @@ components:
       required:
       - loss_s
       - status
+    NextSession:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        event_name:
+          type: string
+        kind:
+          type: string
+        starts_at:
+          type: string
+          format: date-time
+      required:
+      - event_id
+      - event_name
+      - kind
+      - starts_at
     NullEnum:
       enum:
       - null
@@ -1986,6 +2233,31 @@ components:
       - n_green
       - neutralised
       - stops
+    PitNow:
+      type: object
+      properties:
+        position:
+          type: integer
+        ahead:
+          type: integer
+          nullable: true
+        behind:
+          type: integer
+          nullable: true
+        margin_ahead_s:
+          type: number
+          format: double
+          nullable: true
+        margin_behind_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - ahead
+      - behind
+      - margin_ahead_s
+      - margin_behind_s
+      - position
     PitStop:
       type: object
       properties:
@@ -2136,6 +2408,45 @@ components:
       - drivers
       - rounds
       - season
+    RaceControl:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+          nullable: true
+        category:
+          type: string
+        flag:
+          type: string
+        message:
+          type: string
+        lap:
+          type: integer
+          nullable: true
+      required:
+      - at
+      - category
+      - flag
+      - lap
+      - message
+    Radio:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+          nullable: true
+        number:
+          type: integer
+        url:
+          type: string
+          format: uri
+          description: Official recording, played from its source
+      required:
+      - at
+      - number
+      - url
     Replay:
       type: object
       properties:
@@ -2453,6 +2764,18 @@ components:
       - round
       - rounds
       - season
+    StateEnum:
+      enum:
+      - offline
+      - waiting
+      - live
+      - finished
+      type: string
+      description: |-
+        * `offline` - offline
+        * `waiting` - waiting
+        * `live` - live
+        * `finished` - finished
     Stint:
       type: object
       properties:
@@ -2978,6 +3301,33 @@ components:
       - net_gain_s
       - p_attacker_ahead
       - sigma_s
+    Weather:
+      type: object
+      properties:
+        air_c:
+          type: number
+          format: double
+          nullable: true
+        track_c:
+          type: number
+          format: double
+          nullable: true
+        humidity_pct:
+          type: number
+          format: double
+          nullable: true
+        rain:
+          type: boolean
+        wind_ms:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - air_c
+      - humidity_pct
+      - rain
+      - track_c
+      - wind_ms
     Winner:
       type: object
       properties:

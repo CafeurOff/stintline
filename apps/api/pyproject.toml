@@ -29,6 +29,7 @@ dev = [
     "django-stubs[compatible-mypy]>=5.2,<5.3",
     "djangorestframework-stubs[compatible-mypy]>=3.16",
     "celery-types>=0.23",
+    "daphne>=4.1",
 ]
 
 [tool.uv]

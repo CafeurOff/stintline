@@ -81,6 +81,23 @@ services:
     depends_on:
       api: { condition: service_healthy }
 
+  live:
+    <<: [*api-build, *api-env]
+    # Local live mode only (ADR 0002): personal use, from a home connection. Not started
+    # by `make up`; run `make live`. Raw recordings stay in ./recordings (git-ignored).
+    profiles: ["live"]
+    # Runs as the host user so recordings in ./recordings belong to you.
+    user: "${UID:-1000}:${GID:-1000}"
+    command: ["python", "manage.py", "live", "--record", "/app/recordings"]
+    volumes:
+      - ../apps/api:/app/apps/api
+      - ../packages/strategy:/app/packages/strategy
+      - ../packages/racedata:/app/packages/racedata
+      - ../recordings:/app/recordings
+    restart: unless-stopped
+    depends_on:
+      api: { condition: service_healthy }
+
   web:
     build:
       context: ..
