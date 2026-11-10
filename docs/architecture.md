@@ -64,8 +64,8 @@ flowchart LR
 | PostgreSQL | Source of truth for everything served | — |
 | `packages/strategy` | Deterministic models and simulations on plain inputs | Do I/O, import Django or `racedata` |
 | `apps/api` REST | Expose data and strategy results under `/api/v1/`, documented with OpenAPI | Compute strategy logic inline in views |
-| Live worker | Consume the live feed (or a recording, in replay mode), persist new laps, recompute strategy each lap, publish to Redis | Run on the public demo server against the live feed |
-| Channels | Push session updates to subscribed browsers, with a configurable display delay | — |
+| Live process (`manage.py live`) | Consume the live feed (or a recording), build a snapshot with the pit-now answer, keep the latest in Redis and broadcast it once per second (ADR 0011) | Write to Postgres, or run on the public demo server against the live feed |
+| Channels | Push snapshots to subscribed browsers on `/ws/live`; the browser applies the TV delay | — |
 | `apps/web` | Session picker, strategy timeline, degradation, simulator, model page, live/replay view | Call upstream APIs or redeclare API types |
 
 ## Runtime topology (docker compose)
@@ -76,7 +76,7 @@ flowchart LR
 
 1. **Historical ingestion.** `ingest_season(2025)` → `ingest_event` per round → `ingest_session` per session. This fetches OpenF1 laps, stints, pit, race control and weather, plus Jolpica results and pit stops, then upserts. Re-running is a no-op.
 2. **Strategy query.** `GET /api/v1/sessions/{id}/undercut?attacker=…&defender=…&lap=…` → selector loads cleaned laps and stints → strategy engine fits degradation and pit loss → simulation → JSON with the expected gain and an uncertainty interval.
-3. **Live (local).** Live worker subscribes to the SignalR topics (TimingData, TimingAppData, TrackStatus, RaceControlMessages, WeatherData, LapCount…). On each completed lap it upserts, recomputes, and broadcasts on `session.<id>`. The browser applies the user's TV delay.
-4. **Replay (demo).** The replay engine reads stored laps (or a recorded `.jsonl`) and emits the same messages at ×1–×20 speed, so the frontend cannot tell replay from live.
+3. **Live (local).** `manage.py live` subscribes to the SignalR topics (TimingData, TimingAppData, TrackStatus, RaceControlMessages, WeatherData, LapCount, TeamRadio…), merges them and publishes a snapshot at most once per second to the cache and the `live` Channels group. `GET /api/v1/live` gives the state and latest snapshot; `/ws/live` streams the next ones. The browser applies the user's TV delay. Finished sessions are stored by the usual import, not by the live process.
+4. **Replay (demo).** `manage.py live --replay FILE --speed N` plays a recorded `.jsonl` (or one rebuilt from a stored race by `manage.py live_demo`) through the same publisher, so the frontend cannot tell replay from live.
 
 See `docs/data-sources.md` for source limits and terms, and the ADRs for the reasoning behind these choices.

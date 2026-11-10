@@ -14,3 +14,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0008](0008-fan-hub-scope-and-full-data.md) | StintLine becomes a fan hub, built on every public season | Accepted |
 | [0009](0009-wikipedia-driver-portraits.md) | Driver portraits from Wikipedia when no official portrait applies | Accepted |
 | [0010](0010-what-if-strategy-replay.md) | What-if: replay a whole race with another strategy | Accepted |
+| [0011](0011-live-mode-and-team-radio.md) | Live mode and team radio | Accepted |

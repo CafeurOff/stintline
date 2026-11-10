@@ -9,6 +9,7 @@ It must stay accessible to casual fans first, with deeper charts for hardcore fa
 - Phase 6 done: every season stored (timing from 2023, results, qualifying, standings and biographies from 1950), team radio references, automatic import after each Grand Prix (Celery beat), driver, standings and radio endpoints (ADR 0008).
 - Phase 7 done: hub pages (home, Grands Prix by season since 1950 as cards, Grand Prix page with circuit, podium, results and race analysis: key facts, positions and gaps lap by lap, lap times, tyre strategies, best sectors and top speeds), drivers and teams as season cards with photos, line-ups and official car renders, profiles with season charts, standings with the title-fight chart, race picker dialog, photo driver picker, Wikipedia driver portraits (ADR 0009). Data stays current on its own: `refresh_recent` catches up on anything missed.
 - Phase 8 done: what-if replay of a whole race with another tyre strategy (ADR 0010, `stintline_strategy.whatif`, `POST /sessions/{id}/simulate/strategy`, "Strategy" mode on the circuit with a ghost car and finishing-position chances).
+- Phase 9 done: local live mode (ADR 0011). `manage.py live` (`make live`) follows the official feed, keeps the latest snapshot in Redis and streams it on `/ws/live`; `GET /api/v1/live` gives the state and the next session. `/live` page: running order, cars on the circuit, "if he pitted now" with a ghost, team radio, race control, TV delay. Recordings, `--replay` and `live_demo` (recording rebuilt from a stored race).
 - Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -23,11 +24,13 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
                          championship progression)
   stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
   stintline/strategy_api/ ORM to engine adapter (`adapters.py`), strategy endpoints and model card, `backtest` command
-  stintline/live/        (planned) Channels consumers, live worker, replay engine
+  stintline/live/        live publisher (snapshot + pit now), Channels consumer `/ws/live`, `live` and
+                         `live_demo` commands, circuit context from stored races (ADR 0011)
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, layout, theme)  src/features/<feature>/  src/components/{ui,racing}/  src/lib/
 packages/racedata/   Pure Python, import `racedata`. Capability protocols (schedule, results, timing),
-                     adapters (openf1, jolpica, wikipedia; livetiming planned), HTTP client (rate limit, retry,
+                     adapters (openf1, jolpica, wikipedia), live timing client (`racedata.live`:
+                     SignalR, merge, snapshot view, recordings), HTTP client (rate limit, retry,
                      cache, timeout), DTOs, derive/matching helpers, fixture recorder
   fixtures/          recorded upstream responses (tests + offline demo)
 packages/strategy/   Strategy engine, import `stintline_strategy` (numpy + scipy, no Django, no I/O).
@@ -40,7 +43,7 @@ docs/                architecture, data sources, model, ADRs, research
 ```
 
 Data flow: `providers (racedata) -> Celery ingestion -> Postgres -> strategy engine -> DRF /api/v1 -> web`.
-Live flow: `livetiming SignalR (local only) -> live worker -> Postgres + Redis -> Channels WebSocket -> web`.
+Live flow: `livetiming SignalR (local only) -> manage.py live -> Redis (cache + channel layer) -> /ws/live -> web (TV delay)`.
 Details: `docs/architecture.md`, `docs/data-sources.md`, `docs/adr/`.
 
 Hard boundaries:
@@ -69,6 +72,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Ingest history | `manage.py ingest_history [--from 1950] [--to 2022] [--force]` (biographies, results, qualifying, standings; resumable) |
 | Driver portraits | `manage.py ingest_portraits [--season 2025]` (Wikipedia, ADR 0009; also weekly via Celery beat) |
 | Record a fixture | `uv run python -m racedata.tools.record_fixture openf1 laps session_key=9928` |
+| Live mode (local, personal use) | `make live` (follows the feed, records to `./recordings`) · `make live-replay FILE=recordings/x.jsonl SPEED=10` · `manage.py live_demo --session 70 --out recordings/demo.jsonl` |
 | Pre-commit | `pre-commit run --all-files` |
 
 ## Conventions
