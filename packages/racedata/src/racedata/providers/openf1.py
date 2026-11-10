@@ -12,6 +12,7 @@ import structlog
 from racedata.errors import InvalidPayloadError, NotFoundError
 from racedata.http import HttpClient
 from racedata.models import (
+    CarSample,
     Compound,
     DriverEntry,
     LapRecord,
@@ -133,6 +134,33 @@ class OpenF1Source:
         rows = self._rows("location", params)
         samples = self._parse_all("location", rows, _location)
         return sorted(samples, key=lambda s: s.at)
+
+    def car_data(
+        self, session_key: int, driver_number: int, start: datetime, end: datetime
+    ) -> list[CarSample]:
+        """Telemetry of one car in ``[start, end)``. Always bounded, for the same reason as
+        :meth:`locations`: one lap is about 300 rows, a race about 20 000."""
+        params: dict[str, str | int] = {
+            "session_key": session_key,
+            "driver_number": driver_number,
+            "date>": _openf1_instant(start),
+            "date<": _openf1_instant(end),
+        }
+        rows = self._rows("car_data", params)
+        samples = self._parse_all("car_data", rows, _car_sample)
+        return sorted(samples, key=lambda s: s.at)
+
+
+def _car_sample(r: dict[str, Any]) -> CarSample:
+    return CarSample(
+        at=parse_datetime(PROVIDER, r["date"]),
+        speed_kph=int(r["speed"]),
+        throttle_pct=max(0, min(100, int(r["throttle"]))),
+        brake=int(r["brake"]) > 0,
+        gear=int(r["n_gear"]),
+        rpm=int(r["rpm"]),
+        drs=int(r.get("drs") or 0),
+    )
 
 
 def _team_radio(r: dict[str, Any]) -> TeamRadioRecord:

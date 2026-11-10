@@ -431,3 +431,28 @@ class TeamRadio(models.Model):
 
     def __str__(self) -> str:
         return f"{self.session} #{self.car_number} {self.recorded_at:%H:%M:%S}"
+
+
+class TelemetryLap(models.Model):
+    """Car data and positions over one lap (the driver's fastest clean lap of a race or
+    sprint). Bounded upstream requests (OpenF1 ``car_data`` and ``location``), ADR 0013.
+
+    ``samples`` holds parallel lists keyed by channel: ``t`` (seconds from the start of the
+    lap), ``speed`` (km/h), ``throttle`` (%), ``brake`` (0/1), ``gear``, ``rpm``, ``drs``.
+    ``positions`` holds ``t``, ``x`` and ``y`` (OpenF1 plane units).
+    """
+
+    entry = models.ForeignKey(SessionEntry, on_delete=models.CASCADE, related_name="telemetry")
+    lap_number = models.PositiveSmallIntegerField()
+    lap_time_s = models.FloatField()
+    samples = models.JSONField()
+    positions = models.JSONField()
+    fetched_at = models.DateTimeField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["entry", "lap_number"], name="telemetry_unique_lap"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.entry} lap {self.lap_number}"

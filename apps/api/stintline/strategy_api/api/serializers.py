@@ -6,6 +6,10 @@ from typing import Any
 
 from rest_framework import serializers
 
+from stintline.racing.api.serializers import DriverSerializer, TeamSerializer
+from stintline.racing.models import SessionEntry, TelemetryLap
+from stintline.strategy_api.telemetry import MAX_TELEMETRY_CARS
+
 COMPOUND_CHOICES = [(c, c) for c in ("SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET")]
 NEUTRALISATION_CHOICES = [("SC", "SC"), ("VSC", "VSC")]
 MAX_COMPARED_CARS = 4
@@ -277,3 +281,76 @@ class StrategyResultSerializer(serializers.Serializer[Any]):
     points = serializers.FloatField(help_text="Points at the most likely position")
     chances = PositionChanceSerializer(many=True)
     warnings = serializers.ListField(child=serializers.CharField())
+
+
+class TelemetryQuerySerializer(serializers.Serializer[Any]):
+    cars = serializers.CharField(
+        help_text="1 to 3 comma-separated car numbers; the first is the reference, e.g. `4,81`"
+    )
+
+    def validate_cars(self, value: str) -> list[int]:
+        try:
+            cars = [int(v) for v in value.split(",") if v.strip()]
+        except ValueError as exc:
+            raise serializers.ValidationError("car numbers must be integers") from exc
+        cars = list(dict.fromkeys(cars))
+        if not 1 <= len(cars) <= MAX_TELEMETRY_CARS:
+            raise serializers.ValidationError(f"give between 1 and {MAX_TELEMETRY_CARS} cars")
+        return cars
+
+
+class TelemetryEntrySerializer(serializers.ModelSerializer[SessionEntry]):
+    driver = DriverSerializer(read_only=True)
+    team = TeamSerializer(read_only=True)
+
+    class Meta:
+        model = SessionEntry
+        fields = ["car_number", "driver", "team", "team_colour"]
+
+
+class TelemetryLapSerializer(serializers.ModelSerializer[TelemetryLap]):
+    """A stored fastest lap, without its samples."""
+
+    entry = TelemetryEntrySerializer(read_only=True)
+
+    class Meta:
+        model = TelemetryLap
+        fields = ["entry", "lap_number", "lap_time_s"]
+
+
+class BrakingZoneSerializer(serializers.Serializer[Any]):
+    start_m = serializers.IntegerField()
+    end_m = serializers.IntegerField()
+    entry_kph = serializers.IntegerField()
+    min_kph = serializers.IntegerField(help_text="Lowest speed before full throttle: the apex")
+    x = serializers.FloatField()
+    y = serializers.FloatField()
+
+
+class TelemetryCarSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    entry = TelemetryEntrySerializer()
+    lap_number = serializers.IntegerField()
+    lap_time_s = serializers.FloatField()
+    max_speed_kph = serializers.FloatField()
+    full_throttle_share = serializers.FloatField()
+    speed_kph = serializers.ListField(child=serializers.FloatField())
+    throttle_pct = serializers.ListField(child=serializers.FloatField())
+    brake = serializers.ListField(child=serializers.BooleanField())
+    gear = serializers.ListField(child=serializers.IntegerField())
+    drs_open = serializers.ListField(child=serializers.BooleanField())
+    x = serializers.ListField(child=serializers.FloatField(), help_text="Screen units")
+    y = serializers.ListField(child=serializers.FloatField())
+    delta_s = serializers.ListField(
+        child=serializers.FloatField(), help_text="Seconds behind the first car at each point"
+    )
+    braking_zones = BrakingZoneSerializer(many=True)
+
+
+class TelemetryCompareSerializer(serializers.Serializer[Any]):
+    width = serializers.IntegerField(help_text="Screen box of x and y, like the track drawing")
+    height = serializers.IntegerField()
+    length_m = serializers.IntegerField(help_text="Common lap length the laps are drawn on")
+    step_m = serializers.FloatField(help_text="Distance between two points")
+    points = serializers.IntegerField()
+    cars = TelemetryCarSerializer(many=True)

@@ -1,0 +1,14 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/car_data",
+  "params": {
+    "session_key": "9928",
+    "driver_number": "63",
+    "date>": "2025-08-03T14:03:57.102",
+    "date<": "2025-08-03T14:05:16.511"
+  },
+  "recorded_at": "2026-11-10T23:25:31+00:00",
+  "sha256": "9ca53ae0e173bcc39c67240931223343209ecd5aa88677d0bdf39dfbab119358",
+  "bytes": 49801,
+  "dropped_fields": []
+}

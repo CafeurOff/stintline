@@ -9,6 +9,7 @@ import pytest
 
 from racedata.errors import UpstreamUnavailableError
 from racedata.models import (
+    CarSample,
     CircuitInfo,
     Compound,
     DriverEntry,
@@ -134,6 +135,11 @@ class FakeSource:
 
     def team_radio(self, session_key: int) -> list[TeamRadioRecord]:
         return self.d.team_radio
+
+    def car_data(
+        self, session_key: int, driver_number: int, start: dt.datetime, end: dt.datetime
+    ) -> list[CarSample]:
+        return []
 
 
 def fake_sources(data: FakeData) -> Sources:

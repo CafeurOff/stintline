@@ -225,6 +225,21 @@ class PositionSample(_DTO):
     y: float
 
 
+class CarSample(_DTO):
+    """Car telemetry (OpenF1 ``car_data``, about 3.7 Hz).
+
+    ``brake`` is on or off: the feed only sends 0 or 100. ``throttle`` is a percentage.
+    """
+
+    at: datetime
+    speed_kph: int
+    throttle_pct: int
+    brake: bool
+    gear: int
+    rpm: int
+    drs: int
+
+
 class TrackStatusPeriod(_DTO):
     """A neutralised period derived from race control messages."""
 

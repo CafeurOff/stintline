@@ -25,5 +25,15 @@ urlpatterns = [
         views.StrategyView.as_view(),
         name="strategy",
     ),
+    path(
+        "sessions/<int:session_id>/telemetry",
+        views.SessionTelemetryListView.as_view(),
+        name="telemetry",
+    ),
+    path(
+        "sessions/<int:session_id>/telemetry/compare",
+        views.SessionTelemetryCompareView.as_view(),
+        name="telemetry-compare",
+    ),
     path("model", views.ModelCardView.as_view(), name="model"),
 ]

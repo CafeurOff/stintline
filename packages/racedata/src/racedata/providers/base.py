@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Protocol
 
 from racedata.models import (
+    CarSample,
     CircuitInfo,
     ConstructorInfo,
     DriverEntry,
@@ -61,6 +62,10 @@ class TimingSource(Protocol):
     ) -> list[PositionSample]: ...
 
     def team_radio(self, session_key: int) -> list[TeamRadioRecord]: ...
+
+    def car_data(
+        self, session_key: int, driver_number: int, start: datetime, end: datetime
+    ) -> list[CarSample]: ...
 
 
 class HistorySource(Protocol):

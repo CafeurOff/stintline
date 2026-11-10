@@ -24,7 +24,7 @@ from stintline.racing.models import Season, Session
 
 HEADLINES_MAX_AGE_S = 300
 REPORT_CACHE_S = 24 * 60 * 60
-REPORT_FORMAT = 2
+REPORT_FORMAT = 5
 """Bumped whenever the report fields change, so cached reports are rebuilt."""
 
 

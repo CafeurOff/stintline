@@ -5,8 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
+from django.utils import timezone
 
-from stintline.ingestion import history, portraits, services
+from stintline.ingestion import history, portraits, services, telemetry
 from stintline.ingestion.sources import MODE_FIXTURES, open_sources
 from stintline.racing.models import Driver, Session, SessionKind
 
@@ -17,6 +18,10 @@ Italy (low degradation, one stop). Used to choose model defaults."""
 BACKTEST_ROUNDS = (3, 9, 11, 15, 20, 24)
 """Held-out validation races, never used to tune parameters: Japan, Spain, Austria,
 Netherlands (Safety Car), Mexico City and Abu Dhabi."""
+
+
+TELEMETRY_DEMO = (14, (4, 81, 63))
+"""Fastest-lap telemetry recorded for the Hungarian podium only (fixtures stay small)."""
 
 
 class Command(BaseCommand):
@@ -39,6 +44,10 @@ class Command(BaseCommand):
             for session in races:
                 report = services.ingest_session(session, sources)
                 self.stdout.write(f"{session.event.name}: {report.counts}")
+            round_, cars = TELEMETRY_DEMO
+            hungary = races.get(event__round=round_)
+            laps = telemetry.ingest_telemetry(hungary, sources, timezone.now(), cars)
+            self.stdout.write(f"Telemetry: {laps} laps")
             reference = history.ingest_reference(sources)
             self.stdout.write(f"Drivers, teams and circuits: {reference.counts}")
             results = history.ingest_season_results(DEMO_SEASON, sources)

@@ -6,7 +6,7 @@ from typing import Any
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,8 +14,9 @@ from rest_framework.views import APIView
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
 from stintline.racing.models import Session
-from stintline.strategy_api import services
+from stintline.strategy_api import services, telemetry
 from stintline.strategy_api.api import serializers as s
+from stintline_strategy.telemetry import TelemetryError
 
 ERRORS: dict[int, Any] = {400: ProblemSerializer, 404: ProblemSerializer}
 
@@ -242,3 +243,41 @@ class StrategyView(APIView):
             "warnings": [str(w) for w in r.warnings],
         }
         return Response(s.StrategyResultSerializer(data).data, status=status.HTTP_200_OK)
+
+
+class SessionTelemetryListView(APIView):
+    @extend_schema(
+        operation_id="session_telemetry_list",
+        summary="Fastest laps with stored telemetry (car data and positions), fastest first",
+        responses={200: s.TelemetryLapSerializer(many=True), 404: ProblemSerializer},
+        tags=TAG,
+    )
+    def get(self, request: Request, session_id: int) -> Response:
+        session = get_object_or_404(Session, pk=session_id)
+        laps = telemetry.stored_laps(session)
+        data = s.TelemetryLapSerializer(laps, many=True).data
+        stamp = max((lap.fetched_at for lap in laps), default=None)
+        return cached_response(request, data, "telemetry", session_id, stamp)
+
+
+class SessionTelemetryCompareView(APIView):
+    @extend_schema(
+        operation_id="session_telemetry_compare",
+        summary="Speed, throttle, brake, gear and position over the fastest lap of 1 to 3 "
+        "cars, on one distance grid, with braking zones and time deltas",
+        parameters=[OpenApiParameter("cars", str, required=True)],
+        responses={200: s.TelemetryCompareSerializer, **ERRORS},
+        tags=TAG,
+    )
+    def get(self, request: Request, session_id: int) -> Response:
+        cars = _query(s.TelemetryQuerySerializer, request)["cars"]
+        session = get_object_or_404(Session, pk=session_id)
+        try:
+            result = telemetry.compare(session, cars)
+        except telemetry.TelemetryUnavailableError as exc:
+            raise NotFound(str(exc)) from exc
+        except TelemetryError as exc:
+            raise ValidationError({"cars": [str(exc)]}) from exc
+        stamp = max((lap.fetched_at for lap in telemetry.stored_laps(session)), default=None)
+        data = s.TelemetryCompareSerializer(result).data
+        return cached_response(request, data, "telemetry-compare", session_id, cars, stamp)

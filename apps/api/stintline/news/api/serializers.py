@@ -50,6 +50,7 @@ class ReportEntrySerializer(serializers.ModelSerializer[SessionEntry]):
             "finish_position",
             "status",
             "fastest_lap_s",
+            "laps_completed",
         ]
 
 
@@ -79,6 +80,85 @@ class ChampionshipSerializer(serializers.Serializer[Any]):
     leader_changed = serializers.BooleanField()
 
 
+class StartMoveSerializer(serializers.Serializer[Any]):
+    entry = ReportEntrySerializer()
+    grid = serializers.IntegerField()
+    position = serializers.IntegerField(help_text="Position at the end of lap 1")
+
+
+class LapsLedSerializer(serializers.Serializer[Any]):
+    entry = ReportEntrySerializer()
+    laps = serializers.IntegerField()
+
+
+class DecisiveSerializer(serializers.Serializer[Any]):
+    lap = serializers.IntegerField(help_text="First lap of the winner's last spell in the lead")
+    how = serializers.ChoiceField(
+        choices=["lights_to_flag", "undercut", "pit_cycle", "rival_stop", "on_track"]
+    )
+    rival = ReportEntrySerializer(allow_null=True)
+
+
+class StorySerializer(serializers.Serializer[Any]):
+    start_gains = StartMoveSerializer(many=True)
+    start_losses = StartMoveSerializer(many=True)
+    leaders = LapsLedSerializer(many=True)
+    lead_changes = serializers.IntegerField()
+    decisive = DecisiveSerializer(allow_null=True)
+
+
+STOP_TIME_KINDS = [("stationary", "stationary"), ("lane", "lane")]
+
+
+class FastestStopSerializer(serializers.Serializer[Any]):
+    entry = ReportEntrySerializer()
+    lap = serializers.IntegerField()
+    duration_s = serializers.FloatField()
+    measure = serializers.ChoiceField(
+        choices=STOP_TIME_KINDS, help_text="Stationary time, or time in the pit lane"
+    )
+
+
+class PitSummarySerializer(serializers.Serializer[Any]):
+    total = serializers.IntegerField()
+    fastest = FastestStopSerializer(allow_null=True)
+
+
+class WeatherSpanSerializer(serializers.Serializer[Any]):
+    air_min = serializers.FloatField()
+    air_max = serializers.FloatField()
+    track_min = serializers.FloatField()
+    track_max = serializers.FloatField()
+
+
+class TeamPointsSerializer(serializers.Serializer[Any]):
+    team = TeamSerializer()
+    points = serializers.FloatField()
+    colour = serializers.CharField()
+
+
+class StandingChangeSerializer(serializers.Serializer[Any]):
+    driver = DriverSerializer()
+    position = serializers.IntegerField()
+    points = serializers.FloatField()
+    change = serializers.IntegerField(
+        allow_null=True, help_text="Places gained (+) or lost (-) since the previous round"
+    )
+
+
+class ResultLineSerializer(serializers.Serializer[Any]):
+    entry = ReportEntrySerializer()
+    position = serializers.IntegerField(allow_null=True)
+    classification = serializers.CharField()
+    gap_s = serializers.FloatField(allow_null=True)
+    laps_down = serializers.IntegerField()
+    points = serializers.FloatField()
+
+
+def _optional(serializer: type[serializers.Serializer[Any]], value: Any) -> Any:
+    return None if value is None else serializer(value).data
+
+
 class RaceReportSerializer(serializers.Serializer[Any]):
     """Facts of a race or sprint, turned into sentences by the web (EN/FR)."""
 
@@ -100,6 +180,24 @@ class RaceReportSerializer(serializers.Serializer[Any]):
     rain = serializers.BooleanField(allow_null=True, help_text="Rain recorded during the session")
     winner_strategy = serializers.SerializerMethodField()
     championship = serializers.SerializerMethodField()
+    story = serializers.SerializerMethodField()
+    pit_stops = serializers.SerializerMethodField()
+    weather = serializers.SerializerMethodField()
+    teams = TeamPointsSerializer(many=True)
+    standings = StandingChangeSerializer(many=True)
+    results = ResultLineSerializer(many=True)
+
+    @extend_schema_field(StorySerializer(allow_null=True))
+    def get_story(self, report: dict[str, Any]) -> Any:
+        return _optional(StorySerializer, report["story"])
+
+    @extend_schema_field(PitSummarySerializer(allow_null=True))
+    def get_pit_stops(self, report: dict[str, Any]) -> Any:
+        return _optional(PitSummarySerializer, report["pit_stops"])
+
+    @extend_schema_field(WeatherSpanSerializer(allow_null=True))
+    def get_weather(self, report: dict[str, Any]) -> Any:
+        return _optional(WeatherSpanSerializer, report["weather"])
 
     @extend_schema_field(NeutralisationCountSerializer(allow_null=True))
     def get_neutralisations(self, report: dict[str, Any]) -> Any:

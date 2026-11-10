@@ -802,6 +802,75 @@ paths:
                 items:
                   $ref: '#/components/schemas/EntryStints'
           description: ''
+  /api/v1/sessions/{session_id}/telemetry:
+    get:
+      operationId: session_telemetry_list
+      summary: Fastest laps with stored telemetry (car data and positions), fastest
+        first
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TelemetryLap'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/telemetry/compare:
+    get:
+      operationId: session_telemetry_compare
+      summary: Speed, throttle, brake, gear and position over the fastest lap of 1
+        to 3 cars, on one distance grid, with braking zones and time deltas
+      parameters:
+      - in: query
+        name: cars
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - strategy
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelemetryCompare'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/sessions/{session_id}/track:
     get:
       operationId: session_track_retrieve
@@ -911,6 +980,31 @@ components:
       - group
       - name
       - value
+    BrakingZone:
+      type: object
+      properties:
+        start_m:
+          type: integer
+        end_m:
+          type: integer
+        entry_kph:
+          type: integer
+        min_kph:
+          type: integer
+          description: 'Lowest speed before full throttle: the apex'
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+      required:
+      - end_m
+      - entry_kph
+      - min_kph
+      - start_m
+      - x
+      - y
     CareerTotals:
       type: object
       properties:
@@ -1112,6 +1206,22 @@ components:
       - new_tyre_pace_s
       - slope_ci
       - slope_s_per_lap
+    Decisive:
+      type: object
+      properties:
+        lap:
+          type: integer
+          description: First lap of the winner's last spell in the lead
+        how:
+          $ref: '#/components/schemas/HowEnum'
+        rival:
+          allOf:
+          - $ref: '#/components/schemas/ReportEntry'
+          nullable: true
+      required:
+      - how
+      - lap
+      - rival
     Degradation:
       type: object
       properties:
@@ -1618,6 +1728,29 @@ components:
       - race_date
       - round
       - season
+    FastestStop:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/ReportEntry'
+        lap:
+          type: integer
+        duration_s:
+          type: number
+          format: double
+        measure:
+          allOf:
+          - $ref: '#/components/schemas/MeasureEnum'
+          description: |-
+            Stationary time, or time in the pit lane
+
+            * `stationary` - stationary
+            * `lane` - lane
+      required:
+      - duration_s
+      - entry
+      - lap
+      - measure
     FormatEnum:
       enum:
       - conventional
@@ -1709,6 +1842,20 @@ components:
       - last_race
       - next_event
       - season
+    HowEnum:
+      enum:
+      - lights_to_flag
+      - undercut
+      - pit_cycle
+      - rival_stop
+      - on_track
+      type: string
+      description: |-
+        * `lights_to_flag` - lights_to_flag
+        * `undercut` - undercut
+        * `pit_cycle` - pit_cycle
+        * `rival_stop` - rival_stop
+        * `on_track` - on_track
     KindEnum:
       enum:
       - FP1
@@ -1785,6 +1932,16 @@ components:
       required:
       - gap_s
       - lap
+    LapsLed:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/ReportEntry'
+        laps:
+          type: integer
+      required:
+      - entry
+      - laps
     LastRace:
       type: object
       properties:
@@ -2054,6 +2211,14 @@ components:
       - next_session
       - snapshot
       - state
+    MeasureEnum:
+      enum:
+      - stationary
+      - lane
+      type: string
+      description: |-
+        * `stationary` - stationary
+        * `lane` - lane
     Media:
       type: object
       properties:
@@ -2447,6 +2612,18 @@ components:
           description: Duration published by Jolpica
       required:
       - lap_number
+    PitSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        fastest:
+          allOf:
+          - $ref: '#/components/schemas/FastestStop'
+          nullable: true
+      required:
+      - fastest
+      - total
     Placed:
       type: object
       properties:
@@ -2662,6 +2839,33 @@ components:
           - $ref: '#/components/schemas/Championship'
           nullable: true
           readOnly: true
+        story:
+          allOf:
+          - $ref: '#/components/schemas/Story'
+          nullable: true
+          readOnly: true
+        pit_stops:
+          allOf:
+          - $ref: '#/components/schemas/PitSummary'
+          nullable: true
+          readOnly: true
+        weather:
+          allOf:
+          - $ref: '#/components/schemas/WeatherSpan'
+          nullable: true
+          readOnly: true
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamPoints'
+        standings:
+          type: array
+          items:
+            $ref: '#/components/schemas/StandingChange'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultLine'
       required:
       - biggest_gain
       - championship
@@ -2671,11 +2875,17 @@ components:
       - finished_at
       - kind
       - neutralisations
+      - pit_stops
       - podium
       - rain
+      - results
       - retirements
       - session_id
+      - standings
       - starters
+      - story
+      - teams
+      - weather
       - winner
       - winner_strategy
       - winner_wins
@@ -2779,10 +2989,41 @@ components:
           type: number
           format: double
           nullable: true
+        laps_completed:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
       required:
       - car_number
       - driver
       - team
+    ResultLine:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/ReportEntry'
+        position:
+          type: integer
+          nullable: true
+        classification:
+          type: string
+        gap_s:
+          type: number
+          format: double
+          nullable: true
+        laps_down:
+          type: integer
+        points:
+          type: number
+          format: double
+      required:
+      - classification
+      - entry
+      - gap_s
+      - laps_down
+      - points
+      - position
     RivalOutcome:
       type: object
       properties:
@@ -2997,6 +3238,25 @@ components:
       - has_data
       - id
       - kind
+    StandingChange:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        position:
+          type: integer
+        points:
+          type: number
+          format: double
+        change:
+          type: integer
+          nullable: true
+          description: Places gained (+) or lost (-) since the previous round
+      required:
+      - change
+      - driver
+      - points
+      - position
     StandingLine:
       type: object
       properties:
@@ -3056,6 +3316,20 @@ components:
       - round
       - rounds
       - season
+    StartMove:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/ReportEntry'
+        grid:
+          type: integer
+        position:
+          type: integer
+          description: Position at the end of lap 1
+      required:
+      - entry
+      - grid
+      - position
     StateEnum:
       enum:
       - offline
@@ -3187,6 +3461,33 @@ components:
       - loss_s
       - neutralisation
       - outlier
+    Story:
+      type: object
+      properties:
+        start_gains:
+          type: array
+          items:
+            $ref: '#/components/schemas/StartMove'
+        start_losses:
+          type: array
+          items:
+            $ref: '#/components/schemas/StartMove'
+        leaders:
+          type: array
+          items:
+            $ref: '#/components/schemas/LapsLed'
+        lead_changes:
+          type: integer
+        decisive:
+          allOf:
+          - $ref: '#/components/schemas/Decisive'
+          nullable: true
+      required:
+      - decisive
+      - lead_changes
+      - leaders
+      - start_gains
+      - start_losses
     StrategyPlan:
       type: object
       properties:
@@ -3376,6 +3677,20 @@ components:
       - name
       - ref
       - season
+    TeamPoints:
+      type: object
+      properties:
+        team:
+          $ref: '#/components/schemas/Team'
+        points:
+          type: number
+          format: double
+        colour:
+          type: string
+      required:
+      - colour
+      - points
+      - team
     TeamProgression:
       type: object
       properties:
@@ -3483,6 +3798,155 @@ components:
       - seasons
       - starts
       - wins
+    TelemetryCar:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        entry:
+          $ref: '#/components/schemas/TelemetryEntry'
+        lap_number:
+          type: integer
+        lap_time_s:
+          type: number
+          format: double
+        max_speed_kph:
+          type: number
+          format: double
+        full_throttle_share:
+          type: number
+          format: double
+        speed_kph:
+          type: array
+          items:
+            type: number
+            format: double
+        throttle_pct:
+          type: array
+          items:
+            type: number
+            format: double
+        brake:
+          type: array
+          items:
+            type: boolean
+        gear:
+          type: array
+          items:
+            type: integer
+        drs_open:
+          type: array
+          items:
+            type: boolean
+        x:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Screen units
+        y:
+          type: array
+          items:
+            type: number
+            format: double
+        delta_s:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Seconds behind the first car at each point
+        braking_zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/BrakingZone'
+      required:
+      - brake
+      - braking_zones
+      - car_number
+      - delta_s
+      - drs_open
+      - entry
+      - full_throttle_share
+      - gear
+      - lap_number
+      - lap_time_s
+      - max_speed_kph
+      - speed_kph
+      - throttle_pct
+      - x
+      - y
+    TelemetryCompare:
+      type: object
+      properties:
+        width:
+          type: integer
+          description: Screen box of x and y, like the track drawing
+        height:
+          type: integer
+        length_m:
+          type: integer
+          description: Common lap length the laps are drawn on
+        step_m:
+          type: number
+          format: double
+          description: Distance between two points
+        points:
+          type: integer
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/TelemetryCar'
+      required:
+      - cars
+      - height
+      - length_m
+      - points
+      - step_m
+      - width
+    TelemetryEntry:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          readOnly: true
+        team_colour:
+          type: string
+          description: 'Hex RGB without #'
+          maxLength: 6
+      required:
+      - car_number
+      - driver
+      - team
+    TelemetryLap:
+      type: object
+      description: A stored fastest lap, without its samples.
+      properties:
+        entry:
+          allOf:
+          - $ref: '#/components/schemas/TelemetryEntry'
+          readOnly: true
+        lap_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        lap_time_s:
+          type: number
+          format: double
+      required:
+      - entry
+      - lap_number
+      - lap_time_s
     Track:
       type: object
       description: Circuit outline in screen coordinates, samples evenly spaced in
@@ -3620,6 +4084,26 @@ components:
       - rain
       - track_c
       - wind_ms
+    WeatherSpan:
+      type: object
+      properties:
+        air_min:
+          type: number
+          format: double
+        air_max:
+          type: number
+          format: double
+        track_min:
+          type: number
+          format: double
+        track_max:
+          type: number
+          format: double
+      required:
+      - air_max
+      - air_min
+      - track_max
+      - track_min
     Winner:
       type: object
       properties:

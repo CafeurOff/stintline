@@ -11,7 +11,7 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from racedata.errors import ProviderError, RateLimitedError, UpstreamUnavailableError
-from stintline.ingestion import history, portraits, services
+from stintline.ingestion import history, portraits, services, telemetry
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import RACE_KINDS, Event, Season, Session
 
@@ -78,7 +78,28 @@ def ingest_session(session_id: int) -> dict[str, int]:
     session = Session.objects.select_related("event__season").get(pk=session_id)
     with open_sources() as sources:
         report = services.ingest_session(session, sources)
+    ingest_telemetry.delay(session.pk)
     return report.counts
+
+
+@shared_task(
+    autoretry_for=RETRYABLE,
+    retry_backoff=RETRY_BACKOFF_S,
+    retry_backoff_max=RETRY_BACKOFF_MAX_S,
+    retry_jitter=True,
+    max_retries=MAX_RETRIES,
+    acks_late=True,
+)
+def ingest_telemetry(session_id: int) -> int:
+    """Fastest-lap telemetry of every car (about 40 bounded requests, ADR 0013)."""
+    session = Session.objects.get(pk=session_id)
+    with open_sources() as sources:
+        return telemetry.ingest_telemetry(session, sources, timezone.now())
+
+
+TELEMETRY_BACKFILL_PER_RUN = 4
+"""Older races given telemetry per ``refresh_recent`` run: ~160 requests, about 6 minutes
+of the OpenF1 budget every 30 minutes, so new races are never held up behind the backlog."""
 
 
 RESULTS_DELAY = timedelta(hours=1)
@@ -180,7 +201,15 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
         seasons.add(now.year)
     for season in sorted(seasons):
         ingest_season_results.delay(season)
-    log.info("refresh_recent_queued", sessions=len(queued), seasons=sorted(seasons))
+    backlog = telemetry.missing_telemetry().exclude(pk__in=queued)[:TELEMETRY_BACKFILL_PER_RUN]
+    for session in backlog:
+        ingest_telemetry.delay(session.pk)
+    log.info(
+        "refresh_recent_queued",
+        sessions=len(queued),
+        seasons=sorted(seasons),
+        telemetry=len(backlog),
+    )
     return queued
 
 

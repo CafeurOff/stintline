@@ -270,3 +270,44 @@ def test_report_notes_rain_from_the_weather_samples() -> None:
 
     assert facts is not None
     assert facts["rain"] is True
+
+
+def test_race_report_tells_the_race_lap_by_lap(seeded: None) -> None:
+    hungary = Session.objects.get(event__season__year=2025, event__round=14, kind="R")
+
+    body = get(f"news/reports/{hungary.pk}")
+
+    story = body["story"]
+    leader = story["leaders"][0]
+    assert (leader["entry"]["driver"]["code"], leader["laps"]) == ("NOR", 36)
+    assert story["decisive"]["how"] == "rival_stop"
+    assert story["decisive"]["rival"]["driver"]["code"] == "PIA"
+    assert story["start_gains"][0]["position"] < story["start_gains"][0]["grid"]
+    assert body["pit_stops"]["fastest"]["measure"] == "stationary"
+    assert body["weather"]["track_max"] > body["weather"]["track_min"]
+    assert body["teams"][0] == {
+        "team": {"ref": "mclaren", "name": "McLaren"},
+        "points": 43.0,
+        "colour": body["teams"][0]["colour"],
+    }
+    assert [row["driver"]["code"] for row in body["standings"]][:2] == ["PIA", "NOR"]
+    assert len(body["results"]) == 20
+    assert body["results"][1]["gap_s"] == pytest.approx(0.698, abs=0.01)
+
+
+def test_bahrain_winner_got_the_lead_back_after_the_stops(seeded: None) -> None:
+    bahrain = Session.objects.get(event__season__year=2025, event__round=4, kind="R")
+
+    body = get(f"news/reports/{bahrain.pk}")
+
+    assert body["story"]["decisive"]["how"] == "pit_cycle"
+    assert body["standings"][1]["change"] == 1
+
+
+def test_biggest_climb_can_be_on_the_podium() -> None:
+    session = _race((1, 1, "1", 50, 5000.0), (18, 2, "2", 50, 5010.0), (3, 3, "3", 50, 5020.0))
+
+    facts = reports.build(session)
+
+    assert facts is not None
+    assert facts["biggest_gain"].car_number == 2

@@ -466,6 +466,40 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/sessions/{session_id}/telemetry": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fastest laps with stored telemetry (car data and positions), fastest first */
+    get: operations["session_telemetry_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/sessions/{session_id}/telemetry/compare": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Speed, throttle, brake, gear and position over the fastest lap of 1 to 3 cars, on one distance grid, with braking zones and time deltas */
+    get: operations["session_telemetry_compare"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}/track": {
     parameters: {
       query?: never;
@@ -526,6 +560,17 @@ export interface components {
       name: string;
       value: string;
       description: string;
+    };
+    BrakingZone: {
+      start_m: number;
+      end_m: number;
+      entry_kph: number;
+      /** @description Lowest speed before full throttle: the apex */
+      min_kph: number;
+      /** Format: double */
+      x: number;
+      /** Format: double */
+      y: number;
     };
     CareerTotals: {
       seasons: number;
@@ -603,6 +648,12 @@ export interface components {
       /** Format: double */
       new_tyre_pace_s: number;
       low_confidence: boolean;
+    };
+    Decisive: {
+      /** @description First lap of the winner's last spell in the lead */
+      lap: number;
+      how: components["schemas"]["HowEnum"];
+      rival: components["schemas"]["ReportEntry"] | null;
     };
     Degradation: {
       compounds: components["schemas"]["CompoundDegradation"][];
@@ -774,6 +825,19 @@ export interface components {
       format: components["schemas"]["FormatEnum"];
       readonly circuit: components["schemas"]["Circuit"];
     };
+    FastestStop: {
+      entry: components["schemas"]["ReportEntry"];
+      lap: number;
+      /** Format: double */
+      duration_s: number;
+      /**
+       * @description Stationary time, or time in the pit lane
+       *
+       *     * `stationary` - stationary
+       *     * `lane` - lane
+       */
+      measure: components["schemas"]["MeasureEnum"];
+    };
     /**
      * @description * `conventional` - Conventional
      *     * `sprint` - Sprint weekend
@@ -810,6 +874,15 @@ export interface components {
       constructors: components["schemas"]["StandingLine"][];
     };
     /**
+     * @description * `lights_to_flag` - lights_to_flag
+     *     * `undercut` - undercut
+     *     * `pit_cycle` - pit_cycle
+     *     * `rival_stop` - rival_stop
+     *     * `on_track` - on_track
+     * @enum {string}
+     */
+    HowEnum: "lights_to_flag" | "undercut" | "pit_cycle" | "rival_stop" | "on_track";
+    /**
      * @description * `FP1` - Practice 1
      *     * `FP2` - Practice 2
      *     * `FP3` - Practice 3
@@ -841,6 +914,10 @@ export interface components {
       lap: number;
       /** Format: double */
       gap_s: number;
+    };
+    LapsLed: {
+      entry: components["schemas"]["ReportEntry"];
+      laps: number;
     };
     LastRace: {
       session_id: number;
@@ -943,6 +1020,12 @@ export interface components {
       snapshot: components["schemas"]["LiveSnapshot"] | null;
       next_session: components["schemas"]["NextSession"] | null;
     };
+    /**
+     * @description * `stationary` - stationary
+     *     * `lane` - lane
+     * @enum {string}
+     */
+    MeasureEnum: "stationary" | "lane";
     Media: {
       /** Format: uri */
       driver_image_url: string | null;
@@ -1142,6 +1225,10 @@ export interface components {
        */
       reported_duration_s?: number | null;
     };
+    PitSummary: {
+      total: number;
+      fastest: components["schemas"]["FastestStop"] | null;
+    };
     Placed: {
       entry: components["schemas"]["ReportEntry"];
       /**
@@ -1228,6 +1315,12 @@ export interface components {
       rain: boolean | null;
       readonly winner_strategy: components["schemas"]["WinnerStrategy"] | null;
       readonly championship: components["schemas"]["Championship"] | null;
+      readonly story: components["schemas"]["Story"] | null;
+      readonly pit_stops: components["schemas"]["PitSummary"] | null;
+      readonly weather: components["schemas"]["WeatherSpan"] | null;
+      teams: components["schemas"]["TeamPoints"][];
+      standings: components["schemas"]["StandingChange"][];
+      results: components["schemas"]["ResultLine"][];
     };
     Radio: {
       /** Format: date-time */
@@ -1265,6 +1358,18 @@ export interface components {
       status?: string;
       /** Format: double */
       fastest_lap_s?: number | null;
+      /** Format: int64 */
+      laps_completed?: number;
+    };
+    ResultLine: {
+      entry: components["schemas"]["ReportEntry"];
+      position: number | null;
+      classification: string;
+      /** Format: double */
+      gap_s: number | null;
+      laps_down: number;
+      /** Format: double */
+      points: number;
     };
     RivalOutcome: {
       car: number;
@@ -1346,6 +1451,14 @@ export interface components {
       scheduled_start?: string | null;
       readonly has_data: boolean;
     };
+    StandingChange: {
+      driver: components["schemas"]["Driver"];
+      position: number;
+      /** Format: double */
+      points: number;
+      /** @description Places gained (+) or lost (-) since the previous round */
+      change: number | null;
+    };
     StandingLine: {
       /** Format: int64 */
       position?: number | null;
@@ -1363,6 +1476,12 @@ export interface components {
       rounds: number[];
       drivers: components["schemas"]["StandingLine"][];
       constructors: components["schemas"]["StandingLine"][];
+    };
+    StartMove: {
+      entry: components["schemas"]["ReportEntry"];
+      grid: number;
+      /** @description Position at the end of lap 1 */
+      position: number;
     };
     /**
      * @description * `offline` - offline
@@ -1419,6 +1538,13 @@ export interface components {
       loss_s: number;
       neutralisation: string | null;
       outlier: boolean;
+    };
+    Story: {
+      start_gains: components["schemas"]["StartMove"][];
+      start_losses: components["schemas"]["StartMove"][];
+      leaders: components["schemas"]["LapsLed"][];
+      lead_changes: number;
+      decisive: components["schemas"]["Decisive"] | null;
     };
     StrategyPlan: {
       start_compound: string;
@@ -1492,6 +1618,12 @@ export interface components {
       /** @description Line-up, car and championship place in the requested season */
       readonly season: components["schemas"]["SeasonTeam"] | null;
     };
+    TeamPoints: {
+      team: components["schemas"]["Team"];
+      /** Format: double */
+      points: number;
+      colour: string;
+    };
     TeamProgression: {
       team: components["schemas"]["Team"];
       colour: string | null;
@@ -1528,6 +1660,58 @@ export interface components {
       /** Format: double */
       points: number;
       championships: number;
+    };
+    TelemetryCar: {
+      car_number: number;
+      entry: components["schemas"]["TelemetryEntry"];
+      lap_number: number;
+      /** Format: double */
+      lap_time_s: number;
+      /** Format: double */
+      max_speed_kph: number;
+      /** Format: double */
+      full_throttle_share: number;
+      speed_kph: number[];
+      throttle_pct: number[];
+      brake: boolean[];
+      gear: number[];
+      drs_open: boolean[];
+      /** @description Screen units */
+      x: number[];
+      y: number[];
+      /** @description Seconds behind the first car at each point */
+      delta_s: number[];
+      braking_zones: components["schemas"]["BrakingZone"][];
+    };
+    TelemetryCompare: {
+      /** @description Screen box of x and y, like the track drawing */
+      width: number;
+      height: number;
+      /** @description Common lap length the laps are drawn on */
+      length_m: number;
+      /**
+       * Format: double
+       * @description Distance between two points
+       */
+      step_m: number;
+      points: number;
+      cars: components["schemas"]["TelemetryCar"][];
+    };
+    TelemetryEntry: {
+      /** Format: int64 */
+      car_number: number;
+      readonly driver: components["schemas"]["Driver"];
+      readonly team: components["schemas"]["Team"];
+      /** @description Hex RGB without # */
+      team_colour?: string;
+    };
+    /** @description A stored fastest lap, without its samples. */
+    TelemetryLap: {
+      readonly entry: components["schemas"]["TelemetryEntry"];
+      /** Format: int64 */
+      lap_number: number;
+      /** Format: double */
+      lap_time_s: number;
     };
     /** @description Circuit outline in screen coordinates, samples evenly spaced in time over one lap. */
     Track: {
@@ -1584,6 +1768,16 @@ export interface components {
       rain: boolean;
       /** Format: double */
       wind_ms: number | null;
+    };
+    WeatherSpan: {
+      /** Format: double */
+      air_min: number;
+      /** Format: double */
+      air_max: number;
+      /** Format: double */
+      track_min: number;
+      /** Format: double */
+      track_max: number;
     };
     Winner: {
       /** Format: int64 */
@@ -2383,6 +2577,74 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["EntryStints"][];
+        };
+      };
+    };
+  };
+  session_telemetry_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TelemetryLap"][];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_telemetry_compare: {
+    parameters: {
+      query: {
+        cars: string;
+      };
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TelemetryCompare"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
     };

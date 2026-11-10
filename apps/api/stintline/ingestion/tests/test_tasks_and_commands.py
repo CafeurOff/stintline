@@ -40,10 +40,12 @@ def test_ingest_session_task_returns_counts() -> None:
     call_command("seed_demo", stdout=StringIO())
     session = Session.objects.get(event__round=16, kind=SessionKind.RACE)
 
-    counts = tasks.ingest_session.delay(session.pk).get()
+    with patch.object(tasks.ingest_telemetry, "delay") as telemetry_delay:
+        counts = tasks.ingest_session.delay(session.pk).get()
 
     assert counts["laps"] == 976
     assert counts["track_status"] == 0
+    telemetry_delay.assert_called_once_with(session.pk)
 
 
 def test_ingest_command_queues_tasks_by_default() -> None:
