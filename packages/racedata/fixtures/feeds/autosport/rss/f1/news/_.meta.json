@@ -1,0 +1,12 @@
+{
+  "provider": "feeds/autosport",
+  "url": "https://www.autosport.com/rss/f1/news/",
+  "recorded_at": "2026-11-10T23:03:20+00:00",
+  "sha256": "aef3e166dd874dca647fd82e4fb4f773c93c0efb9876668f5ae475c21ed97d77",
+  "bytes": 6999,
+  "dropped_fields": [
+    "description",
+    "enclosure"
+  ],
+  "items_kept": 12
+}

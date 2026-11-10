@@ -111,7 +111,7 @@ class RateLimiter:
 
 
 class HttpClient:
-    """JSON-over-HTTP client for one upstream provider."""
+    """HTTP client for one upstream provider (JSON APIs and text feeds)."""
 
     def __init__(
         self,
@@ -135,7 +135,7 @@ class HttpClient:
         self._client = httpx.Client(
             timeout=timeout_s,
             transport=transport,
-            headers={"User-Agent": user_agent, "Accept": "application/json"},
+            headers={"User-Agent": user_agent},
             follow_redirects=True,
         )
 
@@ -152,13 +152,32 @@ class HttpClient:
             InvalidPayloadError: the body is not valid JSON.
             ProviderError: any other 4xx.
         """
-        url = f"{self.base_url}/{path.lstrip('/')}"
-        query = {k: str(v) for k, v in (params or {}).items()}
+        url, query = self._url(path, params)
         key = cache_key(self.provider, url, query)
         cached = self._cache.get(key)
         if cached is not None:
             return cached
+        response = self._fetch(url, query, "application/json")
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise InvalidPayloadError(self.provider, f"invalid JSON from {url}") from exc
+        self._cache.set(key, data)
+        return data
 
+    def get_text(self, path: str, params: QueryParams | None = None, *, accept: str = "*/*") -> str:
+        """GET ``base_url/path`` and return the body as text (feeds, XML). Not cached.
+
+        Raises the same errors as :meth:`get_json`, except ``InvalidPayloadError``.
+        """
+        url, query = self._url(path, params)
+        return self._fetch(url, query, accept).text
+
+    def _url(self, path: str, params: QueryParams | None) -> tuple[str, dict[str, str]]:
+        url = f"{self.base_url}/{path.lstrip('/')}"
+        return url, {k: str(v) for k, v in (params or {}).items()}
+
+    def _fetch(self, url: str, query: dict[str, str], accept: str) -> httpx.Response:
         last_error: ProviderError | None = None
         for attempt in range(self._retry.max_attempts):
             if attempt:
@@ -168,7 +187,7 @@ class HttpClient:
                 self._clock.sleep(self._retry.delay_for(attempt - 1, retry_after))
             self._limiter.acquire()
             try:
-                response = self._client.get(url, params=query)
+                response = self._client.get(url, params=query, headers={"Accept": accept})
             except httpx.TimeoutException:
                 last_error = UpstreamUnavailableError(self.provider, f"timeout on {url}")
                 continue
@@ -187,12 +206,7 @@ class HttpClient:
                 raise NotFoundError(self.provider, f"HTTP 404 on {url}")
             if status >= httpx.codes.BAD_REQUEST:
                 raise ProviderError(self.provider, f"HTTP {status} on {url}")
-            try:
-                data = response.json()
-            except ValueError as exc:
-                raise InvalidPayloadError(self.provider, f"invalid JSON from {url}") from exc
-            self._cache.set(key, data)
-            return data
+            return response
 
         assert last_error is not None  # noqa: S101  (loop ran at least once)
         raise last_error

@@ -1,0 +1,13 @@
+{
+  "provider": "feeds/f1i",
+  "url": "https://f1i.com/feed/",
+  "recorded_at": "2026-11-10T23:03:22+00:00",
+  "sha256": "e5cd511c6e3d7f5fcae17fd15211f096d898bdcc77246c91e60ee7be68f94245",
+  "bytes": 5174,
+  "dropped_fields": [
+    "description",
+    "{http://purl.org/dc/elements/1.1/}creator",
+    "{http://purl.org/rss/1.0/modules/content/}encoded"
+  ],
+  "items_kept": 12
+}

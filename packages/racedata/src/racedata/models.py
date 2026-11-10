@@ -4,7 +4,7 @@ seconds. Nothing outside ``racedata`` sees raw upstream payloads.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -304,3 +304,24 @@ class WikiPortrait(_DTO):
     artist: str
     license: str
     license_url: str
+
+
+class Headline(_DTO):
+    """One item of a news feed: a title and a link to the publisher's article.
+
+    The article text, summary and images are never kept (ADR 0012).
+    """
+
+    source: str
+    """``FeedConfig.key`` of the feed."""
+    language: str
+    title: str
+    url: str
+    published_at: datetime
+
+    @field_validator("published_at")
+    @classmethod
+    def _utc(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("published_at must be timezone-aware")
+        return value.astimezone(UTC)

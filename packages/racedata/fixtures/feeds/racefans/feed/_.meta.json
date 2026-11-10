@@ -1,0 +1,15 @@
+{
+  "provider": "feeds/racefans",
+  "url": "https://www.racefans.net/feed/",
+  "recorded_at": "2026-11-10T23:03:21+00:00",
+  "sha256": "0e507a04db0eb55caed0949333da20caa411597d90c66251921879c7be1ff368",
+  "bytes": 6879,
+  "dropped_fields": [
+    "comments",
+    "description",
+    "{http://purl.org/dc/elements/1.1/}creator",
+    "{http://purl.org/rss/1.0/modules/slash/}comments",
+    "{http://wellformedweb.org/CommentAPI/}commentRss"
+  ],
+  "items_kept": 12
+}

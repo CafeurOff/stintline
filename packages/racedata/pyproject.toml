@@ -5,6 +5,7 @@ description = "Typed adapters for public motorsport timing data (OpenF1, Jolpica
 requires-python = ">=3.13"
 license = "MIT"
 dependencies = [
+    "defusedxml>=0.7",
     "httpx>=0.28",
     "pydantic>=2.10",
     "structlog>=25.1",
@@ -12,7 +13,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["respx>=0.22"]
+dev = ["respx>=0.22", "types-defusedxml>=0.7"]
 
 [build-system]
 requires = ["uv_build>=0.9,<0.14"]

@@ -36,8 +36,10 @@ def _safe(text: str) -> str:
     return _UNSAFE.sub("_", text).replace("..", "_")
 
 
-def fixture_path(root: Path, provider: str, path: str, params: Mapping[str, str]) -> Path:
-    """Deterministic file location for a request."""
+def fixture_path(
+    root: Path, provider: str, path: str, params: Mapping[str, str], suffix: str = ".json"
+) -> Path:
+    """Deterministic file location for a request (``suffix`` is ``.xml`` for feeds)."""
     clean_path = "/".join(
         _safe(part) for part in path.strip("/").split("/") if part not in ("", ".", "..")
     )
@@ -47,7 +49,7 @@ def fixture_path(root: Path, provider: str, path: str, params: Mapping[str, str]
         # prefix and make the name unique with a digest of the full query.
         digest = hashlib.sha256(slug.encode()).hexdigest()[:16]
         slug = f"{slug[: MAX_SLUG_CHARS - 18]}__{digest}"
-    return root / provider / clean_path / f"{slug}.json"
+    return root / provider / clean_path / f"{slug}{suffix}"
 
 
 def load_fixture(file: Path) -> Any:
@@ -61,17 +63,24 @@ class FixtureTransport(httpx.BaseTransport):
     stripped before looking up the fixture.
     """
 
-    def __init__(self, provider: str, base_path: str = "", root: Path = FIXTURES_ROOT) -> None:
+    def __init__(
+        self,
+        provider: str,
+        base_path: str = "",
+        root: Path = FIXTURES_ROOT,
+        suffix: str = ".json",
+    ) -> None:
         self.provider = provider
         self.base_path = base_path.rstrip("/")
         self.root = root
+        self.suffix = suffix
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
         if self.base_path and path.startswith(self.base_path):
             path = path[len(self.base_path) :]
         params = dict(request.url.params.items())
-        file = fixture_path(self.root, self.provider, path, params)
+        file = fixture_path(self.root, self.provider, path, params, self.suffix)
         if not file.exists():
             raise MissingFixtureError(
                 f"No fixture for {self.provider} {request.url} (expected {file}). "

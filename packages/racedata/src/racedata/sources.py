@@ -7,7 +7,15 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from racedata.cache import FileCache, ResponseCache
-from racedata.config import JOLPICA, OPENF1, WIKIPEDIA, ProviderConfig
+from racedata.config import (
+    FEED_LIMITS,
+    FEEDS,
+    JOLPICA,
+    OPENF1,
+    WIKIPEDIA,
+    FeedConfig,
+    ProviderConfig,
+)
 from racedata.fixtures import FIXTURES_ROOT, FixtureTransport
 from racedata.http import HttpClient
 from racedata.providers.base import (
@@ -17,6 +25,7 @@ from racedata.providers.base import (
     ScheduleSource,
     TimingSource,
 )
+from racedata.providers.feeds import FeedSource
 from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
 from racedata.providers.wikipedia import WikipediaSource
@@ -32,6 +41,8 @@ class Sources:
     """Season-wide results and reference data. ``None`` in minimal test doubles."""
     portraits: PortraitSource | None = None
     """Wikipedia portraits (ADR 0009). ``None`` in minimal test doubles."""
+    news: FeedSource | None = None
+    """News feed headlines (ADR 0012). ``None`` in minimal test doubles."""
 
     def close(self) -> None:
         for client in self.clients:
@@ -61,7 +72,10 @@ def build_http_sources(
     openf1 = _http_client(OPENF1, openf1_base_url, cache)
     jolpica = _http_client(JOLPICA, jolpica_base_url, cache)
     wikipedia = _http_client(WIKIPEDIA, None, None)
-    return _sources(openf1, jolpica, wikipedia)
+    feeds = FeedSource(
+        [(feed, HttpClient(feed.key, feed.base_url, limits=FEED_LIMITS)) for feed in FEEDS]
+    )
+    return _sources(openf1, jolpica, wikipedia, feeds)
 
 
 def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
@@ -70,16 +84,27 @@ def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
     openf1 = _fixture_client(OPENF1, root)
     jolpica = _fixture_client(JOLPICA, root)
     wikipedia = _fixture_client(WIKIPEDIA, root)
-    return _sources(openf1, jolpica, wikipedia)
+    feeds = FeedSource([(feed, _fixture_feed_client(feed, root)) for feed in FEEDS])
+    return _sources(openf1, jolpica, wikipedia, feeds)
 
 
-def _sources(openf1: HttpClient, jolpica: HttpClient, wikipedia: HttpClient) -> Sources:
+def _fixture_feed_client(feed: FeedConfig, root: Path) -> HttpClient:
+    transport = FixtureTransport(
+        f"feeds/{feed.key}", urlparse(feed.base_url).path, root, suffix=".xml"
+    )
+    return HttpClient(feed.key, feed.base_url, transport=transport)
+
+
+def _sources(
+    openf1: HttpClient, jolpica: HttpClient, wikipedia: HttpClient, feeds: FeedSource
+) -> Sources:
     jolpica_source = JolpicaSource(jolpica)
     return Sources(
         schedule=jolpica_source,
         results=jolpica_source,
         timing=OpenF1Source(openf1),
-        clients=(openf1, jolpica, wikipedia),
+        clients=(openf1, jolpica, wikipedia, *feeds.clients),
         history=jolpica_source,
         portraits=WikipediaSource(wikipedia),
+        news=feeds,
     )

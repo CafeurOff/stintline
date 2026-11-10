@@ -1,0 +1,12 @@
+{
+  "provider": "feeds/motorsport-fr",
+  "url": "https://fr.motorsport.com/rss/f1/news/",
+  "recorded_at": "2026-11-10T23:03:22+00:00",
+  "sha256": "7b9c2522d4f6bc811453e1fc6a5fcfc81a5bb3d33321723e61b274a43b383fb1",
+  "bytes": 6624,
+  "dropped_fields": [
+    "description",
+    "enclosure"
+  ],
+  "items_kept": 12
+}

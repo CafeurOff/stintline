@@ -57,15 +57,17 @@ def test_fixture_transport_refuses_unknown_requests(tmp_path: Path) -> None:
 
 
 def test_build_http_sources_wires_cache_and_base_urls(tmp_path: Path) -> None:
+    from racedata.config import FEEDS
     from racedata.sources import build_http_sources
 
     sources = build_http_sources(
         openf1_base_url="https://mirror.test/v1/", jolpica_base_url=None, cache_dir=tmp_path
     )
     try:
-        openf1, jolpica, wikipedia = sources.clients
+        openf1, jolpica, wikipedia, *feeds = sources.clients
         assert openf1.base_url == "https://mirror.test/v1"
         assert jolpica.base_url == "https://api.jolpi.ca/ergast/f1"
         assert wikipedia.base_url == "https://en.wikipedia.org/w"
+        assert [c.base_url for c in feeds] == [f.base_url for f in FEEDS]
     finally:
         sources.close()

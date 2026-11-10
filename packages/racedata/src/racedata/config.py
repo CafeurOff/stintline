@@ -38,3 +38,31 @@ WIKIPEDIA = ProviderConfig(
 )
 
 PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA)}
+
+
+@dataclass(frozen=True, slots=True)
+class FeedConfig:
+    """A public news feed (RSS 2.0 or Atom). Only headlines and links are kept (ADR 0012)."""
+
+    key: str
+    """Stable identifier, stored with every headline."""
+    name: str
+    """Publication name shown next to its headlines."""
+    base_url: str
+    path: str
+    language: str
+    """ISO 639-1 code of the feed's articles."""
+
+
+FEED_LIMITS = (RateLimit(max_calls=1, period_s=1.0),)
+"""Feeds are read once every 30 minutes: one request per second per site is plenty."""
+
+FEEDS = (
+    FeedConfig("autosport", "Autosport", "https://www.autosport.com", "rss/f1/news/", "en"),
+    FeedConfig("racefans", "RaceFans", "https://www.racefans.net", "feed/", "en"),
+    FeedConfig("f1i", "F1i", "https://f1i.com", "feed/", "en"),
+    FeedConfig(
+        "motorsport-fr", "Motorsport.com France", "https://fr.motorsport.com", "rss/f1/news/", "fr"
+    ),
+)
+"""Checked on 2026-11-11. Each feed is read on its own: one failing never blocks the rest."""
