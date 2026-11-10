@@ -9,7 +9,7 @@ import { headlines, hungaryReport, sprintReport } from "@/test/fixtures/news";
 import { renderRoute } from "@/test/render";
 import { server } from "@/test/server";
 
-import { type Report, writeReport } from "./write";
+import { bodyText, type Report, writeReport } from "./write";
 
 function translator(dict: Record<string, string>) {
   return (key: string, params: Record<string, string | number> = {}) =>
@@ -20,31 +20,46 @@ const tEn = translator(en);
 const tFr = translator(fr);
 
 describe("writeReport", () => {
-  it("tells the Hungarian Grand Prix in English", () => {
+  const body = (report: Report, t = tEn, locale: "en" | "fr" = "en") =>
+    bodyText(writeReport(report, t, createFormatters(locale), locale));
+
+  it("tells the Hungarian Grand Prix in English, section by section", () => {
     const written = writeReport(hungaryReport, tEn, createFormatters("en"), "en");
+    const text = bodyText(written).join(" ");
 
     expect(written.title).toBe("Lando Norris wins the Hungarian Grand Prix");
     expect(written.lede).toMatch(/^Norris \(McLaren\) beat Piastri by 0\.698\s?s\./);
     expect(written.lede).toContain("Russell completed the podium.");
     expect(written.lede).toContain("Norris had started 3rd on the grid.");
-    expect(written.paragraphs).toContain("Norris stopped once: medium → hard.");
-    expect(written.paragraphs).toContain(
-      "No safety car, no red flag: the race ran green from start to finish.",
+    expect(written.sections.map((s) => s.key)).toEqual([
+      "start",
+      "race",
+      "strategy",
+      "facts",
+      "championship",
+    ]);
+    expect(text).toMatch(/^At the start, Albon gained 3 places \(19th to 16th after lap 1\)/);
+    expect(text).toContain("Norris led 36 laps, Leclerc led 28 laps and Piastri led 6 laps");
+    expect(text).toContain(
+      "Norris took the lead for good on lap 46, when Piastri made a pit stop.",
     );
-    expect(written.paragraphs.join(" ")).toContain(
-      "Best climb: Andrea Kimi Antonelli, from 15th to 10th.",
+    expect(text).toContain("Norris stopped once: medium → hard.");
+    expect(text).toContain("No safety car, no red flag: the race ran green from start to finish.");
+    expect(text).toMatch(/Quickest stop: McLaren for Norris, 1\.9\s?s stationary/);
+    expect(text).toContain("Best climb: Andrea Kimi Antonelli, from 15th to 10th.");
+    expect(text).toContain("One retirement: Bearman.");
+    expect(text).toContain(
+      "Oscar Piastri still leads the championship after round 14, 284 points, 9 ahead of Norris.",
     );
-    expect(written.paragraphs.join(" ")).toContain("One retirement: Bearman.");
-    expect(written.paragraphs.at(-1)).toMatch(
-      /^Oscar Piastri still leads the championship after round 14, 284 points, 9 ahead of Norris\.$/,
-    );
+    expect(text).toContain("On the constructors' side: McLaren 43 points");
   });
 
   it("tells the same race in French", () => {
     const written = writeReport(hungaryReport, tFr, createFormatters("fr"), "fr");
 
     expect(written.title).toBe("Lando Norris remporte le Grand Prix de Hongrie");
-    expect(written.paragraphs).toContain("Norris a fait un arrêt : médium → durs.");
+    expect(bodyText(written)).toContain("Norris a fait un arrêt : médium → durs.");
+    expect(bodyText(written).join(" ")).toContain("lors de l'arrêt au stand de Piastri");
   });
 
   it("names a sprint and leaves out what it does not know", () => {
@@ -53,7 +68,7 @@ describe("writeReport", () => {
     expect(written.title).toBe("Oscar Piastri wins the Qatar Grand Prix sprint");
     expect(written.lede).toContain("from pole position");
     expect(written.lede).not.toMatch(/Grand Prix win/);
-    expect(written.paragraphs.join(" ")).not.toMatch(/championship|stopped/);
+    expect(bodyText(written).join(" ")).not.toMatch(/championship|stopped|led \d+ laps/);
   });
 
   it("covers first wins, lapped runners-up, neutralisations and new leaders", () => {
@@ -69,27 +84,55 @@ describe("writeReport", () => {
       biggest_gain: null,
       fastest_lap: null,
       championship: { ...hungaryReport.championship, leader_changed: true },
+      rain: true,
     };
 
     const written = writeReport(report, tEn, createFormatters("en"), "en");
+    const text = bodyText(written).join(" ");
 
     expect(written.lede).toContain("Norris (McLaren) finished ahead of Piastri.");
     expect(written.lede).toContain("from the pit lane");
     expect(written.lede).toContain("A first Grand Prix win for Norris.");
-    expect(written.paragraphs).toContain("Norris stopped 2 times: soft → hard → soft.");
-    expect(written.paragraphs).toContain(
-      "The race was neutralised by 2 safety cars and one virtual safety car.",
-    );
-    expect(written.paragraphs.join(" ")).toContain("2 retirements: Norris and Norris.");
-    expect(written.paragraphs.at(-1)).toMatch(/takes the championship lead/);
+    expect(text).toContain("Norris stopped 2 times: soft → hard → soft.");
+    expect(text).toContain("The race was neutralised by 2 safety cars and one virtual safety car.");
+    expect(text).toContain("Rain fell during the race");
+    expect(text).toContain("2 retirements: Norris and Norris.");
+    expect(text).toMatch(/takes the championship lead/);
   });
 
-  it("says when the winner never stopped", () => {
-    const report: Report = { ...hungaryReport, winner_strategy: { stops: 0, compounds: ["HARD"] } };
+  it.each([
+    ["lights_to_flag", "Norris led every lap."],
+    ["undercut", "A textbook undercut."],
+    ["pit_cycle", "once Piastri, who had stayed out longer"],
+    ["on_track", "took the lead from Piastri on track on lap 46"],
+  ] as const)("explains how the lead was won: %s", (how, sentence) => {
+    const story = hungaryReport.story;
+    const report: Report = {
+      ...hungaryReport,
+      story: { ...story, decisive: { ...story.decisive, how } },
+    };
 
-    const written = writeReport(report, tEn, createFormatters("en"), "en");
+    expect(body(report).join(" ")).toContain(sentence);
+  });
 
-    expect(written.paragraphs).toContain("Norris did not stop, on hard tyres.");
+  it("says when the winner never stopped, and lap-one losses", () => {
+    const story = hungaryReport.story;
+    const [loser] = story.start_losses;
+    const report: Report = {
+      ...hungaryReport,
+      winner_strategy: { stops: 0, compounds: ["HARD"] },
+      pit_stops: {
+        ...hungaryReport.pit_stops,
+        fastest: { ...hungaryReport.pit_stops.fastest, measure: "lane" },
+      },
+      story: { ...story, start_gains: [], start_losses: loser ? [loser] : [] },
+    };
+
+    const text = body(report).join(" ");
+
+    expect(text).toContain("Norris did not stop, on hard tyres.");
+    expect(text).toMatch(/lost 4 places on the opening lap/);
+    expect(text).toMatch(/in the pit lane on lap/);
   });
 });
 

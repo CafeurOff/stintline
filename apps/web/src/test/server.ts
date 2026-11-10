@@ -18,6 +18,7 @@ import {
 } from "./fixtures/hub";
 import { model } from "./fixtures/model";
 import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
+import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
 import { replay } from "./fixtures/replay";
@@ -112,6 +113,8 @@ export const handlers = [
     const lang = new URL(request.url).searchParams.get("lang");
     return HttpResponse.json(headlines.filter((h) => !lang || h.language === lang));
   }),
+  http.get("*/api/v1/sessions/:id/telemetry", () => HttpResponse.json(telemetryLaps)),
+  http.get("*/api/v1/sessions/:id/telemetry/compare", () => HttpResponse.json(telemetryCompare)),
   http.get("*/api/v1/news/reports", () => HttpResponse.json([hungaryReport, sprintReport])),
   http.get("*/api/v1/news/reports/:id", ({ params }) =>
     params.id === String(hungaryReport.session_id)

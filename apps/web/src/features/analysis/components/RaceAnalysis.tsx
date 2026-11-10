@@ -6,6 +6,7 @@ import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useReplay, useStints } from "@/features/race/api";
 import { driverCode, driverName } from "@/features/race/entries";
 import { buildClock } from "@/features/race/replay";
+import { TelemetrySection } from "@/features/telemetry/TelemetryView";
 import { StrategyStrips } from "@/features/tyres/components/StrategyStrips";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
@@ -16,8 +17,8 @@ import { gapsByLap, type PerLap, placesGained, positionsByLap } from "../laps";
 import { LapChart, type LapSeries } from "./LapChart";
 
 type Entry = Schema<"Entry">;
-type Chart = "positions" | "gaps" | "pace" | "tyres" | "sectors";
-const CHARTS: readonly Chart[] = ["positions", "gaps", "pace", "tyres", "sectors"];
+type Chart = "positions" | "gaps" | "pace" | "tyres" | "sectors" | "telemetry";
+const CHARTS: readonly Chart[] = ["positions", "gaps", "pace", "tyres", "sectors", "telemetry"];
 /** Drivers highlighted when none are chosen: the podium. */
 const DEFAULT_HIGHLIGHT = 3;
 /** Lap-time lines drawn at once: more is unreadable. */
@@ -121,6 +122,8 @@ export function RaceAnalysis({
         />
       ) : chart === "tyres" ? (
         <Tyres sessionId={sessionId} totalLaps={totalLaps} />
+      ) : chart === "telemetry" ? (
+        <TelemetrySection sessionId={sessionId} />
       ) : (
         <Sectors sessionId={sessionId} entries={entries} />
       )}
