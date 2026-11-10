@@ -143,6 +143,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/news/headlines": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Latest headlines from public news feeds (title and link only) */
+    get: operations["news_headlines_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/news/reports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Reports of the latest races and sprints, written from our data */
+    get: operations["news_reports_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/news/reports/{session_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Report of one race or sprint */
+    get: operations["news_report_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/seasons": {
     parameters: {
       query?: never;
@@ -491,6 +542,16 @@ export interface components {
       championships: number;
       best_finish: number | null;
     };
+    Championship: {
+      round: number;
+      leader: components["schemas"]["Driver"];
+      /** Format: double */
+      points: number;
+      second: components["schemas"]["Driver"] | null;
+      /** Format: double */
+      lead: number | null;
+      leader_changed: boolean;
+    };
     Circuit: {
       /** @description Jolpica circuitId */
       ref: string;
@@ -725,6 +786,17 @@ export interface components {
       /** Format: double */
       gain_per_lap_s: number;
     };
+    Headline: {
+      /** @description racedata FeedConfig.key */
+      source: string;
+      readonly source_name: string;
+      language: string;
+      title: string;
+      /** Format: uri */
+      url: string;
+      /** Format: date-time */
+      published_at: string;
+    };
     Health: {
       status: components["schemas"]["ComponentStatusEnum"];
       version: string;
@@ -898,6 +970,11 @@ export interface components {
       /** Format: int64 */
       lap_end?: number | null;
     };
+    NeutralisationCount: {
+      safety_cars: number;
+      virtual_safety_cars: number;
+      red_flags: number;
+    };
     /**
      * @description * `SC` - SC
      *     * `VSC` - VSC
@@ -1065,6 +1142,15 @@ export interface components {
        */
       reported_duration_s?: number | null;
     };
+    Placed: {
+      entry: components["schemas"]["ReportEntry"];
+      /**
+       * Format: double
+       * @description Behind the winner, same lap
+       */
+      gap_s: number | null;
+      laps_down: number;
+    };
     PlannedStop: {
       /** @description In-lap: new tyres from the next lap */
       lap: number;
@@ -1121,6 +1207,28 @@ export interface components {
       message: string;
       lap: number | null;
     };
+    /** @description Facts of a race or sprint, turned into sentences by the web (EN/FR). */
+    RaceReport: {
+      session_id: number;
+      kind: string;
+      event: components["schemas"]["EventSummary"];
+      /** Format: date-time */
+      finished_at: string;
+      winner: components["schemas"]["ReportEntry"];
+      /** @description Career Grand Prix wins including this one (races only) */
+      winner_wins: number | null;
+      podium: components["schemas"]["Placed"][];
+      starters: number;
+      classified: number;
+      biggest_gain: components["schemas"]["ReportEntry"] | null;
+      fastest_lap: components["schemas"]["ReportEntry"] | null;
+      retirements: components["schemas"]["ReportEntry"][];
+      readonly neutralisations: components["schemas"]["NeutralisationCount"] | null;
+      /** @description Rain recorded during the session */
+      rain: boolean | null;
+      readonly winner_strategy: components["schemas"]["WinnerStrategy"] | null;
+      readonly championship: components["schemas"]["Championship"] | null;
+    };
     Radio: {
       /** Format: date-time */
       at: string | null;
@@ -1142,6 +1250,21 @@ export interface components {
       compounds: (string | null)[];
       tyre_ages: (number | null)[];
       pit_in_laps: number[];
+    };
+    ReportEntry: {
+      /** Format: int64 */
+      car_number: number;
+      readonly driver: components["schemas"]["Driver"];
+      readonly team: components["schemas"]["Team"];
+      /** @description Hex RGB without # */
+      team_colour?: string;
+      /** Format: int64 */
+      grid_position?: number | null;
+      /** Format: int64 */
+      finish_position?: number | null;
+      status?: string;
+      /** Format: double */
+      fastest_lap_s?: number | null;
     };
     RivalOutcome: {
       car: number;
@@ -1470,6 +1593,10 @@ export interface components {
       /** @description Hex RGB without # */
       team_colour?: string;
     };
+    WinnerStrategy: {
+      stops: number;
+      compounds: string[];
+    };
   };
   responses: never;
   parameters: never;
@@ -1670,6 +1797,82 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ModelCard"];
+        };
+      };
+    };
+  };
+  news_headlines_list: {
+    parameters: {
+      query?: {
+        /**
+         * @description * `en` - en
+         *     * `fr` - fr
+         */
+        lang?: "en" | "fr";
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Headline"][];
+        };
+      };
+    };
+  };
+  news_reports_list: {
+    parameters: {
+      query?: {
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RaceReport"][];
+        };
+      };
+    };
+  };
+  news_report_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RaceReport"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
     };

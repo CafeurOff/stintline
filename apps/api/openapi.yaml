@@ -201,6 +201,94 @@ paths:
               schema:
                 $ref: '#/components/schemas/ModelCard'
           description: ''
+  /api/v1/news/headlines:
+    get:
+      operationId: news_headlines_list
+      summary: Latest headlines from public news feeds (title and link only)
+      parameters:
+      - in: query
+        name: lang
+        schema:
+          enum:
+          - en
+          - fr
+          type: string
+          minLength: 1
+        description: |-
+          * `en` - en
+          * `fr` - fr
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          maximum: 60
+          minimum: 1
+          default: 30
+      tags:
+      - news
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Headline'
+          description: ''
+  /api/v1/news/reports:
+    get:
+      operationId: news_reports_list
+      summary: Reports of the latest races and sprints, written from our data
+      parameters:
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          maximum: 30
+          minimum: 1
+          default: 12
+      tags:
+      - news
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RaceReport'
+          description: ''
+  /api/v1/news/reports/{session_id}:
+    get:
+      operationId: news_report_retrieve
+      summary: Report of one race or sprint
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - news
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RaceReport'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/seasons:
     get:
       operationId: seasons_list
@@ -866,6 +954,33 @@ components:
       - seasons
       - starts
       - wins
+    Championship:
+      type: object
+      properties:
+        round:
+          type: integer
+        leader:
+          $ref: '#/components/schemas/Driver'
+        points:
+          type: number
+          format: double
+        second:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        lead:
+          type: number
+          format: double
+          nullable: true
+        leader_changed:
+          type: boolean
+      required:
+      - lead
+      - leader
+      - leader_changed
+      - points
+      - round
+      - second
     Circuit:
       type: object
       properties:
@@ -1523,6 +1638,36 @@ components:
       required:
       - gain_per_lap_s
       - seconds_per_kg
+    Headline:
+      type: object
+      properties:
+        source:
+          type: string
+          description: racedata FeedConfig.key
+          maxLength: 32
+        source_name:
+          type: string
+          readOnly: true
+        language:
+          type: string
+          maxLength: 8
+        title:
+          type: string
+          maxLength: 300
+        url:
+          type: string
+          format: uri
+          maxLength: 600
+        published_at:
+          type: string
+          format: date-time
+      required:
+      - language
+      - published_at
+      - source
+      - source_name
+      - title
+      - url
     Health:
       type: object
       properties:
@@ -1967,6 +2112,19 @@ components:
           nullable: true
       required:
       - status
+    NeutralisationCount:
+      type: object
+      properties:
+        safety_cars:
+          type: integer
+        virtual_safety_cars:
+          type: integer
+        red_flags:
+          type: integer
+      required:
+      - red_flags
+      - safety_cars
+      - virtual_safety_cars
     NeutralisationEnum:
       enum:
       - SC
@@ -2289,6 +2447,22 @@ components:
           description: Duration published by Jolpica
       required:
       - lap_number
+    Placed:
+      type: object
+      properties:
+        entry:
+          $ref: '#/components/schemas/ReportEntry'
+        gap_s:
+          type: number
+          format: double
+          nullable: true
+          description: Behind the winner, same lap
+        laps_down:
+          type: integer
+      required:
+      - entry
+      - gap_s
+      - laps_down
     PlannedStop:
       type: object
       properties:
@@ -2430,6 +2604,81 @@ components:
       - flag
       - lap
       - message
+    RaceReport:
+      type: object
+      description: Facts of a race or sprint, turned into sentences by the web (EN/FR).
+      properties:
+        session_id:
+          type: integer
+        kind:
+          type: string
+        event:
+          $ref: '#/components/schemas/EventSummary'
+        finished_at:
+          type: string
+          format: date-time
+        winner:
+          $ref: '#/components/schemas/ReportEntry'
+        winner_wins:
+          type: integer
+          nullable: true
+          description: Career Grand Prix wins including this one (races only)
+        podium:
+          type: array
+          items:
+            $ref: '#/components/schemas/Placed'
+        starters:
+          type: integer
+        classified:
+          type: integer
+        biggest_gain:
+          allOf:
+          - $ref: '#/components/schemas/ReportEntry'
+          nullable: true
+        fastest_lap:
+          allOf:
+          - $ref: '#/components/schemas/ReportEntry'
+          nullable: true
+        retirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportEntry'
+        neutralisations:
+          allOf:
+          - $ref: '#/components/schemas/NeutralisationCount'
+          nullable: true
+          readOnly: true
+        rain:
+          type: boolean
+          nullable: true
+          description: Rain recorded during the session
+        winner_strategy:
+          allOf:
+          - $ref: '#/components/schemas/WinnerStrategy'
+          nullable: true
+          readOnly: true
+        championship:
+          allOf:
+          - $ref: '#/components/schemas/Championship'
+          nullable: true
+          readOnly: true
+      required:
+      - biggest_gain
+      - championship
+      - classified
+      - event
+      - fastest_lap
+      - finished_at
+      - kind
+      - neutralisations
+      - podium
+      - rain
+      - retirements
+      - session_id
+      - starters
+      - winner
+      - winner_strategy
+      - winner_wins
     Radio:
       type: object
       properties:
@@ -2491,6 +2740,49 @@ components:
       - line_times_s
       - pit_in_laps
       - tyre_ages
+    ReportEntry:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          readOnly: true
+        team_colour:
+          type: string
+          description: 'Hex RGB without #'
+          maxLength: 6
+        grid_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        finish_position:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        status:
+          type: string
+          maxLength: 64
+        fastest_lap_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - car_number
+      - driver
+      - team
     RivalOutcome:
       type: object
       properties:
@@ -3352,3 +3644,15 @@ components:
       - car_number
       - driver
       - team
+    WinnerStrategy:
+      type: object
+      properties:
+        stops:
+          type: integer
+        compounds:
+          type: array
+          items:
+            type: string
+      required:
+      - compounds
+      - stops

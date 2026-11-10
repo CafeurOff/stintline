@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "stintline.ingestion",
     "stintline.strategy_api",
     "stintline.live",
+    "stintline.news",
 ]
 
 MIDDLEWARE = [
@@ -105,6 +106,11 @@ CELERY_BEAT_SCHEDULE = {
     # Also queued when a worker starts (config.celery).
     "refresh-recent-sessions": {
         "task": "stintline.ingestion.tasks.refresh_recent",
+        "schedule": 30 * 60,
+    },
+    # News feed headlines (ADR 0012).
+    "refresh-headlines": {
+        "task": "stintline.news.tasks.refresh_headlines",
         "schedule": 30 * 60,
     },
     "refresh-portraits": {
