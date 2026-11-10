@@ -15,3 +15,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0009](0009-wikipedia-driver-portraits.md) | Driver portraits from Wikipedia when no official portrait applies | Accepted |
 | [0010](0010-what-if-strategy-replay.md) | What-if: replay a whole race with another strategy | Accepted |
 | [0011](0011-live-mode-and-team-radio.md) | Live mode and team radio | Accepted |
+| [0012](0012-news-reports-and-headlines.md) | News: race reports from our data, headlines linked to their sources | Accepted |

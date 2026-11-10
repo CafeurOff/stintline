@@ -10,6 +10,7 @@ It must stay accessible to casual fans first, with deeper charts for hardcore fa
 - Phase 7 done: hub pages (home, Grands Prix by season since 1950 as cards, Grand Prix page with circuit, podium, results and race analysis: key facts, positions and gaps lap by lap, lap times, tyre strategies, best sectors and top speeds), drivers and teams as season cards with photos, line-ups and official car renders, profiles with season charts, standings with the title-fight chart, race picker dialog, photo driver picker, Wikipedia driver portraits (ADR 0009). Data stays current on its own: `refresh_recent` catches up on anything missed.
 - Phase 8 done: what-if replay of a whole race with another tyre strategy (ADR 0010, `stintline_strategy.whatif`, `POST /sessions/{id}/simulate/strategy`, "Strategy" mode on the circuit with a ghost car and finishing-position chances).
 - Phase 9 done: local live mode (ADR 0011). `manage.py live` (`make live`) follows the official feed, keeps the latest snapshot in Redis and streams it on `/ws/live`; `GET /api/v1/live` gives the state and the next session. `/live` page: running order, cars on the circuit, "if he pitted now" with a ghost, team radio, race control, TV delay. Recordings, `--replay` and `live_demo` (recording rebuilt from a stored race).
+- Phase 10 done: news page (ADR 0012). Race and sprint reports written from our own data (facts from `stintline.news.reports`, sentences in EN/FR on the web), headlines from public RSS feeds (title and link only, `racedata.providers.feeds`), refreshed every 30 min; `/news`, `/news/:sessionId` and a news block on the home page.
 - Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -24,12 +25,14 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
                          championship progression)
   stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
   stintline/strategy_api/ ORM to engine adapter (`adapters.py`), strategy endpoints and model card, `backtest` command
+  stintline/news/        headlines from news feeds (model, refresh task, `refresh_news` command),
+                         race reports built from stored data (`reports.py`), news endpoints (ADR 0012)
   stintline/live/        live publisher (snapshot + pit now), Channels consumer `/ws/live`, `live` and
                          `live_demo` commands, circuit context from stored races (ADR 0011)
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, layout, theme)  src/features/<feature>/  src/components/{ui,racing}/  src/lib/
 packages/racedata/   Pure Python, import `racedata`. Capability protocols (schedule, results, timing),
-                     adapters (openf1, jolpica, wikipedia), live timing client (`racedata.live`:
+                     adapters (openf1, jolpica, wikipedia, news feeds), live timing client (`racedata.live`:
                      SignalR, merge, snapshot view, recordings), HTTP client (rate limit, retry,
                      cache, timeout), DTOs, derive/matching helpers, fixture recorder
   fixtures/          recorded upstream responses (tests + offline demo)
@@ -72,6 +75,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Ingest history | `manage.py ingest_history [--from 1950] [--to 2022] [--force]` (biographies, results, qualifying, standings; resumable) |
 | Driver portraits | `manage.py ingest_portraits [--season 2025]` (Wikipedia, ADR 0009; also weekly via Celery beat) |
 | Record a fixture | `uv run python -m racedata.tools.record_fixture openf1 laps session_key=9928` |
+| News headlines | `manage.py refresh_news` (also every 30 min via Celery beat and on worker start) · record a feed fixture: `uv run python -m racedata.tools.record_fixture feeds autosport` |
 | Live mode (local, personal use) | `make live` (follows the feed, records to `./recordings`) · `make live-replay FILE=recordings/x.jsonl SPEED=10` · `manage.py live_demo --session 70 --out recordings/demo.jsonl` |
 | Pre-commit | `pre-commit run --all-files` |
 
@@ -115,5 +119,6 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Missing or inconsistent data.** Lap times can be null (pit-out, lap 1, deleted). Compounds can be `UNKNOWN` or null. Stint tyre age can be missing. Drivers can retire mid-stint. Sprint weekends have two races. Driver numbers are not stable identities across seasons (e.g. 33 → 1): key drivers by provider IDs and map per session.
 - **Pit-stop durations.** Upstream "duration" fields mix pit-lane time (entry to exit) and stationary time depending on the source and season. Verify against fixtures, and name stored fields explicitly (`pit_lane_duration_s`, `stationary_duration_s`). Pit **loss** is computed by the strategy engine, never taken from upstream.
 - **Circuit outlines.** OpenF1 `location` is fetched only for the reference lap (fastest clean lap), always bounded with `date>` / `date<`. Never request a whole race: tens of thousands of rows per car. Outline samples are evenly spaced in time; the UI relies on that to place cars.
+- **News.** Never store or show article text, summaries or images from feeds: headline and link only (ADR 0012). A report sentence is written only when its data exists (no race control → no safety-car claim). Bump `REPORT_FORMAT` in `stintline/news/api/views.py` when report fields change, so cached reports are rebuilt. The API container does not hot-reload: `docker compose restart api worker beat` after backend changes.
 - **Protected assets.** No team logos and no "F1" in product naming. Official driver portraits and car renders are allowed only as URL references behind `OFFICIAL_MEDIA_ENABLED` (ADR 0006): never download or commit them. Wikipedia portraits (ADR 0009) are freely licensed URL references and must keep their author and licence credit.
 - **Historical data gaps.** Jolpica has fastest-lap ranks only from 2004 (careers starting earlier report `null`), no qualifying for most seasons before 1994 (poles fall back to first on the grid), and gives lapped cars a time for fewer laps (show the gap in laps). OpenF1 has no pit-stop rows for the first six races of 2023.

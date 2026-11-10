@@ -2,7 +2,7 @@
 
 What each source provides, how often, with what limits and under which terms. Decisions are in [ADR 0002](adr/0002-data-sources-and-live-strategy.md). Background research is in [research/live-data-landscape.md](research/live-data-landscape.md).
 
-Last verified: 2026-11-03.
+Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 
 ## Summary
 
@@ -12,6 +12,7 @@ Last verified: 2026-11-03.
 | Jolpica | Calendar, sessions schedule, results, pit stops, circuits (1950+) | After the session | ~4 req/s burst, ~500 req/hour (to confirm against jolpica-f1 docs). Pages of max 100 rows | None | Open-source Ergast successor, free |
 | Official live timing (SignalR Core) | Live mode only, run locally | Real time (sub-second deltas) | Unknown, single connection | None for the topics we use | formula1.com terms: personal, non-commercial use. Cloud IPs reportedly blocked |
 | FastF1 | **Not used** | — | Needs F1 TV account since Oct 2026 | F1 TV | — |
+| News feeds (RSS 2.0) | Headlines on the news page (title, link, date only, ADR 0012) | Every 30 min | One request per feed per run | None | Links to the publisher's article; nothing republished |
 | FIA timing PDFs | Optional validation of pit-stop figures (Phase 4) | During and after the event | Manual | None | © FIA / FOM, use with notice |
 
 ## OpenF1
@@ -52,6 +53,12 @@ Last verified: 2026-11-03.
 - `action=query&prop=imageinfo&iiprop=url|extmetadata&iiextmetadatafilter=Artist|LicenseShortName|LicenseUrl&titles=File:…` gives the author and licence to display.
 - Thumbnail URLs carry analytics query parameters; the provider strips them. Images are referenced, never downloaded.
 - Fixtures: the 2025 grid and four historical titles (including one missing article) under `fixtures/wikipedia/`. Long queries get a hashed fixture file name (`racedata.fixtures.MAX_SLUG_CHARS`).
+
+## News feeds (ADR 0012)
+- `racedata.config.FEEDS`: Autosport (`https://www.autosport.com/rss/f1/news/`), RaceFans (`https://www.racefans.net/feed/`), F1i (`https://f1i.com/feed/`) in English; Motorsport.com France (`https://fr.motorsport.com/rss/f1/news/`) in French. All RSS 2.0, checked on 2026-11-11.
+- Not used: formula1.com `latest/all.xml` (no dates), The Race (mixes F1 and MotoGP), Motorsport.com English (HTTP 502 when checked), L'Équipe and AutoHebdo (blocked automated readers).
+- Only title, link (tracking parameters removed), date and language are kept. Some titles end with a section label (`… | Formula 1`), which the parser removes.
+- Fixtures: `fixtures/feeds/<key>/<path>/_.xml`, 12 items each, headline fields only (`record_fixture feeds <key>`).
 
 ## Official live timing feed (local live mode)
 - Hub: `wss://livetiming.formula1.com/signalrcore` (SignalR Core, JSON protocol). An `OPTIONS` on `/signalrcore/negotiate` provides the `AWSALBCORS` cookie, then the client invokes `Subscribe([topics])`. The reply is a full snapshot, then incremental `feed` messages `[topic, payload, timestamp]` that merge into the snapshot.

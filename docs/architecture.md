@@ -78,5 +78,6 @@ flowchart LR
 2. **Strategy query.** `GET /api/v1/sessions/{id}/undercut?attacker=…&defender=…&lap=…` → selector loads cleaned laps and stints → strategy engine fits degradation and pit loss → simulation → JSON with the expected gain and an uncertainty interval.
 3. **Live (local).** `manage.py live` subscribes to the SignalR topics (TimingData, TimingAppData, TrackStatus, RaceControlMessages, WeatherData, LapCount, TeamRadio…), merges them and publishes a snapshot at most once per second to the cache and the `live` Channels group. `GET /api/v1/live` gives the state and latest snapshot; `/ws/live` streams the next ones. The browser applies the user's TV delay. Finished sessions are stored by the usual import, not by the live process.
 4. **Replay (demo).** `manage.py live --replay FILE --speed N` plays a recorded `.jsonl` (or one rebuilt from a stored race by `manage.py live_demo`) through the same publisher, so the frontend cannot tell replay from live.
+5. **News.** Celery beat reads the news feeds every 30 minutes through `racedata` and stores headlines (title and link). Race reports are built on request from stored results, timing and standings, and written in EN/FR by the web (ADR 0012).
 
 See `docs/data-sources.md` for source limits and terms, and the ADRs for the reasoning behind these choices.
