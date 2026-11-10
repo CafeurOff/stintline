@@ -66,6 +66,17 @@ export const lapsResponse: Schema<"Lap">[] = replay.cars.flatMap((car) =>
   }),
 );
 
+export const offlineLive: Schema<"LiveStatus"> = {
+  state: "offline",
+  snapshot: null,
+  next_session: {
+    event_id: 14,
+    event_name: "Hungarian Grand Prix",
+    kind: "FP1",
+    starts_at: "2026-11-06T15:30:00Z",
+  },
+};
+
 export function problem(status: number, code: string, title: string, detail = title) {
   return HttpResponse.json(
     { type: "about:blank", title, status, detail, code } satisfies Schema<"Problem">,
@@ -95,6 +106,7 @@ export const handlers = [
   http.post("*/api/v1/sessions/:id/simulate/undercut", () => HttpResponse.json(undercut)),
   http.post("*/api/v1/sessions/:id/simulate/pit-exit", () => HttpResponse.json(pitExit)),
   http.get("*/api/v1/model", () => HttpResponse.json(model)),
+  http.get("*/api/v1/live", () => HttpResponse.json(offlineLive)),
   http.post("*/api/v1/sessions/:id/simulate/strategy", async ({ request }) =>
     HttpResponse.json(strategyResponse((await request.json()) as Schema<"StrategyRequestRequest">)),
   ),

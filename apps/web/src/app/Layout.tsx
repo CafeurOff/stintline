@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useMatch } from "react-router";
 
 import { ApiStatus } from "@/features/health/ApiStatus";
+import { useLiveStatus } from "@/features/live/api";
 import { useSessionDetail } from "@/features/race/api";
 import { RacePicker } from "@/features/session-picker/RacePicker";
 import { useI18n } from "@/lib/i18n/context";
@@ -15,6 +16,7 @@ const navLink = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout() {
   const { t } = useI18n();
+  const live = useLiveStatus().data?.state === "live";
   const tyres = useMatch("/sessions/:sessionId/tyres");
   const race = useMatch("/sessions/:sessionId");
   const raw = (tyres ?? race)?.params.sessionId;
@@ -37,6 +39,13 @@ export function Layout() {
           aria-label={t("nav.label")}
           className="order-last -mx-4 flex w-[calc(100%+2rem)] gap-5 overflow-x-auto px-4 md:order-none md:mx-0 md:w-auto md:px-0"
         >
+          <NavLink to="/live" className={navLink}>
+            <span className="inline-flex items-center gap-1.5">
+              {live && <span aria-hidden="true" className="size-2 rounded-full bg-mark" />}
+              {t("nav.live")}
+              {live && <span className="sr-only"> ({t("live.now")})</span>}
+            </span>
+          </NavLink>
           <NavLink to="/calendar" className={navLink}>
             {t("nav.calendar")}
           </NavLink>

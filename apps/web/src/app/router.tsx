@@ -5,6 +5,7 @@ import { DriverPage } from "@/features/drivers/components/DriverPage";
 import { DriversPage } from "@/features/drivers/components/DriversPage";
 import { EventPage } from "@/features/event/components/EventPage";
 import { HomePage } from "@/features/home/components/HomePage";
+import { LivePage } from "@/features/live/components/LivePage";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { ModelPage } from "@/features/model-about/components/ModelPage";
 import { RacePage } from "@/features/race/components/RacePage";
@@ -20,6 +21,7 @@ export const routes: RouteObject[] = [
     element: <Layout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: "live", element: <LivePage /> },
       { path: "calendar", element: <CalendarPage /> },
       { path: "calendar/:year", element: <CalendarPage /> },
       { path: "events/:eventId", element: <EventPage /> },
