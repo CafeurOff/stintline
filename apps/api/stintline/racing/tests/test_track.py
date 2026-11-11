@@ -1,7 +1,14 @@
 import pytest
 from rest_framework.test import APIClient
 
-from stintline.racing.geometry import OUTLINE_BOX, OUTLINE_PADDING, normalise_outline
+from stintline.racing.geometry import (
+    CARD_BOX,
+    CARD_POINTS,
+    OUTLINE_BOX,
+    OUTLINE_PADDING,
+    card_path,
+    normalise_outline,
+)
 from stintline.racing.models import Session, SessionKind, TrackOutline
 
 
@@ -52,3 +59,15 @@ def test_track_endpoint_is_404_without_outline(seeded: None) -> None:
 
     assert response.status_code == 404
     assert response.json()["code"] == "not_found"
+
+
+def test_card_path_is_closed_and_fits_the_card_box() -> None:
+    points = [[x, (x * 7) % 50] for x in range(1000)]
+
+    path = card_path(points)
+
+    coords = [float(v) for v in path.strip("MZ ").replace("L", "").split()]
+    assert path.startswith("M")
+    assert path.endswith(" Z")
+    assert len(coords) // 2 <= CARD_POINTS
+    assert max(coords) <= CARD_BOX

@@ -96,3 +96,28 @@ def test_media_url_builders() -> None:
     media = media_for(2025, "McLaren", "")
     assert media is not None
     assert media.driver_image_url is None
+
+
+def test_calendar_events_carry_their_circuit_outline(seeded: None) -> None:
+    events = APIClient().get("/api/v1/seasons/2025/events", {"limit": 30}).json()["results"]
+
+    hungary = next(e for e in events if e["round"] == 14)
+    never_timed = next(e for e in events if e["round"] == 1)
+    assert hungary["circuit"]["outline"].startswith("M")
+    assert hungary["circuit"]["outline"].endswith("Z")
+    assert never_timed["circuit"]["outline"] is None
+
+
+def test_driver_photo_is_the_latest_official_portrait(seeded: None) -> None:
+    body = APIClient().get(f"/api/v1/sessions/{race_id(14)}").json()
+
+    norris = next(e for e in body["entries"] if e["car_number"] == 4)
+    assert norris["media"]["driver_image_url"] is not None
+    assert norris["driver"]["photo_url"] == norris["media"]["driver_image_url"]
+
+
+@override_settings(OFFICIAL_MEDIA_ENABLED=False)
+def test_driver_photo_falls_back_to_wikipedia_without_official_media(seeded: None) -> None:
+    body = APIClient().get(f"/api/v1/sessions/{race_id(14)}").json()
+
+    assert all(e["driver"]["photo_url"] == e["driver"]["portrait_url"] for e in body["entries"])

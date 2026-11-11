@@ -38,3 +38,19 @@ def normalise_outline(points: Sequence[Sequence[float]]) -> NormalisedOutline:
     width = round((max(xs) - min_x) * scale + 2 * OUTLINE_PADDING)
     height = round((max_y - min(ys)) * scale + 2 * OUTLINE_PADDING)
     return NormalisedOutline(width=width, height=height, points=out)
+
+
+CARD_BOX = 100.0
+"""Longest side of the small outline drawn on cards, in SVG user units."""
+CARD_POINTS = 120
+"""Points kept on a card outline: enough for every corner, a few hundred bytes of path."""
+
+
+def card_path(points: Sequence[Sequence[float]]) -> str:
+    """A compact closed SVG path of the outline in a ``CARD_BOX`` box (y flipped)."""
+    shape = normalise_outline(points)
+    step = max(1, -(-len(shape.points) // CARD_POINTS))  # ceiling: never more than CARD_POINTS
+    kept = shape.points[::step]
+    scale = CARD_BOX / OUTLINE_BOX
+    coords = [f"{x * scale:.1f} {y * scale:.1f}" for x, y in kept]
+    return "M" + " L".join(coords) + " Z"

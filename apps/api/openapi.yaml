@@ -1107,10 +1107,17 @@ components:
             maxLength: 200
           - type: string
             maxLength: 0
+        outline:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Small SVG path of the layout in a 100-unit box, from its newest
+            timed race
       required:
       - country
       - locality
       - name
+      - outline
       - ref
     Compare:
       type: object
@@ -1273,9 +1280,16 @@ components:
           readOnly: true
           description: Wikipedia portrait (ADR 0009); official media take precedence
             when present
+        photo_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Photo to show: latest official portrait if enabled, else the
+            Wikipedia one'
       required:
       - family_name
       - given_name
+      - photo_url
       - portrait_url
       - ref
     DriverBio:
@@ -1320,9 +1334,16 @@ components:
           - $ref: '#/components/schemas/Portrait'
           nullable: true
           readOnly: true
+        photo_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Photo to show: latest official portrait if enabled, else the
+            Wikipedia one'
       required:
       - family_name
       - given_name
+      - photo_url
       - portrait
       - ref
     DriverCareer:
@@ -1397,6 +1418,12 @@ components:
           - $ref: '#/components/schemas/Portrait'
           nullable: true
           readOnly: true
+        photo_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: 'Photo to show: latest official portrait if enabled, else the
+            Wikipedia one'
         team:
           allOf:
           - $ref: '#/components/schemas/LatestTeam'
@@ -1412,6 +1439,7 @@ components:
       required:
       - family_name
       - given_name
+      - photo_url
       - portrait
       - ref
       - season

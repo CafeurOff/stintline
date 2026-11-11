@@ -22,6 +22,8 @@ from stintline.racing.models import (
     TeamRadio,
     TrackStatus,
 )
+from stintline.racing.outlines import circuit_outlines
+from stintline.racing.photos import PhotoBook
 
 
 class SeasonSerializer(serializers.ModelSerializer[Season]):
@@ -33,9 +35,31 @@ class SeasonSerializer(serializers.ModelSerializer[Season]):
 
 
 class CircuitSerializer(serializers.ModelSerializer[Circuit]):
+    outline = serializers.SerializerMethodField(
+        help_text="Small SVG path of the layout in a 100-unit box, from its newest timed race"
+    )
+
     class Meta:
         model = Circuit
-        fields = ["ref", "name", "locality", "country", "latitude", "longitude", "wikipedia_url"]
+        fields = [
+            "ref",
+            "name",
+            "locality",
+            "country",
+            "latitude",
+            "longitude",
+            "wikipedia_url",
+            "outline",
+        ]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._outlines: dict[int, str] | None = None
+
+    def get_outline(self, circuit: Circuit) -> str | None:
+        if self._outlines is None:
+            self._outlines = circuit_outlines()
+        return self._outlines.get(circuit.pk)
 
 
 def portrait_of(driver: Driver) -> DriverPortrait | None:
@@ -58,14 +82,24 @@ class DriverSerializer(serializers.ModelSerializer[Driver]):
     portrait_url = serializers.SerializerMethodField(
         help_text="Wikipedia portrait (ADR 0009); official media take precedence when present"
     )
+    photo_url = serializers.SerializerMethodField(
+        help_text="Photo to show: latest official portrait if enabled, else the Wikipedia one"
+    )
 
     class Meta:
         model = Driver
-        fields = ["ref", "code", "given_name", "family_name", "portrait_url"]
+        fields = ["ref", "code", "given_name", "family_name", "portrait_url", "photo_url"]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._photos = PhotoBook()
 
     def get_portrait_url(self, driver: Driver) -> str | None:
         portrait = portrait_of(driver)
         return portrait.image_url if portrait else None
+
+    def get_photo_url(self, driver: Driver) -> str | None:
+        return self._photos.photo_of(driver, self.get_portrait_url(driver))
 
 
 class TeamSerializer(serializers.ModelSerializer[Team]):
@@ -107,13 +141,18 @@ class EventSerializer(EventSummarySerializer):
     class Meta(EventSummarySerializer.Meta):
         fields = [*EventSummarySerializer.Meta.fields, "sessions", "winner"]
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # One instance for every event, so official photos load once per response.
+        self._winner = WinnerSerializer()
+
     @extend_schema_field(WinnerSerializer(allow_null=True))
     def get_winner(self, event: Event) -> dict[str, Any] | None:
         """Needs ``selectors.season_events`` (sessions prefetched with ``winners``)."""
         for session in event.sessions.all():
             if session.kind == SessionKind.RACE:
                 winners = getattr(session, "winners", [])
-                return WinnerSerializer(winners[0]).data if winners else None
+                return self._winner.to_representation(winners[0]) if winners else None
         return None
 
 
@@ -228,6 +267,9 @@ class TrackSerializer(serializers.Serializer[Any]):
 
 class DriverBioSerializer(serializers.ModelSerializer[Driver]):
     portrait = serializers.SerializerMethodField()
+    photo_url = serializers.SerializerMethodField(
+        help_text="Photo to show: latest official portrait if enabled, else the Wikipedia one"
+    )
 
     class Meta:
         model = Driver
@@ -241,12 +283,21 @@ class DriverBioSerializer(serializers.ModelSerializer[Driver]):
             "nationality",
             "wikipedia_url",
             "portrait",
+            "photo_url",
         ]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._photos = PhotoBook()
 
     @extend_schema_field(PortraitSerializer(allow_null=True))
     def get_portrait(self, driver: Driver) -> dict[str, Any] | None:
         portrait = portrait_of(driver)
         return PortraitSerializer(portrait).data if portrait else None
+
+    def get_photo_url(self, driver: Driver) -> str | None:
+        portrait = portrait_of(driver)
+        return self._photos.photo_of(driver, portrait.image_url if portrait else None)
 
 
 class LatestTeamSerializer(serializers.Serializer[Any]):
@@ -427,10 +478,14 @@ class TeamListSerializer(serializers.ModelSerializer[Team]):
         model = Team
         fields = ["ref", "name", "nationality", "wikipedia_url", "colour", "season"]
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._season = SeasonTeamSerializer()
+
     @extend_schema_field(SeasonTeamSerializer(allow_null=True))
     def get_season(self, team: Team) -> dict[str, Any] | None:
         card = self.context.get("season_teams", {}).get(team.pk)
-        return None if card is None else SeasonTeamSerializer(card).data
+        return None if card is None else self._season.to_representation(card)
 
 
 class TeamTotalsSerializer(serializers.Serializer[Any]):

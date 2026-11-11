@@ -18,6 +18,7 @@ export const events = {
         name: "Albert Park Grand Prix Circuit",
         locality: "Melbourne",
         country: "Australia",
+        outline: null,
       },
       winner: null,
       sessions: [
@@ -65,6 +66,7 @@ export const events = {
         name: "Bahrain International Circuit",
         locality: "Sakhir",
         country: "Bahrain",
+        outline: null,
       },
       winner: null,
       sessions: [
@@ -112,6 +114,7 @@ export const events = {
         name: "Hungaroring",
         locality: "Budapest",
         country: "Hungary",
+        outline: null,
       },
       winner: null,
       sessions: [
@@ -159,6 +162,7 @@ export const events = {
         name: "Autodromo Nazionale di Monza",
         locality: "Monza",
         country: "Italy",
+        outline: null,
       },
       winner: null,
       sessions: [

@@ -608,6 +608,8 @@ export interface components {
       /** Format: double */
       longitude?: number | null;
       wikipedia_url?: string;
+      /** @description Small SVG path of the layout in a 100-unit box, from its newest timed race */
+      readonly outline: string | null;
     };
     Compare: {
       car_a: number;
@@ -673,6 +675,8 @@ export interface components {
       family_name: string;
       /** @description Wikipedia portrait (ADR 0009); official media take precedence when present */
       readonly portrait_url: string | null;
+      /** @description Photo to show: latest official portrait if enabled, else the Wikipedia one */
+      readonly photo_url: string | null;
     };
     DriverBio: {
       /** @description Jolpica driverId */
@@ -687,6 +691,8 @@ export interface components {
       nationality?: string;
       wikipedia_url?: string;
       readonly portrait: components["schemas"]["Portrait"] | null;
+      /** @description Photo to show: latest official portrait if enabled, else the Wikipedia one */
+      readonly photo_url: string | null;
     };
     DriverCareer: {
       driver: components["schemas"]["DriverBio"];
@@ -710,6 +716,8 @@ export interface components {
       nationality?: string;
       wikipedia_url?: string;
       readonly portrait: components["schemas"]["Portrait"] | null;
+      /** @description Photo to show: latest official portrait if enabled, else the Wikipedia one */
+      readonly photo_url: string | null;
       /** @description Team of the latest race (in the requested season, if any) */
       readonly team: components["schemas"]["LatestTeam"] | null;
       /** @description Car number and championship place in the requested season */
