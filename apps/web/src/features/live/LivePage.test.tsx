@@ -2,6 +2,7 @@ import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
+import { events } from "@/test/fixtures/events";
 import { liveSnapshot } from "@/test/fixtures/live";
 import { renderRoute } from "@/test/render";
 import { server } from "@/test/server";
@@ -60,6 +61,22 @@ describe("Live page", () => {
     expect(main.getByRole("timer")).toBeVisible();
     expect(screen.queryByText("make live")).toBeNull();
     expect(FakeSocket.instances).toHaveLength(0);
+  });
+
+  it("says a session is running when the schedule says so but no live data comes", async () => {
+    const started = new Date(Date.now() - 30 * 60_000).toISOString();
+    server.use(
+      http.get("*/api/v1/events/:id", () =>
+        HttpResponse.json({
+          ...events.results[0],
+          sessions: [{ id: 1, kind: "R", scheduled_start: started, has_data: false }],
+        }),
+      ),
+    );
+    renderRoute("/live");
+
+    expect(await screen.findByRole("heading", { name: "A session is running" })).toBeVisible();
+    expect(screen.queryByRole("timer")).toBeNull();
   });
 
   it("shows the running order, the circuit and the race control", async () => {

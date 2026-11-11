@@ -8,7 +8,8 @@
 /*
  * Design tokens. The circuit is the interface: a quiet, near-black ground (dark, default)
  * or a warm paper ground (light), one race red for marks and actions, team colours for
- * cars. Titillium Web, self-hosted. No gradients, glows or decorative cards.
+ * cars. Titillium Web, self-hosted (up to 900). Broadcast style (ADR 0014): cards carry data,
+ * no glows, a faint stripe texture on heroes only.
  *
  * Contrast (WCAG AA): text >= 12:1, muted >= 6:1 on bg and panel in both themes.
  * `mark` is a fill (>= 3:1 on surfaces); text in red uses `mark-text`; white on
