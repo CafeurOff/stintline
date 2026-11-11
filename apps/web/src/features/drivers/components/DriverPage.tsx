@@ -19,6 +19,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
 import { teamColour, teamTint } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 type Career = Schema<"DriverCareer">;
 
@@ -30,6 +31,8 @@ export function DriverPage() {
   const i18n = useI18n();
   const { t } = i18n;
   const career = useDriver(ref);
+  const who = career.data?.driver;
+  useDocumentTitle(who ? `${who.given_name} ${who.family_name}` : null);
 
   if (career.error instanceof ApiError && career.error.status === 404) return <NotFoundPage />;
   if (career.isError) {
@@ -321,7 +324,10 @@ function ResultsSection({ driverRef, seasons }: { driverRef: string; seasons: nu
             </thead>
             <tbody>
               {results.data.results.map((result) => {
-                const finished = result.finish_position;
+                // Jolpica gives retired cars an order too: only a numeric classification is a finish.
+                const finished = /^\d+$/.test(result.classification ?? "")
+                  ? result.finish_position
+                  : null;
                 return (
                   <tr key={result.session_id}>
                     <td className="num text-muted">{result.round}</td>
@@ -343,7 +349,7 @@ function ResultsSection({ driverRef, seasons }: { driverRef: string; seasons: nu
                     <td
                       className={`num font-bold ${finished != null && finished <= 3 ? "text-mark-text" : ""}`}
                     >
-                      {finished ?? result.classification}
+                      {finished ?? result.classification ?? "—"}
                       {finished == null && result.status && (
                         <span className="block text-xs font-normal text-muted">
                           {result.status}

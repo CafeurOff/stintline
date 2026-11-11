@@ -94,7 +94,7 @@ describe("Hub pages", () => {
     renderRoute("/teams");
     await userEvent.click(await screen.findByRole("link", { name: /McLaren/ }));
 
-    expect(await screen.findByRole("heading", { name: "McLaren" })).toBeVisible();
+    expect(await screen.findByRole("heading", { level: 1, name: "McLaren" })).toBeVisible();
     expect(screen.getByLabelText("Team in numbers")).toHaveTextContent("Constructors' titles");
   });
 
@@ -172,6 +172,24 @@ describe("Hub pages", () => {
         .getAllByRole("columnheader")
         .map((h) => h.textContent),
     ).toContain("Q3");
+  });
+
+  it("shows a non-finish as its classification, not its order", async () => {
+    renderRoute("/drivers/norris");
+
+    const row = (await screen.findByRole("link", { name: "Las Vegas Grand Prix" })).closest("tr");
+
+    expect(row).not.toBeNull();
+    expect(row).toHaveTextContent("DDisqualified");
+    expect(row).not.toHaveTextContent("19");
+  });
+
+  it("sets the browser tab title to the driver's name", async () => {
+    renderRoute("/drivers/norris");
+
+    await screen.findByRole("heading", { name: "Norris" });
+
+    expect(document.title).toBe("Lando Norris · StintLine");
   });
 
   it("switches season on a driver's results", async () => {
