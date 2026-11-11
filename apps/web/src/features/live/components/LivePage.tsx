@@ -7,6 +7,7 @@ import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { useHome } from "@/features/hub/api";
 import { useTrack } from "@/features/race/api";
 import { type CarMarker, type Ghost, TrackMap } from "@/features/race/components/TrackMap";
 import { pointAt } from "@/features/race/replay";
@@ -14,6 +15,7 @@ import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 import { useLiveStatus } from "../api";
 import { delayed, type LiveSnapshot, TV_DELAYS, type TvDelay } from "../buffer";
@@ -53,7 +55,9 @@ function useTicker(active: boolean): number {
 
 /** Live session from the local live process, with a TV delay; offline otherwise. */
 export function LivePage() {
+  const { t } = useI18n();
   const status = useLiveStatus();
+  useDocumentTitle(t("nav.live"));
   const online = status.data !== undefined && status.data.state !== "offline";
   const { buffer, connected } = useLiveSocket(online);
   const [delay, setDelay] = useState<TvDelay>(storedDelay);
@@ -97,6 +101,7 @@ function sessionLabel(kind: string, t: ReturnType<typeof useI18n>["t"]): string 
 function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
   const { t, locale } = useI18n();
   const tag = locale === "fr" ? "fr-FR" : "en-GB";
+  const last = useHome().data?.last_race;
   return (
     <div className="flex max-w-3xl flex-col gap-6">
       <PageHeader title={t("live.offline.title")}>{t("live.offline.body")}</PageHeader>
@@ -119,6 +124,25 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
               minute: "2-digit",
             }).format(new Date(next.starts_at))}
           </p>
+        </section>
+      )}
+      {last?.has_data && (
+        <section
+          aria-labelledby="live-replay"
+          className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-panel p-6"
+        >
+          <div>
+            <p className="text-sm text-muted">{t("live.meanwhile")}</p>
+            <h2 id="live-replay" className="text-xl font-bold">
+              {eventName(last.event.name, locale)} {last.event.season}
+            </h2>
+          </div>
+          <Link
+            to={`/sessions/${String(last.session_id)}`}
+            className="rounded-lg bg-action px-4 py-3 font-bold text-white hover:brightness-110"
+          >
+            {t("live.replayLast")}
+          </Link>
         </section>
       )}
       <section aria-labelledby="live-how" className="flex flex-col gap-2 text-muted">

@@ -17,6 +17,7 @@ import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
 import { useSearchParamsState } from "@/lib/useSearchParam";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 type Entry = Schema<"Entry">;
 type Kind = "R" | "SPRINT" | "Q";
@@ -31,9 +32,12 @@ export function EventPage() {
 }
 
 function EventLoader({ eventId }: { eventId: number }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const event = useEvent(eventId);
   const [params, update] = useSearchParamsState();
+  useDocumentTitle(
+    event.data ? `${eventName(event.data.name, locale)} ${String(event.data.season)}` : null,
+  );
 
   if (event.error instanceof ApiError && event.error.status === 404) return <NotFoundPage />;
   if (event.isError) return <ErrorState error={event.error} onRetry={() => void event.refetch()} />;

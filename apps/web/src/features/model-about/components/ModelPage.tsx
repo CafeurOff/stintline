@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { assumptionGroup, assumptionText } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 import { useModelCard } from "../api";
 import { readBacktest } from "../backtest";
@@ -14,6 +15,7 @@ const HELD_OUT = "held-out";
 export function ModelPage() {
   const { t } = useI18n();
   const model = useModelCard();
+  useDocumentTitle(t("model.title"));
 
   return (
     <article className="mx-auto flex max-w-2xl flex-col gap-8 py-6 text-lg">

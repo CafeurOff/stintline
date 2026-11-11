@@ -14,6 +14,7 @@ import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
 import { useNow } from "@/lib/useNow";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 const DAY_MS = 86_400_000;
 
@@ -21,6 +22,7 @@ const DAY_MS = 86_400_000;
 export function HomePage() {
   const { t } = useI18n();
   const home = useHome();
+  useDocumentTitle(null);
 
   if (home.isError) return <ErrorState error={home.error} onRetry={() => void home.refetch()} />;
   if (!home.data) return <Skeleton className="mt-6 h-[60vh]" />;

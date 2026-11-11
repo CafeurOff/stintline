@@ -14,6 +14,7 @@ import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { useDegradation } from "@/features/tyres/api";
 import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
 import { byFinish, driverCode, driverName, entriesByCar, type Entry, entryPhoto } from "../entries";
@@ -65,9 +66,12 @@ export function RacePage() {
 }
 
 function RaceLoader({ sessionId }: { sessionId: number }) {
+  const { locale } = useI18n();
   const session = useSessionDetail(sessionId);
   const replay = useReplay(sessionId);
   const track = useTrack(sessionId);
+  const event = session.data?.event;
+  useDocumentTitle(event ? `${eventName(event.name, locale)} ${String(event.season)}` : null);
 
   const error = session.error ?? replay.error ?? track.error;
   if (error instanceof ApiError && error.status === 404) return <NotFoundPage />;

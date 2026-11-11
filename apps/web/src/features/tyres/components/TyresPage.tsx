@@ -11,6 +11,7 @@ import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 import { useDegradation } from "../api";
 import { DegradationChart, type SeriesStyle } from "./DegradationChart";
@@ -36,6 +37,7 @@ function Tyres({ sessionId }: { sessionId: number }) {
   const stints = useStints(sessionId);
   const degradation = useDegradation(sessionId);
   const [params, update] = useSearchParamsState();
+  useDocumentTitle(t("tyres.title"));
 
   if (session.isError)
     return <ErrorState error={session.error} onRetry={() => void session.refetch()} />;

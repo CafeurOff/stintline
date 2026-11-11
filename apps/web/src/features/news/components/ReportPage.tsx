@@ -10,6 +10,7 @@ import { useSessionDetail } from "@/features/race/api";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour, teamTint } from "@/lib/teams";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 import { useReport, useReports } from "../api";
 import { type Report, type Section, writeReport } from "../write";
@@ -23,6 +24,8 @@ export function ReportPage() {
   const raw = useParams().sessionId ?? "";
   const sessionId = /^\d+$/.test(raw) ? Number(raw) : 0;
   const report = useReport(sessionId);
+  const headline = report.data ? writeReport(report.data, t, f, locale).title : null;
+  useDocumentTitle(headline);
 
   if (report.isError) {
     return <ErrorState error={report.error} onRetry={() => void report.refetch()} />;

@@ -16,6 +16,7 @@ import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
 import { teamColour, teamTint } from "@/lib/teams";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 /** Seasons listed before "show all": a decade of history. */
 const SEASONS_SHOWN = 10;
@@ -24,6 +25,7 @@ const SEASONS_SHOWN = 10;
 export function TeamPage() {
   const { ref = "" } = useParams();
   const team = useTeam(ref);
+  useDocumentTitle(team.data?.team.name);
 
   if (team.error instanceof ApiError && team.error.status === 404) return <NotFoundPage />;
   if (team.isError) return <ErrorState error={team.error} onRetry={() => void team.refetch()} />;

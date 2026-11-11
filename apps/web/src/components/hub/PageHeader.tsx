@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
+
 interface PageHeaderProps {
   eyebrow?: ReactNode;
   title: string;
@@ -9,6 +11,7 @@ interface PageHeaderProps {
 
 /** Page title block: small context line, the title, a short description, actions. */
 export function PageHeader({ eyebrow, title, children, actions }: PageHeaderProps) {
+  useDocumentTitle(title);
   return (
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
