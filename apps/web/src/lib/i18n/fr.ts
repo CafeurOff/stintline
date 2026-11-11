@@ -120,6 +120,23 @@ export const fr: Record<MessageKey, string> = {
   "model.title": "Comment fonctionne StintLine",
   "model.intro":
     "StintLine lit le vrai chrono de chaque tour. Il écarte les tours qui ne disent rien du rythme (départ, passages aux stands, safety car, trafic), corrige l'effet du carburant brûlé, mesure la vitesse d'usure de chaque pneu et le temps que coûte un arrêt sur chaque circuit. Il en déduit où un pilote ressort après son arrêt, avec une marge d'erreur.",
+  "model.steps.title": "Du chrono à la stratégie, en quatre étapes",
+  "model.step.laps.title": "Tours propres",
+  "model.step.laps.body":
+    "Premier tour, tours aux stands, voiture de sécurité et tours aberrants ne disent rien du rythme : ils sont écartés.",
+  "model.step.fuel.title": "Carburant",
+  "model.step.fuel.body":
+    "La voiture s'allège à chaque tour. Ce gain est retiré pour ne garder que l'effet des pneus.",
+  "model.step.tyres.title": "Usure des pneus",
+  "model.step.tyres.body":
+    "Le temps perdu par tour pour chaque gomme, avec sa marge d'erreur, course par course.",
+  "model.step.stops.title": "Arrêts aux stands",
+  "model.step.stops.body":
+    "Ce que coûte un arrêt sur chaque circuit, puis où la voiture ressort et avec quelle probabilité pour chaque place.",
+  "model.tile.stops": "vrais arrêts testés",
+  "model.tile.exact": "position exacte",
+  "model.tile.within": "à une place près",
+  "model.tile.mae": "places d'écart en moyenne (en gardant la position : {baseline})",
   "model.test.title": "Testé sur des courses qu'il n'avait jamais vues",
   "model.test.body":
     "{n} vrais arrêts tirés de six courses 2025 jamais utilisées pour régler le modèle : la position prédite était exacte {exact} du temps, et à une place près {within} du temps.",

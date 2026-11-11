@@ -117,6 +117,23 @@ export const en = {
   "model.title": "How StintLine works",
   "model.intro":
     "StintLine reads the real timing of every lap. It removes the laps that say nothing about pace (start, pit laps, safety car, traffic), corrects for the fuel burnt, measures how fast each tyre wears and how much time a pit stop costs at each circuit. From there it estimates where a driver rejoins after a stop, with a margin of error.",
+  "model.steps.title": "From timing to strategy, in four steps",
+  "model.step.laps.title": "Clean laps",
+  "model.step.laps.body":
+    "Lap 1, pit laps, safety car laps and outliers say nothing about pace: they are set aside.",
+  "model.step.fuel.title": "Fuel",
+  "model.step.fuel.body":
+    "A car gets lighter every lap. That gain is removed so only the tyres are left.",
+  "model.step.tyres.title": "Tyre wear",
+  "model.step.tyres.body":
+    "How much time each compound loses per lap, with a margin of error, at every race.",
+  "model.step.stops.title": "Pit stops",
+  "model.step.stops.body":
+    "The time a stop costs at each circuit, then where the car rejoins and how likely each place is.",
+  "model.tile.stops": "real pit stops tested",
+  "model.tile.exact": "exact position",
+  "model.tile.within": "within one place",
+  "model.tile.mae": "places off on average (keeping the position: {baseline})",
   "model.test.title": "Tested on races it never saw",
   "model.test.body":
     "{n} real pit stops from six 2025 races that were never used to tune the model: the predicted position was exact {exact} of the time and within one place {within} of the time.",
