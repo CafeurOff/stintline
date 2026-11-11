@@ -1,22 +1,36 @@
+import { type ComponentType, lazy } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router";
 
-import { CalendarPage } from "@/features/calendar/components/CalendarPage";
-import { DriverPage } from "@/features/drivers/components/DriverPage";
-import { DriversPage } from "@/features/drivers/components/DriversPage";
-import { EventPage } from "@/features/event/components/EventPage";
 import { HomePage } from "@/features/home/components/HomePage";
-import { LivePage } from "@/features/live/components/LivePage";
-import { NewsPage } from "@/features/news/components/NewsPage";
-import { ReportPage } from "@/features/news/components/ReportPage";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-import { ModelPage } from "@/features/model-about/components/ModelPage";
-import { RacePage } from "@/features/race/components/RacePage";
-import { StandingsPage } from "@/features/standings/components/StandingsPage";
-import { TeamPage } from "@/features/teams/components/TeamPage";
-import { TeamsPage } from "@/features/teams/components/TeamsPage";
-import { TyresPage } from "@/features/tyres/components/TyresPage";
 
 import { Layout } from "./Layout";
+
+/** Loads a page module on first visit, so the home page does not ship every chart.
+ * The layout wraps the outlet in Suspense: the header shows while the page loads. */
+function page<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
+  return lazy(async () => ({ default: (await load())[name] }));
+}
+
+const LivePage = page(() => import("@/features/live/components/LivePage"), "LivePage");
+const NewsPage = page(() => import("@/features/news/components/NewsPage"), "NewsPage");
+const ReportPage = page(() => import("@/features/news/components/ReportPage"), "ReportPage");
+const CalendarPage = page(
+  () => import("@/features/calendar/components/CalendarPage"),
+  "CalendarPage",
+);
+const EventPage = page(() => import("@/features/event/components/EventPage"), "EventPage");
+const DriversPage = page(() => import("@/features/drivers/components/DriversPage"), "DriversPage");
+const DriverPage = page(() => import("@/features/drivers/components/DriverPage"), "DriverPage");
+const TeamsPage = page(() => import("@/features/teams/components/TeamsPage"), "TeamsPage");
+const TeamPage = page(() => import("@/features/teams/components/TeamPage"), "TeamPage");
+const StandingsPage = page(
+  () => import("@/features/standings/components/StandingsPage"),
+  "StandingsPage",
+);
+const RacePage = page(() => import("@/features/race/components/RacePage"), "RacePage");
+const TyresPage = page(() => import("@/features/tyres/components/TyresPage"), "TyresPage");
+const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
 
 export const routes: RouteObject[] = [
   {

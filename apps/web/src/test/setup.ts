@@ -1,9 +1,13 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
 import { server } from "./server";
+
+// Pages are lazy-loaded: the first import of a page in a busy parallel run can take
+// longer than the default 1 s that find* queries wait.
+configure({ asyncUtilTimeout: 3000 });
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });

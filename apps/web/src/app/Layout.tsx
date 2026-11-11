@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Link, NavLink, Outlet, useMatch } from "react-router";
 
+import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiStatus } from "@/features/health/ApiStatus";
 import { useLiveStatus } from "@/features/live/api";
 import { useSessionDetail } from "@/features/race/api";
@@ -72,7 +74,9 @@ export function Layout() {
       </header>
       {sessionId !== null && <RaceBar sessionId={sessionId} onTyres={tyres !== null} />}
       <main id="main" tabIndex={-1} className="flex-1 pb-8">
-        <Outlet />
+        <Suspense fallback={<Skeleton className="h-[60vh]" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <footer className="flex flex-wrap justify-between gap-2 border-t border-line py-4 text-sm text-muted">
         <span>{t("app.disclaimer")}</span>
