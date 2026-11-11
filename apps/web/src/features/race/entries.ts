@@ -27,5 +27,5 @@ export function entriesByCar(entries: readonly Entry[]): Map<number, Entry> {
 
 /** Official portrait (ADR 0006) first, else the Wikipedia one (ADR 0009). */
 export function entryPhoto(entry: Pick<Entry, "media" | "driver">): string | null {
-  return entry.media?.driver_image_url ?? entry.driver.portrait_url ?? null;
+  return entry.media?.driver_image_url ?? entry.driver.photo_url ?? null;
 }

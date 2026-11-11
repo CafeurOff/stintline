@@ -110,7 +110,7 @@ function SeasonTeamCard({ team, season }: { team: TeamItem; season: Schema<"Seas
               label={entry.car_number}
               name={`${entry.driver.given_name} ${entry.driver.family_name}`}
               colour={team.colour}
-              imageUrl={entry.media?.driver_image_url ?? entry.driver.portrait_url}
+              imageUrl={entry.media?.driver_image_url ?? entry.driver.photo_url}
               size="sm"
               decorative
             />

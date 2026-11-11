@@ -225,7 +225,7 @@ function EventCard({ event, sessionId, view, showYear, onPick }: EventCardProps)
               label={winner.driver.code ?? winner.car_number}
               name={`${winner.driver.given_name} ${winner.driver.family_name}`}
               colour={winner.team_colour}
-              imageUrl={winner.driver.portrait_url}
+              imageUrl={winner.driver.photo_url}
               size="xs"
               decorative
             />

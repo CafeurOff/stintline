@@ -100,7 +100,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
                   className="group flex items-center gap-4 overflow-hidden rounded-2xl bg-panel p-3 hover:bg-raised"
                 >
                   <DriverPhoto
-                    imageUrl={driver.portrait_url}
+                    imageUrl={driver.photo_url}
                     label={driver.code ?? initials(driver.given_name, driver.family_name)}
                     colour={colour}
                     className="size-20 shrink-0 rounded-xl"

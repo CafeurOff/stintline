@@ -136,7 +136,7 @@ function DriverCard({ driver }: { driver: DriverItem }) {
         </span>
       </span>
       <DriverPhoto
-        imageUrl={driver.portrait?.image_url}
+        imageUrl={driver.photo_url ?? driver.portrait?.image_url}
         label={driver.code ?? initials(driver.given_name, driver.family_name)}
         colour={colour}
         className="absolute inset-y-0 right-0 h-full w-2/5"
@@ -158,7 +158,7 @@ function DriverTile({ driver }: { driver: DriverItem }) {
         label={driver.code ?? initials(driver.given_name, driver.family_name)}
         name={name}
         colour={driver.team?.colour}
-        imageUrl={driver.portrait?.image_url}
+        imageUrl={driver.photo_url ?? driver.portrait?.image_url}
         size="lg"
         decorative
       />

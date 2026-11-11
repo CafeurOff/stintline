@@ -9,6 +9,7 @@ export interface DriverLike {
   given_name: string;
   family_name: string;
   portrait_url?: string | null;
+  photo_url?: string | null;
 }
 
 interface DriverNameProps {
@@ -32,7 +33,7 @@ export function DriverName({ driver, colour, imageUrl, avatar = "sm" }: DriverNa
           label={driver.code ?? initials(driver.given_name, driver.family_name)}
           name={name}
           colour={colour}
-          imageUrl={imageUrl ?? driver.portrait_url}
+          imageUrl={imageUrl ?? driver.photo_url ?? driver.portrait_url}
           size={avatar}
           decorative
         />
