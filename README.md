@@ -4,7 +4,7 @@
 
 StintLine is a hub for Formula 1 fans built on public timing and results data. Replay a race lap by lap with the real cars on the real track. Ask "what if he had pitted now?", test an undercut, or run the whole race again with another tyre strategy. Then dig into lap charts, gaps, sectors and fastest-lap telemetry. Casual fans get plain answers first. The detailed charts are one click further.
 
-![Home page: last race podium, next Grand Prix, championship and latest news](docs/screenshots/home.png)
+![Home page: the last Grand Prix with its podium, the next one with a countdown, both championships](docs/screenshots/home.png)
 
 ## What you can do
 
@@ -15,7 +15,7 @@ StintLine is a hub for Formula 1 fans built on public timing and results data. R
 | **Undercut and overcut** | Lap-by-lap gain of stopping first against a rival, from fitted tyre wear and the circuit's pit loss. |
 | **Replay a whole race with another strategy** | Change one car's stops and compounds. The other drivers keep their real race, and you get the finishing-position chances. |
 | **Race analysis** | Key facts, positions and gaps lap by lap, lap times, tyre strategies, best sectors, top speeds. |
-| **Telemetry** | Compare fastest laps: speed, throttle, brake, gear and the gap along the lap, drawn on the circuit with braking zones. |
+| **Telemetry** | Compare fastest laps: speed, throttle, brake, gear and the gap along the lap, drawn on the circuit with braking zones. Drag across the charts (or pick a corner) to zoom on any part of the lap and compare the drivers there. |
 | **Every Grand Prix since 1950** | Results, qualifying, grids, driver and team careers, championship tables with the title-fight chart. |
 | **News** | Race reports written from the data (in English and French) and headline links to public sources. |
 | **Live mode (local)** | Follows the official timing feed from your own computer: running order, cars on the circuit, team radio, race control, TV delay. |
@@ -24,9 +24,11 @@ The interface is bilingual (English and French), works on phones, and has a ligh
 
 ![Replaying the 2026 Brazilian Grand Prix with the strategy simulator open](docs/screenshots/circuit-strategy.png)
 
-![Gap to the leader lap by lap on the Grand Prix page](docs/screenshots/race-analysis.png)
+![Grands Prix of the season drawn around their circuit, with the winner and a replay button](docs/screenshots/grands-prix.png)
 
-![Fastest-lap telemetry comparison between two drivers](docs/screenshots/telemetry.png)
+![Telemetry zoomed on one corner: speed, throttle, brake, gear and gap, the circuit framed on that section](docs/screenshots/telemetry.png)
+
+Screenshots are taken with third-party images blocked, so drivers appear as their coloured initials. The site shows their official portraits.
 
 ## Quick start
 
@@ -49,6 +51,17 @@ On its first start the Celery worker imports the current season, then every race
 | Results, qualifying and standings since 1950 | `uv run python apps/api/manage.py ingest_history` | a few hours, can be resumed |
 
 `make help` lists every target. `CLAUDE.md` is the full reference for commands, conventions and known pitfalls.
+
+## Live mode at home
+
+The live page of the public site shows the next session with a countdown, the weekend in your time zone and the last replay. To follow a session live (running order, cars on the circuit, team radio, race control, TV delay), run StintLine on your own computer from a home connection:
+
+```bash
+make up      # the stack
+make live    # follows the official timing feed and records it to ./recordings
+```
+
+The official feed is for personal use and does not answer cloud servers, which is why the public site is replay-only (ADR 0002, ADR 0011).
 
 ## The strategy model
 
