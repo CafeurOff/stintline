@@ -72,6 +72,8 @@ flowchart LR
 
 `postgres`, `redis`, `api` (ASGI: Django + Channels), `worker` (Celery), `beat` (Celery beat), `web` (Vite dev server in dev, static build behind nginx in prod). One command: `make up`.
 
+The public demo (`infra/docker-compose.demo.yml`, `make demo-up`) runs the production images of the same services plus a one-shot `migrate`, publishes only nginx, and never runs `live` (replay-only, ADR 0002). See [`deploy.md`](deploy.md).
+
 ## Key flows
 
 1. **Historical ingestion.** `ingest_season(2025)` → `ingest_event` per round → `ingest_session` per session. This fetches OpenF1 laps, stints, pit, race control and weather, plus Jolpica results and pit stops, then upserts. Re-running is a no-op.

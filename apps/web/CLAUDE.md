@@ -30,6 +30,7 @@ Read the root `CLAUDE.md` first. This file only adds frontend-specific rules.
 - Charts use the library chosen in its ADR. Each chart has a text summary or table alternative.
 - No logos. Official driver portraits and car renders are shown only from the URLs the API returns (ADR 0006), with `referrerPolicy="no-referrer"`, and always fall back to original illustrations (numbered avatar, team-colour silhouette) when absent or broken. Never download or bundle them. Wikipedia portraits (ADR 0009) come second (`entryPhoto`), and the driver profile must show their author and licence.
 - Country and nationality names go through `lib/i18n/geo.ts` (ISO codes + `Intl.DisplayNames`). Grand Prix names since 1950 are translated in `content.ts`.
+- Every page sets its browser tab title with `useDocumentTitle` (`PageHeader` does it for its title). Pages other than home and not-found are `React.lazy` in `app/router.tsx`, rendered inside the layout's `Suspense`.
 - Simulations are queries keyed by their request (not mutations), debounced, with the previous result kept on screen.
 - UI copy in English and French (see Language).
 

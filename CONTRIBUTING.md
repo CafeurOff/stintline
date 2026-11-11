@@ -3,7 +3,7 @@
 Thanks for your interest. StintLine is a portfolio-grade project, so the bar is "would a team's engineering-tools group merge this?".
 
 ## Getting started
-Prerequisites: [uv](https://docs.astral.sh/uv/) ≥ 0.5, Node 22 + pnpm 10, Docker with Compose v2, and `pre-commit` (`uv tool install pre-commit`).
+Prerequisites: [uv](https://docs.astral.sh/uv/) ≥ 0.9, Node ≥ 22.12 + pnpm 10, Docker with Compose v2, and `pre-commit` (`uv tool install pre-commit`).
 
 ```bash
 make setup     # Python + JS dependencies, git hooks

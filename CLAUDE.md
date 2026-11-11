@@ -12,6 +12,7 @@ It must stay accessible to casual fans first, with deeper charts for hardcore fa
 - Phase 9 done: local live mode (ADR 0011). `manage.py live` (`make live`) follows the official feed, keeps the latest snapshot in Redis and streams it on `/ws/live`; `GET /api/v1/live` gives the state and the next session. `/live` page: running order, cars on the circuit, "if he pitted now" with a ghost, team radio, race control, TV delay. Recordings, `--replay` and `live_demo` (recording rebuilt from a stored race).
 - Phase 10 done: news page (ADR 0012). Race and sprint reports written from our own data (facts from `stintline.news.reports`, sentences in EN/FR on the web), headlines from public RSS feeds (title and link only, `racedata.providers.feeds`), refreshed every 30 min; `/news`, `/news/:sessionId` and a news block on the home page.
 - Phase 10b done: lap telemetry and journalist-style reports (ADR 0013). Fastest clean lap of every driver (OpenF1 `car_data` + `location`, bounded), `TelemetryLap`, `stintline_strategy.telemetry` (distance, braking zones, gap along the lap), `GET /sessions/{id}/telemetry[/compare]`, a Telemetry tab on the Grand Prix analysis, and reports with the race story, sections and charts.
+- Phase 11 done: polish and README. Tab title per page (`useDocumentTitle`), pages loaded on demand (`React.lazy` behind a `Suspense` in the layout), phone fixes, retirements shown on driver results, faster season filters (`EXISTS`), a richer not-found page, a last-race replay link on the offline live page. README with screenshots (taken with third-party photos blocked), and a replay-only public demo with production images (`infra/docker-compose.demo.yml`, `make demo-up`, `docs/deploy.md`).
 - Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -44,7 +45,8 @@ packages/strategy/   Strategy engine, import `stintline_strategy` (numpy + scipy
                      braking zones), backtest, synthetic
                      (ground-truth races for tests)
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
-infra/               docker compose, Dockerfiles, nginx, deploy config
+infra/               docker compose (dev, and `docker-compose.demo.yml`: public replay-only demo),
+                     Dockerfiles, nginx, `demo.env.example`
 docs/                architecture, data sources, model, ADRs, research
 ```
 
@@ -81,6 +83,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Telemetry | `manage.py ingest_telemetry [--session ID \| --season 2025] [--sync]` (queues every race still missing it without options; also after each import and 4 older races per `refresh_recent`) |
 | News headlines | `manage.py refresh_news` (also every 30 min via Celery beat and on worker start) · record a feed fixture: `uv run python -m racedata.tools.record_fixture feeds autosport` |
 | Live mode (local, personal use) | `make live` (follows the feed, records to `./recordings`) · `make live-replay FILE=recordings/x.jsonl SPEED=10` · `manage.py live_demo --session 70 --out recordings/demo.jsonl` |
+| Public demo (replay-only) | `cp infra/demo.env.example infra/demo.env`, then `make demo-up` (http://localhost:8080) · `make demo-load` copies the local database into it · `make demo-down` (see `docs/deploy.md`) |
 | Pre-commit | `pre-commit run --all-files` |
 
 ## Conventions
@@ -112,6 +115,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 7. Clean Conventional Commit history with no AI attribution.
 
 ## Known pitfalls
+- **Production behind a proxy.** nginx keeps the `X-Forwarded-Proto` sent by the TLS proxy (Django redirects plain HTTP in prod), and `/api/v1/health` is exempt from the HTTPS redirect so the container health check works. A page module is lazy-loaded: in Vitest, `find*` queries wait up to 3 s (`src/test/setup.ts`), and a test must not match an element of the previous page while the next one loads.
 - **Toolchain pins.** TypeScript stays on 5.9 (openapi-typescript and typescript-eslint do not support 7 yet). ESLint stays on 9 (jsx-a11y). jsdom stays on 28 (29+ needs Node ≥ 22.13 and 30 needs Node ≥ 22.22). The API client resolves `fetch` at call time so MSW can intercept it.
 - **Strategy engine.** Stints can start on used tyres (`tyre_age_at_start` > 0). Pit loss already includes the out-lap new-tyre effect, so do not add it twice. Statistical tests assert calibration over many seeds, never single-seed CI containment (flaky by design).
 - **Ingestion.** Only finished races and sprints get timing data (ADR 0004). Results, qualifying and standings come from Jolpica for every season (`stintline/ingestion/history.py`); never write timing-only columns (team colour, media id) from that path. OpenF1 answers empty result sets with HTTP 404: the provider turns it into an empty list. History import: `manage.py ingest_history` (resumable, a few hours because of Jolpica's limit). Celery beat runs `refresh_recent` every 30 minutes, and each worker queues it on start: it refreshes the current calendar when older than 12 h, imports every finished race or sprint never imported (catch-up after downtime) plus those finished within 3 days, then the season's results. Beat interval schedules only fire after a full interval, so never rely on a daily beat entry for freshness. Driver identity comes from Jolpica results joined on the car number raced that weekend. The Celery worker runs with `--concurrency=1` because rate limiting is in-process.

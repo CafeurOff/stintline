@@ -98,7 +98,7 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 
 \* Baseline: the car keeps the position it had before stopping.
 
-Per-race tables are in `docs/backtest/2025-reference.json` and `docs/backtest/2025-held-out.json`.
+Per-race tables are in `apps/api/stintline/strategy_api/data/backtest-2025-reference.json` and `backtest-2025-held-out.json` (also served on the model page).
 
 **Reading the results.**
 - **The model generalises.** Held-out MAE (0.86 / 0.66) matches the reference set (0.88 / 0.58), so there is no sign of overfitting.
