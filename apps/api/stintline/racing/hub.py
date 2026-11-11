@@ -66,7 +66,13 @@ def search_teams(text: str | None, season: int | None) -> QuerySet[Team]:
         )
         order = ["prefix", "name"]  # "Ferrari" before "Cooper-Ferrari"
     if season is not None:
-        teams = teams.filter(entries__session__event__season__year=season).distinct()
+        teams = teams.filter(
+            Exists(
+                SessionEntry.objects.filter(
+                    team=OuterRef("pk"), session__event__season__year=season
+                )
+            )
+        )
     return with_team_colour(teams).order_by(*order)
 
 

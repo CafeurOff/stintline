@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from django.db.models import Case, Max, Q, QuerySet, When
+from django.db.models import Case, Exists, Max, OuterRef, Q, QuerySet, When
 
 from stintline.racing.media import media_for
 from stintline.racing.models import Driver, SessionEntry, SessionKind, Standing
@@ -175,7 +175,14 @@ def search_drivers(text: str | None, season: int | None) -> QuerySet[Driver]:
                 | Q(code__iexact=word)
             )
     if season is not None:
-        drivers = drivers.filter(entries__session__event__season__year=season).distinct()
+        # Exists, not a join + distinct: the latest-team subqueries would run once per race.
+        drivers = drivers.filter(
+            Exists(
+                SessionEntry.objects.filter(
+                    driver=OuterRef("pk"), session__event__season__year=season
+                )
+            )
+        )
     order: list[Any] = ["family_name", "given_name"]
     if text:
         # Surnames starting with the first word come first ("Ham" -> Hamilton, not Graham).
