@@ -40,6 +40,22 @@ down: ## Stop the stack (keeps the database volume)
 logs: ## Follow logs of every service
 	$(COMPOSE) logs -f
 
+# ---------------------------------------------------------------- public demo (replay-only)
+DEMO := docker compose -f infra/docker-compose.demo.yml --env-file infra/demo.env
+
+.PHONY: demo-up demo-down demo-load
+demo-up: ## Build and start the replay-only demo with production images (http://localhost:8080)
+	@test -f infra/demo.env || (echo "Copy infra/demo.env.example to infra/demo.env and fill it in" && exit 1)
+	$(DEMO) up -d --build
+
+demo-down: ## Stop the demo (keeps its database volume)
+	$(DEMO) down
+
+demo-load: ## Copy the local development database into the demo (replaces the demo data)
+	$(COMPOSE) exec -T postgres pg_dump -U stintline -d stintline -Fc --no-owner \
+		| $(DEMO) exec -T postgres pg_restore -U stintline -d stintline --clean --if-exists --no-owner
+	$(DEMO) restart api worker
+
 .PHONY: dev-api dev-web
 dev-api: ## Run the API locally (needs Postgres and Redis, e.g. `make deps`)
 	$(MANAGE) migrate

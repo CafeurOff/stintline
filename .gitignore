@@ -54,3 +54,6 @@ Thumbs.db
 
 # Live timing recordings (personal use, never committed)
 /recordings/
+
+# Public demo secrets
+infra/demo.env

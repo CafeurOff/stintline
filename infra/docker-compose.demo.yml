@@ -1,0 +1,94 @@
+# Public demo stack, replay-only (ADR 0002): production images, no live service, one port.
+#   cp infra/demo.env.example infra/demo.env   # then set the secrets and host name
+#   make demo-up                               # http://localhost:8080
+# Put a TLS reverse proxy (Caddy, Traefik, a tunnel...) in front of it on a real server.
+name: stintline-demo
+
+x-api: &api
+  build:
+    context: ..
+    dockerfile: infra/docker/api.Dockerfile
+    target: prod
+  image: stintline-api:prod
+  env_file:
+    - path: demo.env
+      required: true
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.prod
+    DATABASE_URL: postgres://${POSTGRES_USER:-stintline}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/demo.env}@postgres:5432/${POSTGRES_DB:-stintline}
+    REDIS_URL: redis://redis:6379/0
+    # The image's code directory is read-only for the app user.
+    RACEDATA_CACHE_DIR: /tmp/racedata-cache
+    LOG_JSON: "true"
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-stintline}
+      POSTGRES_USER: ${POSTGRES_USER:-stintline}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in infra/demo.env}
+    volumes:
+      - demo-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    <<: *api
+    command: ["python", "manage.py", "migrate", "--noinput"]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    <<: *api
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  # Imports each Grand Prix after it finishes (Celery beat, `refresh_recent`).
+  worker:
+    <<: *api
+    # One process: provider rate limits are enforced in-process (ADR 0004).
+    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=1"]
+    healthcheck:
+      disable: true
+    depends_on:
+      api: { condition: service_healthy }
+
+  beat:
+    <<: *api
+    command: ["celery", "-A", "config", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    healthcheck:
+      disable: true
+    depends_on:
+      api: { condition: service_healthy }
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/docker/web.Dockerfile
+      target: prod
+    image: stintline-web:prod
+    ports:
+      - "${DEMO_PORT:-8080}:80"
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  demo-postgres:
