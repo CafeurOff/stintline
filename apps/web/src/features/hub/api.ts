@@ -33,9 +33,10 @@ export function useSeasonEvents(year: number | null) {
   });
 }
 
-export function useEvent(eventId: number) {
+export function useEvent(eventId: number, enabled = true) {
   return useQuery({
     queryKey: ["event", eventId],
+    enabled,
     queryFn: async ({ signal }) =>
       unwrap(
         await api.GET("/api/v1/events/{event_id}", {

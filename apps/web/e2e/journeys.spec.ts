@@ -50,7 +50,10 @@ test("read the tyres page and the explanation in French", async ({ page }) => {
   await page.getByRole("link", { name: "Pneus" }).click();
   await expect(page.getByText("Durs")).toBeVisible();
 
-  await page.getByRole("link", { name: "Comment ça marche" }).click();
+  await page
+    .getByRole("navigation", { name: "Navigation principale" })
+    .getByRole("link", { name: "Comment ça marche" })
+    .click();
   await expect(page.getByRole("heading", { name: "Comment fonctionne StintLine" })).toBeVisible();
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("lang", "fr");

@@ -47,10 +47,12 @@ CARD_POINTS = 120
 
 
 def card_path(points: Sequence[Sequence[float]]) -> str:
-    """A compact closed SVG path of the outline in a ``CARD_BOX`` box (y flipped)."""
+    """A compact closed SVG path of the outline, centred in a square ``CARD_BOX`` box."""
     shape = normalise_outline(points)
     step = max(1, -(-len(shape.points) // CARD_POINTS))  # ceiling: never more than CARD_POINTS
     kept = shape.points[::step]
     scale = CARD_BOX / OUTLINE_BOX
-    coords = [f"{x * scale:.1f} {y * scale:.1f}" for x, y in kept]
+    dx = (OUTLINE_BOX - shape.width) / 2
+    dy = (OUTLINE_BOX - shape.height) / 2
+    coords = [f"{(x + dx) * scale:.1f} {(y + dy) * scale:.1f}" for x, y in kept]
     return "M" + " L".join(coords) + " Z"

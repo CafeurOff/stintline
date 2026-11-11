@@ -5,6 +5,7 @@ from typing import Any
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from stintline.racing.hub import SeasonColours, season_colours
 from stintline.racing.media import media_for
 from stintline.racing.models import (
     Circuit,
@@ -416,10 +417,25 @@ class DriverResultSerializer(serializers.ModelSerializer[SessionEntry]):
 class StandingLineSerializer(serializers.ModelSerializer[Standing]):
     driver = DriverSerializer(read_only=True, allow_null=True)
     team = TeamSerializer(read_only=True, allow_null=True)
+    colour = serializers.SerializerMethodField(
+        help_text="Team colour of the driver or team that season (timed seasons only), hex RGB"
+    )
 
     class Meta:
         model = Standing
-        fields = ["position", "position_text", "points", "wins", "driver", "team"]
+        fields = ["position", "position_text", "points", "wins", "driver", "team", "colour"]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._colours: dict[int, SeasonColours] = {}
+
+    def get_colour(self, line: Standing) -> str | None:
+        colours = self._colours.get(line.season_id)
+        if colours is None:
+            colours = self._colours[line.season_id] = season_colours(line.season_id)
+        if line.driver_id is not None:
+            return colours.drivers.get(line.driver_id)
+        return colours.teams.get(line.team_id) if line.team_id is not None else None
 
 
 class StandingsSerializer(serializers.Serializer[Any]):

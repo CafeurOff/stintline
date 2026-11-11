@@ -121,3 +121,10 @@ def test_driver_photo_falls_back_to_wikipedia_without_official_media(seeded: Non
     body = APIClient().get(f"/api/v1/sessions/{race_id(14)}").json()
 
     assert all(e["driver"]["photo_url"] == e["driver"]["portrait_url"] for e in body["entries"])
+
+
+def test_home_standings_carry_team_colours(seeded: None) -> None:
+    body = APIClient().get("/api/v1/home").json()
+
+    assert body["drivers"]
+    assert all(line["colour"] for line in body["drivers"] if line["driver"])

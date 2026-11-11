@@ -569,6 +569,7 @@ export const standings = {
     {
       position: 1,
       position_text: "1",
+      colour: "F47600",
       points: 423.0,
       wins: 7,
       driver: {
@@ -586,6 +587,7 @@ export const standings = {
     {
       position: 2,
       position_text: "2",
+      colour: "F47600",
       points: 421.0,
       wins: 8,
       driver: {
@@ -603,6 +605,7 @@ export const standings = {
     {
       position: 3,
       position_text: "3",
+      colour: "F47600",
       points: 410.0,
       wins: 7,
       driver: {
@@ -620,6 +623,7 @@ export const standings = {
     {
       position: 4,
       position_text: "4",
+      colour: "F47600",
       points: 319.0,
       wins: 2,
       driver: {
@@ -637,6 +641,7 @@ export const standings = {
     {
       position: 5,
       position_text: "5",
+      colour: "F47600",
       points: 242.0,
       wins: 0,
       driver: {
@@ -656,6 +661,7 @@ export const standings = {
     {
       position: 1,
       position_text: "1",
+      colour: "F47600",
       points: 833.0,
       wins: 14,
       driver: null,
@@ -667,6 +673,7 @@ export const standings = {
     {
       position: 2,
       position_text: "2",
+      colour: "F47600",
       points: 469.0,
       wins: 2,
       driver: null,
@@ -678,6 +685,7 @@ export const standings = {
     {
       position: 3,
       position_text: "3",
+      colour: "F47600",
       points: 451.0,
       wins: 8,
       driver: null,

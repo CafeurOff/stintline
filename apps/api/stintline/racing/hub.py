@@ -369,3 +369,25 @@ def season_drivers(season: int) -> dict[int, SeasonDriver]:
             points=standing.points if standing else None,
         )
     return out
+
+
+@dataclass(frozen=True)
+class SeasonColours:
+    drivers: dict[int, str]
+    teams: dict[int, str]
+
+
+def season_colours(season_id: int) -> SeasonColours:
+    """Latest timing colour of each driver and team in a season (empty before 2023)."""
+    drivers: dict[int, str] = {}
+    teams: dict[int, str] = {}
+    rows = (
+        SessionEntry.objects.filter(session__event__season_id=season_id)
+        .exclude(team_colour="")
+        .order_by("session__event__race_date")
+        .values_list("driver_id", "team_id", "team_colour")
+    )
+    for driver_id, team_id, colour in rows:
+        drivers[driver_id] = colour
+        teams[team_id] = colour
+    return SeasonColours(drivers=drivers, teams=teams)

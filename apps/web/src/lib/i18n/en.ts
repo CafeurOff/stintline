@@ -6,6 +6,20 @@ export const en = {
   "app.skip": "Skip to content",
   "app.disclaimer":
     "Unofficial project, not associated with Formula 1, the FIA or any team. Data: OpenF1, Jolpica.",
+  "nav.menu": "Open the menu",
+  "nav.close": "Close the menu",
+  "header.next": "Next",
+  "header.inDays": "{days}d {hours}h",
+  "header.inHours": "{hours}h {minutes}min",
+  "footer.pitch":
+    "Every Grand Prix since 1950, and the strategy behind the recent ones, replayed on the circuit. Built on public timing and results data.",
+  "footer.explore": "Explore",
+  "footer.more": "More",
+  "countdown.label": "{days} days, {hours} hours and {minutes} minutes left",
+  "countdown.days": "Days",
+  "countdown.hours": "Hrs",
+  "countdown.minutes": "Min",
+  "countdown.seconds": "Sec",
   "nav.label": "Main",
   "nav.race": "Race",
   "nav.tyres": "Tyres",
@@ -153,6 +167,14 @@ export const en = {
   "panel.pick": "{position}: {name}",
   "home.title":
     "Every Grand Prix since 1950. Replay the recent ones on the circuit and try another strategy.",
+  "home.winnerLine": "{winner} wins for {team}.",
+  "home.report": "Read the race report",
+  "home.drivers": "{season} drivers",
+  "home.constructors": "{season} constructors",
+  "home.schedule": "Weekend schedule",
+  "home.localTime": "Times are shown in your time zone.",
+  "home.calendar": "Full calendar",
+  "home.season": "Season {season}",
   "home.lastRace": "Last race",
   "home.podium": "Podium",
   "home.replay": "Replay it on the circuit",
@@ -387,15 +409,15 @@ export const en = {
   "live.raceControl": "Race control",
   "live.offline.title": "No live session right now",
   "live.offline.body":
-    "As soon as a session starts, the cars appear here on the circuit, lap after lap, with the team radios.",
+    "Here is what comes next, in your time zone. Every race can be replayed on the circuit shortly after the chequered flag.",
   "live.next": "Next session",
-  "live.how.title": "How the live mode works",
-  "live.how.body":
-    "The live mode follows the official timing feed from your own computer. Start it with:",
+  "live.running.title": "A session is running",
+  "live.running.body":
+    "Live timing is not available on this site. The replay, with the cars on the circuit and the strategy tools, appears shortly after the chequered flag.",
+  "live.done": "Finished",
+  "live.replayBody": "Watch the cars on the circuit lap by lap, then try another strategy.",
   "live.meanwhile": "While you wait",
   "live.replayLast": "Replay the last race",
-  "live.how.note":
-    "Personal use only, from a home connection. The public site shows replays of finished races.",
 
   "compound.SOFT": "Soft",
   "compound.MEDIUM": "Medium",

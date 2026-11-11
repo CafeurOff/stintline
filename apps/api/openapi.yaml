@@ -3315,7 +3315,14 @@ components:
           - $ref: '#/components/schemas/Team'
           readOnly: true
           nullable: true
+        colour:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Team colour of the driver or team that season (timed seasons
+            only), hex RGB
       required:
+      - colour
       - driver
       - team
     Standings:

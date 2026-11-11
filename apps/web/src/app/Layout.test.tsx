@@ -91,7 +91,8 @@ describe("Layout and navigation", () => {
     expect(
       await screen.findByRole("heading", { name: "Comment fonctionne StintLine" }),
     ).toBeVisible();
-    expect(screen.getByRole("link", { name: "Pilotes" })).toBeVisible();
+    const nav = screen.getByRole("navigation", { name: "Navigation principale" });
+    expect(within(nav).getByRole("link", { name: "Pilotes" })).toBeVisible();
   });
 
   it("shows a not-found page with a way back", async () => {

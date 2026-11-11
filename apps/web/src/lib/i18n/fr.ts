@@ -5,6 +5,20 @@ export const fr: Record<MessageKey, string> = {
   "app.skip": "Aller au contenu",
   "app.disclaimer":
     "Projet non officiel, sans lien avec la Formule 1, la FIA ou une écurie. Données : OpenF1, Jolpica.",
+  "nav.menu": "Ouvrir le menu",
+  "nav.close": "Fermer le menu",
+  "header.next": "Prochaine",
+  "header.inDays": "{days} j {hours} h",
+  "header.inHours": "{hours} h {minutes} min",
+  "footer.pitch":
+    "Tous les Grands Prix depuis 1950, et la stratégie des plus récents rejouée sur le circuit. Construit sur les données publiques de chronométrage et de résultats.",
+  "footer.explore": "Explorer",
+  "footer.more": "Plus",
+  "countdown.label": "Encore {days} jours, {hours} heures et {minutes} minutes",
+  "countdown.days": "Jours",
+  "countdown.hours": "H",
+  "countdown.minutes": "Min",
+  "countdown.seconds": "Sec",
   "nav.label": "Navigation principale",
   "nav.race": "Course",
   "nav.tyres": "Pneus",
@@ -156,6 +170,14 @@ export const fr: Record<MessageKey, string> = {
   "panel.pick": "{position} : {name}",
   "home.title":
     "Tous les Grands Prix depuis 1950. Revivez les plus récents sur le circuit et testez une autre stratégie.",
+  "home.winnerLine": "{winner} s'impose avec {team}.",
+  "home.report": "Lire le compte rendu",
+  "home.drivers": "Pilotes {season}",
+  "home.constructors": "Constructeurs {season}",
+  "home.schedule": "Programme du week-end",
+  "home.localTime": "Horaires affichés dans votre fuseau horaire.",
+  "home.calendar": "Tout le calendrier",
+  "home.season": "Saison {season}",
   "home.lastRace": "Dernière course",
   "home.podium": "Podium",
   "home.replay": "La revoir sur le circuit",
@@ -393,15 +415,16 @@ export const fr: Record<MessageKey, string> = {
   "live.raceControl": "Direction de course",
   "live.offline.title": "Pas de séance en direct pour l'instant",
   "live.offline.body":
-    "Dès qu'une séance commence, les voitures apparaissent ici sur le circuit, tour après tour, avec les radios d'équipe.",
+    "Voici la suite du programme, à votre heure. Chaque course se revoit sur le circuit peu après le drapeau à damier.",
   "live.next": "Prochaine séance",
-  "live.how.title": "Comment marche le direct",
-  "live.how.body":
-    "Le direct suit le flux de chronométrage officiel depuis votre propre ordinateur. Lancez-le avec :",
+  "live.running.title": "Une séance est en cours",
+  "live.running.body":
+    "Le direct n'est pas disponible sur ce site. Le replay, avec les voitures sur le circuit et les outils de stratégie, arrive peu après le drapeau à damier.",
+  "live.done": "Terminée",
+  "live.replayBody":
+    "Revoyez les voitures sur le circuit tour par tour, puis essayez une autre stratégie.",
   "live.meanwhile": "En attendant",
   "live.replayLast": "Revoir la dernière course",
-  "live.how.note":
-    "Pour un usage personnel, depuis une connexion à la maison. Le site public montre les replays des courses terminées.",
 
   "compound.SOFT": "Tendre",
   "compound.MEDIUM": "Médium",

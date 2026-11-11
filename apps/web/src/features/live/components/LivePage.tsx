@@ -2,17 +2,21 @@ import type { Schema } from "@stintline/api-types";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
-import { PageHeader } from "@/components/hub/PageHeader";
+import { Countdown } from "@/components/hub/Countdown";
+import { SectionTitle } from "@/components/hub/SectionTitle";
+import { CircuitMark } from "@/components/racing/CircuitMark";
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useHome } from "@/features/hub/api";
+import { useEvent, useHome } from "@/features/hub/api";
 import { useTrack } from "@/features/race/api";
 import { type CarMarker, type Ghost, TrackMap } from "@/features/race/components/TrackMap";
 import { pointAt } from "@/features/race/replay";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { sessionLabel } from "@/lib/sessions";
+import { useClock } from "@/lib/useClock";
 import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
@@ -91,70 +95,155 @@ export function LivePage() {
   );
 }
 
-const SESSION_KINDS = ["FP1", "FP2", "FP3", "SQ", "SPRINT", "Q", "R"] as const;
+const SESSION_HOURS = 2;
+const HOUR_MS = 3_600_000;
 
-function sessionLabel(kind: string, t: ReturnType<typeof useI18n>["t"]): string {
-  const known = SESSION_KINDS.find((k) => k === kind);
-  return known ? t(`session.${known}`) : kind;
-}
-
+/** No live data: what comes next, the weekend in the visitor's time, and replays meanwhile. */
 function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
   const { t, locale } = useI18n();
-  const tag = locale === "fr" ? "fr-FR" : "en-GB";
+  const now = useClock(30_000);
+  const event = useEvent(next?.event_id ?? 0, next !== null).data;
   const last = useHome().data?.last_race;
+  const tag = locale === "fr" ? "fr-FR" : "en-GB";
+  const when = new Intl.DateTimeFormat(tag, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const sessions = (event?.sessions ?? []).filter((s) => s.scheduled_start);
+  const running = sessions.find((s) => {
+    const start = new Date(s.scheduled_start ?? "").getTime();
+    return now >= start && now < start + SESSION_HOURS * HOUR_MS;
+  });
+
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
-      <PageHeader title={t("live.offline.title")}>{t("live.offline.body")}</PageHeader>
-      {next && (
-        <section aria-labelledby="live-next" className="rounded-2xl bg-panel p-6">
-          <p className="text-sm text-muted">{t("live.next")}</p>
-          <h2 id="live-next" className="text-2xl font-bold">
-            <Link to={`/events/${String(next.event_id)}`} className="hover:underline">
-              {eventName(next.event_name, locale)}
-            </Link>
-          </h2>
-          <p className="mt-1">
-            <span className="font-semibold">{sessionLabel(next.kind, t)}</span>
-            {" · "}
-            {new Intl.DateTimeFormat(tag, {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-              hour: "2-digit",
-              minute: "2-digit",
-            }).format(new Date(next.starts_at))}
+    <div className="flex flex-col gap-8">
+      <section
+        aria-labelledby="live-title"
+        className="relative overflow-hidden rounded-3xl border-t-4 border-mark bg-panel"
+      >
+        {event?.circuit.outline && (
+          <CircuitMark
+            path={event.circuit.outline}
+            stroke="var(--color-mark)"
+            width={6}
+            className="pointer-events-none absolute -right-8 -bottom-10 size-80 opacity-20 sm:size-96"
+          />
+        )}
+        <div className="relative flex flex-col gap-6 p-6 sm:p-10">
+          <p className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase">
+            <span className="flex items-center gap-1.5 rounded-sm bg-raised px-2 py-0.5">
+              <span
+                className={`size-2 rounded-full ${running ? "animate-pulse bg-mark" : "bg-line-strong"}`}
+              />
+              {t("nav.live")}
+            </span>
           </p>
-        </section>
-      )}
-      {last?.has_data && (
-        <section
-          aria-labelledby="live-replay"
-          className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-panel p-6"
-        >
           <div>
-            <p className="text-sm text-muted">{t("live.meanwhile")}</p>
-            <h2 id="live-replay" className="text-xl font-bold">
-              {eventName(last.event.name, locale)} {last.event.season}
-            </h2>
+            <h1 id="live-title" className="text-3xl leading-tight font-black uppercase sm:text-5xl">
+              {running ? t("live.running.title") : t("live.offline.title")}
+            </h1>
+            <p className="mt-2 max-w-2xl text-lg text-muted">
+              {running ? t("live.running.body") : t("live.offline.body")}
+            </p>
           </div>
-          <Link
-            to={`/sessions/${String(last.session_id)}`}
-            className="rounded-lg bg-action px-4 py-3 font-bold text-white hover:brightness-110"
-          >
-            {t("live.replayLast")}
-          </Link>
-        </section>
-      )}
-      <section aria-labelledby="live-how" className="flex flex-col gap-2 text-muted">
-        <h2 id="live-how" className="text-lg font-bold text-ink">
-          {t("live.how.title")}
-        </h2>
-        <p>{t("live.how.body")}</p>
-        <p>
-          <code className="rounded bg-raised px-2 py-1 font-mono text-ink">make live</code>
-        </p>
-        <p className="text-sm">{t("live.how.note")}</p>
+          {next && !running && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <p className="text-xs font-bold tracking-widest text-mark-text uppercase">
+                  {t("live.next")} · {sessionLabel(next.kind, t)}
+                </p>
+                <h2 className="text-2xl font-black uppercase">
+                  <Link to={`/events/${String(next.event_id)}`} className="hover:underline">
+                    {eventName(next.event_name, locale)}
+                  </Link>
+                </h2>
+                <p className="text-muted first-letter:uppercase">
+                  {when.format(new Date(next.starts_at))}
+                </p>
+              </div>
+              <Countdown target={next.starts_at} />
+            </div>
+          )}
+        </div>
       </section>
+      <div className="grid gap-6 lg:grid-cols-2">
+        {sessions.length > 0 && event && (
+          <section
+            aria-labelledby="live-weekend"
+            className="flex flex-col gap-3 rounded-2xl bg-panel p-5"
+          >
+            <SectionTitle id="live-weekend">{eventName(event.name, locale)}</SectionTitle>
+            <ul className="flex flex-col">
+              {sessions.map((s) => {
+                const start = new Date(s.scheduled_start ?? "").getTime();
+                const done = now >= start + SESSION_HOURS * HOUR_MS;
+                const isRunning = s === running;
+                return (
+                  <li
+                    key={s.id}
+                    className={`flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-0 ${
+                      done ? "text-muted" : ""
+                    }`}
+                  >
+                    <span className="flex items-center gap-2 font-semibold">
+                      {isRunning && <span className="size-2 animate-pulse rounded-full bg-mark" />}
+                      {sessionLabel(s.kind, t)}
+                    </span>
+                    <span className="text-sm tabular-nums first-letter:uppercase">
+                      {done ? t("live.done") : when.format(new Date(start))}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="text-xs text-muted">{t("home.localTime")}</p>
+          </section>
+        )}
+        {last?.has_data && (
+          <section
+            aria-labelledby="live-replay"
+            className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-2xl bg-panel p-5"
+          >
+            {last.event.circuit.outline && (
+              <CircuitMark
+                path={last.event.circuit.outline}
+                stroke="var(--color-ink)"
+                width={4}
+                className="pointer-events-none absolute top-4 right-4 size-32 opacity-20"
+              />
+            )}
+            <div className="relative">
+              <p className="text-xs font-bold tracking-widest text-muted uppercase">
+                {t("live.meanwhile")}
+              </p>
+              <h2 id="live-replay" className="mt-1 max-w-[70%] text-2xl font-black uppercase">
+                {eventName(last.event.name, locale)} {last.event.season}
+              </h2>
+              <p className="mt-2 max-w-md text-muted">{t("live.replayBody")}</p>
+            </div>
+            <div className="relative flex flex-wrap gap-3">
+              <Link
+                to={`/sessions/${String(last.session_id)}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-action px-5 py-3 font-bold text-white hover:brightness-110"
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="currentColor">
+                  <path d="M7 4l13 8-13 8z" />
+                </svg>
+                {t("live.replayLast")}
+              </Link>
+              <Link
+                to={`/news/${String(last.session_id)}`}
+                className="rounded-lg border border-line-strong px-5 py-3 font-bold hover:border-ink"
+              >
+                {t("home.report")}
+              </Link>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

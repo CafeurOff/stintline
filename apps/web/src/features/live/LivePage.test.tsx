@@ -47,16 +47,18 @@ afterEach(() => {
 });
 
 describe("Live page", () => {
-  it("explains how to start the live mode and names the next session", async () => {
+  it("counts down to the next session without technical instructions", async () => {
     renderRoute("/live");
 
-    expect(await screen.findByRole("heading", { name: "No live session right now" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Hungarian Grand Prix" })).toHaveAttribute(
+    const main = within(await screen.findByRole("main"));
+    expect(await main.findByRole("heading", { name: "No live session right now" })).toBeVisible();
+    expect(main.getByRole("link", { name: "Hungarian Grand Prix" })).toHaveAttribute(
       "href",
       "/events/14",
     );
-    expect(screen.getByText(/Practice 1/)).toBeVisible();
-    expect(screen.getByText("make live")).toBeVisible();
+    expect(main.getByText(/Practice 1/)).toBeVisible();
+    expect(main.getByRole("timer")).toBeVisible();
+    expect(screen.queryByText("make live")).toBeNull();
     expect(FakeSocket.instances).toHaveLength(0);
   });
 

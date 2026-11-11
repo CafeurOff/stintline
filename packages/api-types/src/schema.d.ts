@@ -1477,6 +1477,8 @@ export interface components {
       wins?: number;
       readonly driver: components["schemas"]["Driver"] | null;
       readonly team: components["schemas"]["Team"] | null;
+      /** @description Team colour of the driver or team that season (timed seasons only), hex RGB */
+      readonly colour: string | null;
     };
     Standings: {
       season: number;
