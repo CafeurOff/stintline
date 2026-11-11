@@ -4,6 +4,11 @@ import { useId } from "react";
 import { useI18n } from "@/lib/i18n/context";
 
 import type { CarStyle } from "./colours";
+import { indexRange, type Section } from "./section";
+
+/** Margin around a zoomed section, as a share of its size, and the smallest zoomed box. */
+const ZOOM_PAD = 0.18;
+const ZOOM_MIN = 120;
 
 type Compare = Schema<"TelemetryCompare">;
 type State = "full" | "brake" | "partial";
@@ -21,9 +26,14 @@ function stateAt(car: Schema<"TelemetryCar">, index: number): State {
 }
 
 /** Consecutive points in the same state, as polylines that overlap by one point. */
-function segments(car: Schema<"TelemetryCar">): { state: State; points: string }[] {
+function segments(
+  car: Schema<"TelemetryCar">,
+  from = 0,
+  to = car.x.length - 1,
+): { state: State; points: string }[] {
   const out: { state: State; points: string[] }[] = [];
   car.x.forEach((x, index) => {
+    if (index < from || index > to) return;
     const state = stateAt(car, index);
     const point = `${String(x)},${String(car.y[index] ?? 0)}`;
     const last = out.at(-1);
@@ -41,6 +51,25 @@ interface LapMapProps {
   data: Compare;
   styles: readonly CarStyle[];
   cursor: number | null;
+  section: Section | null;
+}
+
+/** The section's bounding box with a margin, as an SVG viewBox. */
+function zoomBox(
+  car: Schema<"TelemetryCar">,
+  from: number,
+  to: number,
+): [number, number, number, number] {
+  const xs = car.x.slice(from, to + 1);
+  const ys = car.y.slice(from, to + 1);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const size = Math.max(Math.max(...xs) - minX, Math.max(...ys) - minY, ZOOM_MIN);
+  const pad = size * ZOOM_PAD;
+  const cx = (minX + Math.max(...xs)) / 2;
+  const cy = (minY + Math.max(...ys)) / 2;
+  const side = size + 2 * pad;
+  return [cx - side / 2, cy - side / 2, side, side];
 }
 
 /**
@@ -48,16 +77,22 @@ interface LapMapProps {
  * amber in between, with each braking zone numbered. The other drivers appear as dots
  * where they were at the pointed distance.
  */
-export function LapMap({ data, styles, cursor }: LapMapProps) {
+export function LapMap({ data, styles, cursor, section }: LapMapProps) {
   const { t } = useI18n();
   const titleId = useId();
   const reference = data.cars[0];
   if (!reference) return null;
-  const scale = Math.max(data.width, data.height) / 1000;
+  const [from, to] = section
+    ? indexRange(section, data.step_m, data.points)
+    : [0, reference.x.length - 1];
+  const box: [number, number, number, number] = section
+    ? zoomBox(reference, from, to)
+    : [0, 0, data.width, data.height];
+  const scale = Math.max(box[2], box[3]) / 1000;
   return (
     <figure className="flex flex-col gap-2">
       <svg
-        viewBox={`0 0 ${String(data.width)} ${String(data.height)}`}
+        viewBox={box.map(String).join(" ")}
         role="img"
         aria-labelledby={titleId}
         className="h-auto max-h-[420px] w-full"
@@ -65,7 +100,19 @@ export function LapMap({ data, styles, cursor }: LapMapProps) {
         <title id={titleId}>
           {t("telemetry.mapTitle", { driver: reference.entry.driver.family_name })}
         </title>
-        {segments(reference).map((segment, index) => (
+        {section &&
+          segments(reference).map((segment, index) => (
+            <polyline
+              key={`all-${String(index)}`}
+              points={segment.points}
+              fill="none"
+              stroke="var(--color-track-edge)"
+              strokeWidth={9 * scale}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ))}
+        {segments(reference, from, to).map((segment, index) => (
           <polyline
             key={index}
             points={segment.points}

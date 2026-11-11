@@ -5,12 +5,13 @@ import { GridRows } from "@visx/grid";
 import { Group } from "@visx/group";
 import { scaleLinear } from "@visx/scale";
 import { LinePath } from "@visx/shape";
-import { type PointerEvent, useId } from "react";
+import { type PointerEvent, useId, useState } from "react";
 
 import { useI18n } from "@/lib/i18n/context";
 import { useElementWidth } from "@/lib/useElementWidth";
 
 import type { CarStyle } from "./colours";
+import { clampSection, indexRange, type Section } from "./section";
 
 type Compare = Schema<"TelemetryCompare">;
 type Channel = "speed" | "throttle" | "brake" | "gear" | "delta";
@@ -30,6 +31,8 @@ const PANELS: readonly Panel[] = [
 const GAP = 22;
 const MARGIN = { top: 8, right: 16, bottom: 36, left: 56 };
 const BRAKE_ROW = 6;
+/** A drag shorter than this (in pixels) is a tap that moves the pointer, not a zoom. */
+const DRAG_MIN_PX = 8;
 
 interface TelemetryChartProps {
   data: Compare;
@@ -37,6 +40,9 @@ interface TelemetryChartProps {
   /** Index of the hovered point, shared with the circuit drawing. */
   cursor: number | null;
   onCursor: (index: number | null) => void;
+  /** Zoomed part of the lap, or null for the whole lap. */
+  section: Section | null;
+  onSection: (section: Section) => void;
 }
 
 function values(car: Schema<"TelemetryCar">, channel: Channel): number[] {
@@ -58,12 +64,23 @@ function values(car: Schema<"TelemetryCar">, channel: Channel): number[] {
  * Speed, throttle, brake, gear and time gap along the lap, one line per driver, all on
  * the same distance axis. Pointing anywhere shows every value at that spot.
  */
-export function TelemetryChart({ data, styles, cursor, onCursor }: TelemetryChartProps) {
+export function TelemetryChart({
+  data,
+  styles,
+  cursor,
+  onCursor,
+  section,
+  onSection,
+}: TelemetryChartProps) {
   const { t, f } = useI18n();
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const titleId = useId();
+  const clipId = useId();
+  const [drag, setDrag] = useState<{ from: number; to: number } | null>(null);
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 160);
-  const x = scaleLinear({ domain: [0, data.length_m], range: [0, innerWidth] });
+  const shown = section ?? { start: 0, end: data.length_m };
+  const x = scaleLinear({ domain: [shown.start, shown.end], range: [0, innerWidth] });
+  const visible = indexRange(shown, data.step_m, data.points);
   const distance = (index: number) => index * data.step_m;
   const multi = data.cars.length > 1;
   const panels = PANELS.filter((p) => p.channel !== "delta" || multi);
@@ -74,17 +91,37 @@ export function TelemetryChart({ data, styles, cursor, onCursor }: TelemetryChar
   const total = panels.reduce((sum, p) => sum + p.height, 0) + GAP * (panels.length - 1);
   const height = total + MARGIN.top + MARGIN.bottom;
 
+  const metresAt = (event: PointerEvent<SVGRectElement>) =>
+    x.invert(event.clientX - event.currentTarget.getBoundingClientRect().left);
   const onMove = (event: PointerEvent<SVGRectElement>) => {
-    const box = event.currentTarget.getBoundingClientRect();
-    const metres = x.invert(event.clientX - box.left);
+    const metres = metresAt(event);
     const index = Math.round(metres / data.step_m);
     onCursor(Math.min(Math.max(index, 0), data.points - 1));
+    if (drag) setDrag({ ...drag, to: metres });
+  };
+  const onDown = (event: PointerEvent<SVGRectElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const metres = metresAt(event);
+    setDrag({ from: metres, to: metres });
+    onMove(event);
+  };
+  const onUp = () => {
+    if (drag && Math.abs(x(drag.to) - x(drag.from)) >= DRAG_MIN_PX) {
+      const picked = clampSection(drag.from, drag.to, data.length_m);
+      if (picked) onSection(picked);
+    }
+    setDrag(null);
   };
 
   return (
     <div ref={ref} className="relative w-full min-w-0">
       <svg width={width} height={height} role="img" aria-labelledby={titleId} className="block">
         <title id={titleId}>{t("telemetry.chartTitle")}</title>
+        <defs>
+          <clipPath id={clipId}>
+            <rect x={0} y={-4} width={innerWidth} height={total + 8} />
+          </clipPath>
+        </defs>
         <Group left={MARGIN.left} top={MARGIN.top}>
           {placed.map((panel) => (
             <Group key={panel.channel} top={panel.top}>
@@ -94,6 +131,9 @@ export function TelemetryChart({ data, styles, cursor, onCursor }: TelemetryChar
                 styles={styles}
                 width={innerWidth}
                 x={x}
+                visible={visible}
+                rebase={section !== null}
+                clipId={clipId}
                 label={t(`telemetry.channel.${panel.channel}`)}
               />
             </Group>
@@ -102,12 +142,26 @@ export function TelemetryChart({ data, styles, cursor, onCursor }: TelemetryChar
             top={total}
             scale={x}
             numTicks={innerWidth < 420 ? 4 : 8}
-            tickFormat={(value) => `${f.number(Number(value) / 1000, 1)} km`}
+            tickFormat={(value) =>
+              `${f.number(Number(value) / 1000, shown.end - shown.start < 2000 ? 2 : 1)} km`
+            }
             stroke="var(--color-line-strong)"
             tickStroke="var(--color-line-strong)"
             tickLabelProps={{ fill: "var(--color-muted)", fontSize: 11 }}
           />
-          {cursor !== null && (
+          {drag && (
+            <rect
+              x={Math.min(x(drag.from), x(drag.to))}
+              width={Math.abs(x(drag.to) - x(drag.from))}
+              height={total}
+              fill="var(--color-ink)"
+              fillOpacity={0.12}
+              stroke="var(--color-ink)"
+              strokeOpacity={0.5}
+              strokeDasharray="4 3"
+            />
+          )}
+          {cursor !== null && cursor >= visible[0] && cursor <= visible[1] && (
             <line
               x1={x(distance(cursor))}
               x2={x(distance(cursor))}
@@ -121,16 +175,27 @@ export function TelemetryChart({ data, styles, cursor, onCursor }: TelemetryChar
             width={innerWidth}
             height={total}
             fill="transparent"
+            className="cursor-crosshair touch-pan-y"
             onPointerMove={onMove}
-            onPointerDown={onMove}
+            onPointerDown={onDown}
+            onPointerUp={onUp}
+            onPointerCancel={() => {
+              setDrag(null);
+            }}
             onPointerLeave={() => {
-              onCursor(null);
+              if (!drag) onCursor(null);
             }}
           />
         </Group>
       </svg>
       {cursor !== null && (
-        <Readout data={data} styles={styles} index={cursor} distance={distance(cursor)} />
+        <Readout
+          data={data}
+          styles={styles}
+          index={cursor}
+          distance={distance(cursor)}
+          base={section ? visible[0] : null}
+        />
       )}
     </div>
   );
@@ -142,6 +207,9 @@ function PanelLines({
   styles,
   width,
   x,
+  visible,
+  rebase,
+  clipId,
   label,
 }: {
   panel: Panel;
@@ -149,6 +217,11 @@ function PanelLines({
   styles: readonly CarStyle[];
   width: number;
   x: (value: number) => number;
+  /** First and last sample shown: the y scales fit them. */
+  visible: [number, number];
+  /** Zoomed: gaps start from zero at the start of the section. */
+  rebase: boolean;
+  clipId: string;
   label: string;
 }) {
   const { f } = useI18n();
@@ -167,7 +240,11 @@ function PanelLines({
           {label}
         </text>
         {data.cars.map((car, row) => (
-          <g key={car.car_number} transform={`translate(0 ${String(row * (BRAKE_ROW - 1))})`}>
+          <g
+            key={car.car_number}
+            clipPath={`url(#${clipId})`}
+            transform={`translate(0 ${String(row * (BRAKE_ROW - 1))})`}
+          >
             {car.brake.map((on, index) =>
               on ? (
                 <rect
@@ -184,7 +261,14 @@ function PanelLines({
       </g>
     );
   }
-  const all = data.cars.flatMap((car) => values(car, channel));
+  const [first, last] = visible;
+  const series = (car: Schema<"TelemetryCar">) => {
+    const raw = values(car, channel);
+    if (channel !== "delta" || !rebase) return raw;
+    const base = raw[first] ?? 0;
+    return raw.map((v) => v - base);
+  };
+  const all = data.cars.flatMap((car) => series(car).slice(first, last + 1));
   const domain: [number, number] =
     channel === "throttle"
       ? [0, 100]
@@ -212,7 +296,8 @@ function PanelLines({
       {data.cars.map((car, index) => (
         <LinePath
           key={car.car_number}
-          data={values(car, channel)}
+          clipPath={`url(#${clipId})`}
+          data={series(car)}
           x={(_, i) => x(i * data.step_m)}
           y={(v) => y(v)}
           {...(channel === "gear" ? { curve: curveStepAfter } : {})}
@@ -241,11 +326,14 @@ function Readout({
   styles,
   index,
   distance,
+  base,
 }: {
   data: Compare;
   styles: readonly CarStyle[];
   index: number;
   distance: number;
+  /** Zoomed: gaps are counted from this sample. */
+  base: number | null;
 }) {
   const { t, f } = useI18n();
   return (
@@ -270,7 +358,14 @@ function Readout({
           {car.brake[index] && (
             <span className="font-semibold text-loss">{t("telemetry.braking")}</span>
           )}
-          {i > 0 && <span className="text-muted">{f.delta(car.delta_s[index] ?? 0, 3)}</span>}
+          {i > 0 && (
+            <span className="text-muted">
+              {f.delta(
+                (car.delta_s[index] ?? 0) - (base === null ? 0 : (car.delta_s[base] ?? 0)),
+                3,
+              )}
+            </span>
+          )}
         </span>
       ))}
     </div>

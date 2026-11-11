@@ -24,6 +24,20 @@ describe("Telemetry", () => {
     expect(screen.getByRole("img", { name: /Norris's fastest lap on the circuit/ })).toBeVisible();
   });
 
+  it("zooms on a corner, compares the drivers there and goes back to the whole lap", async () => {
+    const { router } = renderRoute("/events/14?chart=telemetry");
+
+    const corners = await screen.findByRole("group", { name: "Corners of the first driver's lap" });
+    await userEvent.click(within(corners).getByRole("button", { name: "T1" }));
+
+    expect(router.state.location.search).toMatch(/zoom=\d+-\d+/);
+    const table = screen.getByRole("table", { name: "On this part of the lap" });
+    expect(within(table).getAllByRole("row")).toHaveLength(3);
+    await userEvent.click(screen.getByRole("button", { name: "Whole lap" }));
+    expect(router.state.location.search).not.toContain("zoom=");
+    expect(screen.queryByRole("table", { name: "On this part of the lap" })).toBeNull();
+  });
+
   it("keeps the chosen drivers in the address", async () => {
     const { router } = renderRoute("/events/14?chart=telemetry");
 
