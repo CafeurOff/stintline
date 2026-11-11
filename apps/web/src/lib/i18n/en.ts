@@ -30,6 +30,7 @@ export const en = {
   "home.empty.title": "No race loaded yet",
   "home.empty.body": "Load the demo races with make seed, then reload this page.",
   "notFound.title": "Page not found",
+  "notFound.body": "This page does not exist, or the link is out of date.",
   "notFound.back": "Back to the home page",
 
   "race.noTiming":
@@ -391,6 +392,8 @@ export const en = {
   "live.how.title": "How the live mode works",
   "live.how.body":
     "The live mode follows the official timing feed from your own computer. Start it with:",
+  "live.meanwhile": "While you wait",
+  "live.replayLast": "Replay the last race",
   "live.how.note":
     "Personal use only, from a home connection. The public site shows replays of finished races.",
 
@@ -470,7 +473,7 @@ export const en = {
   "report.pits.fastest": "Quickest stop: {team} for {driver}, {time} stationary on lap {lap}.",
   "report.pits.fastestLane":
     "Quickest stop: {driver} ({team}), {time} in the pit lane on lap {lap}.",
-  "report.teams": "On the constructors' side: {teams}.",
+  "report.teams": "Most points on the day among the teams: {teams}.",
   "report.teamPoints": "{team} {points} points",
   "report.section.start": "The start",
   "report.section.race": "The race",

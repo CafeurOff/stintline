@@ -51,7 +51,7 @@ describe("writeReport", () => {
     expect(text).toContain(
       "Oscar Piastri still leads the championship after round 14, 284 points, 9 ahead of Norris.",
     );
-    expect(text).toContain("On the constructors' side: McLaren 43 points");
+    expect(text).toContain("Most points on the day among the teams: McLaren 43 points");
   });
 
   it("tells the same race in French", () => {

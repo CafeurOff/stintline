@@ -29,6 +29,7 @@ export const fr: Record<MessageKey, string> = {
   "home.empty.title": "Aucune course chargée",
   "home.empty.body": "Chargez les courses de démonstration avec make seed, puis rechargez la page.",
   "notFound.title": "Page introuvable",
+  "notFound.body": "Cette page n'existe pas, ou le lien n'est plus à jour.",
   "notFound.back": "Retour à l'accueil",
 
   "race.noTiming":
@@ -397,6 +398,8 @@ export const fr: Record<MessageKey, string> = {
   "live.how.title": "Comment marche le direct",
   "live.how.body":
     "Le direct suit le flux de chronométrage officiel depuis votre propre ordinateur. Lancez-le avec :",
+  "live.meanwhile": "En attendant",
+  "live.replayLast": "Revoir la dernière course",
   "live.how.note":
     "Pour un usage personnel, depuis une connexion à la maison. Le site public montre les replays des courses terminées.",
 
@@ -477,7 +480,7 @@ export const fr: Record<MessageKey, string> = {
     "Arrêt le plus rapide : {team} pour {driver}, {time} à l'arrêt au tour {lap}.",
   "report.pits.fastestLane":
     "Arrêt le plus rapide : {driver} ({team}), {time} dans la voie des stands au tour {lap}.",
-  "report.teams": "Côté constructeurs : {teams}.",
+  "report.teams": "Les écuries qui ont le plus marqué ce jour-là : {teams}.",
   "report.teamPoints": "{team} {points} points",
   "report.section.start": "Le départ",
   "report.section.race": "La course",
