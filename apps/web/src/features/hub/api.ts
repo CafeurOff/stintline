@@ -126,8 +126,9 @@ export function useTeam(ref: string) {
   });
 }
 
-export function useStandings(year: number, round: number | null) {
+export function useStandings(year: number, round: number | null, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["standings", year, round],
     queryFn: async ({ signal }) =>
       unwrap(
@@ -141,8 +142,9 @@ export function useStandings(year: number, round: number | null) {
   });
 }
 
-export function useProgression(year: number) {
+export function useProgression(year: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["progression", year],
     queryFn: async ({ signal }) =>
       unwrap(

@@ -4,6 +4,7 @@
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource/ibm-plex-mono/600.css";
+@import "flag-icons/css/flag-icons.min.css";
 
 /*
  * Design tokens, "pit wall" direction (docs/design.md). The look comes from timing sheets and
@@ -16,15 +17,15 @@
  * `action` >= 5:1. Compound fills are shared by both themes and carry a dark letter.
  */
 @theme {
-  --color-bg: #0f1012;
-  --color-panel: #141518;
-  --color-raised: #1b1c20;
-  --color-line: #25272c;
-  --color-line-strong: #373a41;
-  --color-track: #2a2c32;
-  --color-track-edge: #3b3e46;
-  --color-ink: #ececee;
-  --color-muted: #9b9da5;
+  --color-bg: #0a0c11;
+  --color-panel: #11141b;
+  --color-raised: #191d27;
+  --color-line: #222836;
+  --color-line-strong: #323a4c;
+  --color-track: #262c3a;
+  --color-track-edge: #3a4256;
+  --color-ink: #eef0f5;
+  --color-muted: #9aa2b5;
   --color-mark: #ff2d2d;
   --color-mark-text: #ff6b66;
   --color-action: #c8102e;

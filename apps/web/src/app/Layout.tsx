@@ -1,4 +1,16 @@
 import { type ReactNode, Suspense, useState } from "react";
+import {
+  BookOpen,
+  CalendarDays,
+  Gauge,
+  House,
+  type LucideIcon,
+  Newspaper,
+  RadioTower,
+  Trophy,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 import { Link, NavLink, Outlet, useLocation, useMatch } from "react-router";
 
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -15,34 +27,35 @@ import { timeLeft, useClock } from "@/lib/useClock";
 import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
 
-type Section = readonly [to: string, key: MessageKey];
+type Section = readonly [to: string, key: MessageKey, icon: LucideIcon];
 
-/** The site map, grouped by what a fan is looking for. Live is first in its group. */
+/** The site map, grouped by what a fan is looking for. */
 const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
   {
     key: "nav.group.weekend",
     links: [
-      ["/live", "nav.live"],
-      ["/calendar", "nav.calendar"],
+      ["/", "nav.home", House],
+      ["/live", "nav.live", RadioTower],
+      ["/calendar", "nav.calendar", CalendarDays],
     ],
   },
   {
     key: "nav.group.championship",
     links: [
-      ["/standings", "nav.standings"],
-      ["/drivers", "nav.drivers"],
-      ["/teams", "nav.teams"],
+      ["/standings", "nav.standings", Trophy],
+      ["/drivers", "nav.drivers", UserRound],
+      ["/teams", "nav.teams", UsersRound],
     ],
   },
-  { key: "nav.group.paddock", links: [["/news", "nav.news"]] },
-  { key: "nav.group.about", links: [["/model", "nav.model"]] },
+  { key: "nav.group.paddock", links: [["/news", "nav.news", Newspaper]] },
+  { key: "nav.group.about", links: [["/model", "nav.model", BookOpen]] },
 ];
 
 const railLink = ({ isActive }: { isActive: boolean }) =>
-  `relative flex h-9 items-center gap-2.5 pr-3 pl-5 text-[0.9rem] transition-colors before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] ${
+  `mx-2 flex h-10 items-center gap-3 rounded-md px-3 text-[0.92rem] transition-colors ${
     isActive
-      ? "font-semibold text-ink before:bg-mark"
-      : "text-muted before:bg-transparent hover:bg-raised hover:text-ink"
+      ? "bg-mark/15 font-semibold text-ink [&>svg]:text-mark-text"
+      : "text-muted hover:bg-raised hover:text-ink"
   }`;
 
 const tabLink = ({ isActive }: { isActive: boolean }) =>
@@ -70,7 +83,7 @@ export function Layout() {
         <ContextBar>
           {sessionId !== null && <RaceBar sessionId={sessionId} onTyres={tyres !== null} />}
         </ContextBar>
-        <div className="mx-auto flex w-full max-w-[1360px] flex-1 flex-col px-4 pt-6 sm:px-8">
+        <div className="mx-auto flex w-full max-w-[1840px] flex-1 flex-col px-4 pt-6 sm:px-8">
           <main id="main" tabIndex={-1} className="flex-1 pb-16">
             <Suspense fallback={<Skeleton className="h-[60vh]" />}>
               <Outlet />
@@ -86,9 +99,14 @@ export function Layout() {
 function Wordmark() {
   return (
     <Link to="/" className="flex items-center gap-2.5" aria-label="StintLine">
-      <span aria-hidden="true" className="chamfer size-5 bg-mark [--cut:7px]" />
-      <span className="condensed text-[1.35rem] leading-none font-extrabold tracking-tight uppercase">
-        StintLine
+      <span
+        aria-hidden="true"
+        className="grid size-8 place-items-center rounded-md bg-mark text-white"
+      >
+        <Gauge className="size-5" strokeWidth={2.25} />
+      </span>
+      <span className="text-lg leading-none font-extrabold tracking-tight">
+        Stint<span className="text-mark-text">Line</span>
       </span>
     </Link>
   );
@@ -100,13 +118,16 @@ function NavGroups({ onPick }: { onPick?: () => void }) {
     <>
       {GROUPS.map((group) => (
         <div key={group.key} className="flex flex-col">
-          <span className="px-5 pt-5 pb-1.5 text-xs font-medium text-muted">{t(group.key)}</span>
+          <span className="px-5 pt-5 pb-1.5 text-[0.7rem] font-semibold tracking-wider text-muted/80 uppercase">
+            {t(group.key)}
+          </span>
           <ul className="flex flex-col">
-            {group.links.map(([to, key]) => (
+            {group.links.map(([to, key, Icon]) => (
               <li key={to}>
-                <NavLink to={to} className={railLink} onClick={onPick}>
+                <NavLink to={to} end={to === "/"} className={railLink} onClick={onPick}>
+                  <Icon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={1.75} />
+                  <span className="flex-1">{t(key)}</span>
                   {to === "/live" && <LiveMark />}
-                  {t(key)}
                   {to === "/live" && <LiveNote />}
                 </NavLink>
               </li>
@@ -141,7 +162,12 @@ function Rail() {
 /** Live state as on a timing screen: a kerb flag when a session runs, a grey tick otherwise. */
 function LiveMark() {
   const live = useLiveStatus().data?.state === "live";
-  return <span aria-hidden="true" className={`h-2.5 w-4 ${live ? "kerb" : "bg-line-strong"}`} />;
+  return (
+    <span
+      aria-hidden="true"
+      className={`size-2 rounded-full ${live ? "animate-pulse bg-mark" : "bg-line-strong"}`}
+    />
+  );
 }
 
 function LiveNote() {
@@ -250,7 +276,7 @@ function SiteFooter() {
   const { t } = useI18n();
   return (
     <footer className="border-t border-line">
-      <div className="mx-auto flex w-full max-w-[1360px] flex-col gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-8">
+      <div className="mx-auto flex w-full max-w-[1840px] flex-col gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <p>{t("app.disclaimer")}</p>
         <ApiStatus />
       </div>

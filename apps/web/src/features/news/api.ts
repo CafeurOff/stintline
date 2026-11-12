@@ -33,8 +33,9 @@ export function useReports(limit = 12) {
   });
 }
 
-export function useReport(sessionId: number) {
+export function useReport(sessionId: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["report", sessionId],
     queryFn: async ({ signal }) =>
       unwrap(

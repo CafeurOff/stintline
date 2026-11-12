@@ -101,6 +101,18 @@ function regionName(code: string, locale: Locale): string | undefined {
   return names.of(code);
 }
 
+/** ISO 3166 code of a country as the API spells it, lower case (`Brazil` -> `br`). */
+export function countryCode(country: string): string | null {
+  const code = COUNTRY_CODES[country] ?? (/^[A-Z]{2}$/.test(country) ? country : undefined);
+  return code ? code.toLowerCase() : null;
+}
+
+/** ISO 3166 code of a nationality (`British` -> `gb`). */
+export function nationalityCode(nationality: string): string | null {
+  const code = NATIONALITY_CODES[nationality];
+  return code ? code.toLowerCase() : null;
+}
+
 /** Country name in the reader's language (`UK` -> `Royaume-Uni`), else the API text. */
 export function countryName(country: string, locale: Locale): string {
   const code = COUNTRY_CODES[country];

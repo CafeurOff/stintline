@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
 import { renderRoute } from "@/test/render";
+import { hungaryReport } from "@/test/fixtures/news";
 import { homeResponse, server } from "@/test/server";
 
 describe("Home page", () => {
@@ -16,12 +17,21 @@ describe("Home page", () => {
     expect(within(hero).getByRole("link", { name: /Replay it on the circuit/ })).toBeVisible();
   });
 
-  it("counts down to the next Grand Prix and lists its weekend", async () => {
+  it("counts down to the next session of the next Grand Prix", async () => {
     renderRoute("/");
 
-    const next = await screen.findByRole("region", { name: "Italian Grand Prix" });
+    const next = await screen.findByRole("region", { name: /Italian Grand Prix/ });
     expect(within(next).getByRole("timer")).toBeVisible();
-    expect(within(next).getByRole("list", { name: "Weekend schedule" })).toBeVisible();
+  });
+
+  it("sums up the last race in key figures and facts", async () => {
+    renderRoute("/");
+
+    expect(await screen.findByRole("region", { name: "Biggest climber" })).toBeVisible();
+    const facts = await screen.findByRole("region", { name: "Last race in facts" });
+    expect(within(facts).getByText("Lando Norris wins the Hungarian Grand Prix")).toBeVisible();
+    await userEvent.click(within(facts).getByRole("button", { name: "Team" }));
+    expect(within(facts).queryByText("Lando Norris wins the Hungarian Grand Prix")).toBeNull();
   });
 
   it("shows both championships with links to the full standings", async () => {
@@ -33,7 +43,7 @@ describe("Home page", () => {
       "href",
       "/standings/2025",
     );
-    expect(within(teams).getByRole("link", { name: /McLaren/ })).toBeVisible();
+    expect(await within(teams).findByRole("link", { name: /McLaren/ })).toBeVisible();
   });
 
   it("lays the season out as a strip of rounds", async () => {
@@ -41,6 +51,61 @@ describe("Home page", () => {
 
     const season = await screen.findByRole("region", { name: "Season 2025" });
     expect(await within(season).findAllByRole("listitem")).not.toHaveLength(0);
+  });
+
+  it("filters the facts by driver, team and race", async () => {
+    renderRoute("/");
+
+    const facts = await screen.findByRole("region", { name: "Last race in facts" });
+    for (const name of ["Driver", "Race", "Team", "All"]) {
+      await userEvent.click(within(facts).getByRole("button", { name }));
+      expect(within(facts).getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
+      expect(within(facts).getAllByRole("listitem").length).toBeGreaterThan(0);
+    }
+  });
+
+  it("shows how each driver moved in the standings since the last round", async () => {
+    renderRoute("/");
+
+    const drivers = await screen.findByRole("region", { name: "2025 drivers" });
+    expect(await within(drivers).findByRole("link", { name: /Norris/ })).toBeVisible();
+    expect(within(drivers).getByRole("columnheader", { name: "Evo." })).toBeVisible();
+  });
+
+  it("falls back to the code when a driver photo fails to load", async () => {
+    renderRoute("/");
+
+    const podium = await screen.findByRole("list", { name: "Podium" });
+    for (const img of podium.querySelectorAll("img")) img.dispatchEvent(new Event("error"));
+    expect(await within(podium).findByText("NOR")).toBeInTheDocument();
+  });
+
+  it("leaves out the figures a race report does not have", async () => {
+    server.use(
+      http.get("*/api/v1/news/reports/:id", () =>
+        HttpResponse.json({
+          ...hungaryReport,
+          pit_stops: null,
+          biggest_gain: null,
+          fastest_lap: null,
+          winner_wins: null,
+          winner_strategy: null,
+          retirements: [],
+          teams: [],
+          neutralisations: null,
+          story: null,
+          championship: { ...hungaryReport.championship, leader_changed: true },
+        }),
+      ),
+      http.get("*/api/v1/home", () => HttpResponse.json({ ...homeResponse, next_event: null })),
+    );
+    renderRoute("/");
+
+    const facts = await screen.findByRole("region", { name: "Last race in facts" });
+    expect(await within(facts).findByText(/takes the lead/)).toBeVisible();
+    expect(screen.queryByRole("region", { name: "Biggest climber" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Fastest pit stop" })).toBeNull();
+    expect(screen.queryByRole("timer")).toBeNull();
   });
 
   it("says when nothing is loaded yet", async () => {

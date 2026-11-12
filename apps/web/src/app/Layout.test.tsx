@@ -15,7 +15,7 @@ describe("Layout and navigation", () => {
       "href",
       `/sessions/${SESSION_ID}`,
     );
-    expect(screen.getByRole("heading", { name: "Italian Grand Prix" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: /Italian Grand Prix/ })).toBeVisible();
   });
 
   it("explains how to load data when there is none", async () => {

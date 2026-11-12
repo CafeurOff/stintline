@@ -218,13 +218,16 @@ describe("Report page", () => {
 });
 
 describe("Home page news", () => {
-  it("shows the latest report and headlines", async () => {
+  it("links the latest report and shows headlines", async () => {
     renderRoute("/");
 
+    const facts = await screen.findByRole("region", { name: "Last race in facts" });
+    expect(within(facts).getByRole("link", { name: /Read the race report/ })).toHaveAttribute(
+      "href",
+      "/news/70",
+    );
     const news = await screen.findByRole("region", { name: "Latest news" });
-    expect(
-      await within(news).findByRole("link", { name: "Lando Norris wins the Hungarian Grand Prix" }),
-    ).toBeVisible();
+    expect(within(news).getAllByRole("link").length).toBeGreaterThan(2);
     expect(within(news).getByRole("link", { name: /All news/ })).toHaveAttribute("href", "/news");
   });
 });
