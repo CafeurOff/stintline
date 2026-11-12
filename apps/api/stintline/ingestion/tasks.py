@@ -11,6 +11,7 @@ from django.db.models import Max, Q
 from django.utils import timezone
 
 from racedata.errors import ProviderError, RateLimitedError, UpstreamUnavailableError
+from stintline.analysis.tasks import build_race_analysis, build_stale_analysis
 from stintline.ingestion import history, portraits, services, telemetry
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import RACE_KINDS, Event, Season, Session
@@ -78,6 +79,7 @@ def ingest_session(session_id: int) -> dict[str, int]:
     session = Session.objects.select_related("event__season").get(pk=session_id)
     with open_sources() as sources:
         report = services.ingest_session(session, sources)
+    build_race_analysis.delay(session.pk)
     ingest_telemetry.delay(session.pk)
     return report.counts
 
@@ -94,7 +96,10 @@ def ingest_telemetry(session_id: int) -> int:
     """Fastest-lap telemetry of every car (about 40 bounded requests, ADR 0013)."""
     session = Session.objects.get(pk=session_id)
     with open_sources() as sources:
-        return telemetry.ingest_telemetry(session, sources, timezone.now())
+        stored = telemetry.ingest_telemetry(session, sources, timezone.now())
+    if stored:
+        build_race_analysis.delay(session.pk)
+    return stored
 
 
 TELEMETRY_BACKFILL_PER_RUN = 4
@@ -204,6 +209,7 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
     backlog = telemetry.missing_telemetry().exclude(pk__in=queued)[:TELEMETRY_BACKFILL_PER_RUN]
     for session in backlog:
         ingest_telemetry.delay(session.pk)
+    build_stale_analysis.delay()
     log.info(
         "refresh_recent_queued",
         sessions=len(queued),

@@ -48,6 +48,15 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 | Full throttle | ≥ 99 % | `telemetry.py`, web | The feed rarely reports exactly 100 % on straights. |
 | `MIN_START_GAIN` / `MIN_START_LOSS` | 2 / 3 places | `news/story.py` | Lap-1 moves worth a sentence in a race report. |
 | `UNDERCUT_WINDOW_LAPS` | 5 | `news/story.py` | The winner's stop counts as an undercut when it came at most 5 laps before the stop of the car it passed. |
+| `PaceFilter.cutoff_pct` | 107 % | `analysis.py` | Race pace charts drop laps slower than 107 % of the race's fastest lap (the qualifying rule fans know). The user can change it or turn it off. Lap 1 is never kept. |
+| `WHISKER_IQR` | 1.5 | `analysis.py` | Tukey's convention for box-plot whiskers and outliers. |
+| `ConsistencyConfig.min_stint_laps` | 4 | `analysis.py` | A straight line through fewer clean laps absorbs the scatter it should measure. |
+| `ConsistencyConfig.min_laps` | 8 | `analysis.py` | Clean laps needed for a consistency figure. |
+| `UndercutConfig.max_gap_s` | 3.0 s | `analysis.py` | An early stop counts as an undercut attempt only within 3 s of the car ahead: about the most a new-tyre out-lap and the rival's slower in-lap can make up. |
+| `UndercutConfig.max_reply_laps` | 3 | `analysis.py` | The car ahead must pit within 3 laps, or the stops are unrelated. |
+| `MIN_CLEAN_LAPS` | 5 | `analysis/build.py` | Clean laps a car needs before its median race pace is stored. |
+| `MIN_STATIONARY_S` | 1.6 s | `analysis/build.py` | Faster stationary times are timing glitches (the record is about 1.8 s). |
+| `MIN_RACES` | 3 | `analysis/season.py` | Races with a consistency figure a driver needs to be ranked over a season. |
 
 ## 3. Methods
 
@@ -72,6 +81,8 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 **Lap telemetry (ADR 0013).** One lap of car data (speed, throttle, brake on/off, gear, DRS, about 3.7 Hz) and positions. Distance is the trapezoidal integral of speed, the first sample extrapolated back to the line at its own speed and the last one forward to the end of the lap. Two laps are compared on the fraction of the lap, stretched to their mean length, so corners line up even though integrated lengths differ by up to ~1 %. Time at each point is interpolated on the same fraction; the gap between two drivers at a point is the difference of those times. Braking zones are runs of the brake channel, merged when closer than 30 m and kept when longer than 0.3 s; the apex speed is the lowest speed before the next full-throttle application. On the 2025 Hungarian Grand Prix the integrated lap is 4,342 m (official 4,381 m), Norris's fastest lap shows 10 braking zones (turn 1: 275 → 88 km/h) and the gap to Piastri ends at −0.506 s, the exact difference of their lap times.
 
 **Race story (ADR 0012, 0013).** The running order at the end of each lap comes from line-crossing times. Lead spells, laps led and lap-1 moves follow directly. The winner's last change of lead is classed as: led every lap; regained after the pit cycle (the winner led, stopped, and the car that stayed out stopped one or two laps before the lead came back); undercut (the winner stopped up to 5 laps before the stop of the car that led); inherited at a rival's stop; or on track.
+
+**Analysis figures (ADR 0017).** Stored once per race. *Race pace* is the median of the fuel-corrected clean laps, compared with the median of all cars (field) or with a teammate; the race pace chart lets the user change the lap filter. *Consistency* is the robust σ (MAD × 1.4826) of the residuals once each stint's straight-line trend is removed, so tyre wear does not count as inconsistency. *Passes* are order changes at the line between two consecutive green laps where neither car pitted on either lap. *Undercut attempts*: car A pits on lap L within 3 s of the car directly ahead, B, which pits within the next 3 laps; the undercut worked when A is ahead at the end of B's out-lap. Stops on or just before a neutralised lap are left out. On the 2025 season this finds 54 attempts, 23 of which worked.
 
 ## 4. Validation
 
@@ -145,4 +156,5 @@ Each ±0.011 s/kg shifts slopes by about ±0.019 s/lap. 0.022 s/kg yields negati
 - **Pit loss under a Safety Car** can be overestimated when a stop's out-lap falls under the SC (the slow SC lap inflates the measured loss). Found with the what-if tests; affects circuits where the field pitted just before a Safety Car.
 - **Telemetry** is sampled at ~3.7 Hz: a brief lift or a short brake application can fall between two samples, and minimum speeds are rounded to the nearest sample. Integrated distance drifts by about 1 % per lap, which is why laps are compared by fraction of lap. Only the fastest clean lap of each driver is stored.
 - **Race story** classes the decisive moment from positions at the line only: an overtake in the pit lane or a position given back under orders reads as "on track".
+- **Analysis figures** read positions at the line only: a pass made and lost within a lap is not seen, and races whose timing has no lap start times (Miami 2025) have no passes or laps led. Degradation from wet races is left out of the track DNA.
 - **Sample size.** Nine dry 2025 races. Wet races, Qatar-style stint limits and sprint races are not part of the validation.

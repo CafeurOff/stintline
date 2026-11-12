@@ -6,6 +6,170 @@ info:
     pit loss, undercut and pit-exit simulation. Unofficial project, not associated
     with Formula 1, the FIA or any team.'
 paths:
+  /api/v1/analysis/circuits:
+    get:
+      operationId: analysis_circuits_list
+      summary: Track DNA of every circuit raced since 2023, from our own figures
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CircuitProfile'
+          description: ''
+  /api/v1/analysis/head-to-head:
+    get:
+      operationId: analysis_head_to_head_retrieve
+      summary: 'Two drivers over a season: qualifying, race and fuel-corrected pace
+        duels'
+      parameters:
+      - in: query
+        name: a
+        schema:
+          type: string
+        description: Driver ref, e.g. `norris`
+      - in: query
+        name: b
+        schema:
+          type: string
+        description: Driver ref, e.g. `piastri`
+      - in: query
+        name: season
+        schema:
+          type: integer
+        description: Season, e.g. `2025`
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeadToHead'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/analysis/seasons/{year}/consistency:
+    get:
+      operationId: analysis_consistency_list
+      summary: Drivers ranked by lap-to-lap scatter once tyre wear is removed (2023+)
+      parameters:
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Consistency'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/analysis/seasons/{year}/pit-stops:
+    get:
+      operationId: analysis_pit_stops_retrieve
+      summary: Fastest stops, team averages, pit loss and undercuts of a season (2023+)
+      parameters:
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PitStops'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/analysis/seasons/{year}/teammates:
+    get:
+      operationId: analysis_teammates_list
+      summary: Every team's teammate duel over a season, best-scoring team first
+      parameters:
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Teammates'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/drivers:
     get:
       operationId: drivers_list
@@ -536,6 +700,59 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Lap'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/sessions/{session_id}/pace:
+    get:
+      operationId: session_pace_retrieve
+      summary: 'Race pace of every car: box plots, laps and fastest laps, with filters'
+      parameters:
+      - in: query
+        name: cutoff
+        schema:
+          type: integer
+        description: '% of the fastest lap, 0 keeps all'
+      - in: query
+        name: fuel
+        schema:
+          type: boolean
+        description: Fuel-corrected times (default true)
+      - in: query
+        name: pit
+        schema:
+          type: boolean
+        description: Keep in-laps and out-laps
+      - in: query
+        name: sc
+        schema:
+          type: boolean
+        description: Keep neutralised and restart laps
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionPace'
           description: ''
         '400':
           content:
@@ -1119,6 +1336,166 @@ components:
       - name
       - outline
       - ref
+    CircuitProfile:
+      type: object
+      properties:
+        circuit:
+          $ref: '#/components/schemas/Circuit'
+        races:
+          type: integer
+        latest_event_id:
+          type: integer
+        latest_session_id:
+          type: integer
+        lap_length_m:
+          type: number
+          format: double
+          nullable: true
+        top_speed_kph:
+          type: number
+          format: double
+          nullable: true
+        full_throttle_share:
+          type: number
+          format: double
+          nullable: true
+        braking_zones:
+          type: integer
+          nullable: true
+        pit_loss_s:
+          type: number
+          format: double
+          nullable: true
+        pit_loss_sigma_s:
+          type: number
+          format: double
+          nullable: true
+        degradation_s_per_lap:
+          type: number
+          format: double
+          nullable: true
+          description: Median over dry races of the mean dry-compound slope
+        degradation:
+          $ref: '#/components/schemas/DryCompoundSlopes'
+        safety_car_races:
+          type: integer
+        vsc_races:
+          type: integer
+        wet_races:
+          type: integer
+        passes_per_race:
+          type: number
+          format: double
+          nullable: true
+        undercut_attempts:
+          type: integer
+        undercut_successes:
+          type: integer
+        winning_stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/WinningStops'
+        fastest_lap_s:
+          type: number
+          format: double
+          nullable: true
+        fastest_lap_year:
+          type: integer
+          nullable: true
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/CircuitRace'
+      required:
+      - braking_zones
+      - circuit
+      - degradation
+      - degradation_s_per_lap
+      - fastest_lap_s
+      - fastest_lap_year
+      - full_throttle_share
+      - history
+      - lap_length_m
+      - latest_event_id
+      - latest_session_id
+      - passes_per_race
+      - pit_loss_s
+      - pit_loss_sigma_s
+      - races
+      - safety_car_races
+      - top_speed_kph
+      - undercut_attempts
+      - undercut_successes
+      - vsc_races
+      - wet_races
+      - winning_stops
+    CircuitRace:
+      type: object
+      properties:
+        year:
+          type: integer
+        event_id:
+          type: integer
+        session_id:
+          type: integer
+        name:
+          type: string
+        winner:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        winner_team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          nullable: true
+        winner_colour:
+          type: string
+          nullable: true
+        winner_strategy:
+          type: array
+          items:
+            type: string
+        wet:
+          type: boolean
+        passes:
+          type: integer
+          nullable: true
+        safety_cars:
+          type: integer
+        virtual_safety_cars:
+          type: integer
+        red_flags:
+          type: integer
+        pit_loss_s:
+          type: number
+          format: double
+          nullable: true
+        fastest_lap_s:
+          type: number
+          format: double
+          nullable: true
+        undercut_attempts:
+          type: integer
+        undercut_successes:
+          type: integer
+      required:
+      - event_id
+      - fastest_lap_s
+      - name
+      - passes
+      - pit_loss_s
+      - red_flags
+      - safety_cars
+      - session_id
+      - undercut_attempts
+      - undercut_successes
+      - virtual_safety_cars
+      - wet
+      - winner
+      - winner_colour
+      - winner_strategy
+      - winner_team
+      - year
     Compare:
       type: object
       properties:
@@ -1213,6 +1590,62 @@ components:
       - new_tyre_pace_s
       - slope_ci
       - slope_s_per_lap
+    Consistency:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        team:
+          $ref: '#/components/schemas/Team'
+        colour:
+          type: string
+          nullable: true
+        median_spread_s:
+          type: number
+          format: double
+        best:
+          $ref: '#/components/schemas/SpreadRace'
+        worst:
+          $ref: '#/components/schemas/SpreadRace'
+        races:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsistencyRace'
+      required:
+      - best
+      - colour
+      - driver
+      - median_spread_s
+      - races
+      - team
+      - worst
+    ConsistencyRace:
+      type: object
+      properties:
+        round:
+          type: integer
+        event_id:
+          type: integer
+        session_id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        spread_s:
+          type: number
+          format: double
+          nullable: true
+        clean_laps:
+          type: integer
+      required:
+      - clean_laps
+      - country
+      - event_id
+      - name
+      - round
+      - session_id
+      - spread_s
     Decisive:
       type: object
       properties:
@@ -1545,6 +1978,64 @@ components:
       - season
       - session_id
       - team
+    DryCompoundSlopes:
+      type: object
+      properties:
+        SOFT:
+          type: number
+          format: double
+          nullable: true
+        MEDIUM:
+          type: number
+          format: double
+          nullable: true
+        HARD:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - HARD
+      - MEDIUM
+      - SOFT
+    DuelRound:
+      type: object
+      properties:
+        round:
+          type: integer
+        event_id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        session_id:
+          type: integer
+          nullable: true
+          description: Timed race, if any
+        a:
+          $ref: '#/components/schemas/SideRound'
+        b:
+          $ref: '#/components/schemas/SideRound'
+        quali_gap_s:
+          type: number
+          format: double
+          nullable: true
+          description: A minus B in the last segment both set a time in
+        pace_gap_s:
+          type: number
+          format: double
+          nullable: true
+          description: 'A minus B: median fuel-corrected clean lap (negative = A faster)'
+      required:
+      - a
+      - b
+      - country
+      - event_id
+      - name
+      - pace_gap_s
+      - quali_gap_s
+      - round
+      - session_id
     Entry:
       type: object
       properties:
@@ -1756,6 +2247,27 @@ components:
       - race_date
       - round
       - season
+    FastestLap:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        lap:
+          type: integer
+        time_s:
+          type: number
+          format: double
+        compound:
+          type: string
+        tyre_age:
+          type: integer
+          nullable: true
+      required:
+      - car_number
+      - compound
+      - lap
+      - time_s
+      - tyre_age
     FastestStop:
       type: object
       properties:
@@ -1799,6 +2311,53 @@ components:
       required:
       - gain_per_lap_s
       - seconds_per_kg
+    HeadToHead:
+      type: object
+      properties:
+        a:
+          $ref: '#/components/schemas/SideTotals'
+        b:
+          $ref: '#/components/schemas/SideTotals'
+        shared_rounds:
+          type: integer
+        quali:
+          type: array
+          items:
+            type: integer
+          description: '[A ahead, B ahead]'
+        race:
+          type: array
+          items:
+            type: integer
+        pace:
+          type: array
+          items:
+            type: integer
+        median_quali_gap_s:
+          type: number
+          format: double
+          nullable: true
+        median_pace_gap_s:
+          type: number
+          format: double
+          nullable: true
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DuelRound'
+        season:
+          type: integer
+      required:
+      - a
+      - b
+      - median_pace_gap_s
+      - median_quali_gap_s
+      - pace
+      - quali
+      - race
+      - rounds
+      - season
+      - shared_rounds
     Headline:
       type: object
       properties:
@@ -2374,6 +2933,106 @@ components:
     NullEnum:
       enum:
       - null
+    PaceCar:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        entry:
+          $ref: '#/components/schemas/PaceEntry'
+        summary:
+          allOf:
+          - $ref: '#/components/schemas/PaceSummary'
+          nullable: true
+        laps:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaceLap'
+      required:
+      - car_number
+      - entry
+      - laps
+      - summary
+    PaceEntry:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        team:
+          $ref: '#/components/schemas/Team'
+        team_colour:
+          type: string
+      required:
+      - driver
+      - team
+      - team_colour
+    PaceLap:
+      type: object
+      properties:
+        lap:
+          type: integer
+        time_s:
+          type: number
+          format: double
+        value_s:
+          type: number
+          format: double
+          description: Raw or fuel-corrected, as requested
+        compound:
+          type: string
+        tyre_age:
+          type: integer
+          nullable: true
+        kept:
+          type: boolean
+      required:
+      - compound
+      - kept
+      - lap
+      - time_s
+      - tyre_age
+      - value_s
+    PaceSummary:
+      type: object
+      properties:
+        n:
+          type: integer
+        median_s:
+          type: number
+          format: double
+        q1_s:
+          type: number
+          format: double
+        q3_s:
+          type: number
+          format: double
+        low_s:
+          type: number
+          format: double
+        high_s:
+          type: number
+          format: double
+        mean_s:
+          type: number
+          format: double
+        std_s:
+          type: number
+          format: double
+        outliers_s:
+          type: array
+          items:
+            type: number
+            format: double
+      required:
+      - high_s
+      - low_s
+      - mean_s
+      - median_s
+      - n
+      - outliers_s
+      - q1_s
+      - q3_s
+      - std_s
     PaginatedDriverListItemList:
       type: object
       required:
@@ -2647,6 +3306,41 @@ components:
           description: Duration published by Jolpica
       required:
       - lap_number
+    PitStops:
+      type: object
+      properties:
+        season:
+          type: integer
+        stops:
+          type: integer
+        timed_stops:
+          type: integer
+          description: Stops with a stationary time
+        undercut_attempts:
+          type: integer
+        undercut_successes:
+          type: integer
+        fastest:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stop'
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamStops'
+        races:
+          type: array
+          items:
+            $ref: '#/components/schemas/RaceStops'
+      required:
+      - fastest
+      - races
+      - season
+      - stops
+      - teams
+      - timed_stops
+      - undercut_attempts
+      - undercut_successes
     PitSummary:
       type: object
       properties:
@@ -2924,6 +3618,59 @@ components:
       - winner
       - winner_strategy
       - winner_wins
+    RaceStops:
+      type: object
+      properties:
+        round:
+          type: integer
+        event_id:
+          type: integer
+        session_id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        stops:
+          type: integer
+        median_stationary_s:
+          type: number
+          format: double
+          nullable: true
+        median_lane_s:
+          type: number
+          format: double
+          nullable: true
+        fastest:
+          allOf:
+          - $ref: '#/components/schemas/Stop'
+          nullable: true
+        pit_loss_s:
+          type: number
+          format: double
+          nullable: true
+        pit_loss_sigma_s:
+          type: number
+          format: double
+          nullable: true
+        undercut_attempts:
+          type: integer
+        undercut_successes:
+          type: integer
+      required:
+      - country
+      - event_id
+      - fastest
+      - median_lane_s
+      - median_stationary_s
+      - name
+      - pit_loss_s
+      - pit_loss_sigma_s
+      - round
+      - session_id
+      - stops
+      - undercut_attempts
+      - undercut_successes
     Radio:
       type: object
       properties:
@@ -3254,6 +4001,44 @@ components:
       - kind
       - neutralisations
       - total_laps
+    SessionPace:
+      type: object
+      properties:
+        session_id:
+          type: integer
+        total_laps:
+          type: integer
+        fuel_corrected:
+          type: boolean
+        fuel_gain_per_lap_s:
+          type: number
+          format: double
+        cutoff_pct:
+          type: number
+          format: double
+          nullable: true
+        include_pit_laps:
+          type: boolean
+        include_neutralised:
+          type: boolean
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaceCar'
+        fastest_laps:
+          type: array
+          items:
+            $ref: '#/components/schemas/FastestLap'
+      required:
+      - cars
+      - cutoff_pct
+      - fastest_laps
+      - fuel_corrected
+      - fuel_gain_per_lap_s
+      - include_neutralised
+      - include_pit_laps
+      - session_id
+      - total_laps
     SessionSummary:
       type: object
       properties:
@@ -3273,6 +4058,111 @@ components:
       - has_data
       - id
       - kind
+    SideRound:
+      type: object
+      properties:
+        quali:
+          type: integer
+          nullable: true
+        finish:
+          type: integer
+          nullable: true
+        classification:
+          type: string
+        status:
+          type: string
+        points:
+          type: number
+          format: double
+        team_ref:
+          type: string
+      required:
+      - classification
+      - finish
+      - points
+      - quali
+      - status
+      - team_ref
+    SideTotals:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        team:
+          $ref: '#/components/schemas/Team'
+        colour:
+          type: string
+          nullable: true
+        starts:
+          type: integer
+        points:
+          type: number
+          format: double
+        wins:
+          type: integer
+        podiums:
+          type: integer
+        poles:
+          type: integer
+          description: Qualifying first (grid first before 1994)
+        finishes:
+          type: integer
+        retirements:
+          type: integer
+        best_finish:
+          type: integer
+          nullable: true
+        average_quali:
+          type: number
+          format: double
+          nullable: true
+        average_finish:
+          type: number
+          format: double
+          nullable: true
+        laps_led:
+          type: integer
+          nullable: true
+          description: Timed seasons only (2023+)
+      required:
+      - average_finish
+      - average_quali
+      - best_finish
+      - colour
+      - driver
+      - finishes
+      - laps_led
+      - podiums
+      - points
+      - poles
+      - retirements
+      - starts
+      - team
+      - wins
+    SpreadRace:
+      type: object
+      properties:
+        round:
+          type: integer
+        event_id:
+          type: integer
+        session_id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        spread_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - country
+      - event_id
+      - name
+      - round
+      - session_id
+      - spread_s
     StandingChange:
       type: object
       properties:
@@ -3482,6 +4372,48 @@ components:
       - slope_ci
       - slope_s_per_lap
       - stint
+    Stop:
+      type: object
+      properties:
+        round:
+          type: integer
+        event_id:
+          type: integer
+        session_id:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        driver:
+          $ref: '#/components/schemas/Driver'
+        team:
+          $ref: '#/components/schemas/Team'
+        colour:
+          type: string
+          nullable: true
+        lap:
+          type: integer
+        stationary_s:
+          type: number
+          format: double
+          nullable: true
+        lane_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - colour
+      - country
+      - driver
+      - event_id
+      - lane_s
+      - lap
+      - name
+      - round
+      - session_id
+      - stationary_s
+      - team
     StopLoss:
       type: object
       properties:
@@ -3805,6 +4737,40 @@ components:
       - starts
       - wins
       - year
+    TeamStops:
+      type: object
+      properties:
+        team:
+          $ref: '#/components/schemas/Team'
+        colour:
+          type: string
+          nullable: true
+        stops:
+          type: integer
+        median_stationary_s:
+          type: number
+          format: double
+          nullable: true
+        best_stationary_s:
+          type: number
+          format: double
+          nullable: true
+        median_lane_s:
+          type: number
+          format: double
+          nullable: true
+        best_lane_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - best_lane_s
+      - best_stationary_s
+      - colour
+      - median_lane_s
+      - median_stationary_s
+      - stops
+      - team
     TeamTotals:
       type: object
       properties:
@@ -3840,6 +4806,57 @@ components:
       - seasons
       - starts
       - wins
+    Teammates:
+      type: object
+      properties:
+        a:
+          $ref: '#/components/schemas/SideTotals'
+        b:
+          $ref: '#/components/schemas/SideTotals'
+        shared_rounds:
+          type: integer
+        quali:
+          type: array
+          items:
+            type: integer
+          description: '[A ahead, B ahead]'
+        race:
+          type: array
+          items:
+            type: integer
+        pace:
+          type: array
+          items:
+            type: integer
+        median_quali_gap_s:
+          type: number
+          format: double
+          nullable: true
+        median_pace_gap_s:
+          type: number
+          format: double
+          nullable: true
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/DuelRound'
+        team:
+          $ref: '#/components/schemas/Team'
+        colour:
+          type: string
+          nullable: true
+      required:
+      - a
+      - b
+      - colour
+      - median_pace_gap_s
+      - median_quali_gap_s
+      - pace
+      - quali
+      - race
+      - rounds
+      - shared_rounds
+      - team
     TelemetryCar:
       type: object
       properties:
@@ -4181,4 +5198,14 @@ components:
             type: string
       required:
       - compounds
+      - stops
+    WinningStops:
+      type: object
+      properties:
+        stops:
+          type: integer
+        races:
+          type: integer
+      required:
+      - races
       - stops

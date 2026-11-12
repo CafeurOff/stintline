@@ -4,6 +4,91 @@
  */
 
 export interface paths {
+  "/api/v1/analysis/circuits": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Track DNA of every circuit raced since 2023, from our own figures */
+    get: operations["analysis_circuits_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analysis/head-to-head": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Two drivers over a season: qualifying, race and fuel-corrected pace duels */
+    get: operations["analysis_head_to_head_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analysis/seasons/{year}/consistency": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Drivers ranked by lap-to-lap scatter once tyre wear is removed (2023+) */
+    get: operations["analysis_consistency_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analysis/seasons/{year}/pit-stops": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Fastest stops, team averages, pit loss and undercuts of a season (2023+) */
+    get: operations["analysis_pit_stops_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/analysis/seasons/{year}/teammates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Every team's teammate duel over a season, best-scoring team first */
+    get: operations["analysis_teammates_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/drivers": {
     parameters: {
       query?: never;
@@ -330,6 +415,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/sessions/{session_id}/pace": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Race pace of every car: box plots, laps and fastest laps, with filters */
+    get: operations["session_pace_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}/pit-loss": {
     parameters: {
       query?: never;
@@ -611,6 +713,62 @@ export interface components {
       /** @description Small SVG path of the layout in a 100-unit box, from its newest timed race */
       readonly outline: string | null;
     };
+    CircuitProfile: {
+      circuit: components["schemas"]["Circuit"];
+      races: number;
+      latest_event_id: number;
+      latest_session_id: number;
+      /** Format: double */
+      lap_length_m: number | null;
+      /** Format: double */
+      top_speed_kph: number | null;
+      /** Format: double */
+      full_throttle_share: number | null;
+      braking_zones: number | null;
+      /** Format: double */
+      pit_loss_s: number | null;
+      /** Format: double */
+      pit_loss_sigma_s: number | null;
+      /**
+       * Format: double
+       * @description Median over dry races of the mean dry-compound slope
+       */
+      degradation_s_per_lap: number | null;
+      degradation: components["schemas"]["DryCompoundSlopes"];
+      safety_car_races: number;
+      vsc_races: number;
+      wet_races: number;
+      /** Format: double */
+      passes_per_race: number | null;
+      undercut_attempts: number;
+      undercut_successes: number;
+      winning_stops: components["schemas"]["WinningStops"][];
+      /** Format: double */
+      fastest_lap_s: number | null;
+      fastest_lap_year: number | null;
+      history: components["schemas"]["CircuitRace"][];
+    };
+    CircuitRace: {
+      year: number;
+      event_id: number;
+      session_id: number;
+      name: string;
+      winner: components["schemas"]["Driver"] | null;
+      winner_team: components["schemas"]["Team"] | null;
+      winner_colour: string | null;
+      winner_strategy: string[];
+      wet: boolean;
+      passes: number | null;
+      safety_cars: number;
+      virtual_safety_cars: number;
+      red_flags: number;
+      /** Format: double */
+      pit_loss_s: number | null;
+      /** Format: double */
+      fastest_lap_s: number | null;
+      undercut_attempts: number;
+      undercut_successes: number;
+    };
     Compare: {
       car_a: number;
       car_b: number;
@@ -650,6 +808,26 @@ export interface components {
       /** Format: double */
       new_tyre_pace_s: number;
       low_confidence: boolean;
+    };
+    Consistency: {
+      driver: components["schemas"]["Driver"];
+      team: components["schemas"]["Team"];
+      colour: string | null;
+      /** Format: double */
+      median_spread_s: number;
+      best: components["schemas"]["SpreadRace"];
+      worst: components["schemas"]["SpreadRace"];
+      races: components["schemas"]["ConsistencyRace"][];
+    };
+    ConsistencyRace: {
+      round: number;
+      event_id: number;
+      session_id: number;
+      name: string;
+      country: string;
+      /** Format: double */
+      spread_s: number | null;
+      clean_laps: number;
     };
     Decisive: {
       /** @description First lap of the winner's last spell in the lead */
@@ -755,6 +933,34 @@ export interface components {
       /** Format: int64 */
       fastest_lap_rank?: number | null;
     };
+    DryCompoundSlopes: {
+      /** Format: double */
+      SOFT: number | null;
+      /** Format: double */
+      MEDIUM: number | null;
+      /** Format: double */
+      HARD: number | null;
+    };
+    DuelRound: {
+      round: number;
+      event_id: number;
+      name: string;
+      country: string;
+      /** @description Timed race, if any */
+      session_id: number | null;
+      a: components["schemas"]["SideRound"];
+      b: components["schemas"]["SideRound"];
+      /**
+       * Format: double
+       * @description A minus B in the last segment both set a time in
+       */
+      quali_gap_s: number | null;
+      /**
+       * Format: double
+       * @description A minus B: median fuel-corrected clean lap (negative = A faster)
+       */
+      pace_gap_s: number | null;
+    };
     Entry: {
       /** Format: int64 */
       car_number: number;
@@ -833,6 +1039,14 @@ export interface components {
       format: components["schemas"]["FormatEnum"];
       readonly circuit: components["schemas"]["Circuit"];
     };
+    FastestLap: {
+      car_number: number;
+      lap: number;
+      /** Format: double */
+      time_s: number;
+      compound: string;
+      tyre_age: number | null;
+    };
     FastestStop: {
       entry: components["schemas"]["ReportEntry"];
       lap: number;
@@ -857,6 +1071,21 @@ export interface components {
       seconds_per_kg: number;
       /** Format: double */
       gain_per_lap_s: number;
+    };
+    HeadToHead: {
+      a: components["schemas"]["SideTotals"];
+      b: components["schemas"]["SideTotals"];
+      shared_rounds: number;
+      /** @description [A ahead, B ahead] */
+      quali: number[];
+      race: number[];
+      pace: number[];
+      /** Format: double */
+      median_quali_gap_s: number | null;
+      /** Format: double */
+      median_pace_gap_s: number | null;
+      rounds: components["schemas"]["DuelRound"][];
+      season: number;
     };
     Headline: {
       /** @description racedata FeedConfig.key */
@@ -1095,6 +1324,48 @@ export interface components {
     };
     /** @enum {unknown} */
     NullEnum: null;
+    PaceCar: {
+      car_number: number;
+      entry: components["schemas"]["PaceEntry"];
+      summary: components["schemas"]["PaceSummary"] | null;
+      laps: components["schemas"]["PaceLap"][];
+    };
+    PaceEntry: {
+      driver: components["schemas"]["Driver"];
+      team: components["schemas"]["Team"];
+      team_colour: string;
+    };
+    PaceLap: {
+      lap: number;
+      /** Format: double */
+      time_s: number;
+      /**
+       * Format: double
+       * @description Raw or fuel-corrected, as requested
+       */
+      value_s: number;
+      compound: string;
+      tyre_age: number | null;
+      kept: boolean;
+    };
+    PaceSummary: {
+      n: number;
+      /** Format: double */
+      median_s: number;
+      /** Format: double */
+      q1_s: number;
+      /** Format: double */
+      q3_s: number;
+      /** Format: double */
+      low_s: number;
+      /** Format: double */
+      high_s: number;
+      /** Format: double */
+      mean_s: number;
+      /** Format: double */
+      std_s: number;
+      outliers_s: number[];
+    };
     PaginatedDriverListItemList: {
       /** @example 123 */
       count: number;
@@ -1235,6 +1506,17 @@ export interface components {
        */
       reported_duration_s?: number | null;
     };
+    PitStops: {
+      season: number;
+      stops: number;
+      /** @description Stops with a stationary time */
+      timed_stops: number;
+      undercut_attempts: number;
+      undercut_successes: number;
+      fastest: components["schemas"]["Stop"][];
+      teams: components["schemas"]["TeamStops"][];
+      races: components["schemas"]["RaceStops"][];
+    };
     PitSummary: {
       total: number;
       fastest: components["schemas"]["FastestStop"] | null;
@@ -1331,6 +1613,25 @@ export interface components {
       teams: components["schemas"]["TeamPoints"][];
       standings: components["schemas"]["StandingChange"][];
       results: components["schemas"]["ResultLine"][];
+    };
+    RaceStops: {
+      round: number;
+      event_id: number;
+      session_id: number;
+      name: string;
+      country: string;
+      stops: number;
+      /** Format: double */
+      median_stationary_s: number | null;
+      /** Format: double */
+      median_lane_s: number | null;
+      fastest: components["schemas"]["Stop"] | null;
+      /** Format: double */
+      pit_loss_s: number | null;
+      /** Format: double */
+      pit_loss_sigma_s: number | null;
+      undercut_attempts: number;
+      undercut_successes: number;
     };
     Radio: {
       /** Format: date-time */
@@ -1454,12 +1755,64 @@ export interface components {
       readonly entries: components["schemas"]["Entry"][];
       readonly neutralisations: components["schemas"]["Neutralisation"][];
     };
+    SessionPace: {
+      session_id: number;
+      total_laps: number;
+      fuel_corrected: boolean;
+      /** Format: double */
+      fuel_gain_per_lap_s: number;
+      /** Format: double */
+      cutoff_pct: number | null;
+      include_pit_laps: boolean;
+      include_neutralised: boolean;
+      cars: components["schemas"]["PaceCar"][];
+      fastest_laps: components["schemas"]["FastestLap"][];
+    };
     SessionSummary: {
       readonly id: number;
       kind: components["schemas"]["KindEnum"];
       /** Format: date-time */
       scheduled_start?: string | null;
       readonly has_data: boolean;
+    };
+    SideRound: {
+      quali: number | null;
+      finish: number | null;
+      classification: string;
+      status: string;
+      /** Format: double */
+      points: number;
+      team_ref: string;
+    };
+    SideTotals: {
+      driver: components["schemas"]["Driver"];
+      team: components["schemas"]["Team"];
+      colour: string | null;
+      starts: number;
+      /** Format: double */
+      points: number;
+      wins: number;
+      podiums: number;
+      /** @description Qualifying first (grid first before 1994) */
+      poles: number;
+      finishes: number;
+      retirements: number;
+      best_finish: number | null;
+      /** Format: double */
+      average_quali: number | null;
+      /** Format: double */
+      average_finish: number | null;
+      /** @description Timed seasons only (2023+) */
+      laps_led: number | null;
+    };
+    SpreadRace: {
+      round: number;
+      event_id: number;
+      session_id: number;
+      name: string;
+      country: string;
+      /** Format: double */
+      spread_s: number | null;
     };
     StandingChange: {
       driver: components["schemas"]["Driver"];
@@ -1542,6 +1895,21 @@ export interface components {
       rmse_s: number;
       n_laps: number;
       points: components["schemas"]["DegradationPoint"][];
+    };
+    Stop: {
+      round: number;
+      event_id: number;
+      session_id: number;
+      name: string;
+      country: string;
+      driver: components["schemas"]["Driver"];
+      team: components["schemas"]["Team"];
+      colour: string | null;
+      lap: number;
+      /** Format: double */
+      stationary_s: number | null;
+      /** Format: double */
+      lane_s: number | null;
     };
     StopLoss: {
       car_number: number;
@@ -1660,6 +2028,19 @@ export interface components {
       points: number;
       championship_position: number | null;
     };
+    TeamStops: {
+      team: components["schemas"]["Team"];
+      colour: string | null;
+      stops: number;
+      /** Format: double */
+      median_stationary_s: number | null;
+      /** Format: double */
+      best_stationary_s: number | null;
+      /** Format: double */
+      median_lane_s: number | null;
+      /** Format: double */
+      best_lane_s: number | null;
+    };
     TeamTotals: {
       seasons: number;
       first_season: number | null;
@@ -1672,6 +2053,22 @@ export interface components {
       /** Format: double */
       points: number;
       championships: number;
+    };
+    Teammates: {
+      a: components["schemas"]["SideTotals"];
+      b: components["schemas"]["SideTotals"];
+      shared_rounds: number;
+      /** @description [A ahead, B ahead] */
+      quali: number[];
+      race: number[];
+      pace: number[];
+      /** Format: double */
+      median_quali_gap_s: number | null;
+      /** Format: double */
+      median_pace_gap_s: number | null;
+      rounds: components["schemas"]["DuelRound"][];
+      team: components["schemas"]["Team"];
+      colour: string | null;
     };
     TelemetryCar: {
       car_number: number;
@@ -1803,6 +2200,10 @@ export interface components {
       stops: number;
       compounds: string[];
     };
+    WinningStops: {
+      stops: number;
+      races: number;
+    };
   };
   responses: never;
   parameters: never;
@@ -1812,6 +2213,178 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+  analysis_circuits_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CircuitProfile"][];
+        };
+      };
+    };
+  };
+  analysis_head_to_head_retrieve: {
+    parameters: {
+      query?: {
+        /** @description Driver ref, e.g. `norris` */
+        a?: string;
+        /** @description Driver ref, e.g. `piastri` */
+        b?: string;
+        /** @description Season, e.g. `2025` */
+        season?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HeadToHead"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  analysis_consistency_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Consistency"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  analysis_pit_stops_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PitStops"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  analysis_teammates_list: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Teammates"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   drivers_list: {
     parameters: {
       query?: {
@@ -2313,6 +2886,52 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Lap"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_pace_retrieve: {
+    parameters: {
+      query?: {
+        /** @description % of the fastest lap, 0 keeps all */
+        cutoff?: number;
+        /** @description Fuel-corrected times (default true) */
+        fuel?: boolean;
+        /** @description Keep in-laps and out-laps */
+        pit?: boolean;
+        /** @description Keep neutralised and restart laps */
+        sc?: boolean;
+      };
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SessionPace"];
         };
       };
       400: {
