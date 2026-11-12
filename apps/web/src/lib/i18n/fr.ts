@@ -221,6 +221,8 @@ export const fr: Record<MessageKey, string> = {
   "home.upcoming": "À venir",
   "home.nextTag": "Prochain",
   "home.lapsDown": "+{laps} tour(s)",
+  "dash.up": "places gagnées",
+  "dash.down": "places perdues",
   "dash.nextSession": "Prochaine séance",
   "dash.season": "Saison {season}",
   "dash.seasonDone": "{done} manches sur {total}",

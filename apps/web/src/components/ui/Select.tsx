@@ -7,6 +7,7 @@ interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, "id"
   children: ReactNode;
 }
 
+/** Native select drawn as a filter pill: the label, then the current value. */
 export function Select({
   label,
   hideLabel = false,
@@ -16,13 +17,15 @@ export function Select({
 }: SelectProps) {
   const id = useId();
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm text-muted"}>
+    <div
+      className={`flex items-center gap-2 rounded-lg border border-line bg-panel py-1 pr-1 pl-3 ${className}`}
+    >
+      <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm font-semibold"}>
         {label}
       </label>
       <select
         id={id}
-        className="rounded-lg border border-line bg-panel px-2.5 py-1.5 font-semibold text-ink"
+        className="min-w-0 rounded-md bg-raised px-2 py-1 text-sm font-semibold text-ink"
         {...props}
       >
         {children}

@@ -1,8 +1,6 @@
 import type { Schema } from "@stintline/api-types";
 import {
-  ArrowDown,
   ArrowRight,
-  ArrowUp,
   CalendarDays,
   Flag as FlagIcon,
   Newspaper,
@@ -14,9 +12,13 @@ import {
   Wrench,
   Zap,
 } from "lucide-react";
-import { type CSSProperties, type ReactNode, useId, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 
+import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { Face } from "@/components/dash/Face";
+import { Move } from "@/components/dash/Move";
+import { Panel, Tile } from "@/components/dash/Panel";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
@@ -111,105 +113,6 @@ function Dashboard({ home }: { home: Schema<"Home"> }) {
 
 /* ------------------------------------------------------------------ shells */
 
-function Tile({ label, icon, children }: { label: string; icon: ReactNode; children: ReactNode }) {
-  const id = useId();
-  return (
-    <section
-      aria-labelledby={id}
-      className="relative flex min-h-36 flex-col gap-3 overflow-hidden rounded-xl border border-line bg-panel p-5"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h2 id={id} className="text-sm font-semibold">
-          {label}
-        </h2>
-        <span
-          aria-hidden="true"
-          className="grid size-8 shrink-0 place-items-center rounded-lg border border-line text-muted"
-        >
-          {icon}
-        </span>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Panel({
-  id,
-  title,
-  icon,
-  action,
-  children,
-  className = "",
-}: {
-  id: string;
-  title: string;
-  icon: ReactNode;
-  action?: ReactNode;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <section
-      aria-labelledby={id}
-      className={`flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-panel ${className}`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-        <h2 id={id} className="flex items-center gap-2.5 text-lg font-bold">
-          <span aria-hidden="true" className="text-mark-text">
-            {icon}
-          </span>
-          {title}
-        </h2>
-        {action}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/** Driver photo, or the code on the team colour when there is none. Decorative. */
-function Face({
-  url,
-  label,
-  colour,
-  className,
-  style,
-}: {
-  url: string | null | undefined;
-  label: string;
-  colour: string | null | undefined;
-  className: string;
-  style?: CSSProperties;
-}) {
-  const [failed, setFailed] = useState(false);
-  const fill = teamColour(colour);
-  if (url && !failed) {
-    return (
-      <img
-        src={url}
-        alt=""
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          setFailed(true);
-        }}
-        className={`object-cover object-top ${className}`}
-        style={style ?? { backgroundColor: teamTint(colour, 35) }}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={`grid place-items-center font-bold ${className}`}
-      style={{ backgroundColor: fill, color: inkOn(fill) }}
-    >
-      {label}
-    </span>
-  );
-}
-
 function photoOf(entry: { driver: Schema<"Driver">; media?: Schema<"Media"> | null }) {
   return entry.media?.driver_image_url ?? entry.driver.photo_url;
 }
@@ -217,8 +120,6 @@ function photoOf(entry: { driver: Schema<"Driver">; media?: Schema<"Media"> | nu
 function codeOf(driver: Schema<"Driver">): string {
   return driver.code ?? initials(driver.given_name, driver.family_name);
 }
-
-const TRANSPARENT = { backgroundColor: "transparent" } as const;
 
 /* ------------------------------------------------------------------- tiles */
 
@@ -375,7 +276,7 @@ function WinnerTile({
         label={codeOf(winner.driver)}
         colour={winner.team_colour}
         className="absolute -right-2 bottom-0 h-[125%] w-36"
-        style={TRANSPARENT}
+        style={NO_BACKDROP}
       />
     </section>
   );
@@ -591,7 +492,7 @@ function LastRaceBanner({ race }: { race: Schema<"LastRace"> }) {
                     label={codeOf(entry.driver)}
                     colour={entry.team_colour}
                     className={`w-full text-3xl ${index === 0 ? "h-60" : "h-48"}`}
-                    style={TRANSPARENT}
+                    style={NO_BACKDROP}
                   />
                   <span
                     className="flex items-center gap-2 p-2.5"
@@ -747,22 +648,6 @@ function StandingsTable({
         <ArrowRight aria-hidden="true" className="size-4" />
       </Link>
     </Panel>
-  );
-}
-
-function Move({ value }: { value: number }) {
-  if (value === 0) return <span className="text-muted">—</span>;
-  const up = value > 0;
-  const Icon = up ? ArrowUp : ArrowDown;
-  return (
-    <span
-      className={`num inline-flex items-center gap-0.5 text-xs font-semibold ${
-        up ? "text-gain" : "text-loss"
-      }`}
-    >
-      <Icon aria-hidden="true" className="size-3.5" />
-      {Math.abs(value)}
-    </span>
   );
 }
 

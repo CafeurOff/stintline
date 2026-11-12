@@ -218,6 +218,8 @@ export const en = {
   "home.upcoming": "To come",
   "home.nextTag": "Next",
   "home.lapsDown": "+{laps} lap(s)",
+  "dash.up": "places gained",
+  "dash.down": "places lost",
   "dash.nextSession": "Next session",
   "dash.season": "{season} season",
   "dash.seasonDone": "{done} of {total} rounds",

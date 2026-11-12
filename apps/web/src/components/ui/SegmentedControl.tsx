@@ -25,11 +25,11 @@ export function SegmentedControl<T extends string>({
   return (
     <fieldset className="flex min-w-0 flex-col gap-1">
       <legend className={hideLegend ? "sr-only" : "mb-1 text-sm text-muted"}>{legend}</legend>
-      <div className="relative flex overflow-x-auto rounded-lg bg-raised p-1">
+      <div className="relative flex overflow-x-auto rounded-lg border border-line bg-panel p-1">
         {options.map((option) => (
           <label
             key={option.value}
-            className="flex-1 shrink-0 cursor-pointer rounded-md px-3 py-1.5 text-center whitespace-nowrap text-muted transition has-checked:bg-panel has-checked:font-bold has-checked:text-ink has-focus-visible:outline-2 has-focus-visible:outline-mark"
+            className="flex-1 shrink-0 cursor-pointer rounded-md px-3 py-1.5 text-center whitespace-nowrap text-muted transition has-checked:bg-ink has-checked:font-semibold has-checked:text-bg has-focus-visible:outline-2 has-focus-visible:outline-mark"
           >
             <input
               type="radio"
