@@ -1,39 +1,45 @@
 @import "tailwindcss";
-@import "@fontsource/titillium-web/400.css";
-@import "@fontsource/titillium-web/600.css";
-@import "@fontsource/titillium-web/700.css";
-@import "@fontsource/titillium-web/900.css";
-@import "@fontsource/titillium-web/700-italic.css";
+@import "@fontsource-variable/archivo/standard.css";
+@import "@fontsource-variable/archivo/standard-italic.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
 
 /*
- * Design tokens. The circuit is the interface: a quiet, near-black ground (dark, default)
- * or a warm paper ground (light), one race red for marks and actions, team colours for
- * cars. Titillium Web, self-hosted (up to 900). Broadcast style (ADR 0014): cards carry data,
- * no glows, a faint stripe texture on heroes only.
+ * Design tokens, "pit wall" direction (docs/design.md). The look comes from timing sheets and
+ * pit-wall screens: a graphite ground, hairlines instead of cards, numbers in a monospace,
+ * and colour that carries timing meaning (purple fastest, green personal best, yellow
+ * slower or flag, red live). Team colours identify cars and nothing else.
  *
- * Contrast (WCAG AA): text >= 12:1, muted >= 6:1 on bg and panel in both themes.
- * `mark` is a fill (>= 3:1 on surfaces); text in red uses `mark-text`; white on
+ * Contrast (WCAG AA): text >= 12:1, muted >= 6:1 on bg and panel in both themes; timing
+ * colours >= 4.5:1 as text on bg. `mark` is a fill; red text uses `mark-text`; white on
  * `action` >= 5:1. Compound fills are shared by both themes and carry a dark letter.
  */
 @theme {
-  --color-bg: #0d0d10;
-  --color-panel: #15151a;
-  --color-raised: #1d1d24;
-  --color-line: #26262e;
-  --color-line-strong: #3a3a44;
-  --color-track: #2c2c35;
-  --color-track-edge: #3d3d48;
-  --color-ink: #f1f1f3;
-  --color-muted: #a3a3ad;
-  --color-mark: #ff3b3b;
-  --color-mark-text: #ff7070;
-  --color-action: #d4101a;
+  --color-bg: #0f1012;
+  --color-panel: #141518;
+  --color-raised: #1b1c20;
+  --color-line: #25272c;
+  --color-line-strong: #373a41;
+  --color-track: #2a2c32;
+  --color-track-edge: #3b3e46;
+  --color-ink: #ececee;
+  --color-muted: #9b9da5;
+  --color-mark: #ff2d2d;
+  --color-mark-text: #ff6b66;
+  --color-action: #c8102e;
   --color-ghost: #ffffff;
   --color-zone: rgb(255 255 255 / 0.16);
-  --color-gain: #3ddc6f;
-  --color-loss: #ff7070;
-  --color-caution: #ffd400;
-  --color-tyre-ink: #15151a;
+  --color-gain: #34d07a;
+  --color-loss: #ff6b66;
+  --color-caution: #f5c518;
+  --color-tyre-ink: #141518;
+
+  /* Timing semantics (live tower, sectors, fastest laps). */
+  --color-t-purple: #b98cff;
+  --color-t-green: #34d07a;
+  --color-t-yellow: #f5c518;
+  --color-t-blue: #5aaaff;
 
   --color-tyre-soft: #ef4b51;
   --color-tyre-medium: #f0c430;
@@ -42,26 +48,31 @@
   --color-tyre-wet: #3d8bfd;
   --color-tyre-unknown: #9b9993;
 
-  --font-sans: "Titillium Web", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Archivo Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
 :root[data-theme="light"] {
   --color-bg: #f3f2ee;
-  --color-panel: #ffffff;
-  --color-raised: #ebeae5;
-  --color-line: #e2e1dc;
-  --color-line-strong: #c9c8c2;
+  --color-panel: #fbfaf7;
+  --color-raised: #e9e8e3;
+  --color-line: #dddcd6;
+  --color-line-strong: #c4c3bc;
   --color-track: #d6d5cf;
   --color-track-edge: #c2c1ba;
-  --color-ink: #15151a;
-  --color-muted: #5d5d66;
+  --color-ink: #141518;
+  --color-muted: #5b5d65;
   --color-mark: #d4101a;
-  --color-mark-text: #b80d16;
-  --color-ghost: #15151a;
-  --color-zone: rgb(21 21 26 / 0.14);
-  --color-gain: #1d7a3e;
-  --color-loss: #b80d16;
-  --color-caution: #8a6d00;
+  --color-mark-text: #b30d16;
+  --color-ghost: #141518;
+  --color-zone: rgb(20 21 24 / 0.14);
+  --color-gain: #12753a;
+  --color-loss: #b30d16;
+  --color-caution: #7d6300;
+  --color-t-purple: #6f35c9;
+  --color-t-green: #12753a;
+  --color-t-yellow: #7d6300;
+  --color-t-blue: #1a62c2;
 }
 
 html {
@@ -83,6 +94,28 @@ body {
 /* Timing figures line up digit by digit. */
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+/* Every number on a timing sheet: monospace, aligned, zero told apart from O. */
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  letter-spacing: -0.01em;
+}
+
+/* Condensed Archivo for headings and names in narrow columns. */
+.condensed {
+  font-stretch: 72%;
+}
+
+/* The one signature shape: a pit-board corner cut at 45 degrees (top right). */
+.chamfer {
+  clip-path: polygon(0 0, calc(100% - var(--cut, 6px)) 0, 100% var(--cut, 6px), 100% 100%, 0 100%);
+}
+
+/* Kerb stripes, only where they mean something (live state, track limits). */
+.kerb {
+  background-image: repeating-linear-gradient(90deg, var(--color-mark) 0 8px, #ffffff 8px 16px);
 }
 
 @media (prefers-reduced-motion: reduce) {

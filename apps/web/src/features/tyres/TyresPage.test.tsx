@@ -10,7 +10,7 @@ describe("TyresPage", () => {
   it("says how fast each compound wears, softest first", async () => {
     renderRoute(path);
 
-    const items = await screen.findAllByRole("listitem");
+    const items = await within(await screen.findByRole("main")).findAllByRole("listitem");
     expect(items[0]).toHaveTextContent(/Softs\s*lose 101\sms per lap/);
     expect(items[2]).toHaveTextContent(/Hards\s*lose 45\sms per lap/);
   });
@@ -19,7 +19,7 @@ describe("TyresPage", () => {
     renderRoute(path);
 
     const strategies = await screen.findByRole("region", { name: "Who ran what" });
-    const [first] = within(strategies).getAllByRole("listitem");
+    const [first] = await within(strategies).findAllByRole("listitem");
     if (!first) throw new Error("no strategy rows");
     expect(first).toHaveTextContent("NOR");
     expect(within(first).getByRole("img", { name: "Medium 1–31" })).toBeVisible();

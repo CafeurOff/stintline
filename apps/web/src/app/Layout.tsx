@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { type ReactNode, Suspense, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useMatch } from "react-router";
 
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -7,6 +7,7 @@ import { useLiveStatus } from "@/features/live/api";
 import { useSessionDetail } from "@/features/race/api";
 import { RacePicker } from "@/features/session-picker/RacePicker";
 import { eventName } from "@/lib/i18n/content";
+import type { MessageKey } from "@/lib/i18n/en";
 import { useI18n } from "@/lib/i18n/context";
 import { sessionLabel } from "@/lib/sessions";
 import { timeLeft, useClock } from "@/lib/useClock";
@@ -14,22 +15,38 @@ import { timeLeft, useClock } from "@/lib/useClock";
 import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
 
-const SECTIONS = [
-  ["/calendar", "nav.calendar"],
-  ["/drivers", "nav.drivers"],
-  ["/teams", "nav.teams"],
-  ["/standings", "nav.standings"],
-  ["/news", "nav.news"],
-  ["/model", "nav.model"],
-] as const;
+type Section = readonly [to: string, key: MessageKey];
 
-const navLink = ({ isActive }: { isActive: boolean }) =>
-  `relative flex h-full shrink-0 items-center px-1 text-sm font-semibold tracking-wide uppercase transition-colors after:absolute after:inset-x-0 after:bottom-0 after:h-[3px] after:-skew-x-[16deg] ${
-    isActive ? "text-ink after:bg-mark" : "text-muted after:bg-transparent hover:text-ink"
+/** The site map, grouped by what a fan is looking for. Live is first in its group. */
+const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
+  {
+    key: "nav.group.weekend",
+    links: [
+      ["/live", "nav.live"],
+      ["/calendar", "nav.calendar"],
+    ],
+  },
+  {
+    key: "nav.group.championship",
+    links: [
+      ["/standings", "nav.standings"],
+      ["/drivers", "nav.drivers"],
+      ["/teams", "nav.teams"],
+    ],
+  },
+  { key: "nav.group.paddock", links: [["/news", "nav.news"]] },
+  { key: "nav.group.about", links: [["/model", "nav.model"]] },
+];
+
+const railLink = ({ isActive }: { isActive: boolean }) =>
+  `relative flex h-9 items-center gap-2.5 pr-3 pl-5 text-[0.9rem] transition-colors before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] ${
+    isActive
+      ? "font-semibold text-ink before:bg-mark"
+      : "text-muted before:bg-transparent hover:bg-raised hover:text-ink"
   }`;
 
 const tabLink = ({ isActive }: { isActive: boolean }) =>
-  `shrink-0 border-b-2 py-1 font-semibold ${
+  `flex h-12 shrink-0 items-center border-b-2 font-semibold ${
     isActive ? "border-mark text-ink" : "border-transparent text-muted hover:text-ink"
   }`;
 
@@ -41,29 +58,103 @@ export function Layout() {
   const sessionId = raw && /^\d+$/.test(raw) ? Number(raw) : null;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
       <a
         href="#main"
-        className="sr-only z-50 rounded-md bg-panel px-3 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
+        className="sr-only z-50 bg-panel px-3 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
       >
         {t("app.skip")}
       </a>
-      <SiteHeader />
-      <div className="mx-auto flex w-full max-w-[1360px] flex-1 flex-col px-4 pt-6 sm:px-6">
-        {sessionId !== null && <RaceBar sessionId={sessionId} onTyres={tyres !== null} />}
-        <main id="main" tabIndex={-1} className="flex-1 pb-12">
-          <Suspense fallback={<Skeleton className="h-[60vh]" />}>
-            <Outlet />
-          </Suspense>
-        </main>
+      <Rail />
+      <div className="flex min-h-screen min-w-0 flex-col">
+        <ContextBar>
+          {sessionId !== null && <RaceBar sessionId={sessionId} onTyres={tyres !== null} />}
+        </ContextBar>
+        <div className="mx-auto flex w-full max-w-[1360px] flex-1 flex-col px-4 pt-6 sm:px-8">
+          <main id="main" tabIndex={-1} className="flex-1 pb-16">
+            <Suspense fallback={<Skeleton className="h-[60vh]" />}>
+              <Outlet />
+            </Suspense>
+          </main>
+        </div>
+        <SiteFooter />
       </div>
-      <SiteFooter />
     </div>
   );
 }
 
-/** Sticky broadcast-style bar: brand, sections, live state or next session, settings. */
-function SiteHeader() {
+function Wordmark() {
+  return (
+    <Link to="/" className="flex items-center gap-2.5" aria-label="StintLine">
+      <span aria-hidden="true" className="chamfer size-5 bg-mark [--cut:7px]" />
+      <span className="condensed text-[1.35rem] leading-none font-extrabold tracking-tight uppercase">
+        StintLine
+      </span>
+    </Link>
+  );
+}
+
+function NavGroups({ onPick }: { onPick?: () => void }) {
+  const { t } = useI18n();
+  return (
+    <>
+      {GROUPS.map((group) => (
+        <div key={group.key} className="flex flex-col">
+          <span className="px-5 pt-5 pb-1.5 text-xs font-medium text-muted">{t(group.key)}</span>
+          <ul className="flex flex-col">
+            {group.links.map(([to, key]) => (
+              <li key={to}>
+                <NavLink to={to} className={railLink} onClick={onPick}>
+                  {to === "/live" && <LiveMark />}
+                  {t(key)}
+                  {to === "/live" && <LiveNote />}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Desktop: the site map in a fixed rail. Phones get a top bar and a drawer instead. */
+function Rail() {
+  const { t } = useI18n();
+  return (
+    <div className="hidden border-r border-line bg-panel lg:block">
+      <div className="sticky top-0 flex h-screen flex-col">
+        <div className="flex h-14 shrink-0 items-center border-b border-line px-5">
+          <Wordmark />
+        </div>
+        <nav aria-label={t("nav.label")} className="flex-1 overflow-y-auto pb-4">
+          <NavGroups />
+        </nav>
+        <div className="border-t border-line px-3 py-2">
+          <LanguageToggle />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Live state as on a timing screen: a kerb flag when a session runs, a grey tick otherwise. */
+function LiveMark() {
+  const live = useLiveStatus().data?.state === "live";
+  return <span aria-hidden="true" className={`h-2.5 w-4 ${live ? "kerb" : "bg-line-strong"}`} />;
+}
+
+function LiveNote() {
+  const { t } = useI18n();
+  const live = useLiveStatus().data?.state === "live";
+  return live ? <span className="sr-only"> ({t("live.now")})</span> : null;
+}
+
+/**
+ * The bar above every page: the race context on race pages (picker and views), the next
+ * session or the live state on the right. On phones it also carries the brand and the menu.
+ */
+function ContextBar({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { pathname } = useLocation();
   // The menu belongs to the page it was opened on: navigating closes it.
@@ -71,31 +162,13 @@ function SiteHeader() {
   const open = openOn === pathname;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg/90 backdrop-blur-md">
-      <div aria-hidden="true" className="h-1 bg-mark" />
-      <div className="mx-auto flex h-16 w-full max-w-[1360px] items-center gap-6 px-4 sm:px-6">
-        <Link to="/" className="flex shrink-0 items-center gap-2" aria-label="StintLine">
-          <span aria-hidden="true" className="flex gap-0.5">
-            <span className="h-6 w-2 -skew-x-[18deg] bg-mark" />
-            <span className="h-6 w-1 -skew-x-[18deg] bg-mark/60" />
-          </span>
-          <span className="text-xl font-black tracking-tight uppercase italic">
-            Stint<span className="text-mark-text">Line</span>
-          </span>
-        </Link>
-        <nav aria-label={t("nav.label")} className="hidden h-full items-stretch gap-5 lg:flex">
-          <LiveNavLink />
-          {SECTIONS.map(([to, key]) => (
-            <NavLink key={to} to={to} className={navLink}>
-              {t(key)}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="ml-auto flex items-center gap-2">
-          <NextSessionChip />
-          <div className="hidden items-center sm:flex">
-            <LanguageToggle />
-          </div>
+    <header className="sticky top-0 z-40 border-b border-line bg-bg">
+      <div className="flex flex-wrap items-center gap-x-4 px-4 sm:px-8">
+        <div className="flex h-14 items-center lg:hidden">
+          <Wordmark />
+        </div>
+        <div className="ml-auto flex h-14 items-center gap-2 lg:order-2">
+          <NextSession />
           <ThemeToggle />
           <button
             type="button"
@@ -105,7 +178,7 @@ function SiteHeader() {
             onClick={() => {
               setOpenOn(open ? null : pathname);
             }}
-            className="inline-flex size-10 items-center justify-center rounded-md hover:bg-raised lg:hidden"
+            className="inline-flex size-10 items-center justify-center hover:bg-raised lg:hidden"
           >
             <svg aria-hidden="true" viewBox="0 0 24 24" className="size-6" fill="none">
               {open ? (
@@ -116,39 +189,24 @@ function SiteHeader() {
             </svg>
           </button>
         </div>
+        {children && (
+          <div className="-mx-4 flex w-[calc(100%+2rem)] min-w-0 items-center gap-6 overflow-x-auto border-t border-line px-4 sm:-mx-8 sm:w-[calc(100%+4rem)] sm:px-8 lg:order-1 lg:mx-0 lg:w-auto lg:flex-1 lg:border-0 lg:px-0">
+            {children}
+          </div>
+        )}
       </div>
       {open && (
         <nav
           id="site-menu"
           aria-label={t("nav.label")}
-          className="border-t border-line bg-bg px-4 pb-6 lg:hidden"
+          className="max-h-[calc(100vh-3.5rem)] overflow-y-auto border-t border-line bg-panel pb-4 lg:hidden"
         >
-          <ul className="mx-auto flex max-w-[1360px] flex-col">
-            <li>
-              <NavLink
-                to="/live"
-                className="flex items-center gap-3 border-b border-line py-4 text-2xl font-bold uppercase"
-              >
-                <LiveDot />
-                {t("nav.live")}
-              </NavLink>
-            </li>
-            {SECTIONS.map(([to, key]) => (
-              <li key={to}>
-                <NavLink
-                  to={to}
-                  className={({ isActive }) =>
-                    `block border-b border-line py-4 text-2xl font-bold uppercase ${
-                      isActive ? "text-mark-text" : ""
-                    }`
-                  }
-                >
-                  {t(key)}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-4 sm:hidden">
+          <NavGroups
+            onPick={() => {
+              setOpenOn(null);
+            }}
+          />
+          <div className="mt-4 px-3">
             <LanguageToggle />
           </div>
         </nav>
@@ -157,42 +215,15 @@ function SiteHeader() {
   );
 }
 
-function LiveDot() {
-  const live = useLiveStatus().data?.state === "live";
-  return (
-    <span aria-hidden="true" className="relative flex size-2.5">
-      {live && <span className="absolute inset-0 animate-ping rounded-full bg-mark opacity-75" />}
-      <span className={`relative size-2.5 rounded-full ${live ? "bg-mark" : "bg-line-strong"}`} />
-    </span>
-  );
-}
-
-function LiveNavLink() {
-  const { t } = useI18n();
-  const live = useLiveStatus().data?.state === "live";
-  return (
-    <NavLink to="/live" className={navLink}>
-      <span className="inline-flex items-center gap-2">
-        <LiveDot />
-        {t("nav.live")}
-        {live && <span className="sr-only"> ({t("live.now")})</span>}
-      </span>
-    </NavLink>
-  );
-}
-
-/** "LIVE" while a session runs, otherwise the next session and a countdown. */
-function NextSessionChip() {
+/** "Live" while a session runs, otherwise the next session and the time left, in mono. */
+function NextSession() {
   const { t, locale } = useI18n();
   const status = useLiveStatus().data;
   const now = useClock(30_000);
   if (status?.state === "live") {
     return (
-      <Link
-        to="/live"
-        className="flex items-center gap-2 rounded-full bg-mark px-3 py-1 text-sm font-bold text-white uppercase"
-      >
-        <span className="size-2 animate-pulse rounded-full bg-white" />
+      <Link to="/live" className="flex items-center gap-2 font-semibold text-mark-text">
+        <span aria-hidden="true" className="kerb h-2.5 w-5" />
         {t("live.now")}
       </Link>
     );
@@ -205,19 +236,12 @@ function NextSessionChip() {
       ? t("header.inDays", { days: left.days, hours: left.hours })
       : t("header.inHours", { hours: left.hours, minutes: left.minutes });
   return (
-    <Link
-      to="/live"
-      className="hidden items-center gap-3 rounded-lg border border-line bg-panel px-3 py-1.5 text-sm hover:border-line-strong xl:flex"
-    >
-      <span className="flex flex-col leading-tight">
-        <span className="text-[0.65rem] font-semibold tracking-widest text-muted uppercase">
-          {t("header.next")} · {sessionLabel(next.kind, t)}
-        </span>
-        <span className="font-bold">{eventName(next.event_name, locale)}</span>
+    <Link to="/live" className="group hidden items-baseline gap-3 text-sm sm:flex">
+      <span className="text-muted">
+        {t("header.next")} · {sessionLabel(next.kind, t)} ·{" "}
+        <span className="text-ink group-hover:underline">{eventName(next.event_name, locale)}</span>
       </span>
-      <span className="rounded-md bg-raised px-2 py-1 font-black text-mark-text tabular-nums">
-        {when}
-      </span>
+      <span className="num font-medium text-ink">{when}</span>
     </Link>
   );
 }
@@ -225,39 +249,10 @@ function NextSessionChip() {
 function SiteFooter() {
   const { t } = useI18n();
   return (
-    <footer className="mt-auto border-t border-line bg-panel">
-      <div className="mx-auto grid w-full max-w-[1360px] gap-8 px-4 py-10 sm:px-6 md:grid-cols-[2fr_1fr_1fr]">
-        <div className="flex flex-col gap-3">
-          <span className="text-lg font-black tracking-tight uppercase italic">
-            Stint<span className="text-mark-text">Line</span>
-          </span>
-          <p className="max-w-md text-sm text-muted">{t("footer.pitch")}</p>
-          <ApiStatus />
-        </div>
-        <nav aria-label={t("footer.explore")} className="flex flex-col gap-2 text-sm">
-          <span className="font-bold tracking-wide uppercase">{t("footer.explore")}</span>
-          {SECTIONS.slice(0, 4).map(([to, key]) => (
-            <Link key={to} to={to} className="text-muted hover:text-ink">
-              {t(key)}
-            </Link>
-          ))}
-        </nav>
-        <nav aria-label={t("footer.more")} className="flex flex-col gap-2 text-sm">
-          <span className="font-bold tracking-wide uppercase">{t("footer.more")}</span>
-          <Link to="/live" className="text-muted hover:text-ink">
-            {t("nav.live")}
-          </Link>
-          {SECTIONS.slice(4).map(([to, key]) => (
-            <Link key={to} to={to} className="text-muted hover:text-ink">
-              {t(key)}
-            </Link>
-          ))}
-        </nav>
-      </div>
-      <div className="border-t border-line">
-        <p className="mx-auto w-full max-w-[1360px] px-4 py-4 text-xs text-muted sm:px-6">
-          {t("app.disclaimer")}
-        </p>
+    <footer className="border-t border-line">
+      <div className="mx-auto flex w-full max-w-[1360px] flex-col gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <p>{t("app.disclaimer")}</p>
+        <ApiStatus />
       </div>
     </footer>
   );
@@ -270,7 +265,7 @@ function RaceBar({ sessionId, onTyres }: { sessionId: number; onTyres: boolean }
   const eventId = session.data?.event.id;
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2">
+    <>
       <RacePicker sessionId={sessionId} view={onTyres ? "/tyres" : ""} />
       <nav aria-label={t("nav.race")} className="flex gap-5">
         <NavLink to={`/sessions/${sessionId}`} end className={tabLink}>
@@ -285,6 +280,6 @@ function RaceBar({ sessionId, onTyres }: { sessionId: number; onTyres: boolean }
           </NavLink>
         )}
       </nav>
-    </div>
+    </>
   );
 }
