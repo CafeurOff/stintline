@@ -145,12 +145,32 @@ describe("News page", () => {
       await screen.findByRole("link", { name: "Lando Norris wins the Hungarian Grand Prix" }),
     ).toHaveAttribute("href", "/news/70");
     const list = await screen.findByRole("region", { name: "Headlines" });
-    const links = await within(list).findAllByRole("link");
+    const items = await within(list).findAllByRole("button", { name: /Open in the reader/ });
     const english = headlines.filter((h) => h.language === "en");
-    expect(links).toHaveLength(english.length);
-    expect(links[0]).toHaveAttribute("href", english[0]?.url);
-    expect(links[0]).toHaveAttribute("target", "_blank");
-    expect(links[0]).toHaveAttribute("rel", "noopener noreferrer");
+    expect(items).toHaveLength(english.length);
+    const read = within(list).getByRole("link", { name: /^Read on/ });
+    expect(read).toHaveAttribute("href", english[0]?.url);
+    expect(read).toHaveAttribute("target", "_blank");
+    expect(read).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("opens a headline in the reader and filters by source", async () => {
+    renderRoute("/news");
+
+    const list = await screen.findByRole("region", { name: "Headlines" });
+    const items = await within(list).findAllByRole("button", { name: /Open in the reader/ });
+    const second = headlines.filter((h) => h.language === "en")[1];
+    if (!items[1] || !second) throw new Error("fixture needs two English headlines");
+    await userEvent.click(items[1]);
+    expect(within(list).getByRole("link", { name: /^Read on/ })).toHaveAttribute(
+      "href",
+      second.url,
+    );
+    expect(within(list).getByRole("region", { name: "In this story" })).toBeVisible();
+
+    await userEvent.click(within(list).getByRole("button", { name: second.source_name }));
+    const filtered = within(list).getAllByRole("button", { name: /Open in the reader/ });
+    expect(filtered.length).toBeLessThan(items.length);
   });
 
   it("shows every language on demand and keeps it in the address", async () => {
@@ -160,7 +180,9 @@ describe("News page", () => {
 
     expect(router.state.location.search).toBe("?lang=all");
     const list = screen.getByRole("region", { name: "Headlines" });
-    expect(await within(list).findAllByRole("link")).toHaveLength(headlines.length);
+    expect(await within(list).findAllByRole("button", { name: /Open in the reader/ })).toHaveLength(
+      headlines.length,
+    );
   });
 
   it("explains empty feeds and reports", async () => {

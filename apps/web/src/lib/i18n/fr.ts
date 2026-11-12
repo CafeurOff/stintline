@@ -568,6 +568,13 @@ export const fr: Record<MessageKey, string> = {
   "compoundLower.UNKNOWN": "inconnus",
 
   "nav.news": "Actus",
+  "news.allSources": "Toutes les sources",
+  "news.sourceFilter": "Source",
+  "news.readOn": "Lire sur {source}",
+  "news.context": "Dans cette actu",
+  "news.contextNote": "Pilotes et écuries de la saison cités dans le titre, avec leur classement.",
+  "news.noContext": "Aucun pilote ni aucune écurie de la saison n'est cité dans ce titre.",
+  "news.pick": "Ouvrir dans le lecteur",
   "news.title": "Actualités",
   "news.intro":
     "Les comptes rendus des dernières courses, écrits à partir du chronométrage et des résultats, et les titres du jour de la presse spécialisée.",

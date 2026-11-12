@@ -560,6 +560,14 @@ export const en = {
   "compoundLower.UNKNOWN": "unknown",
 
   "nav.news": "News",
+  "news.allSources": "All sources",
+  "news.sourceFilter": "Source",
+  "news.readOn": "Read on {source}",
+  "news.context": "In this story",
+  "news.contextNote":
+    "Drivers and teams of the current season named in the headline, with their standing.",
+  "news.noContext": "No driver or team of the current season is named in this headline.",
+  "news.pick": "Open in the reader",
   "news.title": "News",
   "news.intro":
     "Reports of the latest races, written from the timing and results, and the day's headlines from the specialist press.",

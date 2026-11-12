@@ -1,11 +1,9 @@
-import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour, teamTint } from "@/lib/teams";
 
-import { useAgo } from "../useAgo";
 import { type Report, writeReport } from "../write";
 
 /**
@@ -52,32 +50,5 @@ export function ReportCard({ report, lead = false }: { report: Report; lead?: bo
         {lead && <p className="text-muted">{written.lede}</p>}
       </div>
     </article>
-  );
-}
-
-/** Headlines as plain links to the publishers' articles (ADR 0012). */
-export function HeadlineList({ headlines }: { headlines: readonly Schema<"Headline">[] }) {
-  const { t } = useI18n();
-  const ago = useAgo();
-  return (
-    <ul className="flex flex-col">
-      {headlines.map((headline) => (
-        <li key={headline.url} className="border-b border-line py-3">
-          <a
-            href={headline.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-semibold hover:underline"
-          >
-            {headline.title}
-            <span className="sr-only"> {t("news.opensNew")}</span>
-          </a>
-          <p className="mt-0.5 text-sm text-muted">
-            {headline.source_name} ·{" "}
-            <time dateTime={headline.published_at}>{ago(headline.published_at)}</time>
-          </p>
-        </li>
-      ))}
-    </ul>
   );
 }
