@@ -2,23 +2,24 @@ import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
 import { ShowAll } from "@/components/hub/Collapsible";
+import { History } from "lucide-react";
+
+import { Panel } from "@/components/dash/Panel";
 import { KeyFigures } from "@/components/hub/KeyFigures";
 import { SeasonBars } from "@/components/hub/SeasonBars";
 import { useCollapsed } from "@/components/hub/useCollapsed";
 import { TeamName } from "@/components/hub/TeamName";
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { initials } from "@/components/racing/initials";
-import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { EmptyState, ErrorState } from "@/components/ui/States";
+import { ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-import { useDriver, useDriverResults } from "@/features/hub/api";
+import { DriverSeason } from "./DriverSeason";
+import { useDriver } from "@/features/hub/api";
 import { ApiError } from "@/lib/errors";
-import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
 import { teamColour, teamTint } from "@/lib/teams";
-import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 type Career = Schema<"DriverCareer">;
@@ -41,13 +42,17 @@ export function DriverPage() {
   if (!career.data) return <Skeleton className="h-[60vh]" />;
   const data = career.data;
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-4">
       <DriverHeader career={data} />
       <KeyFigures label={t("driver.figures")} figures={figures(data, i18n)} />
-      {data.seasons.length > 0 && <SeasonsTable career={data} />}
       {data.totals.last_season !== null && (
-        <ResultsSection driverRef={data.driver.ref} seasons={data.seasons.map((s) => s.year)} />
+        <DriverSeason
+          driverRef={data.driver.ref}
+          seasons={data.seasons.map((s) => s.year)}
+          colour={data.latest_team?.colour}
+        />
       )}
+      {data.seasons.length > 0 && <SeasonsTable career={data} />}
     </div>
   );
 }
@@ -95,8 +100,8 @@ function DriverHeader({ career }: { career: Career }) {
 
   return (
     <header
-      className="relative overflow-hidden rounded-3xl border-t-4"
-      style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 22) }}
+      className="relative overflow-hidden rounded-xl border border-line"
+      style={{ backgroundColor: teamTint(colour, 22) }}
     >
       {number != null && (
         <span
@@ -107,13 +112,13 @@ function DriverHeader({ career }: { career: Career }) {
           {number}
         </span>
       )}
-      <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:p-10">
+      <div className="relative flex flex-col gap-6 p-5 sm:flex-row sm:items-end sm:p-7">
         <figure className="flex shrink-0 flex-col gap-2">
           <DriverPhoto
             imageUrl={official ?? portrait?.image_url}
             label={driver.code ?? initials(driver.given_name, driver.family_name)}
             colour={colour}
-            className="h-56 w-44 rounded-2xl"
+            className="h-52 w-40 rounded-lg"
           />
           {portrait && (
             <figcaption className="max-w-44 text-xs text-muted">
@@ -143,7 +148,7 @@ function DriverHeader({ career }: { career: Career }) {
         </figure>
         <div className="min-w-0 pb-2">
           <p className="text-xl text-muted">{driver.given_name}</p>
-          <h1 className="text-5xl leading-none font-bold sm:text-7xl">{driver.family_name}</h1>
+          <h1 className="text-5xl leading-none font-extrabold sm:text-6xl">{driver.family_name}</h1>
           {team && (
             <p className="mt-3 text-lg">
               <TeamName team={team} colour={colour} />
@@ -199,10 +204,12 @@ function SeasonsTable({ career }: { career: Career }) {
   const collapsed = useCollapsed(all, SEASONS_SHOWN);
   const seasons = collapsed.shown;
   return (
-    <section aria-labelledby="driver-seasons" className="flex flex-col gap-3">
-      <h2 id="driver-seasons" className="text-xl font-bold">
-        {t("driver.bySeason")}
-      </h2>
+    <Panel
+      id="driver-seasons"
+      title={t("driver.bySeason")}
+      icon={<History />}
+      bodyClassName="gap-4 p-4"
+    >
       {all.length > 1 && (
         <SeasonBars
           colour={career.latest_team?.colour}
@@ -268,114 +275,6 @@ function SeasonsTable({ career }: { career: Career }) {
           collapsed.setOpen(!collapsed.open);
         }}
       />
-    </section>
-  );
-}
-
-function ResultsSection({ driverRef, seasons }: { driverRef: string; seasons: number[] }) {
-  const { t, f, locale } = useI18n();
-  const [params, update] = useSearchParamsState();
-  const latest = seasons[seasons.length - 1] ?? null;
-  const fromUrl = intParam(params, "season");
-  const season = fromUrl !== null && seasons.includes(fromUrl) ? fromUrl : latest;
-  const results = useDriverResults(driverRef, season);
-
-  return (
-    <section aria-labelledby="driver-results" className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="driver-results" className="text-xl font-bold">
-          {t("driver.results")}
-        </h2>
-        <Select
-          label={t("season.label")}
-          value={season ?? ""}
-          onChange={(event) => {
-            update({ season: event.target.value });
-          }}
-        >
-          {[...seasons].reverse().map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </Select>
-      </div>
-      {results.isError ? (
-        <ErrorState error={results.error} onRetry={() => void results.refetch()} />
-      ) : !results.data ? (
-        <Skeleton className="h-64" />
-      ) : results.data.results.length === 0 ? (
-        <EmptyState title={t("driver.noResults")} />
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th className="num">{t("col.round")}</th>
-                <th>{t("col.grandPrix")}</th>
-                <th className="hidden sm:table-cell">{t("col.team")}</th>
-                <th className="num hidden sm:table-cell">{t("col.grid")}</th>
-                <th className="num">{t("col.position")}</th>
-                <th className="num">{t("col.points")}</th>
-                <th>
-                  <span className="sr-only">{t("col.replay")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {results.data.results.map((result) => {
-                // Jolpica gives retired cars an order too: only a numeric classification is a finish.
-                const finished = /^\d+$/.test(result.classification ?? "")
-                  ? result.finish_position
-                  : null;
-                return (
-                  <tr key={result.session_id}>
-                    <td className="num text-muted">{result.round}</td>
-                    <td>
-                      <Link to={`/events/${result.event_id}`} className="hover:underline">
-                        {eventName(result.event_name, locale)}
-                      </Link>
-                      {result.kind === "SPRINT" && (
-                        <span className="ml-2 text-xs text-muted">{t("picker.sprint")}</span>
-                      )}
-                      <span className="block text-xs text-muted">{f.date(result.race_date)}</span>
-                    </td>
-                    <td className="hidden sm:table-cell">
-                      <TeamName team={result.team} />
-                    </td>
-                    <td className="num hidden text-muted sm:table-cell">
-                      {result.grid_position === 0 ? "—" : (result.grid_position ?? "—")}
-                    </td>
-                    <td
-                      className={`num font-bold ${finished != null && finished <= 3 ? "text-mark-text" : ""}`}
-                    >
-                      {finished ?? result.classification ?? "—"}
-                      {finished == null && result.status && (
-                        <span className="block text-xs font-normal text-muted">
-                          {result.status}
-                        </span>
-                      )}
-                    </td>
-                    <td className="num">
-                      {result.points ? f.number(result.points, result.points % 1 ? 1 : 0) : ""}
-                    </td>
-                    <td className="text-right">
-                      {result.has_data && (
-                        <Link
-                          to={`/sessions/${result.session_id}`}
-                          className="text-sm font-semibold whitespace-nowrap text-mark-text hover:underline"
-                        >
-                          {t("col.replay")} →
-                        </Link>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
+    </Panel>
   );
 }
