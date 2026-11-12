@@ -142,10 +142,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
             </span>
           </p>
           <div>
-            <h1
-              id="live-title"
-              className="text-3xl leading-tight font-extrabold uppercase sm:text-5xl"
-            >
+            <h1 id="live-title" className="text-3xl leading-tight font-extrabold sm:text-5xl">
               {running ? t("live.running.title") : t("live.offline.title")}
             </h1>
             <p className="mt-2 max-w-2xl text-lg text-muted">
@@ -158,7 +155,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
                 <p className="text-xs font-bold tracking-wide text-mark-text uppercase">
                   {t("live.next")} · {sessionLabel(next.kind, t)}
                 </p>
-                <h2 className="text-2xl font-extrabold uppercase">
+                <h2 className="text-2xl font-extrabold">
                   <Link to={`/events/${String(next.event_id)}`} className="hover:underline">
                     {eventName(next.event_name, locale)}
                   </Link>
@@ -222,7 +219,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
               <p className="text-xs font-bold tracking-wide text-muted uppercase">
                 {t("live.meanwhile")}
               </p>
-              <h2 id="live-replay" className="mt-1 max-w-[70%] text-2xl font-extrabold uppercase">
+              <h2 id="live-replay" className="mt-1 max-w-[70%] text-2xl font-extrabold">
                 {eventName(last.event.name, locale)} {last.event.season}
               </h2>
               <p className="mt-2 max-w-md text-muted">{t("live.replayBody")}</p>

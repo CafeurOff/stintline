@@ -26,18 +26,14 @@ export function Countdown({ target, compact = false }: { target: string; compact
         <span
           key={unit}
           aria-hidden="true"
-          className={`flex flex-col items-center rounded-lg bg-raised ${
+          className={`flex flex-col items-center rounded-lg border border-line bg-raised ${
             compact ? "min-w-12 px-2 py-1" : "min-w-16 px-3 py-2"
           }`}
         >
-          <span
-            className={`leading-none font-extrabold tabular-nums ${compact ? "text-xl" : "text-3xl"}`}
-          >
+          <span className={`num leading-none font-semibold ${compact ? "text-xl" : "text-3xl"}`}>
             {String(value).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[0.65rem] font-semibold tracking-wide text-muted uppercase">
-            {unit}
-          </span>
+          <span className="mt-1 text-[0.65rem] font-semibold text-muted uppercase">{unit}</span>
         </span>
       ))}
     </div>

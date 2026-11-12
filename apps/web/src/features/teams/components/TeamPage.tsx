@@ -1,7 +1,9 @@
+import { History } from "lucide-react";
 import { Link, useParams } from "react-router";
 
 import { ShowAll } from "@/components/hub/Collapsible";
 import { DriverName } from "@/components/hub/DriverName";
+import { Panel } from "@/components/dash/Panel";
 import { KeyFigures } from "@/components/hub/KeyFigures";
 import { SeasonBars } from "@/components/hub/SeasonBars";
 import { useCollapsed } from "@/components/hub/useCollapsed";
@@ -97,7 +99,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
               <li key={driver.ref}>
                 <Link
                   to={`/drivers/${driver.ref}`}
-                  className="group flex items-center gap-4 overflow-hidden rounded-xl bg-panel p-3 hover:bg-raised"
+                  className="group flex items-center gap-4 overflow-hidden rounded-xl border border-line bg-panel p-3 hover:bg-raised"
                 >
                   <DriverPhoto
                     imageUrl={driver.photo_url}
@@ -129,13 +131,13 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
         ]}
       />
 
-      <section aria-labelledby="team-seasons" className="flex flex-col gap-4">
-        <div>
-          <h2 id="team-seasons" className="text-xl font-bold">
-            {t("driver.bySeason")}
-          </h2>
-          <p className="text-sm text-muted">{t("team.chartNote")}</p>
-        </div>
+      <Panel
+        id="team-seasons"
+        title={t("driver.bySeason")}
+        icon={<History />}
+        bodyClassName="gap-4 p-4"
+      >
+        <p className="text-sm text-muted">{t("team.chartNote")}</p>
         {seasons.length > 1 && (
           <SeasonBars
             colour={colour}
@@ -199,7 +201,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
             collapsed.setOpen(!collapsed.open);
           }}
         />
-      </section>
+      </Panel>
     </div>
   );
 }

@@ -36,9 +36,7 @@ export function ModelPage() {
               >
                 {index + 1}
               </span>
-              <h3 className="relative text-lg font-extrabold uppercase">
-                {t(`model.step.${step}.title`)}
-              </h3>
+              <h3 className="relative text-lg font-extrabold">{t(`model.step.${step}.title`)}</h3>
               <p className="relative text-muted">{t(`model.step.${step}.body`)}</p>
             </li>
           ))}
@@ -55,9 +53,7 @@ export function ModelPage() {
             <TestSummary backtest={model.data.backtest} />
           </section>
           <details className="rounded-xl bg-panel p-5">
-            <summary className="cursor-pointer text-lg font-bold uppercase">
-              {t("model.details")}
-            </summary>
+            <summary className="cursor-pointer text-lg font-bold">{t("model.details")}</summary>
             <p className="mt-2 text-muted">
               {t("model.details.note")}{" "}
               <span className="tabular">({model.data.engine_version})</span>
