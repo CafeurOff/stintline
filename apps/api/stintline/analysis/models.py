@@ -10,6 +10,12 @@ from django.db import models
 
 from stintline.racing.models import Session, SessionEntry
 
+MIN_LOSS_STOPS = 8
+"""Green-flag stops a race needs before its pit loss stands for the circuit."""
+MAX_LOSS_SPREAD = 0.25
+"""Largest spread (σ / loss) of a pit loss that stands for the circuit. Dry races sit
+around 5 %; a quarter means the stops measured different things."""
+
 
 class RaceStats(models.Model):
     """One race or sprint: what the engine and the stored data say about it."""
@@ -32,9 +38,7 @@ class RaceStats(models.Model):
     passes = models.PositiveSmallIntegerField(
         null=True, blank=True, help_text="Green-flag on-track passes (null: no running order)"
     )
-    wet = models.BooleanField(
-        default=False, help_text="Rain was recorded or intermediate or wet tyres were used"
-    )
+    wet = models.BooleanField(default=False, help_text="Intermediate or wet tyres were used")
     degradation = models.JSONField(
         default=dict, help_text="{compound: fuel-corrected s/lap} for compounds with a fit"
     )
@@ -56,6 +60,20 @@ class RaceStats(models.Model):
 
     def __str__(self) -> str:
         return f"stats {self.session}"
+
+    @property
+    def pit_loss_reliable(self) -> bool:
+        """Whether the pit loss can stand for the circuit (season and circuit summaries).
+
+        A red flag missing from the timing, a wet race or a handful of stops can give a
+        figure that says nothing about the pit lane (Monza 2026: 6 measurable stops)."""
+        return (
+            self.pit_loss_s is not None
+            and self.pit_loss_sigma_s is not None
+            and not self.wet
+            and self.pit_loss_stops >= MIN_LOSS_STOPS
+            and self.pit_loss_sigma_s <= MAX_LOSS_SPREAD * self.pit_loss_s
+        )
 
 
 class EntryRaceStats(models.Model):

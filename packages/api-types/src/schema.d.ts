@@ -725,7 +725,10 @@ export interface components {
       /** Format: double */
       full_throttle_share: number | null;
       braking_zones: number | null;
-      /** Format: double */
+      /**
+       * Format: double
+       * @description Median over the races whose pit loss is reliable
+       */
       pit_loss_s: number | null;
       /** Format: double */
       pit_loss_sigma_s: number | null;
@@ -764,6 +767,7 @@ export interface components {
       red_flags: number;
       /** Format: double */
       pit_loss_s: number | null;
+      pit_loss_reliable: boolean;
       /** Format: double */
       fastest_lap_s: number | null;
       undercut_attempts: number;
@@ -1630,6 +1634,8 @@ export interface components {
       pit_loss_s: number | null;
       /** Format: double */
       pit_loss_sigma_s: number | null;
+      /** @description Enough dry green-flag stops with a tight spread to stand for the circuit */
+      pit_loss_reliable: boolean;
       undercut_attempts: number;
       undercut_successes: number;
     };

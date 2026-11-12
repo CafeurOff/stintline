@@ -228,6 +228,9 @@ class RaceStopsSerializer(RaceRefSerializer):
     fastest = StopSerializer(allow_null=True)
     pit_loss_s = serializers.FloatField(allow_null=True)
     pit_loss_sigma_s = serializers.FloatField(allow_null=True)
+    pit_loss_reliable = serializers.BooleanField(
+        help_text="Enough dry green-flag stops with a tight spread to stand for the circuit"
+    )
     undercut_attempts = serializers.IntegerField()
     undercut_successes = serializers.IntegerField()
 
@@ -272,6 +275,7 @@ class CircuitRaceSerializer(serializers.Serializer[Any]):
     virtual_safety_cars = serializers.IntegerField()
     red_flags = serializers.IntegerField()
     pit_loss_s = serializers.FloatField(allow_null=True)
+    pit_loss_reliable = serializers.BooleanField()
     fastest_lap_s = serializers.FloatField(allow_null=True)
     undercut_attempts = serializers.IntegerField()
     undercut_successes = serializers.IntegerField()
@@ -286,7 +290,9 @@ class CircuitProfileSerializer(serializers.Serializer[Any]):
     top_speed_kph = serializers.FloatField(allow_null=True)
     full_throttle_share = serializers.FloatField(allow_null=True)
     braking_zones = serializers.IntegerField(allow_null=True)
-    pit_loss_s = serializers.FloatField(allow_null=True)
+    pit_loss_s = serializers.FloatField(
+        allow_null=True, help_text="Median over the races whose pit loss is reliable"
+    )
     pit_loss_sigma_s = serializers.FloatField(allow_null=True)
     degradation_s_per_lap = serializers.FloatField(
         allow_null=True, help_text="Median over dry races of the mean dry-compound slope"

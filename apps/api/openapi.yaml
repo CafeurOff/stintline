@@ -1366,6 +1366,7 @@ components:
           type: number
           format: double
           nullable: true
+          description: Median over the races whose pit loss is reliable
         pit_loss_sigma_s:
           type: number
           format: double
@@ -1470,6 +1471,8 @@ components:
           type: number
           format: double
           nullable: true
+        pit_loss_reliable:
+          type: boolean
         fastest_lap_s:
           type: number
           format: double
@@ -1483,6 +1486,7 @@ components:
       - fastest_lap_s
       - name
       - passes
+      - pit_loss_reliable
       - pit_loss_s
       - red_flags
       - safety_cars
@@ -3653,6 +3657,10 @@ components:
           type: number
           format: double
           nullable: true
+        pit_loss_reliable:
+          type: boolean
+          description: Enough dry green-flag stops with a tight spread to stand for
+            the circuit
         undercut_attempts:
           type: integer
         undercut_successes:
@@ -3664,6 +3672,7 @@ components:
       - median_lane_s
       - median_stationary_s
       - name
+      - pit_loss_reliable
       - pit_loss_s
       - pit_loss_sigma_s
       - round

@@ -131,3 +131,27 @@ def test_command_builds_stale_season_session_or_all(seeded: None) -> None:
         "3 races analysed",
         "3 races analysed",
     ]
+
+
+@pytest.mark.parametrize(
+    ("changes", "reliable"),
+    [
+        ({}, True),
+        ({"wet": True}, False),
+        ({"pit_loss_stops": 6}, False),
+        ({"pit_loss_sigma_s": 9.0}, False),
+        ({"pit_loss_s": None}, False),
+    ],
+)
+def test_pit_loss_reliable_needs_dry_tight_and_enough_stops(
+    changes: dict[str, object], reliable: bool
+) -> None:
+    values: dict[str, object] = {
+        "pit_loss_s": 22.0,
+        "pit_loss_sigma_s": 1.2,
+        "pit_loss_stops": 20,
+        "wet": False,
+        **changes,
+    }
+
+    assert RaceStats(**values).pit_loss_reliable is reliable

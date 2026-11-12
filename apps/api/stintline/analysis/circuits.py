@@ -42,6 +42,7 @@ def _race_row(stats: RaceStats, winner: SessionEntry | None) -> dict[str, Any]:
         "virtual_safety_cars": stats.virtual_safety_cars,
         "red_flags": stats.red_flags,
         "pit_loss_s": round(stats.pit_loss_s, 2) if stats.pit_loss_s is not None else None,
+        "pit_loss_reliable": stats.pit_loss_reliable,
         "fastest_lap_s": stats.fastest_lap_s,
         "undercut_attempts": len(undercuts),
         "undercut_successes": sum(1 for u in undercuts if u["gap_after_s"] < 0),
@@ -52,6 +53,7 @@ def _profile(
     circuit: Circuit, races: list[RaceStats], winners: dict[int, SessionEntry]
 ) -> dict[str, Any]:
     dry = [r for r in races if not r.wet]
+    reliable = [r for r in races if r.pit_loss_reliable]
     per_compound = {
         c: _median([r.degradation[c] for r in dry if c in r.degradation], 4) for c in DRY_COMPOUNDS
     }
@@ -78,9 +80,9 @@ def _profile(
         "top_speed_kph": _latest([r.top_speed_kph for r in races]),
         "full_throttle_share": _latest([r.full_throttle_share for r in races]),
         "braking_zones": _latest([r.braking_zones for r in races]),
-        "pit_loss_s": _median([r.pit_loss_s for r in races if r.pit_loss_s is not None], 2),
+        "pit_loss_s": _median([r.pit_loss_s for r in reliable if r.pit_loss_s is not None], 2),
         "pit_loss_sigma_s": _median(
-            [r.pit_loss_sigma_s for r in races if r.pit_loss_sigma_s is not None], 2
+            [r.pit_loss_sigma_s for r in reliable if r.pit_loss_sigma_s is not None], 2
         ),
         "degradation_s_per_lap": _median(slopes, 4),
         "degradation": per_compound,

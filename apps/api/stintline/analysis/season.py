@@ -15,7 +15,7 @@ MIN_RACES = 3
 """Races with a consistency figure a driver needs to be ranked: a stand-in driver's one
 race says little about them."""
 
-FASTEST_STOPS_SHOWN = 15
+FASTEST_STOPS_SHOWN = 20
 
 
 def _round(value: float | None, digits: int = 3) -> float | None:
@@ -166,6 +166,7 @@ def pit_stops(year: int) -> dict[str, Any] | None:
                 "fastest": _stop(ranked[0], colours.drivers) if ranked else None,
                 "pit_loss_s": _round(rs.pit_loss_s, 2) if rs else None,
                 "pit_loss_sigma_s": _round(rs.pit_loss_sigma_s, 2) if rs else None,
+                "pit_loss_reliable": rs.pit_loss_reliable if rs else False,
                 "undercut_attempts": len(undercuts),
                 "undercut_successes": sum(1 for u in undercuts if u["gap_after_s"] < 0),
             }

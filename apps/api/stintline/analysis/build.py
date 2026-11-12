@@ -23,7 +23,6 @@ from stintline.racing.models import (
     Stint,
     TelemetryLap,
     TrackStatus,
-    WeatherSample,
 )
 from stintline.strategy_api.services import (
     LOW_CONFIDENCE_MIN_STINTS,
@@ -106,10 +105,9 @@ WET_COMPOUNDS = ("INTERMEDIATE", "WET")
 
 
 def _is_wet(session: Session) -> bool:
-    return (
-        WeatherSample.objects.filter(session=session, rainfall=True).exists()
-        or Stint.objects.filter(entry__session=session, compound__in=WET_COMPOUNDS).exists()
-    )
+    """Intermediate or wet tyres were fitted. A few rain samples alone (a shower that
+    never needed other tyres) leave a race dry: the tyres say whether rain mattered."""
+    return Stint.objects.filter(entry__session=session, compound__in=WET_COMPOUNDS).exists()
 
 
 def _entry_rows(
