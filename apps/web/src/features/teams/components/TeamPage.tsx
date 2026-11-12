@@ -49,7 +49,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
   return (
     <div className="flex flex-col gap-12">
       <header
-        className="relative overflow-hidden rounded-3xl border-t-4 p-6 sm:p-10"
+        className="relative overflow-hidden rounded-xl border border-line p-6 sm:p-10"
         style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 22) }}
       >
         <div className="relative z-10 flex flex-col gap-2 lg:max-w-[55%]">
@@ -97,7 +97,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
               <li key={driver.ref}>
                 <Link
                   to={`/drivers/${driver.ref}`}
-                  className="group flex items-center gap-4 overflow-hidden rounded-2xl bg-panel p-3 hover:bg-raised"
+                  className="group flex items-center gap-4 overflow-hidden rounded-xl bg-panel p-3 hover:bg-raised"
                 >
                   <DriverPhoto
                     imageUrl={driver.photo_url}

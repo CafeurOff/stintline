@@ -122,7 +122,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
     <div className="flex flex-col gap-8">
       <section
         aria-labelledby="live-title"
-        className="relative overflow-hidden rounded-3xl border-t-4 border-mark bg-panel"
+        className="relative overflow-hidden rounded-xl border border-line border-mark bg-panel"
       >
         {event?.circuit.outline && (
           <CircuitMark
@@ -133,7 +133,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
           />
         )}
         <div className="relative flex flex-col gap-6 p-6 sm:p-10">
-          <p className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase">
+          <p className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase">
             <span className="flex items-center gap-1.5 rounded-sm bg-raised px-2 py-0.5">
               <span
                 className={`size-2 rounded-full ${running ? "animate-pulse bg-mark" : "bg-line-strong"}`}
@@ -142,7 +142,10 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
             </span>
           </p>
           <div>
-            <h1 id="live-title" className="text-3xl leading-tight font-black uppercase sm:text-5xl">
+            <h1
+              id="live-title"
+              className="text-3xl leading-tight font-extrabold uppercase sm:text-5xl"
+            >
               {running ? t("live.running.title") : t("live.offline.title")}
             </h1>
             <p className="mt-2 max-w-2xl text-lg text-muted">
@@ -152,10 +155,10 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
           {next && !running && (
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-xs font-bold tracking-widest text-mark-text uppercase">
+                <p className="text-xs font-bold tracking-wide text-mark-text uppercase">
                   {t("live.next")} · {sessionLabel(next.kind, t)}
                 </p>
-                <h2 className="text-2xl font-black uppercase">
+                <h2 className="text-2xl font-extrabold uppercase">
                   <Link to={`/events/${String(next.event_id)}`} className="hover:underline">
                     {eventName(next.event_name, locale)}
                   </Link>
@@ -173,7 +176,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
         {sessions.length > 0 && event && (
           <section
             aria-labelledby="live-weekend"
-            className="flex flex-col gap-3 rounded-2xl bg-panel p-5"
+            className="flex flex-col gap-3 rounded-xl bg-panel p-5"
           >
             <SectionTitle id="live-weekend">{eventName(event.name, locale)}</SectionTitle>
             <ul className="flex flex-col">
@@ -205,7 +208,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
         {last?.has_data && (
           <section
             aria-labelledby="live-replay"
-            className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-2xl bg-panel p-5"
+            className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-panel p-5"
           >
             {last.event.circuit.outline && (
               <CircuitMark
@@ -216,10 +219,10 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
               />
             )}
             <div className="relative">
-              <p className="text-xs font-bold tracking-widest text-muted uppercase">
+              <p className="text-xs font-bold tracking-wide text-muted uppercase">
                 {t("live.meanwhile")}
               </p>
-              <h2 id="live-replay" className="mt-1 max-w-[70%] text-2xl font-black uppercase">
+              <h2 id="live-replay" className="mt-1 max-w-[70%] text-2xl font-extrabold uppercase">
                 {eventName(last.event.name, locale)} {last.event.season}
               </h2>
               <p className="mt-2 max-w-md text-muted">{t("live.replayBody")}</p>
@@ -491,7 +494,7 @@ function PitNow({
   return (
     <section
       aria-labelledby="live-pit"
-      className="flex flex-col gap-2 rounded-2xl border border-line bg-panel p-5"
+      className="flex flex-col gap-2 rounded-xl border border-line bg-panel p-5"
     >
       <h2 id="live-pit" className="text-lg leading-tight font-bold">
         {t("live.pit.question", { name: car.last_name })}

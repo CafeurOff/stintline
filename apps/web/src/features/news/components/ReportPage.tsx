@@ -40,7 +40,7 @@ export function ReportPage() {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
       <article className="flex min-w-0 flex-col gap-8">
         <header
-          className="overflow-hidden rounded-2xl border-t-4"
+          className="overflow-hidden rounded-xl border border-line"
           style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 12) }}
         >
           <DriverPhoto

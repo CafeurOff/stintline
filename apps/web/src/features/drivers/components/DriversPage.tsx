@@ -105,7 +105,7 @@ function DriverCard({ driver }: { driver: DriverItem }) {
   return (
     <Link
       to={`/drivers/${driver.ref}`}
-      className="group relative flex h-48 overflow-hidden rounded-2xl border-t-4 transition hover:brightness-110"
+      className="group relative flex h-48 overflow-hidden rounded-xl border border-line transition hover:brightness-110"
       style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 22) }}
     >
       <span className="relative z-10 flex w-3/5 flex-col justify-between p-4">

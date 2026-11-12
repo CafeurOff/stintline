@@ -30,7 +30,7 @@ export function Dialog({ open, onClose, title, children }: DialogProps) {
       ref={ref}
       aria-labelledby={titleId}
       onClose={onClose}
-      className="m-0 h-dvh max-h-none w-full max-w-none bg-panel p-0 text-ink backdrop:bg-black/70 sm:m-auto sm:h-auto sm:max-h-[85vh] sm:max-w-3xl sm:rounded-2xl sm:border sm:border-line"
+      className="m-0 h-dvh max-h-none w-full max-w-none bg-panel p-0 text-ink backdrop:bg-black/70 sm:m-auto sm:h-auto sm:max-h-[85vh] sm:max-w-3xl sm:rounded-xl sm:border sm:border-line"
     >
       {open && (
         <div className="flex h-full max-h-[inherit] flex-col">

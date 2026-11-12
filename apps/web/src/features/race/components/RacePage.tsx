@@ -306,7 +306,7 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
       {entry && (
         <aside
           aria-live="polite"
-          className="flex flex-col gap-5 self-start rounded-2xl border border-line bg-panel p-5"
+          className="flex flex-col gap-5 self-start rounded-xl border border-line bg-panel p-5"
         >
           <SegmentedControl
             legend={t("panel.mode")}

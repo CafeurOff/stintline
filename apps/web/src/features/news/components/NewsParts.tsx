@@ -19,8 +19,8 @@ export function ReportCard({ report, lead = false }: { report: Report; lead?: bo
   const colour = winner.team_colour;
   return (
     <article
-      className={`relative flex overflow-hidden rounded-2xl bg-panel ${
-        lead ? "flex-col self-start border-t-4 sm:flex-row" : "items-stretch border-l-4"
+      className={`relative flex overflow-hidden rounded-xl bg-panel ${
+        lead ? "flex-col self-start border border-line sm:flex-row" : "items-stretch border-l-4"
       }`}
       style={{
         borderTopColor: teamColour(colour),

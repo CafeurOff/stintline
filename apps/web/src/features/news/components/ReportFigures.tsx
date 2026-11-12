@@ -31,7 +31,7 @@ export function Figure({
   children: ReactNode;
 }) {
   return (
-    <figure className="flex flex-col gap-3 rounded-2xl bg-panel p-4 sm:p-5">
+    <figure className="flex flex-col gap-3 rounded-xl bg-panel p-4 sm:p-5">
       <h3 className="text-lg font-bold">{title}</h3>
       {children}
       {note && <figcaption className="text-sm text-muted">{note}</figcaption>}

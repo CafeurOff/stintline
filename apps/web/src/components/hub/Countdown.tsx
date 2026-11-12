@@ -31,11 +31,11 @@ export function Countdown({ target, compact = false }: { target: string; compact
           }`}
         >
           <span
-            className={`leading-none font-black tabular-nums ${compact ? "text-xl" : "text-3xl"}`}
+            className={`leading-none font-extrabold tabular-nums ${compact ? "text-xl" : "text-3xl"}`}
           >
             {String(value).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[0.65rem] font-semibold tracking-widest text-muted uppercase">
+          <span className="mt-1 text-[0.65rem] font-semibold tracking-wide text-muted uppercase">
             {unit}
           </span>
         </span>

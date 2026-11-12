@@ -87,7 +87,7 @@ function SeasonTeamCard({ team, season }: { team: TeamItem; season: Schema<"Seas
   return (
     <Link
       to={`/teams/${team.ref}`}
-      className="group flex h-full flex-col gap-4 rounded-2xl border-t-4 p-5 transition hover:brightness-110"
+      className="group flex h-full flex-col gap-4 rounded-xl border border-line p-5 transition hover:brightness-110"
       style={{ borderTopColor: teamColour(team.colour), backgroundColor: teamTint(team.colour) }}
     >
       <div className="flex items-start justify-between gap-3">

@@ -28,15 +28,15 @@ export function ModelPage() {
           {STEPS.map((step, index) => (
             <li
               key={step}
-              className="relative flex flex-col gap-2 overflow-hidden rounded-2xl bg-panel p-5"
+              className="relative flex flex-col gap-2 overflow-hidden rounded-xl bg-panel p-5"
             >
               <span
                 aria-hidden="true"
-                className="absolute -top-4 -right-2 text-8xl font-black text-raised select-none"
+                className="absolute -top-4 -right-2 text-8xl font-extrabold text-raised select-none"
               >
                 {index + 1}
               </span>
-              <h3 className="relative text-lg font-black uppercase">
+              <h3 className="relative text-lg font-extrabold uppercase">
                 {t(`model.step.${step}.title`)}
               </h3>
               <p className="relative text-muted">{t(`model.step.${step}.body`)}</p>
@@ -54,7 +54,7 @@ export function ModelPage() {
             <SectionTitle id="test-title">{t("model.test.title")}</SectionTitle>
             <TestSummary backtest={model.data.backtest} />
           </section>
-          <details className="rounded-2xl bg-panel p-5">
+          <details className="rounded-xl bg-panel p-5">
             <summary className="cursor-pointer text-lg font-bold uppercase">
               {t("model.details")}
             </summary>
@@ -117,10 +117,10 @@ function TestSummary({ backtest }: { backtest: Record<string, unknown> }) {
         {tiles.map(([value, label]) => (
           <div
             key={label}
-            className="flex flex-col rounded-2xl border-t-4 border-mark bg-panel p-5"
+            className="flex flex-col rounded-xl border border-line border-mark bg-panel p-5"
           >
             <dt className="text-sm text-muted">{label}</dt>
-            <dd className="order-first text-5xl font-black tabular-nums">{value}</dd>
+            <dd className="order-first text-5xl font-extrabold tabular-nums">{value}</dd>
           </div>
         ))}
       </dl>
