@@ -1,5 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 
+import { Link } from "react-router";
+
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -114,12 +116,20 @@ export function RaceAnalysis({
           kind={chart}
         />
       ) : chart === "pace" ? (
-        <PaceChart
-          sessionId={sessionId}
-          entries={entries}
-          totalLaps={totalLaps}
-          cars={[...highlighted].slice(0, MAX_PACE_DRIVERS)}
-        />
+        <>
+          <PaceChart
+            sessionId={sessionId}
+            entries={entries}
+            totalLaps={totalLaps}
+            cars={[...highlighted].slice(0, MAX_PACE_DRIVERS)}
+          />
+          <Link
+            to={`/analysis/pace?session=${String(sessionId)}`}
+            className="self-start text-sm font-semibold text-mark-text hover:underline"
+          >
+            {t("analysis.paceLink")}
+          </Link>
+        </>
       ) : chart === "tyres" ? (
         <Tyres sessionId={sessionId} totalLaps={totalLaps} />
       ) : chart === "telemetry" ? (

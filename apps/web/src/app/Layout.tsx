@@ -2,14 +2,19 @@ import { type ReactNode, Suspense, useState } from "react";
 import {
   BookOpen,
   CalendarDays,
+  ChartNoAxesColumn,
+  Crosshair,
   Gauge,
   House,
   type LucideIcon,
   Newspaper,
   RadioTower,
+  Route,
+  Swords,
   Trophy,
   UserRound,
   UsersRound,
+  Wrench,
 } from "lucide-react";
 import { Link, NavLink, Outlet, useLocation, useMatch } from "react-router";
 
@@ -45,6 +50,16 @@ const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
       ["/standings", "nav.standings", Trophy],
       ["/drivers", "nav.drivers", UserRound],
       ["/teams", "nav.teams", UsersRound],
+    ],
+  },
+  {
+    key: "nav.group.analysis",
+    links: [
+      ["/analysis", "nav.headToHead", Swords],
+      ["/analysis/pace", "nav.pace", ChartNoAxesColumn],
+      ["/analysis/consistency", "nav.consistency", Crosshair],
+      ["/analysis/pit-stops", "nav.pitStops", Wrench],
+      ["/circuits", "nav.circuits", Route],
     ],
   },
   { key: "nav.group.paddock", links: [["/news", "nav.news", Newspaper]] },
@@ -124,7 +139,12 @@ function NavGroups({ onPick }: { onPick?: () => void }) {
           <ul className="flex flex-col">
             {group.links.map(([to, key, Icon]) => (
               <li key={to}>
-                <NavLink to={to} end={to === "/"} className={railLink} onClick={onPick}>
+                <NavLink
+                  to={to}
+                  end={to === "/" || to === "/analysis"}
+                  className={railLink}
+                  onClick={onPick}
+                >
                   <Icon aria-hidden="true" className="size-[18px] shrink-0" strokeWidth={1.75} />
                   <span className="flex-1">{t(key)}</span>
                   {to === "/live" && <LiveMark />}

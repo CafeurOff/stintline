@@ -2,6 +2,14 @@ import type { Schema } from "@stintline/api-types";
 import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 
+import {
+  circuits,
+  consistency,
+  headToHead,
+  pitStops,
+  sessionPace,
+  teammates,
+} from "./fixtures/analysis";
 import { degradation } from "./fixtures/degradation";
 import { events } from "./fixtures/events";
 import { homeResponse } from "./fixtures/home";
@@ -108,6 +116,12 @@ export const handlers = [
   http.post("*/api/v1/sessions/:id/simulate/undercut", () => HttpResponse.json(undercut)),
   http.post("*/api/v1/sessions/:id/simulate/pit-exit", () => HttpResponse.json(pitExit)),
   http.get("*/api/v1/model", () => HttpResponse.json(model)),
+  http.get("*/api/v1/analysis/seasons/:year/teammates", () => HttpResponse.json(teammates)),
+  http.get("*/api/v1/analysis/head-to-head", () => HttpResponse.json(headToHead)),
+  http.get("*/api/v1/analysis/seasons/:year/consistency", () => HttpResponse.json(consistency)),
+  http.get("*/api/v1/analysis/seasons/:year/pit-stops", () => HttpResponse.json(pitStops)),
+  http.get("*/api/v1/analysis/circuits", () => HttpResponse.json(circuits)),
+  http.get("*/api/v1/sessions/:id/pace", () => HttpResponse.json(sessionPace)),
   http.get("*/api/v1/live", () => HttpResponse.json(offlineLive)),
   http.get("*/api/v1/news/headlines", ({ request }) => {
     const lang = new URL(request.url).searchParams.get("lang");

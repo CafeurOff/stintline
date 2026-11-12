@@ -30,6 +30,23 @@ const StandingsPage = page(
 );
 const RacePage = page(() => import("@/features/race/components/RacePage"), "RacePage");
 const TyresPage = page(() => import("@/features/tyres/components/TyresPage"), "TyresPage");
+const HeadToHeadPage = page(
+  () => import("@/features/insights/components/HeadToHeadPage"),
+  "HeadToHeadPage",
+);
+const PacePage = page(() => import("@/features/insights/components/PacePage"), "PacePage");
+const ConsistencyPage = page(
+  () => import("@/features/insights/components/ConsistencyPage"),
+  "ConsistencyPage",
+);
+const PitStopsPage = page(
+  () => import("@/features/insights/components/PitStopsPage"),
+  "PitStopsPage",
+);
+const CircuitsPage = page(
+  () => import("@/features/insights/components/CircuitsPage"),
+  "CircuitsPage",
+);
 const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
 
 export const routes: RouteObject[] = [
@@ -51,6 +68,12 @@ export const routes: RouteObject[] = [
       { path: "standings/:year", element: <StandingsPage /> },
       { path: "sessions/:sessionId", element: <RacePage /> },
       { path: "sessions/:sessionId/tyres", element: <TyresPage /> },
+      { path: "analysis", element: <HeadToHeadPage /> },
+      { path: "analysis/pace", element: <PacePage /> },
+      { path: "analysis/consistency", element: <ConsistencyPage /> },
+      { path: "analysis/pit-stops", element: <PitStopsPage /> },
+      { path: "circuits", element: <CircuitsPage /> },
+      { path: "circuits/:ref", element: <CircuitsPage /> },
       { path: "model", element: <ModelPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],

@@ -1,5 +1,14 @@
 import type { Schema } from "@stintline/api-types";
-import { Flag as FlagIcon, ListOrdered, Medal, Play, Sigma, Target, Trophy } from "lucide-react";
+import {
+  Flag as FlagIcon,
+  ListOrdered,
+  Medal,
+  Play,
+  Sigma,
+  Swords,
+  Target,
+  Trophy,
+} from "lucide-react";
 import { Link } from "react-router";
 
 import { Panel, Tile } from "@/components/dash/Panel";
@@ -51,19 +60,30 @@ export function DriverSeason({
   const ink = teamColour(colour);
 
   const picker = (
-    <Select
-      label={t("season.label")}
-      value={season ?? ""}
-      onChange={(event) => {
-        update({ season: event.target.value });
-      }}
-    >
-      {[...seasons].reverse().map((year) => (
-        <option key={year} value={year}>
-          {year}
-        </option>
-      ))}
-    </Select>
+    <div className="flex flex-wrap items-center gap-2">
+      {season !== null && (
+        <Link
+          to={`/analysis?mode=drivers&season=${String(season)}&a=${driverRef}`}
+          className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold hover:bg-raised"
+        >
+          <Swords aria-hidden="true" className="size-4" />
+          {t("driver.vsTeammate")}
+        </Link>
+      )}
+      <Select
+        label={t("season.label")}
+        value={season ?? ""}
+        onChange={(event) => {
+          update({ season: event.target.value });
+        }}
+      >
+        {[...seasons].reverse().map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </Select>
+    </div>
   );
 
   if (results.isError) {
