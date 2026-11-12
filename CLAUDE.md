@@ -15,6 +15,7 @@ It must stay accessible to casual fans first, with deeper charts for hardcore fa
 - Phase 11 done: polish and README. Tab title per page (`useDocumentTitle`), pages loaded on demand (`React.lazy` behind a `Suspense` in the layout), phone fixes, retirements shown on driver results, faster season filters (`EXISTS`), a richer not-found page, a last-race replay link on the offline live page. README with screenshots (taken with third-party photos blocked), and a replay-only public demo with production images (`infra/docker-compose.demo.yml`, `make demo-up`, `docs/deploy.md`).
 - Phase 12 done: broadcast design for the public site (ADR 0014). Sticky header with live dot, next-session countdown and phone menu; home page hero on the last Grand Prix with the podium in official photos, next Grand Prix countdown and weekend schedule, both championships, news, season strip; Grand Prix cards drawn around the circuit outline (`circuit.outline`, also for races still to come); public live page (countdown, schedule, last replay, no commands); official portraits everywhere (`photo_url`); standings leaders; telemetry zoom on any part of the lap (`?zoom=`, corner buttons, section table); model page in four steps with key figures.
 - Phase 13 done: dashboard design for the whole site (ADR 0016, `docs/design.md`): icon sidebar, tiles of real figures, panels, flags, driver faces, movement arrows; dashboard home, Grand Prix page with race tiles and tagged facts, driver profile as a season dashboard, standings with moves and points share, news wire with a reader; headline pictures as URL references (ADR 0015). Next phases (paddock and FIA documents, technical, analysis hub, live, 3D lap, our own ideas, polish): `docs/plans/phases-13-20.md`.
+- Phase 16 done: analysis hub (ADR 0017). Per-race figures computed once by the engine and stored (`stintline.analysis`: `RaceStats`, `EntryRaceStats`, `build_analysis`, built after each import and telemetry, stale ones by `refresh_recent`). Pages: head-to-head (every team's teammate duel or two drivers, since 1950; fuel-corrected pace gap from 2023), race pace (box plots, filters for pit and safety-car laps, cut-off, fuel-corrected switch), consistency (scatter once tyre wear is removed, map driver × race), pit stops (fastest crews, team medians, pit loss per race, undercuts that worked), track DNA (one profile per circuit and its records). Engine: `stintline_strategy.analysis` (pace filter, box plots, consistency, passes, laps led, real undercut attempts).
 - Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -32,6 +33,9 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
   stintline/news/        headlines from news feeds (model, refresh task, `refresh_news` command),
                          race reports built from stored data (`reports.py`, race story in
                          `story.py`), news endpoints (ADR 0012, 0013)
+  stintline/analysis/    per-race figures stored after each import (`build.py`), head-to-heads
+                         (`duels.py`), race pace (`pace.py`), consistency and pit stops (`season.py`),
+                         track DNA (`circuits.py`), analysis endpoints (ADR 0017)
   stintline/live/        live publisher (snapshot + pit now), Channels consumer `/ws/live`, `live` and
                          `live_demo` commands, circuit context from stored races (ADR 0011)
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
@@ -44,7 +48,8 @@ packages/racedata/   Pure Python, import `racedata`. Capability protocols (sched
 packages/strategy/   Strategy engine, import `stintline_strategy` (numpy + scipy, no Django, no I/O).
                      Modules: domain, laps, fuel, degradation, pit_loss, pit_exit, pace, undercut,
                      window, whatif (whole-race strategy replay), telemetry (lap traces,
-                     braking zones), backtest, synthetic
+                     braking zones), analysis (pace boxes, consistency, passes, undercut
+                     attempts), backtest, synthetic
                      (ground-truth races for tests)
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
 infra/               docker compose (dev, and `docker-compose.demo.yml`: public replay-only demo),
@@ -86,6 +91,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | News headlines | `manage.py refresh_news` (also every 30 min via Celery beat and on worker start) · record a feed fixture: `uv run python -m racedata.tools.record_fixture feeds autosport` |
 | Live mode (local, personal use) | `make live` (follows the feed, records to `./recordings`) · `make live-replay FILE=recordings/x.jsonl SPEED=10` · `manage.py live_demo --session 70 --out recordings/demo.jsonl` |
 | Public demo (replay-only) | `cp infra/demo.env.example infra/demo.env`, then `make demo-up` (http://localhost:8080) · `make demo-load` copies the local database into it · `make demo-down` (see `docs/deploy.md`) |
+| Analysis figures | `manage.py build_analysis [--season 2025 \| --session ID \| --all]` (stale races by default; also after each import and every `refresh_recent`) |
 | Pre-commit | `pre-commit run --all-files` |
 
 ## Conventions
@@ -131,4 +137,5 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Circuit outlines and telemetry.** OpenF1 `location` and `car_data` are fetched only over one lap (reference lap for the outline, each driver's fastest clean lap for telemetry), always bounded with `date>` / `date<`. Never request a whole race: tens of thousands of rows per car. Outline samples are evenly spaced in time; the UI relies on that to place cars. Telemetry distance is integrated from speed (no distance channel): compare laps by fraction of lap, never by raw metres.
 - **News.** Never store or show article text or summaries from feeds: headline, link and the picture URL the feed attaches to the item (ADR 0012, ADR 0015). Pictures are URL references, never downloaded, behind `NEWS_IMAGES_ENABLED`; no scraping of article pages for images. A report sentence is written only when its data exists (no race control → no safety-car claim). Bump `REPORT_FORMAT` in `stintline/news/api/views.py` when report fields change, so cached reports are rebuilt. The API container does not hot-reload: `docker compose restart api worker beat` after backend changes.
 - **Protected assets.** No team logos and no "F1" in product naming. Official driver portraits and car renders are allowed only as URL references behind `OFFICIAL_MEDIA_ENABLED` (ADR 0006, on by default since ADR 0014): never download or commit them. `photo_url` on drivers is the latest official portrait (cached, key changes with each import), else Wikipedia. Wikipedia portraits (ADR 0009) are freely licensed URL references and must keep their author and licence credit.
+- **Analysis figures (ADR 0017).** Bump `ANALYSIS_FORMAT` in `stintline/analysis/build.py` when a stored figure changes meaning, so every race is rebuilt. A race is wet only when intermediate or wet tyres were fitted (rain samples alone do not count). A pit loss stands for its circuit only when it is reliable (`RaceStats.pit_loss_reliable`: dry, ≥ 8 green stops, spread ≤ 25 %): Monza 2026 had a red flag missing from the timing and a 1,842 s median pit lane. Some sessions have no lap start times (Miami 2025): no running order, so passes and laps led are null, not zero.
 - **Historical data gaps.** Jolpica has fastest-lap ranks only from 2004 (careers starting earlier report `null`), no qualifying for most seasons before 1994 (poles fall back to first on the grid), and gives lapped cars a time for fewer laps (show the gap in laps). OpenF1 has no pit-stop rows for the first six races of 2023.

@@ -1,6 +1,6 @@
 # Phases 13–20: dashboard design, paddock, technical and analysis pages
 
-Status: Phase 13 done (2026-11-12). Later phases validated as a direction on 2026-11-12; each
+Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Later phases validated as a direction on 2026-11-12; each
 still gets a short go/no-go before it starts. Decisions taken on 2026-11-12: FIA PDFs relayed by
 our API and shown in the page (A), incidents and penalties from official decisions, no money
 figures (B), sidebar navigation (C), headline pictures as URL references (E, ADR 0015), no
@@ -43,7 +43,14 @@ teams, live, model, circuit pages. Headline pictures (ADR 0015).
   unsafe releases, penalty points on the licence per driver, round-by-round chart, the
   decision document and the lap of each incident. Real facts only.
 
-## Phase 16 — Analysis hub (new pages, in the dashboard style)
+## Phase 16 — Analysis hub (done, ADR 0017)
+Built in this order after the plan was validated on 2026-11-13: per-race figures stored by
+`stintline.analysis`, then the pages. Head-to-heads cover every season since 1950 (grid stands
+in for qualifying before 1994); the pace gap needs timing (2023+). Race pace is its own page and
+the Grand Prix pace tab links to it. Pit losses that do not stand for the circuit (wet, too few
+stops, unrecorded red flag) stay in the tables, greyed, and are left out of medians.
+
+Original scope:
 - **Head-to-head**: pick two drivers or a team. Qualifying and race head-to-head as split bars
   for every team, teammate qualifying gaps as a dot strip per session, points, finishes,
   laps led. Our addition: pace gap on clean laps, fuel-corrected, race by race.

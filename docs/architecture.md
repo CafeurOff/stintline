@@ -63,6 +63,7 @@ flowchart LR
 | `apps/api` ingestion | Map DTOs to models with natural-key upserts. Schedule ingestion | Call upstream directly (always via `racedata`) |
 | PostgreSQL | Source of truth for everything served | — |
 | `packages/strategy` | Deterministic models and simulations on plain inputs | Do I/O, import Django or `racedata` |
+| `apps/api` analysis | Run the engine once per imported race and store the figures the season and circuit pages read (`RaceStats`, `EntryRaceStats`, ADR 0017) | Run the engine over a whole season inside a request |
 | `apps/api` REST | Expose data and strategy results under `/api/v1/`, documented with OpenAPI | Compute strategy logic inline in views |
 | Live process (`manage.py live`) | Consume the live feed (or a recording), build a snapshot with the pit-now answer, keep the latest in Redis and broadcast it once per second (ADR 0011) | Write to Postgres, or run on the public demo server against the live feed |
 | Channels | Push snapshots to subscribed browsers on `/ws/live`; the browser applies the TV delay | — |
