@@ -19,3 +19,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0013](0013-lap-telemetry-and-race-stories.md) | Lap telemetry and race reports told like a journalist would | Accepted |
 | [0014](0014-broadcast-design-for-the-public-site.md) | Broadcast design for the public site | Accepted |
 | [0015](0015-headline-images-as-url-references.md) | Headline images as URL references | Accepted |
+| [0016](0016-dashboard-design.md) | Dashboard design for the whole site | Accepted |

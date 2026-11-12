@@ -1,6 +1,6 @@
 # 0014. Broadcast design for the public site
 
-- Status: Accepted (maintainer decision, 2026-11-11). Amends the visual rules of ADR 0007 and ADR 0008.
+- Status: Superseded by ADR 0016 for its visual rules (2026-11-12). Accepted (maintainer decision, 2026-11-11). Amends the visual rules of ADR 0007 and ADR 0008.
 - Date: 2026-11-11
 
 ## Context
