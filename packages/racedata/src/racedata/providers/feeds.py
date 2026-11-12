@@ -1,9 +1,11 @@
 """News feeds: headlines and links from public RSS 2.0 and Atom feeds (ADR 0012).
 
-Only the title, the link, the date and the feed's language are kept. Summaries, article
-bodies and images are dropped while parsing: StintLine links to articles, it never
-republishes them. XML is parsed with ``defusedxml`` (no entity expansion, no external
-entities), since feeds come from third-party servers.
+Only the title, the link, the date, the feed's language and the URL of the image the
+publisher attaches to the item (RSS ``enclosure``, Media RSS ``content``/``thumbnail``) are
+kept. Summaries and article bodies are dropped while parsing, and images are never
+downloaded: StintLine links to articles, it never republishes them (ADR 0012, ADR 0015).
+XML is parsed with ``defusedxml`` (no entity expansion, no external entities), since feeds
+come from third-party servers.
 """
 
 from __future__ import annotations
@@ -27,6 +29,7 @@ from racedata.http import HttpClient
 from racedata.models import Headline
 
 ATOM = "{http://www.w3.org/2005/Atom}"
+MEDIA = "{http://search.yahoo.com/mrss/}"
 ACCEPT = "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.8"
 MAX_TITLE_CHARS = 300
 MAX_ITEMS_PER_FEED = 50
@@ -82,9 +85,44 @@ def _text(element: Element | None) -> str | None:
     return element.text if element is not None else None
 
 
-def _rss_items(root: Element) -> Iterable[tuple[str | None, str | None, str | None]]:
+def clean_image(raw: str | None) -> str | None:
+    """Image URL kept only over HTTPS (the site is served over HTTPS), without tracking."""
+    url = clean_url(raw)
+    return url if url is not None and url.startswith("https://") else None
+
+
+def _is_image(element: Element) -> bool:
+    kind = element.get("type", "")
+    return kind.startswith("image/") or element.get("medium") == "image" or not kind
+
+
+def _item_image(item: Element) -> str | None:
+    """The publisher's picture for an item: enclosure, then Media RSS content or thumbnail."""
+    candidates = [
+        *item.findall("enclosure"),
+        *item.findall(f"{MEDIA}content"),
+        *item.findall(f"{MEDIA}thumbnail"),
+        *(link for link in item.findall(f"{ATOM}link") if link.get("rel") == "enclosure"),
+    ]
+    for element in candidates:
+        if element.tag.endswith("thumbnail") or _is_image(element):
+            url = clean_image(element.get("url") or element.get("href"))
+            if url is not None:
+                return url
+    return None
+
+
+Item = tuple[str | None, str | None, str | None, str | None]
+
+
+def _rss_items(root: Element) -> Iterable[Item]:
     for item in root.iter("item"):
-        yield _text(item.find("title")), _text(item.find("link")), _text(item.find("pubDate"))
+        yield (
+            _text(item.find("title")),
+            _text(item.find("link")),
+            _text(item.find("pubDate")),
+            _item_image(item),
+        )
 
 
 def _atom_link(entry: Element) -> str | None:
@@ -94,10 +132,10 @@ def _atom_link(entry: Element) -> str | None:
     return None
 
 
-def _atom_items(root: Element) -> Iterable[tuple[str | None, str | None, str | None]]:
+def _atom_items(root: Element) -> Iterable[Item]:
     for entry in root.iter(f"{ATOM}entry"):
         date = _text(entry.find(f"{ATOM}published")) or _text(entry.find(f"{ATOM}updated"))
-        yield _text(entry.find(f"{ATOM}title")), _atom_link(entry), date
+        yield _text(entry.find(f"{ATOM}title")), _atom_link(entry), date, _item_image(entry)
 
 
 def parse_feed(body: str, feed: FeedConfig, now: datetime) -> list[Headline]:
@@ -121,7 +159,7 @@ def parse_feed(body: str, feed: FeedConfig, now: datetime) -> list[Headline]:
 
     seen: set[str] = set()
     out: list[Headline] = []
-    for raw_title, raw_link, raw_date in items:
+    for raw_title, raw_link, raw_date, image_url in items:
         title, url, published = clean_title(raw_title), clean_url(raw_link), parse_date(raw_date)
         if not title or url is None or published is None or url in seen:
             continue
@@ -136,6 +174,7 @@ def parse_feed(body: str, feed: FeedConfig, now: datetime) -> list[Headline]:
                     title=title,
                     url=url,
                     published_at=published,
+                    image_url=image_url,
                 )
             )
         except ValidationError:

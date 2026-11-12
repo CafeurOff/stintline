@@ -868,6 +868,8 @@ export interface components {
       url: string;
       /** Format: date-time */
       published_at: string;
+      /** @description The publisher's picture (a URL reference), or null when absent or switched off. */
+      readonly image_url: string | null;
     };
     Health: {
       status: components["schemas"]["ComponentStatusEnum"];

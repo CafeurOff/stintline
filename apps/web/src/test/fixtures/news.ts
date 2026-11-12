@@ -1747,6 +1747,7 @@ export const headlines = [
     title: "Social Media: Hamilton witnesses humanitarian relief effort in Gaza Strip",
     url: "https://www.racefans.net/2026/11/10/social-media-hamilton-witnesses-humanitarian-relief-effort-in-gaza-strip/",
     published_at: "2026-11-10T21:38:25Z",
+    image_url: null,
   },
   {
     source: "f1i",
@@ -1755,6 +1756,7 @@ export const headlines = [
     title: "'The car was phenomenal\u2019: Alonso finds reason to smile",
     url: "https://f1i.com/news/577871-the-car-was-phenomenal-alonso-finds-reason-to-smile.html",
     published_at: "2026-11-10T16:53:04Z",
+    image_url: null,
   },
   {
     source: "motorsport-fr",
@@ -1764,6 +1766,7 @@ export const headlines = [
       'Verstappen sur les accrochages chez Ferrari : "Je ne signerais jamais deux pilotes num\u00e9ro 1"',
     url: "https://fr.motorsport.com/f1/news/max-verstappen-accrochages-ferrari-signerais-jamais-deux-pilotes-numero-1/10873625/",
     published_at: "2026-11-10T16:38:04Z",
+    image_url: "https://images.example.org/motorsport-fr-3.jpg",
   },
   {
     source: "racefans",
@@ -1773,6 +1776,7 @@ export const headlines = [
       "F1 scraps back-up plan to race at Imola if Middle East GPs are cancelled \u2013 reports",
     url: "https://www.racefans.net/2026/11/10/f1-scraps-back-up-plan-to-race-at-imola-if-middle-east-gps-are-cancelled-reports/",
     published_at: "2026-11-10T15:58:22Z",
+    image_url: null,
   },
   {
     source: "f1i",
@@ -1781,6 +1785,7 @@ export const headlines = [
     title: "F1 tells Imola it won't be needed for season finale",
     url: "https://f1i.com/news/577876-f1-tells-imola-it-wont-be-needed-for-season-finale.html",
     published_at: "2026-11-10T15:26:31Z",
+    image_url: null,
   },
   {
     source: "autosport",
@@ -1789,6 +1794,7 @@ export const headlines = [
     title: "F1 2026 calendar update: Imola off the table, no plan B if Iran war escalates",
     url: "https://www.autosport.com/f1/news/f1-2026-calendar-update-imola-off-the-table-no-plan-b-if-iran-war-escalates/10873643/",
     published_at: "2026-11-10T14:52:26Z",
+    image_url: "https://images.example.org/autosport-6.jpg",
   },
   {
     source: "motorsport-fr",
@@ -1798,6 +1804,7 @@ export const headlines = [
       "Calendrier F1 2026 : Imola \u00e9cart\u00e9, aucun plan B en cas d'escalade de la guerre",
     url: "https://fr.motorsport.com/f1/news/calendrier-f1-2026-imola-ecarte-plan-b-escalade-guerre/10873641/",
     published_at: "2026-11-10T14:51:12Z",
+    image_url: "https://images.example.org/motorsport-fr-7.jpg",
   },
   {
     source: "autosport",
@@ -1806,5 +1813,6 @@ export const headlines = [
     title: "FIA reveals ADUO results in final review of 2026 F1 season",
     url: "https://www.autosport.com/f1/news/fia-reveals-aduo-results-in-final-review-of-2026-f1-season/10873566/",
     published_at: "2026-11-10T11:45:39Z",
+    image_url: "https://images.example.org/autosport-8.jpg",
   },
 ] satisfies Schema<"Headline">[];

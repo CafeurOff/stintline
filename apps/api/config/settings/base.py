@@ -172,6 +172,9 @@ SPECTACULAR_SETTINGS = {
 OFFICIAL_MEDIA_ENABLED: bool = env.bool("OFFICIAL_MEDIA_ENABLED", default=True)
 """Return official portrait and car image URLs (references only, ADR 0006)."""
 
+NEWS_IMAGES_ENABLED: bool = env.bool("NEWS_IMAGES_ENABLED", default=True)
+"""Return the publishers' headline image URLs (references only, never downloaded, ADR 0015)."""
+
 RACEDATA = {
     "MODE": env.str("RACEDATA_MODE", default="http"),
     "CACHE_DIR": env.str("RACEDATA_CACHE_DIR", default=str(BASE_DIR / ".racedata-cache")),

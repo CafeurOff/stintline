@@ -24,6 +24,7 @@ export const SESSION_ID = session.id;
 export async function mockApi(page: Page) {
   await page.route("https://media.formula1.com/**", (route) => route.abort());
   await page.route("https://*.wikimedia.org/**", (route) => route.abort());
+  await page.route("https://images.example.org/**", (route) => route.abort());
   const json = (body: unknown) => ({ json: body });
   const routes: [string, unknown][] = [
     ["**/api/v1/health", { status: "ok", version: "0.1.0", database: "ok" }],

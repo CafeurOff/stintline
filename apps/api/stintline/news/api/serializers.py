@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from django.conf import settings
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -17,13 +18,20 @@ from stintline.racing.models import SessionEntry
 
 class HeadlineSerializer(serializers.ModelSerializer[Headline]):
     source_name = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Headline
-        fields = ["source", "source_name", "language", "title", "url", "published_at"]
+        fields = ["source", "source_name", "language", "title", "url", "published_at", "image_url"]
 
     def get_source_name(self, headline: Headline) -> str:
         return SOURCE_NAMES.get(headline.source, headline.source)
+
+    def get_image_url(self, headline: Headline) -> str | None:
+        """The publisher's picture (a URL reference), or null when absent or switched off."""
+        if not settings.NEWS_IMAGES_ENABLED:
+            return None
+        return headline.image_url or None
 
 
 class HeadlineQuerySerializer(serializers.Serializer[Any]):

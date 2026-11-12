@@ -34,6 +34,7 @@ def store_headlines(items: list[HeadlineDTO], now: datetime) -> int:
                 "language": item.language,
                 "title": item.title,
                 "published_at": item.published_at,
+                "image_url": item.image_url or "",
                 "fetched_at": now,
             },
         )

@@ -2,7 +2,7 @@
 
 Status: validated on 2026-11-12 with the recommended option for every decision in section 7
 (A: relay the PDF, B: incidents without money figures, C: rail + context bar, D: stop after the
-pilot, E: headlines only, F: no transcripts for now), except the design itself: it is first
+pilot, E: changed on 2026-11-12, headline pictures as URL references (ADR 0015), F: no transcripts for now), except the design itself: it is first
 tried on one page (the home page, on a branch) and adopted only if the maintainer likes it.
 Each phase still gets its own short go/no-go before it starts.
 

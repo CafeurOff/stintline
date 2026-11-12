@@ -11,6 +11,12 @@ class Headline(models.Model):
     title = models.CharField(max_length=300)
     url = models.URLField(max_length=600, unique=True)
     published_at = models.DateTimeField()
+    image_url = models.URLField(
+        max_length=1000,
+        blank=True,
+        default="",
+        help_text="Publisher's picture for the item, a URL reference only (ADR 0015)",
+    )
     fetched_at = models.DateTimeField()
 
     class Meta:

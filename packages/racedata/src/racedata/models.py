@@ -324,7 +324,8 @@ class WikiPortrait(_DTO):
 class Headline(_DTO):
     """One item of a news feed: a title and a link to the publisher's article.
 
-    The article text, summary and images are never kept (ADR 0012).
+    The article text and summary are never kept (ADR 0012). The publisher's picture is kept
+    as a URL reference only, never downloaded (ADR 0015).
     """
 
     source: str
@@ -333,6 +334,8 @@ class Headline(_DTO):
     title: str
     url: str
     published_at: datetime
+    image_url: str | None = None
+    """HTTPS URL of the image the publisher attaches to the item, when the feed has one."""
 
     @field_validator("published_at")
     @classmethod

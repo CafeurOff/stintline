@@ -1,6 +1,6 @@
 # 0012. News: race reports from our data, headlines linked to their sources
 
-- Status: Accepted (Phase 10, 2026-11-11)
+- Status: Accepted (Phase 10, 2026-11-11). Images amended by ADR 0015.
 
 ## Context
 The roadmap (ADR 0008) ends the fan hub with a news page. Two things were agreed on 2026-11-03: no republished articles (they belong to their publishers), and no paid service (zero budget, so no hosted language model). The page still has to feel alive after every Grand Prix and between them.

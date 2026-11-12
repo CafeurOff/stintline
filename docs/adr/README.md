@@ -17,3 +17,5 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0011](0011-live-mode-and-team-radio.md) | Live mode and team radio | Accepted |
 | [0012](0012-news-reports-and-headlines.md) | News: race reports from our data, headlines linked to their sources | Accepted |
 | [0013](0013-lap-telemetry-and-race-stories.md) | Lap telemetry and race reports told like a journalist would | Accepted |
+| [0014](0014-broadcast-design-for-the-public-site.md) | Broadcast design for the public site | Accepted |
+| [0015](0015-headline-images-as-url-references.md) | Headline images as URL references | Accepted |

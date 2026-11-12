@@ -97,6 +97,20 @@ def test_headlines_endpoint_filters_by_language_newest_first() -> None:
     assert len(get("news/headlines", limit=1)) == 1
 
 
+def test_headlines_endpoint_returns_the_publisher_image_url(settings: Any) -> None:
+    item = headline("https://e.org/a", NOW).model_copy(
+        update={"image_url": "https://cdn.e.org/a.jpg"}
+    )
+    services.store_headlines([item, headline("https://e.org/b", NOW)], NOW)
+
+    images = {h["url"]: h["image_url"] for h in get("news/headlines")}
+    settings.NEWS_IMAGES_ENABLED = False
+    switched_off = {h["image_url"] for h in get("news/headlines")}
+
+    assert images == {"https://e.org/a": "https://cdn.e.org/a.jpg", "https://e.org/b": None}
+    assert switched_off == {None}
+
+
 def test_headlines_endpoint_rejects_unknown_languages() -> None:
     body = get("news/headlines", status=400, lang="de")
 

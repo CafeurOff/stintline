@@ -194,3 +194,63 @@ def test_recorded_feed_fixtures_hold_no_article_text() -> None:
         text = file.read_text(encoding="utf-8")
         assert "<description>" not in text, file
         assert "content:encoded" not in text, file
+
+
+def _item_with(extra: str, link: str = "https://example.org/a") -> str:
+    return (
+        f"<item><title>T</title><link>{link}</link>"
+        f"<pubDate>Tue, 10 Nov 2026 14:52:26 +0000</pubDate>{extra}</item>"
+    )
+
+
+def test_parse_feed_keeps_the_enclosure_image_url() -> None:
+    body = _rss(
+        _item_with('<enclosure url="https://cdn.example.org/p.jpg" type="image/jpeg" length="1"/>')
+    )
+
+    [headline] = parse_feed(body, FEED, NOW)
+
+    assert headline.image_url == "https://cdn.example.org/p.jpg"
+
+
+def test_parse_feed_reads_media_rss_thumbnails() -> None:
+    body = (
+        '<?xml version="1.0"?><rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">'
+        "<channel>"
+        + _item_with('<media:thumbnail url="https://cdn.example.org/t.jpg"/>')
+        + "</channel></rss>"
+    )
+
+    [headline] = parse_feed(body, FEED, NOW)
+
+    assert headline.image_url == "https://cdn.example.org/t.jpg"
+
+
+def test_parse_feed_ignores_plain_http_and_non_image_enclosures() -> None:
+    body = _rss(
+        _item_with('<enclosure url="http://cdn.example.org/p.jpg" type="image/jpeg"/>'),
+        _item_with(
+            '<enclosure url="https://cdn.example.org/a.mp3" type="audio/mpeg"/>',
+            link="https://example.org/b",
+        ),
+        _item("No image", "https://example.org/c"),
+    )
+
+    headlines = parse_feed(body, FEED, NOW)
+
+    assert [h.image_url for h in headlines] == [None, None, None]
+
+
+def test_trim_feed_keeps_image_references_but_not_summaries() -> None:
+    body = _rss(
+        _item_with(
+            '<description>Summary</description><enclosure url="https://cdn.example.org/p.jpg"'
+            ' type="image/jpeg"/>'
+        )
+    )
+
+    trimmed, dropped = trim_feed(body)
+
+    assert "enclosure" in trimmed
+    assert "Summary" not in trimmed
+    assert dropped == ["description"]

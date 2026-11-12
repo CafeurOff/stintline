@@ -82,8 +82,20 @@ def record(provider: str, path: str, params: dict[str, str], root: Path) -> Path
 
 
 FEED_ITEMS_KEPT = 12
-FEED_ITEM_FIELDS = frozenset({"title", "link", "pubDate", "guid", "category"})
-"""Article summaries, bodies and images are removed: fixtures never hold article text."""
+FEED_ITEM_FIELDS = frozenset(
+    {
+        "title",
+        "link",
+        "pubDate",
+        "guid",
+        "category",
+        "enclosure",
+        "{http://search.yahoo.com/mrss/}content",
+        "{http://search.yahoo.com/mrss/}thumbnail",
+    }
+)
+"""Article summaries and bodies are removed: fixtures never hold article text. Image
+references (URLs only) are kept, since headlines carry them (ADR 0015)."""
 
 
 def trim_feed(body: str, keep: int = FEED_ITEMS_KEPT) -> tuple[str, list[str]]:
