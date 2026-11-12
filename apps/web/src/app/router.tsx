@@ -1,4 +1,4 @@
-import { type ComponentType, lazy } from "react";
+import { type ComponentType, lazy, Suspense } from "react";
 import { createBrowserRouter, type RouteObject } from "react-router";
 
 import { HomePage } from "@/features/home/components/HomePage";
@@ -31,8 +31,27 @@ const StandingsPage = page(
 const RacePage = page(() => import("@/features/race/components/RacePage"), "RacePage");
 const TyresPage = page(() => import("@/features/tyres/components/TyresPage"), "TyresPage");
 const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
+const DirectionsPage = page(
+  () => import("@/features/home/components/directions/DirectionsPage"),
+  "DirectionsPage",
+);
+
+/** Design review pages, only in the development server (never in a production build). */
+const devRoutes: RouteObject[] = import.meta.env.DEV
+  ? [
+      {
+        path: "dev/directions",
+        element: (
+          <Suspense fallback={null}>
+            <DirectionsPage />
+          </Suspense>
+        ),
+      },
+    ]
+  : [];
 
 export const routes: RouteObject[] = [
+  ...devRoutes,
   {
     element: <Layout />,
     children: [
