@@ -27,7 +27,7 @@ def stored_laps(session: Session) -> list[TelemetryLap]:
     )
 
 
-def _samples(lap: TelemetryLap) -> engine.LapSamples:
+def lap_samples(lap: TelemetryLap) -> engine.LapSamples:
     car, pos = lap.samples, lap.positions
 
     def arr(values: list[Any]) -> np.ndarray[Any, np.dtype[np.float64]]:
@@ -81,7 +81,7 @@ def compare(session: Session, cars: list[int]) -> dict[str, Any]:
     missing = [car for car in cars if car not in by_car]
     if missing:
         raise TelemetryUnavailableError(f"no telemetry for car {missing[0]}")
-    samples = [_samples(by_car[car]) for car in cars]
+    samples = [lap_samples(by_car[car]) for car in cars]
     length = float(np.mean([engine.natural_length(s) for s in samples]))
     traces = [engine.trace(s, length) for s in samples]
     size = min(len(t.distance_m) for t in traces)
