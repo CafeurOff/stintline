@@ -8,6 +8,8 @@ import { useSeasonEvents } from "@/features/hub/api";
 import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { useI18n } from "@/lib/i18n/context";
 import { useNow } from "@/lib/useNow";
+import type { Schema } from "@stintline/api-types";
+import { KeyFigures } from "@/components/hub/KeyFigures";
 
 import { GrandPrixCard } from "./GrandPrixCard";
 
@@ -49,14 +51,49 @@ export function CalendarPage() {
       ) : list.length === 0 ? (
         <EmptyState title={t("calendar.empty")} />
       ) : (
-        <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {list.map((event) => (
-            <li key={event.id}>
-              <GrandPrixCard event={event} isNext={event.id === nextId} now={now} />
-            </li>
-          ))}
-        </ol>
+        <div className="flex flex-col gap-4">
+          <SeasonFigures events={list} />
+          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {list.map((event) => (
+              <li key={event.id}>
+                <GrandPrixCard event={event} isNext={event.id === nextId} now={now} />
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
     </div>
+  );
+}
+
+/** The season at a glance: rounds run, sprints, different winners, the most wins. */
+function SeasonFigures({ events }: { events: readonly Schema<"Event">[] }) {
+  const { t } = useI18n();
+  const wins = new Map<string, { name: string; count: number }>();
+  for (const event of events) {
+    const w = event.winner;
+    if (!w) continue;
+    const entry = wins.get(w.driver.ref) ?? { name: w.driver.family_name, count: 0 };
+    entry.count += 1;
+    wins.set(w.driver.ref, entry);
+  }
+  const top = [...wins.values()].sort((a, b) => b.count - a.count)[0];
+  const done = events.filter((e) => e.winner).length;
+  return (
+    <KeyFigures
+      label={t("calendar.figures")}
+      figures={[
+        { label: t("calendar.fig.run"), value: `${String(done)} / ${String(events.length)}` },
+        {
+          label: t("calendar.fig.sprints"),
+          value: events.filter((e) => e.format === "sprint").length,
+        },
+        { label: t("calendar.fig.winners"), value: wins.size },
+        {
+          label: t("calendar.fig.mostWins"),
+          value: top ? `${top.name} · ${String(top.count)}` : "—",
+        },
+      ]}
+    />
   );
 }

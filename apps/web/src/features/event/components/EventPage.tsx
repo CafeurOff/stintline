@@ -1,7 +1,14 @@
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
+import { ListOrdered, Play } from "lucide-react";
+
+import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { Face } from "@/components/dash/Face";
+import { Panel } from "@/components/dash/Panel";
 import { DriverName } from "@/components/hub/DriverName";
+import { CircuitMark } from "@/components/racing/CircuitMark";
+import { Flag } from "@/components/racing/Flag";
 import { CircuitOutline } from "@/components/racing/CircuitOutline";
 import { TeamName } from "@/components/hub/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -9,6 +16,15 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useEvent } from "@/features/hub/api";
+import {
+  ClimberTile,
+  FactsPanel,
+  FastestLapTile,
+  FastestStopTile,
+  RaceControlTile,
+} from "@/features/hub/RaceFacts";
+import { useReport } from "@/features/news/api";
+import { inkOn, teamColour, teamTint } from "@/lib/teams";
 import { RaceAnalysis } from "@/features/analysis/components/RaceAnalysis";
 import { useSessionDetail, useTrack } from "@/features/race/api";
 import { byFinish } from "@/features/race/entries";
@@ -53,34 +69,69 @@ function EventLoader({ eventId }: { eventId: number }) {
   const race = sessions.find((s) => s.kind === "R");
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-4">
       <EventHero event={data} replays={replays} raceId={race?.id ?? null} />
-      {!shown ? (
-        <EmptyState title={t("event.noResults")} />
-      ) : (
-        <section aria-labelledby="event-results" className="flex flex-col gap-4">
-          <h2 id="event-results" className="text-2xl font-bold">
-            {t("event.results")}
-          </h2>
-          {sessions.length > 1 && (
-            <SegmentedControl
-              legend={t("event.session")}
-              hideLegend
-              options={sessions.map((s) => ({ value: s.kind, label: t(`kind.${s.kind as Kind}`) }))}
-              value={shown.kind}
-              onChange={(value) => {
-                update({ session: value === sessions[0]?.kind ? null : value });
-              }}
-            />
-          )}
-          <SessionResults key={shown.id} sessionId={shown.id} kind={shown.kind as Kind} />
-        </section>
-      )}
+      {race?.has_data && <RaceFigures sessionId={race.id} />}
+      <div className="grid gap-4 xl:grid-cols-3">
+        {!shown ? (
+          <EmptyState title={t("event.noResults")} />
+        ) : (
+          <Panel
+            id="event-results"
+            title={t("event.results")}
+            icon={<ListOrdered />}
+            className="xl:col-span-2"
+            action={
+              sessions.length > 1 && (
+                <SegmentedControl
+                  legend={t("event.session")}
+                  hideLegend
+                  options={sessions.map((s) => ({
+                    value: s.kind,
+                    label: t(`kind.${s.kind as Kind}`),
+                  }))}
+                  value={shown.kind}
+                  onChange={(value) => {
+                    update({ session: value === sessions[0]?.kind ? null : value });
+                  }}
+                />
+              )
+            }
+          >
+            <SessionResults key={shown.id} sessionId={shown.id} kind={shown.kind as Kind} />
+          </Panel>
+        )}
+        {race?.has_data && <RaceFactsColumn sessionId={race.id} />}
+      </div>
       {shown && shown.has_data && shown.kind !== "Q" && (
-        <AnalysisLoader key={`analysis-${String(shown.id)}`} sessionId={shown.id} />
+        <div className="rounded-xl border border-line bg-panel p-5">
+          <AnalysisLoader key={`analysis-${String(shown.id)}`} sessionId={shown.id} />
+        </div>
       )}
     </div>
   );
+}
+
+/** The race in tiles: fastest stop, biggest climber, fastest lap, race control. */
+function RaceFigures({ sessionId }: { sessionId: number }) {
+  const report = useReport(sessionId).data;
+  if (!report) return null;
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {report.pit_stops?.fastest && <FastestStopTile report={report} />}
+      {report.biggest_gain && <ClimberTile entry={report.biggest_gain} />}
+      {report.fastest_lap && <FastestLapTile entry={report.fastest_lap} />}
+      <RaceControlTile report={report} />
+    </div>
+  );
+}
+
+function RaceFactsColumn({ sessionId }: { sessionId: number }) {
+  const report = useReport(sessionId).data;
+  const { t } = useI18n();
+  return report ? (
+    <FactsPanel report={report} limit={Number.POSITIVE_INFINITY} title={t("event.facts")} />
+  ) : null;
 }
 
 function EventHero({
@@ -101,15 +152,16 @@ function EventHero({
     .slice(0, 3);
 
   return (
-    <header className="grid gap-8 rounded-3xl bg-panel p-6 sm:p-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <div className="flex flex-col gap-4">
+    <header className="relative grid gap-6 overflow-hidden rounded-xl border border-line bg-panel p-5 sm:p-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_14rem] lg:items-end">
+      <div className="flex flex-col gap-4 self-center">
         <div>
-          <p className="text-sm text-muted">
+          <p className="flex items-center gap-2 text-sm text-muted">
+            <Flag country={event.circuit.country} className="text-base" />
             <Link to={`/calendar/${String(event.season)}`} className="hover:underline">
               {t("event.eyebrow", { season: event.season, round: event.round })}
             </Link>
           </p>
-          <h1 className="text-4xl leading-none font-bold sm:text-6xl">
+          <h1 className="mt-1 text-4xl leading-none font-extrabold sm:text-5xl">
             {eventName(event.name, locale)}
           </h1>
           <p className="mt-2 text-muted">
@@ -117,20 +169,6 @@ function EventHero({
             {countryName(event.circuit.country, locale)} · {f.date(event.race_date)}
           </p>
         </div>
-        {top3.length > 0 && (
-          <ol aria-label={t("home.podium")} className="flex flex-wrap gap-x-6 gap-y-3">
-            {top3.map((entry, index) => (
-              <li key={entry.car_number} className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-muted tabular-nums">{index + 1}</span>
-                <DriverName
-                  driver={entry.driver}
-                  colour={entry.team_colour}
-                  imageUrl={entry.media?.driver_image_url}
-                />
-              </li>
-            ))}
-          </ol>
-        )}
         {replays.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {replays.map((s) => (
@@ -139,18 +177,64 @@ function EventHero({
                 to={`/sessions/${String(s.id)}`}
                 className={
                   s.kind === "R"
-                    ? "rounded-lg bg-action px-4 py-3 font-bold text-white hover:brightness-110"
-                    : "rounded-lg border border-line-strong px-4 py-3 font-bold hover:border-ink"
+                    ? "inline-flex items-center gap-2 rounded-lg bg-action px-4 py-2.5 font-semibold text-white hover:brightness-110"
+                    : "inline-flex items-center gap-2 rounded-lg border border-line-strong bg-raised px-4 py-2.5 font-semibold hover:border-ink"
                 }
               >
+                <Play aria-hidden="true" className="size-4 fill-current" />
                 {s.kind === "R" ? t("event.replay") : t("event.replaySprint")}
               </Link>
             ))}
           </div>
         )}
       </div>
-      {track.data && (
-        <CircuitOutline track={track.data} className="h-48 w-full self-center lg:h-64" />
+      {top3.length > 0 ? (
+        <ol aria-label={t("home.podium")} className="grid grid-cols-3 items-end gap-3">
+          {[1, 0, 2].map((index) => {
+            const entry = top3[index];
+            if (!entry) return <li key={index} />;
+            const colour = teamColour(entry.team_colour);
+            return (
+              <li key={entry.car_number}>
+                <Link
+                  to={`/drivers/${entry.driver.ref}`}
+                  className="group flex flex-col overflow-hidden rounded-lg"
+                  style={{ backgroundColor: teamTint(entry.team_colour, 30) }}
+                >
+                  <Face
+                    url={entry.media?.driver_image_url ?? entry.driver.photo_url}
+                    label={entry.driver.code ?? entry.driver.family_name.slice(0, 3)}
+                    colour={entry.team_colour}
+                    className={`w-full text-2xl ${index === 0 ? "h-48" : "h-40"}`}
+                    style={NO_BACKDROP}
+                  />
+                  <span
+                    className="flex items-center gap-2 px-2.5 py-2"
+                    style={{ backgroundColor: colour, color: inkOn(colour) }}
+                  >
+                    <span className="num font-bold">{index + 1}</span>
+                    <span className="truncate text-sm font-extrabold uppercase group-hover:underline">
+                      {entry.driver.family_name}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      ) : (
+        <span />
+      )}
+      {track.data ? (
+        <CircuitOutline track={track.data} className="hidden h-48 w-full self-center lg:block" />
+      ) : (
+        event.circuit.outline && (
+          <CircuitMark
+            path={event.circuit.outline}
+            width={3}
+            className="hidden h-48 w-full self-center lg:block"
+          />
+        )
       )}
     </header>
   );
@@ -200,7 +284,7 @@ function RaceTable({ entries }: { entries: Entry[] }) {
   };
   return (
     <div className="overflow-x-auto">
-      <table className="data-table">
+      <table className="data-table text-sm">
         <thead>
           <tr>
             <th className="num">{t("col.position")}</th>
@@ -253,7 +337,7 @@ function QualifyingTable({ entries }: { entries: Entry[] }) {
   const { t, f } = useI18n();
   return (
     <div className="overflow-x-auto">
-      <table className="data-table">
+      <table className="data-table text-sm">
         <thead>
           <tr>
             <th className="num">{t("col.position")}</th>
