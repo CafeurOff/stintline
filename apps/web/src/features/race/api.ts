@@ -21,8 +21,9 @@ export function useSessionDetail(sessionId: number, enabled = true) {
   });
 }
 
-export function useStints(sessionId: number) {
+export function useStints(sessionId: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["session", sessionId, "stints"],
     queryFn: async ({ signal }) =>
       unwrap(

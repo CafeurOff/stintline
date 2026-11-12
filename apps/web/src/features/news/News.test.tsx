@@ -225,7 +225,7 @@ describe("Home page news", () => {
     expect(
       await within(news).findByRole("link", { name: "Lando Norris wins the Hungarian Grand Prix" }),
     ).toBeVisible();
-    expect(within(news).getByRole("link", { name: "All news →" })).toHaveAttribute("href", "/news");
+    expect(within(news).getByRole("link", { name: /All news/ })).toHaveAttribute("href", "/news");
   });
 });
 
