@@ -25,7 +25,8 @@ describe("Hub pages", () => {
     const { router } = renderRoute("/events/14");
 
     expect(await screen.findByRole("heading", { name: "Hungarian Grand Prix" })).toBeVisible();
-    const table = await screen.findByRole("table");
+    const results = await screen.findByRole("region", { name: "Results" });
+    const table = within(results).getByRole("table");
     expect(within(table).getAllByRole("row")[1]).toHaveTextContent("Norris");
     expect(screen.getByRole("link", { name: "Replay on the circuit" })).toHaveAttribute(
       "href",

@@ -4,6 +4,7 @@ import {
   ListOrdered,
   Medal,
   Play,
+  Scale,
   Sigma,
   Swords,
   Target,
@@ -18,6 +19,8 @@ import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useDriverResults } from "@/features/hub/api";
+import { useDecisions } from "@/features/paddock/api";
+import { DecisionTable } from "@/features/paddock/components/DecisionTable";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
@@ -117,7 +120,31 @@ export function DriverSeason({
           </div>
         )}
       </div>
+      {season !== null && <DriverDecisions driverRef={driverRef} season={season} />}
     </div>
+  );
+}
+
+/** The season's stewards' decisions about the driver (ADR 0018); nothing when there are none. */
+function DriverDecisions({ driverRef, season }: { driverRef: string; season: number }) {
+  const { t } = useI18n();
+  const decisions = useDecisions({ season, driver: driverRef });
+  const rows = decisions.data ?? [];
+  if (rows.length === 0) return null;
+  const points = rows.reduce((sum, d) => sum + (d.penalty_points ?? 0), 0);
+  const penalties = rows.filter((d) => d.is_penalty).length;
+  return (
+    <Panel
+      title={t("driver.decisions", { season })}
+      icon={<Scale />}
+      action={
+        <span className="num text-sm text-muted">
+          {t("driver.decisionsSummary", { penalties, points })}
+        </span>
+      }
+    >
+      <DecisionTable decisions={rows} showEvent />
+    </Panel>
   );
 }
 

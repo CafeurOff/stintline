@@ -47,6 +47,10 @@ const CircuitsPage = page(
   () => import("@/features/insights/components/CircuitsPage"),
   "CircuitsPage",
 );
+const DocumentsPage = page(
+  () => import("@/features/paddock/components/DocumentsPage"),
+  "DocumentsPage",
+);
 const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
 
 export const routes: RouteObject[] = [
@@ -74,6 +78,7 @@ export const routes: RouteObject[] = [
       { path: "analysis/pit-stops", element: <PitStopsPage /> },
       { path: "circuits", element: <CircuitsPage /> },
       { path: "circuits/:ref", element: <CircuitsPage /> },
+      { path: "documents", element: <DocumentsPage /> },
       { path: "model", element: <ModelPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],

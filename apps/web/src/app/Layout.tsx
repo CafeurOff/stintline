@@ -4,6 +4,7 @@ import {
   CalendarDays,
   ChartNoAxesColumn,
   Crosshair,
+  FileText,
   Gauge,
   House,
   type LucideIcon,
@@ -62,7 +63,13 @@ const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
       ["/circuits", "nav.circuits", Route],
     ],
   },
-  { key: "nav.group.paddock", links: [["/news", "nav.news", Newspaper]] },
+  {
+    key: "nav.group.paddock",
+    links: [
+      ["/news", "nav.news", Newspaper],
+      ["/documents", "nav.documents", FileText],
+    ],
+  },
   { key: "nav.group.about", links: [["/model", "nav.model", BookOpen]] },
 ];
 

@@ -16,7 +16,7 @@ import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useLaps, useSectors } from "../api";
 import { gapsByLap, type PerLap, placesGained, positionsByLap } from "../laps";
-import { LapChart, type LapSeries } from "./LapChart";
+import { LapChart, type LapMark, type LapSeries } from "./LapChart";
 
 type Entry = Schema<"Entry">;
 type Chart = "positions" | "gaps" | "pace" | "tyres" | "sectors" | "telemetry";
@@ -33,6 +33,8 @@ interface RaceAnalysisProps {
   entries: readonly Entry[];
   neutralisations: readonly Schema<"Neutralisation">[];
   totalLaps: number;
+  /** Stewards' decisions to draw on the running-order charts. */
+  marks?: readonly LapMark[];
 }
 
 /** Key facts of a race, then lap-by-lap charts for those who want the details. */
@@ -41,6 +43,7 @@ export function RaceAnalysis({
   entries,
   neutralisations,
   totalLaps,
+  marks = [],
 }: RaceAnalysisProps) {
   const { t } = useI18n();
   const [params, update] = useSearchParamsState();
@@ -114,6 +117,7 @@ export function RaceAnalysis({
           totalLaps={totalLaps}
           highlighted={highlighted}
           kind={chart}
+          marks={marks}
         />
       ) : chart === "pace" ? (
         <>
@@ -238,12 +242,14 @@ function RunningChart({
   totalLaps,
   highlighted,
   kind,
+  marks,
 }: {
   sessionId: number;
   entries: readonly Entry[];
   totalLaps: number;
   highlighted: ReadonlySet<number>;
   kind: "positions" | "gaps";
+  marks: readonly LapMark[];
 }) {
   const { t, f } = useI18n();
   const replay = useReplay(sessionId);
@@ -268,6 +274,7 @@ function RunningChart({
           invert
           yDomain={[1, entries.length]}
           xLabel={t("analysis.lap")}
+          marks={marks}
         />
       </>
     );
@@ -289,6 +296,7 @@ function RunningChart({
         invert
         yFormat={(value) => f.seconds(value, 0)}
         xLabel={t("analysis.lap")}
+        marks={marks}
       />
     </>
   );

@@ -11,6 +11,13 @@ import {
   teammates,
 } from "./fixtures/analysis";
 import { degradation } from "./fixtures/degradation";
+import {
+  decisions,
+  documentDetail,
+  documentEvents,
+  documentList,
+  documentSearch,
+} from "./fixtures/paddock";
 import { events } from "./fixtures/events";
 import { homeResponse } from "./fixtures/home";
 import { strategyResponse } from "./fixtures/strategy";
@@ -122,6 +129,17 @@ export const handlers = [
   http.get("*/api/v1/analysis/seasons/:year/pit-stops", () => HttpResponse.json(pitStops)),
   http.get("*/api/v1/analysis/circuits", () => HttpResponse.json(circuits)),
   http.get("*/api/v1/sessions/:id/pace", () => HttpResponse.json(sessionPace)),
+  http.get("*/api/v1/documents/events", () => HttpResponse.json(documentEvents)),
+  http.get("*/api/v1/documents", ({ request }) =>
+    HttpResponse.json(new URL(request.url).searchParams.get("q") ? documentSearch : documentList),
+  ),
+  http.get("*/api/v1/documents/:id", () => HttpResponse.json(documentDetail)),
+  http.get("*/api/v1/stewards/decisions", ({ request }) => {
+    const driver = new URL(request.url).searchParams.get("driver");
+    return HttpResponse.json(
+      driver ? decisions.filter((d) => d.driver?.ref === driver) : decisions,
+    );
+  }),
   http.get("*/api/v1/live", () => HttpResponse.json(offlineLive)),
   http.get("*/api/v1/news/headlines", ({ request }) => {
     const lang = new URL(request.url).searchParams.get("lang");

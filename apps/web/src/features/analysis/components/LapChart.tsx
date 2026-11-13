@@ -19,6 +19,14 @@ export interface LapSeries {
   values: PerLap;
 }
 
+/** A stewards' decision placed on a car's line (ADR 0018). */
+export interface LapMark {
+  key: string;
+  car: number;
+  lap: number;
+  label: string;
+}
+
 interface LapChartProps {
   label: string;
   series: readonly LapSeries[];
@@ -31,6 +39,8 @@ interface LapChartProps {
   yFormat?: (value: number) => string;
   xLabel: string;
   height?: number;
+  /** Decisions drawn as small flags on the cars' lines, with their text as a tooltip. */
+  marks?: readonly LapMark[];
 }
 
 const MARGIN = { top: 12, right: 48, bottom: 40, left: 52 };
@@ -48,6 +58,7 @@ export function LapChart({
   yFormat = String,
   xLabel,
   height = 420,
+  marks = [],
 }: LapChartProps) {
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const titleId = useId();
@@ -113,6 +124,24 @@ export function LapChart({
                     {s.label}
                   </text>
                 )}
+              </g>
+            );
+          })}
+          {marks.map((mark) => {
+            const value = series.find((s) => s.key === mark.car)?.values[mark.lap - 1];
+            if (value == null) return null;
+            const cx = x(mark.lap);
+            const cy = y(value);
+            return (
+              <g key={mark.key} data-testid="lap-mark">
+                <title>{mark.label}</title>
+                <path
+                  d={`M${String(cx)} ${String(cy - 4)}l-5 -9h10z`}
+                  fill="var(--color-t-yellow)"
+                  stroke="var(--color-panel)"
+                  strokeWidth={1}
+                />
+                <circle cx={cx} cy={cy} r={2.5} fill="var(--color-t-yellow)" />
               </g>
             );
           })}

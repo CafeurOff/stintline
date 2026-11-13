@@ -1,7 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
-import { ListOrdered, Play } from "lucide-react";
+import { ListOrdered, Play, Scale } from "lucide-react";
 
 import { NO_BACKDROP } from "@/components/dash/backdrop";
 import { Face } from "@/components/dash/Face";
@@ -25,7 +25,10 @@ import {
 } from "@/features/hub/RaceFacts";
 import { useReport } from "@/features/news/api";
 import { inkOn, teamColour, teamTint } from "@/lib/teams";
+import type { LapMark } from "@/features/analysis/components/LapChart";
 import { RaceAnalysis } from "@/features/analysis/components/RaceAnalysis";
+import { useDecisions } from "@/features/paddock/api";
+import { DecisionTable } from "@/features/paddock/components/DecisionTable";
 import { useSessionDetail, useTrack } from "@/features/race/api";
 import { byFinish } from "@/features/race/entries";
 import { ApiError } from "@/lib/errors";
@@ -103,9 +106,14 @@ function EventLoader({ eventId }: { eventId: number }) {
         )}
         {race?.has_data && <RaceFactsColumn sessionId={race.id} />}
       </div>
+      <StewardsPanel eventId={data.id} season={data.season} />
       {shown && shown.has_data && shown.kind !== "Q" && (
         <div className="rounded-xl border border-line bg-panel p-5">
-          <AnalysisLoader key={`analysis-${String(shown.id)}`} sessionId={shown.id} />
+          <AnalysisLoader
+            key={`analysis-${String(shown.id)}`}
+            sessionId={shown.id}
+            eventId={data.id}
+          />
         </div>
       )}
     </div>
@@ -240,9 +248,50 @@ function EventHero({
   );
 }
 
-function AnalysisLoader({ sessionId }: { sessionId: number }) {
+/** Stewards' decisions of the weekend (ADR 0018); nothing when there are none. */
+function StewardsPanel({ eventId, season }: { eventId: number; season: number }) {
+  const { t } = useI18n();
+  const decisions = useDecisions({ event: eventId });
+  if (!decisions.data || decisions.data.length === 0) return null;
+  return (
+    <Panel
+      title={t("docs.decisions")}
+      icon={<Scale />}
+      action={
+        <Link
+          to={`/documents?season=${String(season)}&event=${String(eventId)}`}
+          className="text-sm font-semibold text-muted hover:text-ink"
+        >
+          {t("event.allDocuments")}
+        </Link>
+      }
+    >
+      <DecisionTable decisions={decisions.data} />
+    </Panel>
+  );
+}
+
+function AnalysisLoader({ sessionId, eventId }: { sessionId: number; eventId: number }) {
+  const { t } = useI18n();
   const session = useSessionDetail(sessionId);
+  const decisions = useDecisions({ event: eventId });
   if (!session.data) return null;
+  const marks: LapMark[] = (decisions.data ?? []).flatMap((d) =>
+    d.session_id === sessionId && d.lap != null && d.car_number != null
+      ? [
+          {
+            key: String(d.document_id),
+            car: d.car_number,
+            lap: d.lap,
+            label: t("event.markLabel", {
+              driver: d.driver?.code ?? d.driver_name ?? "",
+              lap: d.lap,
+              fact: d.fact ?? "",
+            }),
+          },
+        ]
+      : [],
+  );
   const entries = [...session.data.entries].sort(byFinish);
   return (
     <RaceAnalysis
@@ -250,6 +299,7 @@ function AnalysisLoader({ sessionId }: { sessionId: number }) {
       entries={entries}
       neutralisations={session.data.neutralisations}
       totalLaps={session.data.total_laps ?? 0}
+      marks={marks}
     />
   );
 }
