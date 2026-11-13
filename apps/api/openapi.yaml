@@ -170,6 +170,197 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/documents:
+    get:
+      operationId: documents_list
+      summary: FIA event documents, newest first or by relevance with a search
+      parameters:
+      - in: query
+        name: car
+        schema:
+          type: integer
+          maximum: 99
+          minimum: 1
+      - in: query
+        name: category
+        schema:
+          enum:
+          - decision
+          - infringement
+          - summons
+          - classification
+          - technical
+          - notes
+          - other
+          type: string
+          minLength: 1
+        description: |-
+          * `decision` - Decision
+          * `infringement` - Infringement
+          * `summons` - Summons
+          * `classification` - Classification
+          * `technical` - Technical
+          * `notes` - Notes
+          * `other` - Other
+      - in: query
+        name: event
+        schema:
+          type: integer
+          minimum: 1
+        description: Event id
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 40
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - in: query
+        name: q
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description: Full-text search
+      - in: query
+        name: season
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 1950
+      tags:
+      - paddock
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/documents/{document_id}:
+    get:
+      operationId: document_retrieve
+      summary: One FIA document with its text and, for decisions, the stewards' ruling
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - paddock
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetail'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/documents/{document_id}/pdf:
+    get:
+      operationId: document_pdf_retrieve
+      summary: The document's PDF, relayed from fia.com (not stored)
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - paddock
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Retry after 10 s
+        '502':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/documents/events:
+    get:
+      operationId: documents_events_list
+      summary: Grands Prix of a season with documents, latest first, with counts
+      parameters:
+      - in: query
+        name: season
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 1950
+        required: true
+      tags:
+      - paddock
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDocuments'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/drivers:
     get:
       operationId: drivers_list
@@ -1115,6 +1306,54 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/stewards/decisions:
+    get:
+      operationId: stewards_decisions_list
+      summary: Stewards' decisions about cars, linked to drivers, sessions and laps
+      parameters:
+      - in: query
+        name: driver
+        schema:
+          type: string
+          minLength: 1
+          pattern: ^[-a-zA-Z0-9_]+$
+        description: Driver ref
+      - in: query
+        name: event
+        schema:
+          type: integer
+          minimum: 1
+      - in: query
+        name: season
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 1950
+      tags:
+      - paddock
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Decision'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/teams:
     get:
       operationId: teams_list
@@ -1650,6 +1889,199 @@ components:
       - round
       - session_id
       - spread_s
+    Decision:
+      type: object
+      properties:
+        document_id:
+          type: integer
+        document_number:
+          type: integer
+        title:
+          type: string
+        published_at:
+          type: string
+          format: date-time
+        event:
+          $ref: '#/components/schemas/DocumentEvent'
+        session_id:
+          type: integer
+          nullable: true
+        infringement:
+          type: string
+        colour:
+          type: string
+          nullable: true
+          readOnly: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          nullable: true
+          readOnly: true
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        driver_name:
+          type: string
+          maxLength: 128
+        session_label:
+          type: string
+          maxLength: 64
+        session_kind:
+          type: string
+          nullable: true
+        lap:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        incident_time:
+          type: string
+          description: Local HH:MM
+          maxLength: 5
+        fact:
+          type: string
+        decision:
+          type: string
+        is_penalty:
+          type: boolean
+        time_penalty_s:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        drive_through:
+          type: boolean
+        stop_go_s:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        grid_places:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        back_of_grid:
+          type: boolean
+        pit_lane_start:
+          type: boolean
+        penalty_points:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reprimand:
+          type: boolean
+        fine_eur:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        disqualified:
+          type: boolean
+        lap_time_deleted:
+          type: boolean
+        no_further_action:
+          type: boolean
+      required:
+      - colour
+      - document_id
+      - document_number
+      - driver
+      - event
+      - infringement
+      - is_penalty
+      - published_at
+      - team
+      - title
+    DecisionBrief:
+      type: object
+      properties:
+        car_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        driver_name:
+          type: string
+          maxLength: 128
+        session_label:
+          type: string
+          maxLength: 64
+        session_kind:
+          type: string
+          nullable: true
+        lap:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        incident_time:
+          type: string
+          description: Local HH:MM
+          maxLength: 5
+        fact:
+          type: string
+        decision:
+          type: string
+        is_penalty:
+          type: boolean
+        time_penalty_s:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        drive_through:
+          type: boolean
+        stop_go_s:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        grid_places:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        back_of_grid:
+          type: boolean
+        pit_lane_start:
+          type: boolean
+        penalty_points:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        reprimand:
+          type: boolean
+        fine_eur:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        disqualified:
+          type: boolean
+        lap_time_deleted:
+          type: boolean
+        no_further_action:
+          type: boolean
+      required:
+      - driver
+      - is_penalty
     Decisive:
       type: object
       properties:
@@ -1694,6 +2126,182 @@ components:
       required:
       - corrected_time_s
       - tyre_age
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          $ref: '#/components/schemas/DocumentEvent'
+        number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        title:
+          type: string
+          maxLength: 300
+        category:
+          $ref: '#/components/schemas/DocumentCategoryEnum'
+        published_at:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: uri
+          description: fia.com PDF, a reference
+          maxLength: 500
+        cars:
+          description: Car numbers named in the title
+        has_text:
+          type: boolean
+          readOnly: true
+        snippet:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Passage around a searched word
+        decision:
+          allOf:
+          - $ref: '#/components/schemas/DecisionBrief'
+          nullable: true
+          readOnly: true
+      required:
+      - category
+      - decision
+      - event
+      - has_text
+      - id
+      - number
+      - published_at
+      - snippet
+      - title
+      - url
+    DocumentCategoryEnum:
+      enum:
+      - decision
+      - infringement
+      - summons
+      - classification
+      - technical
+      - notes
+      - other
+      type: string
+      description: |-
+        * `decision` - Decision
+        * `infringement` - Infringement
+        * `summons` - Summons
+        * `classification` - Classification
+        * `technical` - Technical
+        * `notes` - Notes
+        * `other` - Other
+    DocumentDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          $ref: '#/components/schemas/DocumentEvent'
+        number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        title:
+          type: string
+          maxLength: 300
+        category:
+          $ref: '#/components/schemas/DocumentCategoryEnum'
+        published_at:
+          type: string
+          format: date-time
+        url:
+          type: string
+          format: uri
+          description: fia.com PDF, a reference
+          maxLength: 500
+        cars:
+          description: Car numbers named in the title
+        has_text:
+          type: boolean
+          readOnly: true
+        snippet:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Passage around a searched word
+        decision:
+          allOf:
+          - $ref: '#/components/schemas/DecisionBrief'
+          nullable: true
+          readOnly: true
+        text:
+          type: string
+          description: Text extracted from the PDF (empty until read)
+        reason:
+          type: string
+          nullable: true
+          readOnly: true
+        infringement:
+          type: string
+          nullable: true
+          readOnly: true
+      required:
+      - category
+      - decision
+      - event
+      - has_text
+      - id
+      - infringement
+      - number
+      - published_at
+      - reason
+      - snippet
+      - text
+      - title
+      - url
+    DocumentEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        season:
+          type: integer
+        round:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        name:
+          type: string
+          maxLength: 128
+        country:
+          type: string
+        race_date:
+          type: string
+          format: date
+      required:
+      - country
+      - id
+      - name
+      - race_date
+      - round
+      - season
+    DocumentPage:
+      type: object
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+      required:
+      - count
+      - results
     Driver:
       type: object
       properties:
@@ -2217,6 +2825,22 @@ components:
       - season
       - sessions
       - winner
+    EventDocuments:
+      type: object
+      properties:
+        event:
+          $ref: '#/components/schemas/DocumentEvent'
+        documents:
+          type: integer
+        decisions:
+          type: integer
+        penalties:
+          type: integer
+      required:
+      - decisions
+      - documents
+      - event
+      - penalties
     EventSummary:
       type: object
       properties:

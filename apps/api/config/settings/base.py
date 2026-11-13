@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "corsheaders",
     "rest_framework",
     "drf_spectacular",
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     "stintline.live",
     "stintline.news",
     "stintline.analysis",
+    "stintline.paddock",
 ]
 
 MIDDLEWARE = [
@@ -114,11 +116,21 @@ CELERY_BEAT_SCHEDULE = {
         "task": "stintline.news.tasks.refresh_headlines",
         "schedule": 30 * 60,
     },
+    # FIA documents and stewards' decisions (ADR 0018).
+    "refresh-fia-documents": {
+        "task": "stintline.paddock.tasks.refresh_fia_documents",
+        "schedule": 30 * 60,
+    },
     "refresh-portraits": {
         "task": "stintline.ingestion.tasks.refresh_portraits",
         "schedule": 7 * 24 * 60 * 60,
     },
 }
+
+FIA_SEASONS: list[int] = env.list("FIA_SEASONS", cast=int, default=[2025, 2026])
+"""Seasons whose FIA documents are imported (ADR 0018)."""
+FIA_REQUEST_INTERVAL_S: float = env.float("FIA_REQUEST_INTERVAL_S", default=10.0)
+"""fia.com robots.txt asks for 10 s between requests, shared by every process."""
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -167,6 +179,7 @@ SPECTACULAR_SETTINGS = {
     "ENUM_NAME_OVERRIDES": {
         "ComponentStatusEnum": "stintline.core.api.serializers.COMPONENT_STATUS_CHOICES",
         "TyreCompoundEnum": "stintline.strategy_api.api.serializers.COMPOUND_CHOICES",
+        "DocumentCategoryEnum": "stintline.paddock.models.DocumentCategory",
     },
 }
 

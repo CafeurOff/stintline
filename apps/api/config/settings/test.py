@@ -27,3 +27,5 @@ STORAGES = {
 MIDDLEWARE = [m for m in MIDDLEWARE if not m.startswith("whitenoise.")]  # noqa: F405
 
 RACEDATA = {**RACEDATA, "MODE": "fixtures", "CACHE_DIR": None}  # noqa: F405
+
+FIA_REQUEST_INTERVAL_S = 0.0

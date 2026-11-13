@@ -54,4 +54,7 @@ def problem_exception_handler(exc: Exception, context: dict[str, Any]) -> Respon
         )
     codes = exc.get_codes()
     code = codes if isinstance(codes, str) else "error"
-    return _problem(response.status_code, code, str(exc.default_detail), str(exc.detail))
+    problem = _problem(response.status_code, code, str(exc.default_detail), str(exc.detail))
+    if "Retry-After" in response:
+        problem["Retry-After"] = response["Retry-After"]
+    return problem

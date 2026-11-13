@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from stintline.ingestion import history, portraits, services, telemetry
 from stintline.ingestion.sources import MODE_FIXTURES, open_sources
+from stintline.paddock import services as paddock
 from stintline.racing.models import Driver, Session, SessionKind
 
 DEMO_SEASON = 2025
@@ -22,6 +23,10 @@ Netherlands (Safety Car), Mexico City and Abu Dhabi."""
 
 TELEMETRY_DEMO = (14, (4, 81, 63))
 """Fastest-lap telemetry recorded for the Hungarian podium only (fixtures stay small)."""
+
+
+FIA_DEMO_EVENT = "Hungarian Grand Prix"
+"""FIA documents recorded for Hungary only: its stewards' decisions and final classification."""
 
 
 class Command(BaseCommand):
@@ -55,4 +60,9 @@ class Command(BaseCommand):
             grid = Driver.objects.filter(entries__session__event__season__year=DEMO_SEASON)
             pictures = portraits.ingest_portraits(sources, grid.distinct())
             self.stdout.write(f"Portraits: {pictures.counts}")
+            if sources.fia is not None:
+                documents = paddock.seed_documents(
+                    sources.fia, hungary.event, FIA_DEMO_EVENT, timezone.now()
+                )
+                self.stdout.write(f"FIA documents read: {documents}")
         self.stdout.write(self.style.SUCCESS(f"Demo data loaded ({len(rounds)} races)"))

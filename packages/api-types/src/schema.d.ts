@@ -89,6 +89,74 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/documents": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** FIA event documents, newest first or by relevance with a search */
+    get: operations["documents_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/documents/{document_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** One FIA document with its text and, for decisions, the stewards' ruling */
+    get: operations["document_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/documents/{document_id}/pdf": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The document's PDF, relayed from fia.com (not stored) */
+    get: operations["document_pdf_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/documents/events": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Grands Prix of a season with documents, latest first, with counts */
+    get: operations["documents_events_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/drivers": {
     parameters: {
       query?: never;
@@ -619,6 +687,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/stewards/decisions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Stewards' decisions about cars, linked to drivers, sessions and laps */
+    get: operations["stewards_decisions_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/teams": {
     parameters: {
       query?: never;
@@ -833,6 +918,80 @@ export interface components {
       spread_s: number | null;
       clean_laps: number;
     };
+    Decision: {
+      document_id: number;
+      document_number: number;
+      title: string;
+      /** Format: date-time */
+      published_at: string;
+      event: components["schemas"]["DocumentEvent"];
+      session_id?: number | null;
+      infringement: string;
+      readonly colour: string | null;
+      readonly team: components["schemas"]["Team"] | null;
+      /** Format: int64 */
+      car_number?: number | null;
+      driver: components["schemas"]["Driver"] | null;
+      driver_name?: string;
+      session_label?: string;
+      session_kind?: string | null;
+      /** Format: int64 */
+      lap?: number | null;
+      /** @description Local HH:MM */
+      incident_time?: string;
+      fact?: string;
+      decision?: string;
+      is_penalty: boolean;
+      /** Format: int64 */
+      time_penalty_s?: number;
+      drive_through?: boolean;
+      /** Format: int64 */
+      stop_go_s?: number;
+      /** Format: int64 */
+      grid_places?: number;
+      back_of_grid?: boolean;
+      pit_lane_start?: boolean;
+      /** Format: int64 */
+      penalty_points?: number;
+      reprimand?: boolean;
+      /** Format: int64 */
+      fine_eur?: number;
+      disqualified?: boolean;
+      lap_time_deleted?: boolean;
+      no_further_action?: boolean;
+    };
+    DecisionBrief: {
+      /** Format: int64 */
+      car_number?: number | null;
+      driver: components["schemas"]["Driver"] | null;
+      driver_name?: string;
+      session_label?: string;
+      session_kind?: string | null;
+      /** Format: int64 */
+      lap?: number | null;
+      /** @description Local HH:MM */
+      incident_time?: string;
+      fact?: string;
+      decision?: string;
+      is_penalty: boolean;
+      /** Format: int64 */
+      time_penalty_s?: number;
+      drive_through?: boolean;
+      /** Format: int64 */
+      stop_go_s?: number;
+      /** Format: int64 */
+      grid_places?: number;
+      back_of_grid?: boolean;
+      pit_lane_start?: boolean;
+      /** Format: int64 */
+      penalty_points?: number;
+      reprimand?: boolean;
+      /** Format: int64 */
+      fine_eur?: number;
+      disqualified?: boolean;
+      lap_time_deleted?: boolean;
+      no_further_action?: boolean;
+    };
     Decisive: {
       /** @description First lap of the winner's last spell in the lead */
       lap: number;
@@ -848,6 +1007,78 @@ export interface components {
       tyre_age: number;
       /** Format: double */
       corrected_time_s: number;
+    };
+    Document: {
+      readonly id: number;
+      event: components["schemas"]["DocumentEvent"];
+      /** Format: int64 */
+      number: number;
+      title: string;
+      category: components["schemas"]["DocumentCategoryEnum"];
+      /** Format: date-time */
+      published_at: string;
+      /**
+       * Format: uri
+       * @description fia.com PDF, a reference
+       */
+      url: string;
+      /** @description Car numbers named in the title */
+      cars?: unknown;
+      readonly has_text: boolean;
+      /** @description Passage around a searched word */
+      readonly snippet: string | null;
+      readonly decision: components["schemas"]["DecisionBrief"] | null;
+    };
+    /**
+     * @description * `decision` - Decision
+     *     * `infringement` - Infringement
+     *     * `summons` - Summons
+     *     * `classification` - Classification
+     *     * `technical` - Technical
+     *     * `notes` - Notes
+     *     * `other` - Other
+     * @enum {string}
+     */
+    DocumentCategoryEnum:
+      "decision" | "infringement" | "summons" | "classification" | "technical" | "notes" | "other";
+    DocumentDetail: {
+      readonly id: number;
+      event: components["schemas"]["DocumentEvent"];
+      /** Format: int64 */
+      number: number;
+      title: string;
+      category: components["schemas"]["DocumentCategoryEnum"];
+      /** Format: date-time */
+      published_at: string;
+      /**
+       * Format: uri
+       * @description fia.com PDF, a reference
+       */
+      url: string;
+      /** @description Car numbers named in the title */
+      cars?: unknown;
+      readonly has_text: boolean;
+      /** @description Passage around a searched word */
+      readonly snippet: string | null;
+      readonly decision: components["schemas"]["DecisionBrief"] | null;
+      /** @description Text extracted from the PDF (empty until read) */
+      text: string;
+      readonly reason: string | null;
+      readonly infringement: string | null;
+    };
+    DocumentEvent: {
+      readonly id: number;
+      season: number;
+      /** Format: int64 */
+      round: number;
+      name: string;
+      country: string;
+      /** Format: date */
+      race_date: string;
+    };
+    DocumentPage: {
+      count: number;
+      results: components["schemas"]["Document"][];
     };
     Driver: {
       /** @description Jolpica driverId */
@@ -1031,6 +1262,12 @@ export interface components {
       readonly sessions: components["schemas"]["SessionSummary"][];
       /** @description Race winner, once classified */
       readonly winner: components["schemas"]["Winner"] | null;
+    };
+    EventDocuments: {
+      event: components["schemas"]["DocumentEvent"];
+      documents: number;
+      decisions: number;
+      penalties: number;
     };
     EventSummary: {
       readonly id: number;
@@ -2391,6 +2628,179 @@ export interface operations {
       };
     };
   };
+  documents_list: {
+    parameters: {
+      query?: {
+        car?: number;
+        /**
+         * @description * `decision` - Decision
+         *     * `infringement` - Infringement
+         *     * `summons` - Summons
+         *     * `classification` - Classification
+         *     * `technical` - Technical
+         *     * `notes` - Notes
+         *     * `other` - Other
+         */
+        category?:
+          | "decision"
+          | "infringement"
+          | "summons"
+          | "classification"
+          | "technical"
+          | "notes"
+          | "other";
+        /** @description Event id */
+        event?: number;
+        limit?: number;
+        offset?: number;
+        /** @description Full-text search */
+        q?: string;
+        season?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DocumentPage"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  document_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DocumentDetail"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  document_pdf_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        document_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/pdf": string;
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      /** @description Retry after 10 s */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  documents_events_list: {
+    parameters: {
+      query: {
+        season: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["EventDocuments"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   drivers_list: {
     parameters: {
       query?: {
@@ -3303,6 +3713,46 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Track"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  stewards_decisions_list: {
+    parameters: {
+      query?: {
+        /** @description Driver ref */
+        driver?: string;
+        event?: number;
+        season?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Decision"][];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
       404: {
