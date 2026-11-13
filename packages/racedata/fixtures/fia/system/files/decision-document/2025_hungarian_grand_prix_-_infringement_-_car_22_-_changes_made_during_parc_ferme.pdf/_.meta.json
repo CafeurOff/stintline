@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_infringement_-_car_22_-_changes_made_during_parc_ferme.pdf",
+  "recorded_at": "2026-11-13T00:03:41+00:00",
+  "sha256": "068b61ab47151d813b19e0f1f13dafdc7e4e5c72aab3db154e0a8ae8ae898b03",
+  "bytes": 292887,
+  "dropped_fields": [
+    "images"
+  ]
+}

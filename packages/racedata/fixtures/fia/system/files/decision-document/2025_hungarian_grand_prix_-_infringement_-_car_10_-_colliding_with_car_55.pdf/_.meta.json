@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_infringement_-_car_10_-_colliding_with_car_55.pdf",
+  "recorded_at": "2026-11-13T00:03:09+00:00",
+  "sha256": "0ea8536a683e19c88a68ec42d4ba1a9257c86a55b08b1a5bb12c032d149fbb10",
+  "bytes": 286408,
+  "dropped_fields": [
+    "images"
+  ]
+}

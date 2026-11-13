@@ -343,3 +343,71 @@ class Headline(_DTO):
         if value.tzinfo is None:
             raise ValueError("published_at must be timezone-aware")
         return value.astimezone(UTC)
+
+
+class FiaCategory(StrEnum):
+    """What an FIA event document is about, from its title."""
+
+    DECISION = "decision"
+    INFRINGEMENT = "infringement"
+    SUMMONS = "summons"
+    CLASSIFICATION = "classification"
+    TECHNICAL = "technical"
+    NOTES = "notes"
+    OTHER = "other"
+
+
+class FiaDocumentRef(_DTO):
+    """One document listed on fia.com for a Grand Prix (ADR 0018). The PDF is a reference."""
+
+    event_name: str
+    number: int
+    title: str
+    category: FiaCategory
+    published_at: datetime
+    url: str
+    cars: tuple[int, ...] = ()
+    """Car numbers named in the title ("Car 63", "Cars 4 & 63")."""
+
+    @field_validator("published_at")
+    @classmethod
+    def _utc(cls, v: datetime) -> datetime:
+        return _require_utc(v)
+
+
+class Penalty(_DTO):
+    """What the stewards decided, read from the decision text. Zero/false when absent."""
+
+    time_s: int = 0
+    drive_through: bool = False
+    stop_go_s: int = 0
+    grid_places: int = 0
+    back_of_grid: bool = False
+    pit_lane_start: bool = False
+    penalty_points: int = 0
+    reprimand: bool = False
+    fine_eur: int = 0
+    disqualified: bool = False
+    lap_time_deleted: bool = False
+    no_further_action: bool = False
+
+
+class StewardsDecisionRecord(_DTO):
+    """The fields of a stewards' decision document (FIA decision template)."""
+
+    car: int | None
+    driver_name: str
+    competitor: str
+    incident_time: str | None
+    """Local time of the incident at the circuit, ``HH:MM``."""
+    session: str
+    fact: str
+    infringement: str
+    decision: str
+    reason: str
+    penalty: Penalty
+    issued_on: date | None = None
+    """Local date printed in the header of the decision."""
+    issued_time: str | None = None
+    """Local time printed in the header, ``HH:MM``. With the fia.com publication time it
+    gives the circuit's UTC offset, which places the incident on a lap."""

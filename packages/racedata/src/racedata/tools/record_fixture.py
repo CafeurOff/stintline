@@ -5,6 +5,8 @@ Usage::
     uv run python -m racedata.tools.record_fixture openf1 laps session_key=9998
     uv run python -m racedata.tools.record_fixture jolpica 2025/4/results limit=100
     uv run python -m racedata.tools.record_fixture feeds autosport
+    uv run python -m racedata.tools.record_fixture fia "<season page>/event/Hungarian Grand Prix"
+    uv run python -m racedata.tools.record_fixture fia /system/files/decision-document/x.pdf
 
 Large or sensitive fields are dropped (listed in the ``.meta.json``). This is the only
 sanctioned way to call upstream APIs outside the running application.
@@ -14,7 +16,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
+import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -22,9 +26,10 @@ from typing import Any
 from xml.etree.ElementTree import tostring
 
 from defusedxml import ElementTree
+from pypdf import PdfReader, PdfWriter
 
-from racedata.config import FEEDS, PROVIDERS
-from racedata.fixtures import FIXTURES_ROOT, fixture_path
+from racedata.config import FEEDS, FIA, PROVIDERS
+from racedata.fixtures import FIXTURES_ROOT, fia_suffix, fixture_path
 from racedata.http import HttpClient
 from racedata.providers.feeds import ACCEPT
 
@@ -142,6 +147,51 @@ def record_feed(key: str, root: Path) -> Path:
     return file
 
 
+def strip_pdf(content: bytes) -> bytes:
+    """The PDF without its images (logos, signatures): a fraction of the size, same text."""
+    reader = PdfReader(io.BytesIO(content))
+    writer = PdfWriter(clone_from=reader)
+    writer.remove_images()
+    out = io.BytesIO()
+    writer.write(out)
+    return out.getvalue()
+
+
+_SCRIPTS = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.S | re.I)
+
+
+def strip_html(body: str) -> str:
+    """The page without scripts and styles (site settings, tokens), trailing spaces removed:
+    the parser only reads the markup."""
+    text = _SCRIPTS.sub("", body)
+    return "\n".join(line.rstrip() for line in text.splitlines()) + "\n"
+
+
+def record_fia(path: str, root: Path) -> Path:
+    """An fia.com list page (HTML) or document (PDF, images removed)."""
+    client = HttpClient(FIA.name, FIA.base_url, limits=FIA.limits)
+    try:
+        body = client.get_bytes(path)
+    finally:
+        client.close()
+    suffix = fia_suffix(path)
+    pdf = suffix == ".pdf"
+    body = strip_pdf(body) if pdf else strip_html(body.decode("utf-8")).encode("utf-8")
+    file = fixture_path(root, "fia", path, {}, suffix)
+    file.parent.mkdir(parents=True, exist_ok=True)
+    file.write_bytes(body)
+    meta = {
+        "provider": "fia",
+        "url": f"{FIA.base_url}/{path.lstrip('/')}",
+        "recorded_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "sha256": hashlib.sha256(body).hexdigest(),
+        "bytes": len(body),
+        "dropped_fields": ["images"] if suffix == ".pdf" else ["script", "style"],
+    }
+    file.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    return file
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Record an upstream response as a fixture.")
     parser.add_argument("provider", choices=[*sorted(PROVIDERS), "feeds"])
@@ -153,6 +203,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.provider == "feeds":
         file = record_feed(args.path, args.root)
+    elif args.provider == "fia":
+        file = record_fia(args.path, args.root)
     else:
         params = dict(p.split("=", 1) for p in args.params)
         file = record(args.provider, args.path, params, args.root)

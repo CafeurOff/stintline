@@ -173,6 +173,16 @@ class HttpClient:
         url, query = self._url(path, params)
         return self._fetch(url, query, accept).text
 
+    def get_bytes(
+        self, path: str, params: QueryParams | None = None, *, accept: str = "*/*"
+    ) -> bytes:
+        """GET ``base_url/path`` and return the raw body (PDF documents). Not cached.
+
+        Raises the same errors as :meth:`get_text`.
+        """
+        url, query = self._url(path, params)
+        return self._fetch(url, query, accept).content
+
     def _url(self, path: str, params: QueryParams | None) -> tuple[str, dict[str, str]]:
         url = f"{self.base_url}/{path.lstrip('/')}"
         return url, {k: str(v) for k, v in (params or {}).items()}

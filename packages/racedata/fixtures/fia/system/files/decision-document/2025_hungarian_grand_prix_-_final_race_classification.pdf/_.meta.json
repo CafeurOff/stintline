@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_final_race_classification.pdf",
+  "recorded_at": "2026-11-13T00:04:01+00:00",
+  "sha256": "0c18e5d841e1912b5853d412c69e96fadda4b6ed18607991534bb0ceea722fe6",
+  "bytes": 395234,
+  "dropped_fields": [
+    "images"
+  ]
+}

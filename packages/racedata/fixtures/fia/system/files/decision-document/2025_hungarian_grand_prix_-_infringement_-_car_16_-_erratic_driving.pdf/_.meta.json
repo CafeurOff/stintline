@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_infringement_-_car_16_-_erratic_driving.pdf",
+  "recorded_at": "2026-11-13T00:02:59+00:00",
+  "sha256": "6946ab3eff17efd7d2b232a9da2be941459b9940c3b982f45b058871032fa940",
+  "bytes": 287611,
+  "dropped_fields": [
+    "images"
+  ]
+}

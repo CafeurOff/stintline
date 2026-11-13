@@ -37,7 +37,20 @@ WIKIPEDIA = ProviderConfig(
     limits=(RateLimit(max_calls=1, period_s=1.0),),
 )
 
-PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA)}
+FIA = ProviderConfig(
+    name="fia",
+    base_url="https://www.fia.com",
+    # robots.txt asks every crawler for a 10 s delay between requests (checked 2026-11-13).
+    limits=(RateLimit(max_calls=1, period_s=10.0),),
+)
+
+FIA_SEASON_PAGES = {
+    2025: "documents/championships/fia-formula-one-world-championship-14/season/season-2025-2071",
+    2026: "documents/championships/fia-formula-one-world-championship-14/season/season-2026-2072",
+}
+"""Season pages of the Formula One documents (the trailing number is fia.com's own id)."""
+
+PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA, FIA)}
 
 
 @dataclass(frozen=True, slots=True)

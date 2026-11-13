@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_infringement_-_car_27_-_false_start.pdf",
+  "recorded_at": "2026-11-13T00:03:30+00:00",
+  "sha256": "5188740fc939416e44eb6471bbc4395c4cb9f46cf57991bfdbafdafa9a423bd6",
+  "bytes": 283682,
+  "dropped_fields": [
+    "images"
+  ]
+}

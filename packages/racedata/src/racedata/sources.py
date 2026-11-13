@@ -10,13 +10,14 @@ from racedata.cache import FileCache, ResponseCache
 from racedata.config import (
     FEED_LIMITS,
     FEEDS,
+    FIA,
     JOLPICA,
     OPENF1,
     WIKIPEDIA,
     FeedConfig,
     ProviderConfig,
 )
-from racedata.fixtures import FIXTURES_ROOT, FixtureTransport
+from racedata.fixtures import FIXTURES_ROOT, FiaFixtureTransport, FixtureTransport
 from racedata.http import HttpClient
 from racedata.providers.base import (
     HistorySource,
@@ -26,6 +27,7 @@ from racedata.providers.base import (
     TimingSource,
 )
 from racedata.providers.feeds import FeedSource
+from racedata.providers.fia import FiaSource
 from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
 from racedata.providers.wikipedia import WikipediaSource
@@ -43,10 +45,16 @@ class Sources:
     """Wikipedia portraits (ADR 0009). ``None`` in minimal test doubles."""
     news: FeedSource | None = None
     """News feed headlines (ADR 0012). ``None`` in minimal test doubles."""
+    fia: FiaSource | None = None
+    """FIA event documents and stewards' decisions (ADR 0018). ``None`` in test doubles."""
 
     def close(self) -> None:
         for client in self.clients:
             client.close()
+
+
+FIA_TIMEOUT_S = 40.0
+"""Some FIA PDFs weigh several megabytes: a longer read timeout than the JSON APIs."""
 
 
 def _http_client(
@@ -75,7 +83,8 @@ def build_http_sources(
     feeds = FeedSource(
         [(feed, HttpClient(feed.key, feed.base_url, limits=FEED_LIMITS)) for feed in FEEDS]
     )
-    return _sources(openf1, jolpica, wikipedia, feeds)
+    fia = HttpClient(FIA.name, FIA.base_url, limits=FIA.limits, timeout_s=FIA_TIMEOUT_S)
+    return _sources(openf1, jolpica, wikipedia, feeds, fia)
 
 
 def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
@@ -85,7 +94,8 @@ def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
     jolpica = _fixture_client(JOLPICA, root)
     wikipedia = _fixture_client(WIKIPEDIA, root)
     feeds = FeedSource([(feed, _fixture_feed_client(feed, root)) for feed in FEEDS])
-    return _sources(openf1, jolpica, wikipedia, feeds)
+    fia = HttpClient(FIA.name, FIA.base_url, transport=FiaFixtureTransport(root))
+    return _sources(openf1, jolpica, wikipedia, feeds, fia)
 
 
 def _fixture_feed_client(feed: FeedConfig, root: Path) -> HttpClient:
@@ -96,15 +106,20 @@ def _fixture_feed_client(feed: FeedConfig, root: Path) -> HttpClient:
 
 
 def _sources(
-    openf1: HttpClient, jolpica: HttpClient, wikipedia: HttpClient, feeds: FeedSource
+    openf1: HttpClient,
+    jolpica: HttpClient,
+    wikipedia: HttpClient,
+    feeds: FeedSource,
+    fia: HttpClient,
 ) -> Sources:
     jolpica_source = JolpicaSource(jolpica)
     return Sources(
         schedule=jolpica_source,
         results=jolpica_source,
         timing=OpenF1Source(openf1),
-        clients=(openf1, jolpica, wikipedia, *feeds.clients),
+        clients=(openf1, jolpica, wikipedia, fia, *feeds.clients),
         history=jolpica_source,
         portraits=WikipediaSource(wikipedia),
         news=feeds,
+        fia=FiaSource(fia),
     )

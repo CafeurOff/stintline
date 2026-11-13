@@ -87,3 +87,19 @@ class FixtureTransport(httpx.BaseTransport):
                 "Record it with `/new-provider-fixture`."
             )
         return httpx.Response(200, content=file.read_bytes(), request=request)
+
+
+def fia_suffix(path: str) -> str:
+    """fia.com serves HTML list pages and PDF documents from one host."""
+    return ".pdf" if path.lower().endswith(".pdf") else ".html"
+
+
+class FiaFixtureTransport(FixtureTransport):
+    """Fixture transport for fia.com: ``.html`` for list pages, ``.pdf`` for documents."""
+
+    def __init__(self, root: Path = FIXTURES_ROOT) -> None:
+        super().__init__("fia", "", root)
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self.suffix = fia_suffix(request.url.path)
+        return super().handle_request(request)

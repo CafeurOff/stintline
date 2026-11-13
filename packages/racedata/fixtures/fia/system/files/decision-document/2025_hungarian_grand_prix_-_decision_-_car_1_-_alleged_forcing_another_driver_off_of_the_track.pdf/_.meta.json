@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_decision_-_car_1_-_alleged_forcing_another_driver_off_of_the_track.pdf",
+  "recorded_at": "2026-11-13T00:02:48+00:00",
+  "sha256": "a862d37fc907e6c1a63500e5dae25fc22a79113ef0e06ffdea07f95ce0efdfce",
+  "bytes": 292535,
+  "dropped_fields": [
+    "images"
+  ]
+}

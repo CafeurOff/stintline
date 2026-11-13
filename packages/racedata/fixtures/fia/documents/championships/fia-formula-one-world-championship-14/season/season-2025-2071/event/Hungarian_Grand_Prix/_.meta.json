@@ -1,0 +1,11 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/documents/championships/fia-formula-one-world-championship-14/season/season-2025-2071/event/Hungarian Grand Prix",
+  "recorded_at": "2026-11-13T00:02:32+00:00",
+  "sha256": "6f8a3e3cccdaa11382d0a0ff8c061092ce7c68d59298567c00f2018c013fb7dd",
+  "bytes": 110871,
+  "dropped_fields": [
+    "script",
+    "style"
+  ]
+}

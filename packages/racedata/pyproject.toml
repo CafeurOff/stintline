@@ -8,6 +8,7 @@ dependencies = [
     "defusedxml>=0.7",
     "httpx>=0.28",
     "pydantic>=2.10",
+    "pypdf>=5.1",
     "structlog>=25.1",
     "websockets>=15",
 ]

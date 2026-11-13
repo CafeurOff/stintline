@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_decision_-_car_1_-_alleged_unsafe_release.pdf",
+  "recorded_at": "2026-11-13T00:03:51+00:00",
+  "sha256": "d5c6a5ac01fe884fe9b43cbb248d080e8a12ac0945bf45f752a11094e5b71397",
+  "bytes": 291755,
+  "dropped_fields": [
+    "images"
+  ]
+}
