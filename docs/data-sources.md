@@ -13,7 +13,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 | Official live timing (SignalR Core) | Live mode only, run locally | Real time (sub-second deltas) | Unknown, single connection | None for the topics we use | formula1.com terms: personal, non-commercial use. Cloud IPs reportedly blocked |
 | FastF1 | **Not used** | — | Needs F1 TV account since Oct 2026 | F1 TV | — |
 | News feeds (RSS 2.0) | Headlines on the news page (title, link, date only, ADR 0012) | Every 30 min | One request per feed per run | None | Links to the publisher's article; nothing republished |
-| FIA timing PDFs | Optional validation of pit-stop figures (Phase 4) | During and after the event | Manual | None | © FIA / FOM, use with notice |
+| fia.com event documents (ADR 0018) | Documents page, stewards' decisions linked to drivers, sessions and laps (2025, 2026) | Every 30 min during a weekend | robots.txt: 10 s between requests, shared by every process | None | © FIA. PDFs relayed on request, never stored; extracted text kept for search |
 
 ## OpenF1
 - Base URL `https://api.openf1.org/v1`. JSON or CSV. Filters on any field (`session_key=…&driver_number=…&lap_number>=10`). Dates are ISO 8601 UTC.
@@ -64,6 +64,15 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 - Not used: formula1.com `latest/all.xml` (no dates), The Race (mixes F1 and MotoGP), Motorsport.com English (HTTP 502 when checked), L'Équipe and AutoHebdo (blocked automated readers).
 - Only title, link (tracking parameters removed), date and language are kept. Some titles end with a section label (`… | Formula 1`), which the parser removes.
 - Fixtures: `fixtures/feeds/<key>/<path>/_.xml`, 12 items each, headline fields only (`record_fixture feeds <key>`).
+
+## fia.com event documents (ADR 0018)
+- Season pages: `documents/championships/fia-formula-one-world-championship-14/season/season-2025-2071` and `…/season-2026-2072` (`racedata.config.FIA_SEASON_PAGES`). They list the Grands Prix (`.event-title`).
+- Event pages: `<season page>/event/<name>`. Each `li.document-row` holds the PDF link (`/system/files/decision-document/…pdf`), "Doc N - Title" and "Published on DD.MM.YY HH:MM CET". The label is always "CET" but the time is Paris wall-clock time (CEST in summer): it matches the time printed in the PDF. Recalled documents have no link.
+- robots.txt (checked 2026-11-13): `Crawl-delay: 10`, nothing we read is disallowed. One request per 10 s across the worker and the API, with a slot in Redis; a reader opening a PDF goes before the background import.
+- Decision PDFs follow one template (`No / Driver`, `Competitor`, `Time`, `Session`, `Fact`, `Infringement` or `Offence`, `Decision`, `Reason`); text is extracted with `pypdf`, no-break spaces normalised. The header's local issue time against the publication instant gives the circuit's UTC offset, which places the incident on a lap. The incident `Time` is when the stewards noted it (an unsafe release can read as the last lap).
+- FIA event names differ from ours ("São Paulo" for "Brazilian", "Barcelona-Catalunya", "Bahrain" for "Bahrain Grand Prix in Malaysia"): matched by words, then by the circuit's city. Test sessions are skipped.
+- Volume: about 1,350 documents a season, 330 KB per PDF, about 350 stewards' documents.
+- Fixtures: `fixtures/fia/<path>/_.html` (2025 season page, 2025 Hungarian Grand Prix) and `_.pdf` (its seven stewards' documents and the final classification, images removed) via `record_fixture fia <path>`.
 
 ## Official live timing feed (local live mode)
 - Hub: `wss://livetiming.formula1.com/signalrcore` (SignalR Core, JSON protocol). An `OPTIONS` on `/signalrcore/negotiate` provides the `AWSALBCORS` cookie, then the client invokes `Subscribe([topics])`. The reply is a full snapshot, then incremental `feed` messages `[topic, payload, timestamp]` that merge into the snapshot.

@@ -21,3 +21,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0015](0015-headline-images-as-url-references.md) | Headline images as URL references | Accepted |
 | [0016](0016-dashboard-design.md) | Dashboard design for the whole site | Accepted |
 | [0017](0017-analysis-figures-stored-per-race.md) | Analysis hub: figures computed once per race and stored | Accepted |
+| [0018](0018-fia-documents-and-stewards-decisions.md) | FIA documents and stewards' decisions | Accepted |

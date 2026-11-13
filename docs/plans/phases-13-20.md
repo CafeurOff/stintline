@@ -1,6 +1,6 @@
 # Phases 13–20: dashboard design, paddock, technical and analysis pages
 
-Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Later phases validated as a direction on 2026-11-12; each
+Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Later phases validated as a direction on 2026-11-12; each
 still gets a short go/no-go before it starts. Decisions taken on 2026-11-12: FIA PDFs relayed by
 our API and shown in the page (A), incidents and penalties from official decisions, no money
 figures (B), sidebar navigation (C), headline pictures as URL references (E, ADR 0015), no
@@ -22,7 +22,11 @@ Grand Prix page (race tiles, facts), driver profile as a season dashboard, stand
 points share), news wire with a reader and the drivers and teams a headline names, harmonised
 teams, live, model, circuit pages. Headline pictures (ADR 0015).
 
-## Phase 14 — Paddock: FIA documents and stewards' decisions
+## Phase 14 — Paddock: FIA documents and stewards' decisions (done, ADR 0018)
+Validated on 2026-11-13 with seasons 2025 and 2026 and the extracted text stored. Built as
+planned; the lists come from the season and event pages (`…/event/<name>`), the text from
+`pypdf`, and the viewer from `pdfjs-dist` 4.10 (5+ needs Node 22.13). A reader opening a PDF
+goes before the background import in the shared 10 s slot. Original scope:
 - `racedata.providers.fia`: weekend document lists from fia.com (1 request / 10 s, robots.txt),
   PDF text with `pypdf`. Model `FiaDocument` (event, number, title, category, published_at,
   url, text, cars named). Categories from the title.
