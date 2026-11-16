@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "stintline.analysis",
     "stintline.paddock",
     "stintline.technical",
+    "stintline.forecast",
 ]
 
 MIDDLEWARE = [
@@ -121,6 +122,12 @@ CELERY_BEAT_SCHEDULE = {
     "refresh-fia-documents": {
         "task": "stintline.paddock.tasks.refresh_fia_documents",
         "schedule": 30 * 60,
+    },
+    # Weather forecasts of upcoming sessions (ADR 0020). Open-Meteo updates hourly; every
+    # 3 h keeps them current with one call per weekend.
+    "refresh-forecasts": {
+        "task": "stintline.forecast.tasks.refresh_forecasts",
+        "schedule": 3 * 60 * 60,
     },
     "refresh-portraits": {
         "task": "stintline.ingestion.tasks.refresh_portraits",

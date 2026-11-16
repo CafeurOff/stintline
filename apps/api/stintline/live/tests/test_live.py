@@ -19,8 +19,10 @@ from config.asgi import application
 from racedata.fixtures import FIXTURES_ROOT
 from racedata.live.protocol import Closed, Feed, Snapshot
 from racedata.live.snapshot import LiveCar
+from stintline.live.api.serializers import LiveSnapshotSerializer
 from stintline.live.api.views import live_state
 from stintline.live.circuit import CircuitContext, circuit_context
+from stintline.live.demo import _Car, colour_sectors
 from stintline.live.publisher import CACHE_KEY, GROUP, Publisher
 from stintline.live.strategy import pit_now, race_gaps
 from stintline.racing.models import Session, SessionKind
@@ -55,6 +57,8 @@ def car(number: int, position: int, gap: float | None, **kw: Any) -> LiveCar:
         "tyre_age": 10,
         "tyre_new": True,
         "lap_progress": 0.5,
+        "grid": None,
+        "sectors": [],
     }
     return LiveCar(**{**base, **kw})
 
@@ -142,6 +146,24 @@ def test_publisher_throttles_and_caches(db: None) -> None:
     assert cache.get(CACHE_KEY)["lap"] == 3
 
 
+def test_publisher_keeps_pit_lane_times_the_feed_deletes() -> None:
+    pub = publisher([0.0])
+    pub.apply(Snapshot(SNAPSHOT))
+    pub.apply(
+        Feed(
+            "PitLaneTimeCollection",
+            {"PitTimes": {"4": {"RacingNumber": "4", "Duration": "21.9", "Lap": "20"}}},
+            "t",
+        )
+    )
+    pub.apply(Feed("PitLaneTimeCollection", {"PitTimes": {"_deleted": ["4"]}}, "t"))
+
+    data = pub.snapshot()
+
+    assert data["pit_lane"] == [{"number": 4, "lap": 20, "pit_lane_duration_s": 21.9}]
+    assert data["weather_history"][0]["lap"] == 71
+
+
 def test_publisher_ignores_other_events() -> None:
     pub = publisher([0.0])
     pub.apply(Snapshot({}))
@@ -203,6 +225,69 @@ def test_websocket_sends_the_latest_snapshot_then_updates(db: None) -> None:
         return [first, second]
 
     assert asyncio.run(scenario()) == [{"lap": 1}, {"lap": 2}]
+
+
+# ------------------------------------------------------------------ demo recording
+
+
+def replayed(path: Path) -> Publisher:
+    pub = Publisher(context=lambda key: CONTEXT)
+    for line in path.read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        if record["kind"] == "snapshot":
+            pub.apply(Snapshot(record["data"]))
+        else:
+            pub.apply(Feed(*record["args"]))
+    return pub
+
+
+def test_demo_recording_replays_a_whole_race(seeded: None, tmp_path: Path) -> None:
+    race = Session.objects.get(event__season__year=2025, event__round=14, kind=SessionKind.RACE)
+    path = tmp_path / "demo.jsonl"
+
+    call_command("live_demo", "--session", str(race.pk), "--out", str(path), stdout=StringIO())
+    data = replayed(path).snapshot()
+
+    body = LiveSnapshotSerializer(data).data
+    assert body["session"]["status"] == "Finished"
+    assert body["lap"] == body["total_laps"]
+    assert body["race_control"]
+    assert body["weather_history"]
+    assert len(body["pit_lane"]) > 20
+    winner = body["cars"][0]
+    assert winner["grid"] is not None
+    assert [len(s["segments"]) for s in winner["sectors"]] == [8, 8, 6]
+    assert all(s["time_s"] for s in winner["sectors"])
+
+
+def test_demo_gaps_follow_the_running_order(seeded: None, tmp_path: Path) -> None:
+    race = Session.objects.get(event__season__year=2025, event__round=14, kind=SessionKind.RACE)
+    path = tmp_path / "demo.jsonl"
+    call_command("live_demo", "--session", str(race.pk), "--out", str(path), stdout=StringIO())
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_text("\n".join(lines[: len(lines) // 2]) + "\n", encoding="utf-8")
+
+    cars = replayed(path).snapshot()["cars"]
+
+    on_lead_lap = [c["gap_s"] for c in cars[1:] if c["gap_s"] is not None]
+    assert on_lead_lap == sorted(on_lead_lap)
+    assert all(c["interval_s"] >= 0 for c in cars[1:] if c["interval_s"] is not None)
+
+
+def test_demo_colours_sectors_like_timing_screens() -> None:
+    a = _Car(
+        1, [90.0, 180.0], [], [], set(), sectors={1: (30.0, 30.0, 30.0), 2: (29.0, 31.0, 30.5)}
+    )
+    b = _Car(
+        2, [91.0, 181.0], [], [], set(), sectors={1: (30.5, 29.5, 31.0), 2: (30.2, 29.0, 30.9)}
+    )
+
+    colour_sectors([a, b])
+
+    assert a.colours[1] == ("purple", "purple", "purple")
+    assert b.colours[1] == ("green", "purple", "green")
+    assert a.colours[2] == ("purple", "yellow", "yellow")
+    assert b.colours[2] == ("green", "purple", "green")
 
 
 # ------------------------------------------------------------------ command

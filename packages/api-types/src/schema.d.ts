@@ -225,6 +225,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/forecasts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Weather forecasts of upcoming sessions (Open-Meteo, CC BY 4.0) */
+    get: operations["forecasts_list"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/health": {
     parameters: {
       query?: never;
@@ -1358,6 +1375,39 @@ export interface components {
        */
       measure: components["schemas"]["MeasureEnum"];
     };
+    FlagPeriod: {
+      status: components["schemas"]["FlagPeriodStatusEnum"];
+      /** Format: date-time */
+      start_at: string;
+      /**
+       * Format: date-time
+       * @description Null while it runs
+       */
+      end_at: string | null;
+      start_lap: number | null;
+      end_lap: number | null;
+    };
+    /**
+     * @description * `yellow` - yellow
+     *     * `safety_car` - safety_car
+     *     * `virtual_safety_car` - virtual_safety_car
+     *     * `red` - red
+     * @enum {string}
+     */
+    FlagPeriodStatusEnum: "yellow" | "safety_car" | "virtual_safety_car" | "red";
+    ForecastHour: {
+      /** Format: date-time */
+      at: string;
+      /** Format: double */
+      air_c: number | null;
+      /** Format: double */
+      rain_probability_pct: number | null;
+      /** Format: double */
+      precipitation_mm: number | null;
+      /** Format: double */
+      wind_ms: number | null;
+      weather_code: number | null;
+    };
     /**
      * @description * `conventional` - Conventional
      *     * `sprint` - Sprint weekend
@@ -1560,8 +1610,22 @@ export interface components {
        * @description Share of the current lap completed
        */
       lap_progress: number;
+      /** @description Starting position */
+      grid: number | null;
+      sectors: components["schemas"]["LiveSector"][];
       /** @description Where the car rejoins if it pits now */
       pit_now: components["schemas"]["PitNow"] | null;
+    };
+    LiveSector: {
+      /**
+       * Format: double
+       * @description Last time through the sector
+       */
+      time_s: number | null;
+      personal_best: boolean;
+      overall_best: boolean;
+      /** @description Mini-sectors of the current lap */
+      segments: components["schemas"]["SegmentsEnum"][];
     };
     LiveSession: {
       key: number | null;
@@ -1587,6 +1651,12 @@ export interface components {
       race_control: components["schemas"]["RaceControl"][];
       team_radio: components["schemas"]["Radio"][];
       weather: components["schemas"]["Weather"] | null;
+      /** @description Flag periods of the session */
+      timeline: components["schemas"]["FlagPeriod"][];
+      /** @description Every pit-lane time seen so far */
+      pit_lane: components["schemas"]["PitLaneTime"][];
+      /** @description One reading per lap */
+      weather_history: components["schemas"]["WeatherPoint"][];
       /** @description Stored race at this circuit, for the circuit outline */
       reference_session_id: number | null;
       /** Format: double */
@@ -1815,6 +1885,15 @@ export interface components {
       interval: number[];
       distribution: number[];
       rivals: components["schemas"]["RivalOutcome"][];
+    };
+    PitLaneTime: {
+      number: number;
+      lap: number | null;
+      /**
+       * Format: double
+       * @description Pit entry to pit exit
+       */
+      pit_lane_duration_s: number;
     };
     PitLoss: {
       /** Format: double */
@@ -2136,6 +2215,15 @@ export interface components {
       /** @description Speed trap maximum */
       top_speed_kph: number | null;
     };
+    /**
+     * @description * `none` - none
+     *     * `yellow` - yellow
+     *     * `green` - green
+     *     * `purple` - purple
+     *     * `pit` - pit
+     * @enum {string}
+     */
+    SegmentsEnum: "none" | "yellow" | "green" | "purple" | "pit";
     SessionDetail: {
       readonly id: number;
       kind: components["schemas"]["KindEnum"];
@@ -2145,6 +2233,47 @@ export interface components {
       readonly total_laps: number | null;
       readonly entries: components["schemas"]["Entry"][];
       readonly neutralisations: components["schemas"]["Neutralisation"][];
+    };
+    SessionForecast: {
+      readonly session_id: number;
+      readonly event_id: number;
+      readonly kind: string;
+      /** Format: date-time */
+      fetched_at: string;
+      /** Format: date-time */
+      window_start: string;
+      /** Format: date-time */
+      window_end: string;
+      /**
+       * Format: double
+       * @description Mean air temperature over the window
+       */
+      air_c?: number | null;
+      /** Format: double */
+      air_min_c?: number | null;
+      /** Format: double */
+      air_max_c?: number | null;
+      /**
+       * Format: double
+       * @description Highest hourly chance of rain over the window
+       */
+      rain_probability_pct?: number | null;
+      /**
+       * Format: double
+       * @description Rain expected over the window
+       */
+      precipitation_mm?: number | null;
+      /**
+       * Format: double
+       * @description Strongest hourly mean wind
+       */
+      wind_ms?: number | null;
+      /**
+       * Format: int64
+       * @description Most severe WMO weather code over the window
+       */
+      weather_code?: number | null;
+      readonly hours: components["schemas"]["ForecastHour"][];
     };
     SessionPace: {
       session_id: number;
@@ -2615,6 +2744,14 @@ export interface components {
       rain: boolean;
       /** Format: double */
       wind_ms: number | null;
+    };
+    WeatherPoint: {
+      lap: number | null;
+      /** Format: double */
+      air_c: number | null;
+      /** Format: double */
+      track_c: number | null;
+      rain: boolean;
     };
     WeatherSpan: {
       /** Format: double */
@@ -3103,6 +3240,28 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  forecasts_list: {
+    parameters: {
+      query?: {
+        /** @description Only this Grand Prix */
+        event?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SessionForecast"][];
         };
       };
     };

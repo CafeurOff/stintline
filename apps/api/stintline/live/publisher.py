@@ -17,7 +17,7 @@ from django.core.cache import cache
 
 from racedata.live.merge import LiveState
 from racedata.live.protocol import Event, Feed, Snapshot
-from racedata.live.snapshot import view
+from racedata.live.snapshot import SessionHistory, view
 from stintline.live.circuit import CircuitContext, circuit_context
 from stintline.live.strategy import pit_now
 
@@ -35,6 +35,7 @@ class Publisher:
         context: Callable[[int | None], CircuitContext] = circuit_context,
     ) -> None:
         self.state = LiveState()
+        self.history = SessionHistory()
         self._clock = clock
         self._context = context
         self._dirty = False
@@ -47,10 +48,11 @@ class Publisher:
             self.state.apply_feed(event.topic, event.payload)
         else:
             return
+        self.history.update(self.state)
         self._dirty = True
 
     def snapshot(self) -> dict[str, Any]:
-        live = view(self.state)
+        live = view(self.state, self.history)
         circuit = self._context(live.session.circuit_key)
         stops = pit_now(live.cars, circuit.pit_loss_s) if circuit.pit_loss_s is not None else {}
         data = live.model_dump(mode="json")

@@ -489,6 +489,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/forecasts:
+    get:
+      operationId: forecasts_list
+      summary: Weather forecasts of upcoming sessions (Open-Meteo, CC BY 4.0)
+      parameters:
+      - in: query
+        name: event
+        schema:
+          type: integer
+        description: Only this Grand Prix
+      tags:
+      - forecasts
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SessionForecast'
+          description: ''
   /api/v1/health:
     get:
       operationId: health_retrieve
@@ -3041,6 +3064,75 @@ components:
       - entry
       - lap
       - measure
+    FlagPeriod:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/FlagPeriodStatusEnum'
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Null while it runs
+        start_lap:
+          type: integer
+          nullable: true
+        end_lap:
+          type: integer
+          nullable: true
+      required:
+      - end_at
+      - end_lap
+      - start_at
+      - start_lap
+      - status
+    FlagPeriodStatusEnum:
+      enum:
+      - yellow
+      - safety_car
+      - virtual_safety_car
+      - red
+      type: string
+      description: |-
+        * `yellow` - yellow
+        * `safety_car` - safety_car
+        * `virtual_safety_car` - virtual_safety_car
+        * `red` - red
+    ForecastHour:
+      type: object
+      properties:
+        at:
+          type: string
+          format: date-time
+        air_c:
+          type: number
+          format: double
+          nullable: true
+        rain_probability_pct:
+          type: number
+          format: double
+          nullable: true
+        precipitation_mm:
+          type: number
+          format: double
+          nullable: true
+        wind_ms:
+          type: number
+          format: double
+          nullable: true
+        weather_code:
+          type: integer
+          nullable: true
+      required:
+      - air_c
+      - at
+      - precipitation_mm
+      - rain_probability_pct
+      - weather_code
+      - wind_ms
     FormatEnum:
       enum:
       - conventional
@@ -3563,6 +3655,14 @@ components:
           type: number
           format: double
           description: Share of the current lap completed
+        grid:
+          type: integer
+          nullable: true
+          description: Starting position
+        sectors:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveSector'
         pit_now:
           allOf:
           - $ref: '#/components/schemas/PitNow'
@@ -3575,6 +3675,7 @@ components:
       - compound
       - first_name
       - gap_s
+      - grid
       - in_pit
       - interval_s
       - lap_progress
@@ -3588,10 +3689,33 @@ components:
       - pit_stops
       - position
       - retired
+      - sectors
       - stopped
       - team
       - tyre_age
       - tyre_new
+    LiveSector:
+      type: object
+      properties:
+        time_s:
+          type: number
+          format: double
+          nullable: true
+          description: Last time through the sector
+        personal_best:
+          type: boolean
+        overall_best:
+          type: boolean
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentsEnum'
+          description: Mini-sectors of the current lap
+      required:
+      - overall_best
+      - personal_best
+      - segments
+      - time_s
     LiveSession:
       type: object
       properties:
@@ -3662,6 +3786,21 @@ components:
           allOf:
           - $ref: '#/components/schemas/Weather'
           nullable: true
+        timeline:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagPeriod'
+          description: Flag periods of the session
+        pit_lane:
+          type: array
+          items:
+            $ref: '#/components/schemas/PitLaneTime'
+          description: Every pit-lane time seen so far
+        weather_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/WeatherPoint'
+          description: One reading per lap
         reference_session_id:
           type: integer
           nullable: true
@@ -3681,6 +3820,7 @@ components:
       required:
       - cars
       - lap
+      - pit_lane
       - pit_loss_s
       - pit_loss_sigma_s
       - race_control
@@ -3688,10 +3828,12 @@ components:
       - remaining
       - session
       - team_radio
+      - timeline
       - total_laps
       - track_status
       - updated_at
       - weather
+      - weather_history
     LiveStatus:
       type: object
       properties:
@@ -4129,6 +4271,22 @@ components:
       - position_before
       - rivals
       - sigma_s
+    PitLaneTime:
+      type: object
+      properties:
+        number:
+          type: integer
+        lap:
+          type: integer
+          nullable: true
+        pit_lane_duration_s:
+          type: number
+          format: double
+          description: Pit entry to pit exit
+      required:
+      - lap
+      - number
+      - pit_lane_duration_s
     PitLoss:
       type: object
       properties:
@@ -4980,6 +5138,20 @@ components:
       - car_number
       - ideal_lap_s
       - top_speed_kph
+    SegmentsEnum:
+      enum:
+      - none
+      - yellow
+      - green
+      - purple
+      - pit
+      type: string
+      description: |-
+        * `none` - none
+        * `yellow` - yellow
+        * `green` - green
+        * `purple` - purple
+        * `pit` - pit
     SessionDetail:
       type: object
       properties:
@@ -5017,6 +5189,75 @@ components:
       - kind
       - neutralisations
       - total_laps
+    SessionForecast:
+      type: object
+      properties:
+        session_id:
+          type: integer
+          readOnly: true
+        event_id:
+          type: integer
+          readOnly: true
+        kind:
+          type: string
+          readOnly: true
+        fetched_at:
+          type: string
+          format: date-time
+        window_start:
+          type: string
+          format: date-time
+        window_end:
+          type: string
+          format: date-time
+        air_c:
+          type: number
+          format: double
+          nullable: true
+          description: Mean air temperature over the window
+        air_min_c:
+          type: number
+          format: double
+          nullable: true
+        air_max_c:
+          type: number
+          format: double
+          nullable: true
+        rain_probability_pct:
+          type: number
+          format: double
+          nullable: true
+          description: Highest hourly chance of rain over the window
+        precipitation_mm:
+          type: number
+          format: double
+          nullable: true
+          description: Rain expected over the window
+        wind_ms:
+          type: number
+          format: double
+          nullable: true
+          description: Strongest hourly mean wind
+        weather_code:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Most severe WMO weather code over the window
+        hours:
+          type: array
+          items:
+            $ref: '#/components/schemas/ForecastHour'
+          readOnly: true
+      required:
+      - event_id
+      - fetched_at
+      - hours
+      - kind
+      - session_id
+      - window_end
+      - window_start
     SessionPace:
       type: object
       properties:
@@ -6284,6 +6525,27 @@ components:
       - rain
       - track_c
       - wind_ms
+    WeatherPoint:
+      type: object
+      properties:
+        lap:
+          type: integer
+          nullable: true
+        air_c:
+          type: number
+          format: double
+          nullable: true
+        track_c:
+          type: number
+          format: double
+          nullable: true
+        rain:
+          type: boolean
+      required:
+      - air_c
+      - lap
+      - rain
+      - track_c
     WeatherSpan:
       type: object
       properties:
