@@ -1,6 +1,6 @@
 # Phases 13–20: dashboard design, paddock, technical and analysis pages
 
-Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Later phases validated as a direction on 2026-11-12; each
+Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Phase 15 done (2026-11-13, ADR 0019). Later phases validated as a direction on 2026-11-12; each
 still gets a short go/no-go before it starts. Decisions taken on 2026-11-12: FIA PDFs relayed by
 our API and shown in the page (A), incidents and penalties from official decisions, no money
 figures (B), sidebar navigation (C), headline pictures as URL references (E, ADR 0015), no
@@ -36,7 +36,10 @@ goes before the background import in the shared 10 s slot. Original scope:
   category tags, filters, full-text search, viewer (`pdfjs-dist`, lazy), shareable URL.
 - Decisions shown on the Grand Prix page (facts), the driver profile and the lap chart.
 
-## Phase 15 — Technical
+## Phase 15 — Technical (done, ADR 0019)
+Validated on 2026-11-13 with 3 races either side of an upgrade and `pdfplumber`. Built as
+planned; allowances are read from the FIA's own sentences, and only grid penalties the FIA
+states are shown (no projection). Original scope:
 - **Upgrades**: "Car Presentation Submissions" PDFs parsed with `pdfplumber` (component,
   reason, purpose, geometry, description). Team × round heatmap; drawer with the parts on a
   top-down car outline (original SVG) and our addition: race pace relative to the field
