@@ -13,6 +13,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 | Official live timing (SignalR Core) | Live mode only, run locally | Real time (sub-second deltas) | Unknown, single connection | None for the topics we use | formula1.com terms: personal, non-commercial use. Cloud IPs reportedly blocked |
 | FastF1 | **Not used** | — | Needs F1 TV account since Oct 2026 | F1 TV | — |
 | News feeds (RSS 2.0) | Headlines on the news page (title, link, date only, ADR 0012) | Every 30 min | One request per feed per run | None | Links to the publisher's article; nothing republished |
+| Open-Meteo (ADR 0020) | Weather forecast of upcoming sessions (calendar, home, Grand Prix and live pages) | Every 3 h, sessions within 15 days | 600/min, 10,000/day free; we keep 1/s and 500/h | None | Non-commercial use free, CC BY 4.0: credited wherever shown |
 | fia.com event documents (ADR 0018) | Documents page, stewards' decisions linked to drivers, sessions and laps (2025, 2026) | Every 30 min during a weekend | robots.txt: 10 s between requests, shared by every process | None | © FIA. PDFs relayed on request, never stored; extracted text kept for search |
 
 ## OpenF1
@@ -75,9 +76,14 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 - Technical documents (ADR 0019), read with `pdfplumber`: "Car Presentation Submissions" (one page per team: table of parts, or "No updates submitted"; pages of pictures skipped), "PU elements used per driver up to now" (2025: ICE TC MGU-H MGU-K ES CE EX; 2026: ICE TC EXH MGU-K ES PU-CE PU-ANC, header on two lines), "New PU elements for this Competition" (wording varies: "is using", "will be using", "will start … with"; one sentence can cover "the above drivers").
 - Fixtures: `fixtures/fia/<path>/_.html` (2025 season page, 2025 Hungarian Grand Prix) and `_.pdf` (its seven stewards' documents, the final classification and the four technical documents; images removed except in the upgrades PDF, cut to 5 pages, because removing images also removes table borders) via `record_fixture fia <path>`.
 
+## Open-Meteo (weather forecasts, ADR 0020)
+- `GET https://api.open-meteo.com/v1/forecast?latitude=&longitude=&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,weather_code&timezone=GMT&wind_speed_unit=ms&start_date=&end_date=`: one call per weekend. `hourly.time` is ISO without offset, UTC because of `timezone=GMT`. Missing hours are `null`. Range: 16 days.
+- `precipitation_probability` is the chance of at least 0.1 mm in the preceding hour; `weather_code` is a WMO code (0 clear, 1–3 cloud, 45/48 fog, 51–57 drizzle, 61–67 and 80–82 rain, 71–77 and 85–86 snow, 95–99 thunderstorm).
+- Fixture: `fixtures/openmeteo/forecast/…json` (Yas Marina, 4–6 December 2026) built by hand from the documented format because the development session had no network; replace it with `uv run python -m racedata.tools.record_fixture openmeteo forecast latitude=24.47 longitude=54.60 …`.
+
 ## Official live timing feed (local live mode)
 - Hub: `wss://livetiming.formula1.com/signalrcore` (SignalR Core, JSON protocol). An `OPTIONS` on `/signalrcore/negotiate` provides the `AWSALBCORS` cookie, then the client invokes `Subscribe([topics])`. The reply is a full snapshot, then incremental `feed` messages `[topic, payload, timestamp]` that merge into the snapshot.
-- Topics we use: `SessionInfo`, `SessionStatus`, `DriverList`, `LapCount`, `TimingData`, `TimingAppData` (stints: `Compound`, `New`, `StartLaps`, `TotalLaps`), `TyreStintSeries`, `LapSeries` (position per lap), `TrackStatus` (`1` clear, `2` yellow, `4` SC, `5` red, `6` VSC, `7` VSC ending), `RaceControlMessages`, `WeatherData`, `PitLaneTimeCollection`, `ExtrapolatedClock`.
+- Topics we use: `SessionInfo`, `SessionStatus`, `SessionData` (`Series`: lap start times; `StatusSeries`: track status changes `AllClear`, `Yellow`, `SCDeployed`, `SCEnding`, `VSCDeployed`, `VSCEnding`, `Red`, plus session status changes, including earlier sessions of the weekend), `DriverList`, `LapCount`, `TimingData` (sectors with `Value`, `PersonalFastest`, `OverallFastest` and mini-sector `Segments` statuses: `0` not yet, `2048` yellow, `2049` green, `2051` purple, `2064` pit lane), `TimingAppData` (stints: `Compound`, `New`, `StartLaps`, `TotalLaps`; `GridPos`), `TyreStintSeries`, `LapSeries` (position per lap), `TrackStatus` (`1` clear, `2` yellow, `4` SC, `5` red, `6` VSC, `7` VSC ending), `RaceControlMessages`, `WeatherData`, `PitLaneTimeCollection` (`PitTimes` keyed by car: `Duration` is pit entry to exit, `Lap`; entries are deleted later, so the live process keeps them), `ExtrapolatedClock`.
 - Not available without auth: `CarData.z`, `Position.z` (not needed).
 - `SessionInfo.StartDate` is circuit-local, with a separate `GmtOffset`. Convert to UTC in the adapter.
 - Usage rules: run from a personal connection, for personal use. Do not redistribute recordings. The public demo never connects to this feed.
@@ -105,4 +111,4 @@ Observed quirks, all covered by tests:
 - Jolpica pit `time` is circuit-local.
 
 ## Attribution
-Data courtesy of [OpenF1](https://openf1.org) and [Jolpica](https://github.com/jolpica/jolpica-f1). Driver photos from [Wikimedia Commons](https://commons.wikimedia.org), credited on each profile with their author and licence. Formula 1 timing data © Formula One World Championship Limited. StintLine is unofficial and not associated with Formula 1, the FIA or any team.
+Data courtesy of [OpenF1](https://openf1.org) and [Jolpica](https://github.com/jolpica/jolpica-f1). Weather forecasts by [Open-Meteo](https://open-meteo.com) (CC BY 4.0). Driver photos from [Wikimedia Commons](https://commons.wikimedia.org), credited on each profile with their author and licence. Formula 1 timing data © Formula One World Championship Limited. StintLine is unofficial and not associated with Formula 1, the FIA or any team.

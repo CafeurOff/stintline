@@ -23,3 +23,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0017](0017-analysis-figures-stored-per-race.md) | Analysis hub: figures computed once per race and stored | Accepted |
 | [0018](0018-fia-documents-and-stewards-decisions.md) | FIA documents and stewards' decisions | Accepted |
 | [0019](0019-technical-documents-with-pdfplumber.md) | Technical pages from the FIA technical documents (pdfplumber) | Accepted |
+| [0020](0020-weather-forecasts-and-live-timing-tower.md) | Weather forecasts from Open-Meteo, and a fuller live timing tower | Accepted |

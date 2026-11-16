@@ -18,6 +18,7 @@ It must stay accessible to casual fans first, with deeper charts for hardcore fa
 - Phase 16 done: analysis hub (ADR 0017). Per-race figures computed once by the engine and stored (`stintline.analysis`: `RaceStats`, `EntryRaceStats`, `build_analysis`, built after each import and telemetry, stale ones by `refresh_recent`). Pages: head-to-head (every team's teammate duel or two drivers, since 1950; fuel-corrected pace gap from 2023), race pace (box plots, filters for pit and safety-car laps, cut-off, fuel-corrected switch), consistency (scatter once tyre wear is removed, map driver × race), pit stops (fastest crews, team medians, pit loss per race, undercuts that worked), track DNA (one profile per circuit and its records). Engine: `stintline_strategy.analysis` (pace filter, box plots, consistency, passes, laps led, real undercut attempts).
 - Phase 14 done: paddock (ADR 0018). FIA documents of 2025 and 2026 listed from fia.com (`racedata.providers.fia`, one request per 10 s shared across processes), PDF text extracted with `pypdf` for search, stewards' decisions parsed into penalties and linked to driver, session and lap (`stintline.paddock`, beat every 30 min, `ingest_fia`). `/documents` page with search, category filter and a pdf.js viewer over our PDF relay; decisions on the Grand Prix page (table, marks on the lap chart) and the driver profile.
 - Phase 15 done: technical (ADR 0019). FIA technical documents read with `pdfplumber` through paddock readers (`stintline.technical`): upgrades per team and round with the race pace 3 races before and after (engine figures), power-unit elements per car against the allowances the FIA states, incidents by kind and penalty points over 12 months. `/technical` page (Upgrades, Power units, Incidents) with an original top-down car drawing.
+- Phase 17 done: weekend and live (ADR 0020). Open-Meteo forecasts per session (`racedata.providers.openmeteo`, `stintline.forecast`, beat every 3 h, `refresh_forecasts`, `GET /forecasts`) on the calendar cards, the home countdown, the Grand Prix page and the offline live page. Live page: timing tower with coloured mini-sectors, sector times and places won, race timeline of flag periods (`SessionData`), gap ring with the rejoin window, pit-lane times with averages, weather strip, race control tagged by lap and flag. `live_demo` replays all of it from a stored race.
 - Roadmap (validated 2026-11-03): Phase 7 hub (home page, calendar and archive, driver and team profiles, photo driver picker, detailed analysis pages), Phase 8 what-if strategy replay, Phase 9 live mode with team radio, Phase 10 news, Phase 11 polish and README. Each phase gets its own plan for validation. Directories marked *(planned)* below do not exist yet.
 
 ## Architecture
@@ -44,12 +45,15 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
   stintline/technical/   upgrades, power-unit elements and incidents read from FIA technical
                          documents (`reading.py`, registered as paddock readers; `selectors.py`,
                          `read_technical`), technical endpoints (ADR 0019)
-  stintline/live/        live publisher (snapshot + pit now), Channels consumer `/ws/live`, `live` and
-                         `live_demo` commands, circuit context from stored races (ADR 0011)
+  stintline/live/        live publisher (snapshot + pit now + session history), Channels consumer
+                         `/ws/live`, `live` and `live_demo` commands, circuit context from stored
+                         races (ADR 0011, 0020)
+  stintline/forecast/    Open-Meteo forecasts of upcoming sessions: refresh (`services.py`),
+                         Celery task, `refresh_forecasts`, endpoint (ADR 0020)
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, layout, theme)  src/features/<feature>/  src/components/{ui,racing}/  src/lib/
 packages/racedata/   Pure Python, import `racedata`. Capability protocols (schedule, results, timing),
-                     adapters (openf1, jolpica, wikipedia, news feeds, fia documents), live timing client (`racedata.live`:
+                     adapters (openf1, jolpica, wikipedia, news feeds, fia documents, open-meteo), live timing client (`racedata.live`:
                      SignalR, merge, snapshot view, recordings), HTTP client (rate limit, retry,
                      cache, timeout), DTOs, derive/matching helpers, fixture recorder
   fixtures/          recorded upstream responses (tests + offline demo)
@@ -102,6 +106,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Analysis figures | `manage.py build_analysis [--season 2025 \| --session ID \| --all]` (stale races by default; also after each import and every `refresh_recent`) |
 | FIA documents | `manage.py ingest_fia [--season 2026] [--texts 200] [--all-events]` (1 request / 10 s; also every 30 min via Celery beat) · record a fixture: `uv run python -m racedata.tools.record_fixture fia "<season page>/event/Hungarian Grand Prix"` |
 | Technical documents | `manage.py read_technical [--season 2026] [--limit 50] [--all]` (re-read upgrades and power-unit PDFs after a parser change; 1 request / 10 s) |
+| Weather forecasts | `manage.py refresh_forecasts` (sessions within 15 days; also every 3 h via Celery beat and on worker start) |
 | Pre-commit | `pre-commit run --all-files` |
 
 ## Conventions
@@ -150,4 +155,5 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Analysis figures (ADR 0017).** Bump `ANALYSIS_FORMAT` in `stintline/analysis/build.py` when a stored figure changes meaning, so every race is rebuilt. A race is wet only when intermediate or wet tyres were fitted (rain samples alone do not count). A pit loss stands for its circuit only when it is reliable (`RaceStats.pit_loss_reliable`: dry, ≥ 8 green stops, spread ≤ 25 %): Monza 2026 had a red flag missing from the timing and a 1,842 s median pit lane. Some sessions have no lap start times (Miami 2025): no running order, so passes and laps led are null, not zero.
 - **FIA documents (ADR 0018).** fia.com allows one request per 10 s (robots.txt): every call goes through `paddock.throttle` (a Redis slot shared by the worker and the API), never around it. The PDF relay is the only view that can reach upstream; it is cached a week and a reader goes before the import. "Published on … CET" is Paris wall-clock time. FIA event names differ from ours (`services.match_event`). The decision `Time` is when the stewards noted the incident. PDFs are never stored; the extracted text is. `pdfjs-dist` stays on 4.x (5+ needs Node 22.13). A `sr-only` element must not sit inside an unpositioned scroll wrapper (see `apps/web/CLAUDE.md`).
 - **Technical documents (ADR 0019).** Teams lay out their own upgrade pages: rows start with a number, descriptions continue in the same column; picture-only pages are skipped. Never strip images from an upgrades PDF fixture (table borders go with them). Power-unit columns are placed by x position; allowances come from the FIA's sentences only. A reader registers in `AppConfig.ready` (`paddock.readers.register`).
+- **Weather and live tower (ADR 0020).** Open-Meteo data is CC BY 4.0: show `ForecastCredit` wherever a forecast appears. Forecast times are requested in GMT (UTC). The Open-Meteo fixture is hand-built from the documented format: re-record it when the network is available. Flag periods come from `SessionData.StatusSeries`, which also lists earlier sessions of the weekend (dropped from 30 min before the start). Pit-lane times disappear from `PitLaneTimeCollection`: `SessionHistory` keeps them, and loses them if the live process restarts.
 - **Historical data gaps.** Jolpica has fastest-lap ranks only from 2004 (careers starting earlier report `null`), no qualifying for most seasons before 1994 (poles fall back to first on the grid), and gives lapped cars a time for fewer laps (show the gap in laps). OpenF1 has no pit-stop rows for the first six races of 2023.

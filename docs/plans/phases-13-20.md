@@ -1,6 +1,6 @@
 # Phases 13–20: dashboard design, paddock, technical and analysis pages
 
-Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Phase 15 done (2026-11-13, ADR 0019). Later phases validated as a direction on 2026-11-12; each
+Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Phase 15 done (2026-11-13, ADR 0019). Phase 17 done (2026-11-16, ADR 0020). Later phases validated as a direction on 2026-11-12; each
 still gets a short go/no-go before it starts. Decisions taken on 2026-11-12: FIA PDFs relayed by
 our API and shown in the page (A), incidents and penalties from official decisions, no money
 figures (B), sidebar navigation (C), headline pictures as URL references (E, ADR 0015), no
@@ -71,7 +71,10 @@ Original scope:
   top speed, lap length, pit loss, tyre degradation level, safety-car rate since 2023,
   overtakes (position changes), winning strategies.
 
-## Phase 17 — Weekend and live
+## Phase 17 — Weekend and live (done, ADR 0020)
+Built as planned on 2026-11-16. Flag periods come from the feed's own `SessionData`; the
+demo colours each mini-sector with its sector's result (no mini-sector times are stored).
+Original scope:
 - Open-Meteo forecasts per session (free, no key) on the calendar, the home page and the
   Grand Prix page; rain probability over the session window.
 - Live tower with mini-sectors (purple / green / yellow), tyre age, pit count; session
