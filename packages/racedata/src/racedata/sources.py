@@ -12,6 +12,7 @@ from racedata.config import (
     FEEDS,
     FIA,
     JOLPICA,
+    OPEN_METEO,
     OPENF1,
     WIKIPEDIA,
     FeedConfig,
@@ -30,6 +31,7 @@ from racedata.providers.feeds import FeedSource
 from racedata.providers.fia import FiaSource
 from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
+from racedata.providers.openmeteo import OpenMeteoSource
 from racedata.providers.wikipedia import WikipediaSource
 
 
@@ -47,6 +49,8 @@ class Sources:
     """News feed headlines (ADR 0012). ``None`` in minimal test doubles."""
     fia: FiaSource | None = None
     """FIA event documents and stewards' decisions (ADR 0018). ``None`` in test doubles."""
+    weather: OpenMeteoSource | None = None
+    """Open-Meteo forecasts at the circuits (ADR 0020). ``None`` in test doubles."""
 
     def close(self) -> None:
         for client in self.clients:
@@ -84,7 +88,8 @@ def build_http_sources(
         [(feed, HttpClient(feed.key, feed.base_url, limits=FEED_LIMITS)) for feed in FEEDS]
     )
     fia = HttpClient(FIA.name, FIA.base_url, limits=FIA.limits, timeout_s=FIA_TIMEOUT_S)
-    return _sources(openf1, jolpica, wikipedia, feeds, fia)
+    weather = _http_client(OPEN_METEO, None, None)
+    return _sources(openf1, jolpica, wikipedia, feeds, fia, weather)
 
 
 def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
@@ -95,7 +100,8 @@ def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:
     wikipedia = _fixture_client(WIKIPEDIA, root)
     feeds = FeedSource([(feed, _fixture_feed_client(feed, root)) for feed in FEEDS])
     fia = HttpClient(FIA.name, FIA.base_url, transport=FiaFixtureTransport(root))
-    return _sources(openf1, jolpica, wikipedia, feeds, fia)
+    weather = _fixture_client(OPEN_METEO, root)
+    return _sources(openf1, jolpica, wikipedia, feeds, fia, weather)
 
 
 def _fixture_feed_client(feed: FeedConfig, root: Path) -> HttpClient:
@@ -105,21 +111,23 @@ def _fixture_feed_client(feed: FeedConfig, root: Path) -> HttpClient:
     return HttpClient(feed.key, feed.base_url, transport=transport)
 
 
-def _sources(
+def _sources(  # noqa: PLR0917 - one client per provider
     openf1: HttpClient,
     jolpica: HttpClient,
     wikipedia: HttpClient,
     feeds: FeedSource,
     fia: HttpClient,
+    weather: HttpClient,
 ) -> Sources:
     jolpica_source = JolpicaSource(jolpica)
     return Sources(
         schedule=jolpica_source,
         results=jolpica_source,
         timing=OpenF1Source(openf1),
-        clients=(openf1, jolpica, wikipedia, fia, *feeds.clients),
+        clients=(openf1, jolpica, wikipedia, fia, weather, *feeds.clients),
         history=jolpica_source,
         portraits=WikipediaSource(wikipedia),
         news=feeds,
         fia=FiaSource(fia),
+        weather=OpenMeteoSource(weather),
     )

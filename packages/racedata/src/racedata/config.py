@@ -50,7 +50,15 @@ FIA_SEASON_PAGES = {
 }
 """Season pages of the Formula One documents (the trailing number is fia.com's own id)."""
 
-PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA, FIA)}
+OPEN_METEO = ProviderConfig(
+    name="openmeteo",
+    base_url="https://api.open-meteo.com/v1",
+    # Free non-commercial tier: 600 calls/min, 10,000/day, no key (checked 2026-11-16).
+    # We need a handful of calls every few hours: one per second leaves ample headroom.
+    limits=(RateLimit(max_calls=1, period_s=1.0), RateLimit(max_calls=500, period_s=3600.0)),
+)
+
+PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA, FIA, OPEN_METEO)}
 
 
 @dataclass(frozen=True, slots=True)

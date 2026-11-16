@@ -457,3 +457,16 @@ class PuChangeRecord(_DTO):
     season: int | None
     compliant: bool | None
     """``False`` when the document says it is not in compliance (a grid penalty follows)."""
+
+
+class HourlyForecast(_DTO):
+    """One hour of an Open-Meteo forecast at a circuit (ADR 0020). ``at`` is UTC."""
+
+    at: datetime
+    air_c: float | None
+    rain_probability_pct: float | None
+    """Chance of at least 0.1 mm of rain in the preceding hour."""
+    precipitation_mm: float | None
+    wind_ms: float | None
+    weather_code: int | None
+    """WMO weather interpretation code (0 clear … 95 thunderstorm)."""

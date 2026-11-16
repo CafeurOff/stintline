@@ -5,6 +5,7 @@ Usage::
     uv run python -m racedata.tools.record_fixture openf1 laps session_key=9998
     uv run python -m racedata.tools.record_fixture jolpica 2025/4/results limit=100
     uv run python -m racedata.tools.record_fixture feeds autosport
+    uv run python -m racedata.tools.record_fixture openmeteo forecast latitude=24.47 ...
     uv run python -m racedata.tools.record_fixture fia "<season page>/event/Hungarian Grand Prix"
     uv run python -m racedata.tools.record_fixture fia /system/files/decision-document/x.pdf
 
