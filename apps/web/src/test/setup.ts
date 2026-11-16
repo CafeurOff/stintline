@@ -7,7 +7,7 @@ import { server } from "./server";
 
 // Pages are lazy-loaded: the first import of a page in a busy parallel run can take
 // longer than the default 1 s that find* queries wait.
-configure({ asyncUtilTimeout: 3000 });
+configure({ asyncUtilTimeout: 5000 });
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });

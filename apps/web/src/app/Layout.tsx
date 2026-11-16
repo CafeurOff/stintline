@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarDays,
   ChartNoAxesColumn,
+  Cog,
   Crosshair,
   FileText,
   Gauge,
@@ -68,6 +69,7 @@ const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
     links: [
       ["/news", "nav.news", Newspaper],
       ["/documents", "nav.documents", FileText],
+      ["/technical", "nav.technical", Cog],
     ],
   },
   { key: "nav.group.about", links: [["/model", "nav.model", BookOpen]] },

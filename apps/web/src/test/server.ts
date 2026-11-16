@@ -11,6 +11,7 @@ import {
   teammates,
 } from "./fixtures/analysis";
 import { degradation } from "./fixtures/degradation";
+import { incidents, powerUnits, upgrades } from "./fixtures/technical";
 import {
   decisions,
   documentDetail,
@@ -130,6 +131,9 @@ export const handlers = [
   http.get("*/api/v1/analysis/circuits", () => HttpResponse.json(circuits)),
   http.get("*/api/v1/sessions/:id/pace", () => HttpResponse.json(sessionPace)),
   http.get("*/api/v1/documents/events", () => HttpResponse.json(documentEvents)),
+  http.get("*/api/v1/technical/upgrades", () => HttpResponse.json(upgrades)),
+  http.get("*/api/v1/technical/power-units", () => HttpResponse.json(powerUnits)),
+  http.get("*/api/v1/technical/incidents", () => HttpResponse.json(incidents)),
   http.get("*/api/v1/documents", ({ request }) =>
     HttpResponse.json(new URL(request.url).searchParams.get("q") ? documentSearch : documentList),
   ),
