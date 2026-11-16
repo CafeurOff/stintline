@@ -14,11 +14,12 @@ from datetime import UTC, date, datetime, time, timedelta
 
 import structlog
 from django.db import transaction
+from django.db.models import Q
 
 from racedata.errors import InvalidPayloadError, NotFoundError, ProviderError
 from racedata.models import FiaDocumentRef, StewardsDecisionRecord
 from racedata.providers.fia import FiaSource, parse_decision, pdf_text
-from stintline.paddock import throttle
+from stintline.paddock import readers, throttle
 from stintline.paddock.models import (
     STEWARDS_CATEGORIES,
     FiaDocument,
@@ -54,7 +55,7 @@ class ThrottleBusyError(ProviderError):
     """Another process holds the fia.com request slot."""
 
 
-def _take_turn() -> None:
+def take_turn() -> None:
     if not throttle.wait_turn():
         raise ThrottleBusyError("fia", "request slot busy")
 
@@ -126,7 +127,7 @@ def store_listing(event: Event, fia_name: str, refs: list[FiaDocumentRef], now: 
 def list_event(
     source: FiaSource, season: int, event: Event, fia_name: str, now: datetime
 ) -> ListingReport:
-    _take_turn()
+    take_turn()
     refs = source.event_documents(season, fia_name)
     created = store_listing(event, fia_name, refs, now)
     log.info("fia_event_stored", event_id=event.pk, documents=len(refs), created=created)
@@ -135,7 +136,7 @@ def list_event(
 
 def season_names(source: FiaSource, season: int) -> dict[int, str]:
     """``{event_id: fia name}`` for every Grand Prix of the season page we can match."""
-    _take_turn()
+    take_turn()
     out: dict[int, str] = {}
     for name in source.season_event_names(season):
         event = match_event(season, name)
@@ -150,24 +151,21 @@ def season_names(source: FiaSource, season: int) -> dict[int, str]:
 
 
 def pending_texts(limit: int) -> list[FiaDocument]:
-    """Documents still without text: stewards' documents first, newest first."""
-    stewards = list(
-        FiaDocument.objects.filter(text_fetched_at__isnull=True, category__in=STEWARDS_CATEGORIES)
-        .select_related("event")
-        .order_by("-published_at")[:limit]
+    """Documents still without text, newest first: stewards' documents, then documents a
+    reader handles (technical reports), then the rest."""
+    pending = FiaDocument.objects.filter(text_fetched_at__isnull=True).select_related("event")
+    stewards = Q(category__in=STEWARDS_CATEGORIES)
+    tiers = (
+        pending.filter(stewards),
+        pending.exclude(stewards).filter(readers.handled_titles()),
+        pending.exclude(stewards).exclude(readers.handled_titles()),
     )
-    rest = limit - len(stewards)
-    others = (
-        list(
-            FiaDocument.objects.filter(text_fetched_at__isnull=True)
-            .exclude(category__in=STEWARDS_CATEGORIES)
-            .select_related("event")
-            .order_by("-published_at")[:rest]
-        )
-        if rest > 0
-        else []
-    )
-    return stewards + others
+    out: list[FiaDocument] = []
+    for tier in tiers:
+        if len(out) >= limit:
+            break
+        out += list(tier.order_by("-published_at")[: limit - len(out)])
+    return out
 
 
 def fetch_text(source: FiaSource, document: FiaDocument, now: datetime) -> bool:
@@ -176,9 +174,11 @@ def fetch_text(source: FiaSource, document: FiaDocument, now: datetime) -> bool:
     A document whose PDF cannot be read is marked as fetched with no text, so it is not
     retried every run. Returns whether text was stored.
     """
-    _take_turn()
+    take_turn()
+    content = b""
     try:
-        text = pdf_text(source.document_pdf(document.url))
+        content = source.document_pdf(document.url)
+        text = pdf_text(content)
     except (InvalidPayloadError, NotFoundError) as exc:
         log.warning("fia_text_unreadable", document_id=document.pk, error=type(exc).__name__)
         text = ""
@@ -189,7 +189,23 @@ def fetch_text(source: FiaSource, document: FiaDocument, now: datetime) -> bool:
         record = parse_decision(text)
         if record is not None:
             store_decision(document, record)
+    if content:
+        read_with_readers(document, content)
     return bool(text)
+
+
+def read_with_readers(document: FiaDocument, content: bytes) -> None:
+    """Hand the PDF to every registered reader; one failing reader never stops the import."""
+    for reader in readers.readers_for(document):
+        try:
+            reader.read(document, content)
+        except InvalidPayloadError as exc:
+            log.warning(
+                "fia_reader_failed",
+                reader=reader.name,
+                document_id=document.pk,
+                error=type(exc).__name__,
+            )
 
 
 # --------------------------------------------------------------------- decisions
@@ -292,8 +308,10 @@ def seed_documents(source: FiaSource, event: Event, fia_name: str, now: datetime
     list_event(source, event.season.year, event, fia_name, now)
     read = 0
     for document in FiaDocument.objects.filter(event=event, text_fetched_at__isnull=True):
-        if document.category in STEWARDS_CATEGORIES or document.title.startswith(
-            "Final Race Classification"
+        if (
+            document.category in STEWARDS_CATEGORIES
+            or document.title.startswith("Final Race Classification")
+            or readers.readers_for(document)
         ):
             read += int(fetch_text(source, document, now))
     return read

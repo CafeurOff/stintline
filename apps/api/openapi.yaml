@@ -1418,6 +1418,112 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/technical/incidents:
+    get:
+      operationId: technical_incidents_retrieve
+      summary: Stewards' decisions by kind and penalty points on the licence
+      parameters:
+      - in: query
+        name: season
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 1950
+        required: true
+      tags:
+      - technical
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Incidents'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/technical/power-units:
+    get:
+      operationId: technical_power_units_retrieve
+      summary: Power-unit elements used by each car against the season's allowance
+      parameters:
+      - in: query
+        name: season
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 1950
+        required: true
+      tags:
+      - technical
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PowerUnits'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+  /api/v1/technical/upgrades:
+    get:
+      operationId: technical_upgrades_retrieve
+      summary: Upgrades declared by the teams, with the race pace before and after
+        them
+      parameters:
+      - in: query
+        name: season
+        schema:
+          type: integer
+          maximum: 2100
+          minimum: 1950
+        required: true
+      tags:
+      - technical
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Upgrades'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
 components:
   schemas:
     Assumption:
@@ -2841,6 +2947,22 @@ components:
       - documents
       - event
       - penalties
+    EventRef:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        round:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+      required:
+      - country
+      - event_id
+      - name
+      - round
     EventSummary:
       type: object
       properties:
@@ -3078,6 +3200,168 @@ components:
         * `pit_cycle` - pit_cycle
         * `rival_stop` - rival_stop
         * `on_track` - on_track
+    Incident:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        round:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        document_id:
+          type: integer
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        driver_name:
+          type: string
+        colour:
+          type: string
+          nullable: true
+        session_label:
+          type: string
+        lap:
+          type: integer
+          nullable: true
+        kind:
+          type: string
+        fact:
+          type: string
+        is_penalty:
+          type: boolean
+        time_penalty_s:
+          type: integer
+        grid_places:
+          type: integer
+        penalty_points:
+          type: integer
+        drive_through:
+          type: boolean
+        stop_go_s:
+          type: integer
+        back_of_grid:
+          type: boolean
+        pit_lane_start:
+          type: boolean
+        reprimand:
+          type: boolean
+        fine_eur:
+          type: integer
+        disqualified:
+          type: boolean
+        lap_time_deleted:
+          type: boolean
+        no_further_action:
+          type: boolean
+      required:
+      - back_of_grid
+      - colour
+      - country
+      - disqualified
+      - document_id
+      - drive_through
+      - driver
+      - driver_name
+      - event_id
+      - fact
+      - fine_eur
+      - grid_places
+      - is_penalty
+      - kind
+      - lap
+      - lap_time_deleted
+      - name
+      - no_further_action
+      - penalty_points
+      - pit_lane_start
+      - reprimand
+      - round
+      - session_label
+      - stop_go_s
+      - time_penalty_s
+    IncidentDriver:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        colour:
+          type: string
+          nullable: true
+        decisions:
+          type: integer
+        penalties:
+          type: integer
+        points:
+          type: integer
+          description: Penalty points given this season
+        points_12m:
+          type: integer
+          description: Points on the licence after the last round
+        points_by_round:
+          type: array
+          items:
+            type: integer
+        kinds:
+          type: object
+          additionalProperties:
+            type: integer
+      required:
+      - colour
+      - decisions
+      - driver
+      - kinds
+      - penalties
+      - points
+      - points_12m
+      - points_by_round
+    IncidentKind:
+      type: object
+      properties:
+        kind:
+          type: string
+        decisions:
+          type: integer
+        penalties:
+          type: integer
+      required:
+      - decisions
+      - kind
+      - penalties
+    Incidents:
+      type: object
+      properties:
+        season:
+          type: integer
+        threshold:
+          type: integer
+          description: Points in 12 months that bring a race ban
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRef'
+        kinds:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncidentKind'
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncidentDriver'
+        decisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Incident'
+      required:
+      - decisions
+      - drivers
+      - kinds
+      - rounds
+      - season
+      - threshold
     KindEnum:
       enum:
       - FP1
@@ -4068,6 +4352,35 @@ components:
       - points
       - position
       - probability
+    PowerUnits:
+      type: object
+      properties:
+        season:
+          type: integer
+        as_of:
+          $ref: '#/components/schemas/EventRef'
+        document_id:
+          type: integer
+        elements:
+          type: array
+          items:
+            type: string
+        allowed:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Allowance per element as the FIA states it
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/PuCar'
+      required:
+      - allowed
+      - as_of
+      - cars
+      - document_id
+      - elements
+      - season
     Problem:
       type: object
       description: Error body returned by every endpoint (inspired by RFC 9457 problem
@@ -4116,6 +4429,76 @@ components:
       - drivers
       - rounds
       - season
+    PuCar:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        team_and_driver:
+          type: string
+          description: As printed by the FIA
+        colour:
+          type: string
+          nullable: true
+        used:
+          type: object
+          additionalProperties:
+            type: integer
+        over:
+          type: array
+          items:
+            type: string
+          description: Beyond the allowance
+        beyond:
+          type: integer
+          description: New elements stated as not in compliance
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/PuChange'
+      required:
+      - beyond
+      - car_number
+      - changes
+      - colour
+      - driver
+      - over
+      - team_and_driver
+      - used
+    PuChange:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        round:
+          type: integer
+        name:
+          type: string
+        country:
+          type: string
+        element:
+          type: string
+        number:
+          type: integer
+        allowed:
+          type: integer
+          nullable: true
+        compliant:
+          type: boolean
+          nullable: true
+      required:
+      - allowed
+      - compliant
+      - country
+      - element
+      - event_id
+      - name
+      - number
+      - round
     RaceControl:
       type: object
       properties:
@@ -5439,6 +5822,30 @@ components:
       - seasons
       - starts
       - wins
+    TeamUpgrades:
+      type: object
+      properties:
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          nullable: true
+        team_name:
+          type: string
+        colour:
+          type: string
+          nullable: true
+        upgrades:
+          type: integer
+        cells:
+          type: array
+          items:
+            $ref: '#/components/schemas/UpgradeCell'
+      required:
+      - cells
+      - colour
+      - team
+      - team_name
+      - upgrades
     Teammates:
       type: object
       properties:
@@ -5749,6 +6156,107 @@ components:
       - net_gain_s
       - p_attacker_ahead
       - sigma_s
+    Upgrade:
+      type: object
+      properties:
+        id:
+          type: integer
+        document_id:
+          type: integer
+        event_id:
+          type: integer
+        round:
+          type: integer
+        team_ref:
+          type: string
+          nullable: true
+        team_name:
+          type: string
+        number:
+          type: integer
+        component:
+          type: string
+        zone:
+          type: string
+        reason:
+          type: string
+        reason_detail:
+          type: string
+        difference:
+          type: string
+        description:
+          type: string
+      required:
+      - component
+      - description
+      - difference
+      - document_id
+      - event_id
+      - id
+      - number
+      - reason
+      - reason_detail
+      - round
+      - team_name
+      - team_ref
+      - zone
+    UpgradeCell:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        round:
+          type: integer
+        count:
+          type: integer
+        performance:
+          type: integer
+          description: Items declared for performance
+        pace_before_pct:
+          type: number
+          format: double
+          nullable: true
+          description: Median gap to the field (%) over the 3 races before
+        pace_after_pct:
+          type: number
+          format: double
+          nullable: true
+          description: Median gap to the field (%) from the upgrade race on (3)
+        races_before:
+          type: integer
+        races_after:
+          type: integer
+      required:
+      - count
+      - event_id
+      - pace_after_pct
+      - pace_before_pct
+      - performance
+      - races_after
+      - races_before
+      - round
+    Upgrades:
+      type: object
+      properties:
+        season:
+          type: integer
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRef'
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeamUpgrades'
+        upgrades:
+          type: array
+          items:
+            $ref: '#/components/schemas/Upgrade'
+      required:
+      - rounds
+      - season
+      - teams
+      - upgrades
     Weather:
       type: object
       properties:

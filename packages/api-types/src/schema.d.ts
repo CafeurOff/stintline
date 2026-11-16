@@ -738,6 +738,57 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/technical/incidents": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Stewards' decisions by kind and penalty points on the licence */
+    get: operations["technical_incidents_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/technical/power-units": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Power-unit elements used by each car against the season's allowance */
+    get: operations["technical_power_units_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/technical/upgrades": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Upgrades declared by the teams, with the race pace before and after them */
+    get: operations["technical_upgrades_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1269,6 +1320,12 @@ export interface components {
       decisions: number;
       penalties: number;
     };
+    EventRef: {
+      event_id: number;
+      round: number;
+      name: string;
+      country: string;
+    };
     EventSummary: {
       readonly id: number;
       readonly season: number;
@@ -1362,6 +1419,61 @@ export interface components {
      * @enum {string}
      */
     HowEnum: "lights_to_flag" | "undercut" | "pit_cycle" | "rival_stop" | "on_track";
+    Incident: {
+      event_id: number;
+      round: number;
+      name: string;
+      country: string;
+      document_id: number;
+      driver: components["schemas"]["Driver"] | null;
+      driver_name: string;
+      colour: string | null;
+      session_label: string;
+      lap: number | null;
+      kind: string;
+      fact: string;
+      is_penalty: boolean;
+      time_penalty_s: number;
+      grid_places: number;
+      penalty_points: number;
+      drive_through: boolean;
+      stop_go_s: number;
+      back_of_grid: boolean;
+      pit_lane_start: boolean;
+      reprimand: boolean;
+      fine_eur: number;
+      disqualified: boolean;
+      lap_time_deleted: boolean;
+      no_further_action: boolean;
+    };
+    IncidentDriver: {
+      driver: components["schemas"]["Driver"];
+      colour: string | null;
+      decisions: number;
+      penalties: number;
+      /** @description Penalty points given this season */
+      points: number;
+      /** @description Points on the licence after the last round */
+      points_12m: number;
+      points_by_round: number[];
+      kinds: {
+        [key: string]: number;
+      };
+    };
+    IncidentKind: {
+      kind: string;
+      decisions: number;
+      penalties: number;
+    };
+    Incidents: {
+      season: number;
+      /** @description Points in 12 months that bring a race ban */
+      threshold: number;
+      rounds: components["schemas"]["EventRef"][];
+      kinds: components["schemas"]["IncidentKind"][];
+      drivers: components["schemas"]["IncidentDriver"][];
+      decisions: components["schemas"]["Incident"][];
+    };
     /**
      * @description * `FP1` - Practice 1
      *     * `FP2` - Practice 2
@@ -1801,6 +1913,17 @@ export interface components {
        */
       points: number;
     };
+    PowerUnits: {
+      season: number;
+      as_of: components["schemas"]["EventRef"];
+      document_id: number;
+      elements: string[];
+      /** @description Allowance per element as the FIA states it */
+      allowed: {
+        [key: string]: number;
+      };
+      cars: components["schemas"]["PuCar"][];
+    };
     /** @description Error body returned by every endpoint (inspired by RFC 9457 problem details). */
     Problem: {
       type: string;
@@ -1818,6 +1941,31 @@ export interface components {
       rounds: components["schemas"]["Round"][];
       drivers: components["schemas"]["DriverProgression"][];
       constructors: components["schemas"]["TeamProgression"][];
+    };
+    PuCar: {
+      car_number: number;
+      driver: components["schemas"]["Driver"] | null;
+      /** @description As printed by the FIA */
+      team_and_driver: string;
+      colour: string | null;
+      used: {
+        [key: string]: number;
+      };
+      /** @description Beyond the allowance */
+      over: string[];
+      /** @description New elements stated as not in compliance */
+      beyond: number;
+      changes: components["schemas"]["PuChange"][];
+    };
+    PuChange: {
+      event_id: number;
+      round: number;
+      name: string;
+      country: string;
+      element: string;
+      number: number;
+      allowed: number | null;
+      compliant: boolean | null;
     };
     RaceControl: {
       /** Format: date-time */
@@ -2297,6 +2445,13 @@ export interface components {
       points: number;
       championships: number;
     };
+    TeamUpgrades: {
+      team: components["schemas"]["Team"] | null;
+      team_name: string;
+      colour: string | null;
+      upgrades: number;
+      cells: components["schemas"]["UpgradeCell"][];
+    };
     Teammates: {
       a: components["schemas"]["SideTotals"];
       b: components["schemas"]["SideTotals"];
@@ -2409,6 +2564,46 @@ export interface components {
       p_attacker_ahead: number;
       attacker_ahead: boolean;
       lap_gaps: components["schemas"]["LapGap"][];
+    };
+    Upgrade: {
+      id: number;
+      document_id: number;
+      event_id: number;
+      round: number;
+      team_ref: string | null;
+      team_name: string;
+      number: number;
+      component: string;
+      zone: string;
+      reason: string;
+      reason_detail: string;
+      difference: string;
+      description: string;
+    };
+    UpgradeCell: {
+      event_id: number;
+      round: number;
+      count: number;
+      /** @description Items declared for performance */
+      performance: number;
+      /**
+       * Format: double
+       * @description Median gap to the field (%) over the 3 races before
+       */
+      pace_before_pct: number | null;
+      /**
+       * Format: double
+       * @description Median gap to the field (%) from the upgrade race on (3)
+       */
+      pace_after_pct: number | null;
+      races_before: number;
+      races_after: number;
+    };
+    Upgrades: {
+      season: number;
+      rounds: components["schemas"]["EventRef"][];
+      teams: components["schemas"]["TeamUpgrades"][];
+      upgrades: components["schemas"]["Upgrade"][];
     };
     Weather: {
       /** Format: double */
@@ -3808,6 +4003,117 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["TeamCareer"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  technical_incidents_retrieve: {
+    parameters: {
+      query: {
+        season: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Incidents"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  technical_power_units_retrieve: {
+    parameters: {
+      query: {
+        season: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PowerUnits"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  technical_upgrades_retrieve: {
+    parameters: {
+      query: {
+        season: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Upgrades"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
       404: {

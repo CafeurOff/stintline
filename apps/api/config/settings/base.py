@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "stintline.news",
     "stintline.analysis",
     "stintline.paddock",
+    "stintline.technical",
 ]
 
 MIDDLEWARE = [
