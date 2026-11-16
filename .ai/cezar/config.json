@@ -1,0 +1,18 @@
+{
+  "baseBranch": "main",
+  "defaultRunner": "claude",
+  "skillsRepos": [],
+  "worktreeRetention": 5,
+  "branchNaming": "Use a conventional prefix (feat/, fix/, docs/, refactor/, test/, chore/) followed by a short kebab-case English summary, e.g. feat/undercut-window-chart. No ticket numbers, no dates.",
+  "worktreeLifecycle": {
+    "afterCreate": [
+      {
+        "id": "39698e07-941c-465b-ae89-9b540ef1c52f",
+        "name": "Install Python and JS dependencies",
+        "command": "uv sync --all-packages --frozen && pnpm install --frozen-lockfile",
+        "timeoutSeconds": 1200
+      }
+    ],
+    "beforeRemove": []
+  }
+}

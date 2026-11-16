@@ -1,0 +1,43 @@
+name: implement-and-verify
+description: >
+  Implement the task following CLAUDE.md, then run the same checks as CI (lint, types,
+  tests, OpenAPI/TS drift). A red check sends its output back to the agent, twice at most.
+  Playwright e2e and Docker builds stay in CI.
+steps:
+  - id: implement
+    name: Implement
+    prompt: |
+      {{task}}
+
+      Work rules for this run:
+      - Read CLAUDE.md first, and apps/web/CLAUDE.md for any frontend change. Respect its
+        hard boundaries (only `racedata` does network I/O, `packages/strategy` stays pure,
+        `packages/api-types` is generated: run `make types`, never edit it by hand).
+      - Keep the change scoped to the task. Add or update tests for what you change.
+      - Modelling changes: every assumption is a named, documented parameter; never tune on
+        the held-out backtest races listed in CLAUDE.md.
+      - Before you finish, run `make lint`, `make typecheck` and the tests of the packages you
+        touched, and fix what fails.
+      - Commit messages in English, conventional style (`feat(api): ...`), no AI attribution.
+      - Never push to main. Your work lands through the cockpit's review gate as a pull request.
+
+  - id: lint-and-types
+    name: Lint, format and types
+    command: make lint && make typecheck
+    onFail:
+      retry: implement
+      max: 2
+
+  - id: tests
+    name: Unit and integration tests
+    command: make test
+    onFail:
+      retry: implement
+      max: 2
+
+  - id: contract
+    name: OpenAPI and generated types are in sync
+    command: make types-check
+    onFail:
+      retry: implement
+      max: 2
