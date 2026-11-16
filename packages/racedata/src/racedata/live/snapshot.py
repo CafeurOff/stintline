@@ -1,7 +1,12 @@
 """A provider-neutral view of the live session, derived from the merged topic state.
 
 Only what the UI and the live strategy need: who is where, on which tyres, how far into
-the lap, plus track status, race control, team radio and weather. Datetimes are UTC.
+the lap and how fast through each mini-sector, plus track status and its periods, race
+control, team radio, pit-lane times and weather. Datetimes are UTC.
+
+Some topics only carry the latest value (pit-lane times are deleted after a while,
+weather is a single reading): :class:`SessionHistory` keeps what was seen so the view can
+show the whole session.
 """
 
 from __future__ import annotations
@@ -25,6 +30,26 @@ TRACK_STATUS = {
     "6": "virtual_safety_car",
     "7": "vsc_ending",
 }
+STATUS_SERIES = {
+    "AllClear": "clear",
+    "Green": "clear",
+    "Yellow": "yellow",
+    "DoubleYellow": "yellow",
+    "SCDeployed": "safety_car",
+    "SCEnding": "safety_car",
+    "VSCDeployed": "virtual_safety_car",
+    "VSCEnding": "virtual_safety_car",
+    "Red": "red",
+}
+"""``SessionData.StatusSeries`` names. An ending period stays part of its period."""
+SEGMENT_STATUS = {0: "none", 2048: "yellow", 2049: "green", 2051: "purple", 2064: "pit"}
+"""Mini-sector codes: yellow = slower than the driver's best, green = personal best,
+purple = overall best, pit = in the pit lane. Other non-zero codes count as yellow."""
+EARLIER_SESSION_MARGIN = timedelta(minutes=30)
+"""``StatusSeries`` also lists earlier sessions of the weekend: entries older than this
+before the session start are left out of the timeline."""
+WEATHER_POINTS_KEPT = 200
+PIT_TIMES_KEPT = 200
 _LAP_TIME = re.compile(r"^(?:(\d+):)?(\d+(?:\.\d+)?)$")
 _OFFSET = re.compile(r"^([+-]?)(\d{1,2}):(\d{2})(?::(\d{2}))?$")
 
@@ -39,6 +64,15 @@ class LiveSession(_DTO):
     country: str
     status: str
     starts_at: datetime | None
+
+
+class LiveSector(_DTO):
+    time_s: float | None
+    """Last time through the sector."""
+    personal_best: bool
+    overall_best: bool
+    segments: list[str]
+    """Mini-sectors of the current lap: none, yellow, green, purple or pit."""
 
 
 class LiveCar(_DTO):
@@ -66,6 +100,8 @@ class LiveCar(_DTO):
     tyre_new: bool | None
     lap_progress: float
     """Share of the current lap completed, from the mini-sectors passed (0 to 1)."""
+    grid: int | None
+    sectors: list[LiveSector]
 
 
 class RaceControl(_DTO):
@@ -90,6 +126,31 @@ class Weather(_DTO):
     wind_ms: float | None
 
 
+class FlagPeriod(_DTO):
+    """A spell of yellow, safety car, virtual safety car or red flag."""
+
+    status: str
+    start_at: datetime
+    end_at: datetime | None
+    """``None`` while it is still running."""
+    start_lap: int | None
+    end_lap: int | None
+
+
+class PitLaneTime(_DTO):
+    number: int
+    lap: int | None
+    pit_lane_duration_s: float
+    """Pit entry to pit exit, as timed by the official feed (not stationary time)."""
+
+
+class WeatherPoint(_DTO):
+    lap: int | None
+    air_c: float | None
+    track_c: float | None
+    rain: bool
+
+
 class LiveView(_DTO):
     session: LiveSession
     lap: int | None
@@ -100,6 +161,9 @@ class LiveView(_DTO):
     race_control: list[RaceControl]
     team_radio: list[Radio]
     weather: Weather | None
+    timeline: list[FlagPeriod]
+    pit_lane: list[PitLaneTime]
+    weather_history: list[WeatherPoint]
 
 
 def lap_seconds(text: Any) -> float | None:
@@ -170,6 +234,30 @@ def _progress(line: dict[str, Any]) -> float:
     return round(done / total, 3) if total else 0.0
 
 
+def _segment(value: Any) -> str:
+    code = _int((value or {}).get("Status")) if isinstance(value, dict) else None
+    if not code:
+        return "none"
+    return SEGMENT_STATUS.get(code, "yellow")
+
+
+def _sectors(line: dict[str, Any]) -> list[LiveSector]:
+    sectors = line.get("Sectors") or []
+    out: list[LiveSector] = []
+    for item in sectors if isinstance(sectors, list) else []:
+        sector = item if isinstance(item, dict) else {}
+        segments = sector.get("Segments") or []
+        out.append(
+            LiveSector(
+                time_s=lap_seconds(sector.get("Value")),
+                personal_best=bool(sector.get("PersonalFastest")),
+                overall_best=bool(sector.get("OverallFastest")),
+                segments=[_segment(x) for x in (segments if isinstance(segments, list) else [])],
+            )
+        )
+    return out
+
+
 def _tyres(app: dict[str, Any]) -> tuple[str | None, int | None, bool | None]:
     stints = app.get("Stints") or []
     if not isinstance(stints, list) or not stints:
@@ -208,10 +296,111 @@ def _car(number: str, line: dict[str, Any], driver: dict[str, Any], app: dict[st
         tyre_age=age,
         tyre_new=new,
         lap_progress=_progress(line),
+        grid=_int(app.get("GridPos")) or None,
+        sectors=_sectors(line),
     )
 
 
-def view(state: LiveState) -> LiveView:
+def _lap_at(laps: list[tuple[datetime, int]], at: datetime) -> int | None:
+    lap = None
+    for start, number in laps:
+        if start > at:
+            break
+        lap = number
+    return lap
+
+
+def timeline(state: LiveState, starts_at: datetime | None) -> list[FlagPeriod]:
+    """Flag periods from ``SessionData``: each track-status change opens a period and
+    closes the previous one; clear spells are left out."""
+    data = state.get("SessionData")
+    laps = sorted(
+        (at, number)
+        for item in (data.get("Series") or [])
+        if isinstance(item, dict)
+        and (at := _utc(item.get("Utc"))) is not None
+        and (number := _int(item.get("Lap"))) is not None
+    )
+    floor = starts_at - EARLIER_SESSION_MARGIN if starts_at else None
+    changes = [
+        (at, STATUS_SERIES.get(str(item["TrackStatus"]), "clear"))
+        for item in (data.get("StatusSeries") or [])
+        if isinstance(item, dict)
+        and "TrackStatus" in item
+        and (at := _utc(item.get("Utc"))) is not None
+        and (floor is None or at >= floor)
+    ]
+    changes.sort(key=lambda change: change[0])
+    out: list[FlagPeriod] = []
+    current: tuple[datetime, str] | None = None
+    for at, status in changes:
+        if current and current[1] == status:
+            continue
+        if current and current[1] != "clear":
+            out.append(_period(current, at, laps))
+        current = (at, status)
+    if current and current[1] != "clear":
+        out.append(_period(current, None, laps))
+    return out
+
+
+def _period(
+    start: tuple[datetime, str], end: datetime | None, laps: list[tuple[datetime, int]]
+) -> FlagPeriod:
+    return FlagPeriod(
+        status=start[1],
+        start_at=start[0],
+        end_at=end,
+        start_lap=_lap_at(laps, start[0]),
+        end_lap=_lap_at(laps, end) if end else None,
+    )
+
+
+class SessionHistory:
+    """What the feed shows only once: pit-lane times (deleted from the topic after a
+    while) and weather readings, kept per lap."""
+
+    def __init__(self) -> None:
+        self._pits: dict[tuple[int, int | None], float] = {}
+        self._weather: dict[int | None, WeatherPoint] = {}
+
+    def update(self, state: LiveState) -> None:
+        times = state.get("PitLaneTimeCollection").get("PitTimes") or {}
+        for key, item in times.items() if isinstance(times, dict) else []:
+            if not isinstance(item, dict):
+                continue
+            number = _int(item.get("RacingNumber") or key)
+            duration = _float(item.get("Duration"))
+            if number is not None and duration is not None and duration > 0:
+                self._pits[(number, _int(item.get("Lap")))] = duration
+        weather = state.get("WeatherData")
+        if weather:
+            lap = _int(state.get("LapCount").get("CurrentLap"))
+            self._weather[lap] = WeatherPoint(
+                lap=lap,
+                air_c=_float(weather.get("AirTemp")),
+                track_c=_float(weather.get("TrackTemp")),
+                rain=_raining(weather),
+            )
+
+    def pit_lane(self) -> list[PitLaneTime]:
+        rows = [
+            PitLaneTime(number=number, lap=lap, pit_lane_duration_s=round(duration, 3))
+            for (number, lap), duration in self._pits.items()
+        ]
+        rows.sort(key=lambda r: (r.lap is None, r.lap or 0, r.number))
+        return rows[-PIT_TIMES_KEPT:]
+
+    def weather(self) -> list[WeatherPoint]:
+        points = sorted(self._weather.values(), key=lambda p: (p.lap is None, p.lap or 0))
+        return points[-WEATHER_POINTS_KEPT:]
+
+
+def _raining(weather: dict[str, Any]) -> bool:
+    return str(weather.get("Rainfall")) not in ("", "0", "None")
+
+
+def view(state: LiveState, history: SessionHistory | None = None) -> LiveView:
     info = state.get("SessionInfo")
     meeting = info.get("Meeting") or {}
     lines = state.get("TimingData").get("Lines") or {}
@@ -228,6 +417,7 @@ def view(state: LiveState) -> LiveView:
     captures = state.get("TeamRadio").get("Captures") or []
     weather = state.get("WeatherData")
     path = str(info.get("Path") or "")
+    starts_at = session_start(info)
     return LiveView(
         session=LiveSession(
             key=_int(info.get("Key")),
@@ -238,7 +428,7 @@ def view(state: LiveState) -> LiveView:
             circuit=str((meeting.get("Circuit") or {}).get("ShortName") or ""),
             country=str((meeting.get("Country") or {}).get("Name") or ""),
             status=str(state.get("SessionStatus").get("Status") or info.get("SessionStatus") or ""),
-            starts_at=session_start(info),
+            starts_at=starts_at,
         ),
         lap=_int(lap_count.get("CurrentLap")),
         total_laps=_int(lap_count.get("TotalLaps")),
@@ -269,9 +459,12 @@ def view(state: LiveState) -> LiveView:
             air_c=_float(weather.get("AirTemp")),
             track_c=_float(weather.get("TrackTemp")),
             humidity_pct=_float(weather.get("Humidity")),
-            rain=str(weather.get("Rainfall")) not in ("", "0", "None"),
+            rain=_raining(weather),
             wind_ms=_float(weather.get("WindSpeed")),
         )
         if weather
         else None,
+        timeline=timeline(state, starts_at),
+        pit_lane=history.pit_lane() if history else [],
+        weather_history=history.weather() if history else [],
     )

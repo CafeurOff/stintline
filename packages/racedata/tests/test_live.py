@@ -26,7 +26,7 @@ from racedata.live.protocol import (
     encode,
     subscribe,
 )
-from racedata.live.snapshot import gap, lap_seconds, session_start, view
+from racedata.live.snapshot import SessionHistory, gap, lap_seconds, session_start, view
 
 SNAPSHOT = json.loads(
     (FIXTURES_ROOT / "livetiming" / "snapshot-mexico-2026.json").read_text(encoding="utf-8")
@@ -130,12 +130,106 @@ def test_view_links_team_radio_to_the_official_recording() -> None:
     assert radio[0].at >= radio[-1].at
 
 
+def test_view_colours_mini_sectors_and_keeps_sector_times() -> None:
+    live = state()
+    live.apply_feed(
+        "TimingData",
+        {
+            "Lines": {
+                "1": {
+                    "Sectors": {
+                        "0": {
+                            "Value": "26.901",
+                            "PersonalFastest": True,
+                            "Segments": {"0": {"Status": 2051}, "1": {"Status": 2049}},
+                        }
+                    }
+                }
+            }
+        },
+    )
+
+    car = next(c for c in view(live).cars if c.number == 1)
+
+    first = car.sectors[0]
+    assert first.segments[:3] == ["purple", "green", "yellow"]
+    assert (first.time_s, first.personal_best, first.overall_best) == (26.901, True, False)
+    assert car.sectors[2].segments[-1] == "pit"
+    assert car.sectors[1].segments[-1] == "none"
+    assert car.grid == 6
+
+
+STATUS_SERIES = [
+    {"Utc": "2026-10-31T17:42:52Z", "TrackStatus": "Yellow"},
+    {"Utc": "2026-11-01T20:11:50Z", "TrackStatus": "Yellow"},
+    {"Utc": "2026-11-01T20:12:05Z", "TrackStatus": "VSCDeployed"},
+    {"Utc": "2026-11-01T20:14:42Z", "TrackStatus": "VSCEnding"},
+    {"Utc": "2026-11-01T20:14:53Z", "TrackStatus": "AllClear"},
+    {"Utc": "2026-11-01T20:15:00Z", "SessionStatus": "Started"},
+    {"Utc": "2026-11-01T21:06:02Z", "TrackStatus": "Red"},
+]
+LAP_SERIES = [
+    {"Utc": "2026-11-01T20:04:50Z", "Lap": 2},
+    {"Utc": "2026-11-01T20:10:14Z", "Lap": 6},
+    {"Utc": "2026-11-01T20:14:00Z", "Lap": 8},
+    {"Utc": "2026-11-01T21:05:00Z", "Lap": 40},
+]
+
+
+def test_timeline_turns_status_changes_into_flag_periods() -> None:
+    live = state()
+    live.apply_feed("SessionData", {"Series": LAP_SERIES, "StatusSeries": STATUS_SERIES})
+
+    periods = view(live).timeline
+
+    assert [p.status for p in periods] == ["yellow", "virtual_safety_car", "red"]
+    vsc = periods[1]
+    assert (vsc.start_lap, vsc.end_lap) == (6, 8)
+    assert vsc.end_at == datetime(2026, 11, 1, 20, 14, 53, tzinfo=UTC)
+    assert periods[-1].end_at is None
+    assert periods[-1].start_lap == 40
+
+
+def test_session_history_keeps_pit_lane_times_once_the_feed_drops_them() -> None:
+    live, history = state(), SessionHistory()
+    live.apply_feed(
+        "PitLaneTimeCollection",
+        {"PitTimes": {"44": {"RacingNumber": "44", "Duration": "22.416", "Lap": "18"}}},
+    )
+    history.update(live)
+    live.apply_feed("PitLaneTimeCollection", {"PitTimes": {"_deleted": ["44"]}})
+    live.apply_feed(
+        "PitLaneTimeCollection",
+        {"PitTimes": {"1": {"RacingNumber": "1", "Duration": "", "Lap": "19"}}},
+    )
+    history.update(live)
+
+    rows = view(live, history).pit_lane
+
+    assert [(r.number, r.lap, r.pit_lane_duration_s) for r in rows] == [(44, 18, 22.416)]
+
+
+def test_session_history_keeps_one_weather_reading_per_lap() -> None:
+    live, history = state(), SessionHistory()
+    for lap, air in ((10, "21.0"), (10, "21.4"), (11, "21.8")):
+        live.apply_feed("LapCount", {"CurrentLap": lap})
+        live.apply_feed("WeatherData", {"AirTemp": air, "Rainfall": "0"})
+        history.update(live)
+
+    points = view(live, history).weather_history
+
+    assert [(p.lap, p.air_c, p.rain) for p in points] == [(10, 21.4, False), (11, 21.8, False)]
+
+
 def test_view_survives_an_empty_state() -> None:
     result = view(LiveState())
 
     assert result.cars == []
     assert result.session.starts_at is None
     assert result.weather is None
+    assert result.timeline == []
+    assert result.pit_lane == []
+    assert result.weather_history == []
 
 
 @pytest.mark.parametrize(
