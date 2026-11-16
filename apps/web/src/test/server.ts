@@ -20,6 +20,7 @@ import {
   documentSearch,
 } from "./fixtures/paddock";
 import { events } from "./fixtures/events";
+import { forecasts } from "./fixtures/forecast";
 import { homeResponse } from "./fixtures/home";
 import { strategyResponse } from "./fixtures/strategy";
 import {
@@ -145,6 +146,10 @@ export const handlers = [
     );
   }),
   http.get("*/api/v1/live", () => HttpResponse.json(offlineLive)),
+  http.get("*/api/v1/forecasts", ({ request }) => {
+    const event = new URL(request.url).searchParams.get("event");
+    return HttpResponse.json(forecasts.filter((f) => !event || f.event_id === Number(event)));
+  }),
   http.get("*/api/v1/news/headlines", ({ request }) => {
     const lang = new URL(request.url).searchParams.get("lang");
     return HttpResponse.json(headlines.filter((h) => !lang || h.language === lang));

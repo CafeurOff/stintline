@@ -27,6 +27,7 @@ import { useReport } from "@/features/news/api";
 import { inkOn, teamColour, teamTint } from "@/lib/teams";
 import type { LapMark } from "@/features/analysis/components/LapChart";
 import { RaceAnalysis } from "@/features/analysis/components/RaceAnalysis";
+import { WeekendForecast } from "@/features/forecast/components/WeekendForecast";
 import { useDecisions } from "@/features/paddock/api";
 import { DecisionTable } from "@/features/paddock/components/DecisionTable";
 import { useSessionDetail, useTrack } from "@/features/race/api";
@@ -74,6 +75,7 @@ function EventLoader({ eventId }: { eventId: number }) {
   return (
     <div className="flex flex-col gap-4">
       <EventHero event={data} replays={replays} raceId={race?.id ?? null} />
+      <WeekendForecast eventId={data.id} />
       {race?.has_data && <RaceFigures sessionId={race.id} />}
       <div className="grid gap-4 xl:grid-cols-3">
         {!shown ? (

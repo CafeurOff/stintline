@@ -5,7 +5,6 @@ import { Link } from "react-router";
 import { Countdown } from "@/components/hub/Countdown";
 import { SectionTitle } from "@/components/hub/SectionTitle";
 import { CircuitMark } from "@/components/racing/CircuitMark";
-import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -21,9 +20,18 @@ import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
+import { useForecasts } from "@/features/forecast/api";
+import { ForecastBadge, ForecastCredit } from "@/features/forecast/components/ForecastBadge";
+
 import { useLiveStatus } from "../api";
 import { delayed, type LiveSnapshot, TV_DELAYS, type TvDelay } from "../buffer";
+import { FALLBACK_LAP_S } from "../ring";
 import { useLiveSocket } from "../useLiveSocket";
+import { FlagTimeline } from "./FlagTimeline";
+import { GapRing } from "./GapRing";
+import { PitLanePanel } from "./PitLanePanel";
+import { TimingTower } from "./TimingTower";
+import { WeatherStrip } from "./WeatherStrip";
 
 type Car = Schema<"LiveCar">;
 
@@ -32,7 +40,6 @@ const DELAY_KEY = "stintline-tv-delay";
 const TICK_MS = 250;
 /** Cars are moved forward between updates by at most this share of a lap. */
 const MAX_EXTRAPOLATION = 0.06;
-const FALLBACK_LAP_S = 90;
 
 function storedDelay(): TvDelay {
   try {
@@ -104,6 +111,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
   const now = useClock(30_000);
   const event = useEvent(next?.event_id ?? 0, next !== null).data;
   const last = useHome().data?.last_race;
+  const forecasts = useForecasts(next?.event_id).data ?? [];
   const tag = locale === "fr" ? "fr-FR" : "en-GB";
   const when = new Intl.DateTimeFormat(tag, {
     weekday: "long",
@@ -181,6 +189,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
                 const start = new Date(s.scheduled_start ?? "").getTime();
                 const done = now >= start + SESSION_HOURS * HOUR_MS;
                 const isRunning = s === running;
+                const sky = forecasts.find((row) => row.session_id === s.id);
                 return (
                   <li
                     key={s.id}
@@ -192,14 +201,18 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
                       {isRunning && <span className="size-2 animate-pulse rounded-full bg-mark" />}
                       {sessionLabel(s.kind, t)}
                     </span>
-                    <span className="text-sm tabular-nums first-letter:uppercase">
-                      {done ? t("live.done") : when.format(new Date(start))}
+                    <span className="flex flex-col items-end gap-0.5">
+                      <span className="text-sm tabular-nums first-letter:uppercase">
+                        {done ? t("live.done") : when.format(new Date(start))}
+                      </span>
+                      {!done && sky && <ForecastBadge forecast={sky} />}
                     </span>
                   </li>
                 );
               })}
             </ul>
             <p className="text-xs text-muted">{t("home.localTime")}</p>
+            {forecasts.length > 0 && <ForecastCredit />}
           </section>
         )}
         {last?.has_data && (
@@ -346,6 +359,7 @@ function Live({ snapshot, receivedAt, now, finished, connected, delay, onDelay }
           />
         )}
       </header>
+      <FlagTimeline periods={snapshot.timeline} lap={snapshot.lap} total={snapshot.total_laps} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex min-w-0 flex-col gap-6">
@@ -362,16 +376,19 @@ function Live({ snapshot, receivedAt, now, finished, connected, delay, onDelay }
           ) : (
             <EmptyState title={snapshot.session.circuit}>{t("live.noTrack")}</EmptyState>
           )}
-          <Leaderboard
+          <TimingTower
             cars={cars}
             selected={selected?.number ?? null}
             onSelect={(car) => {
               update({ car });
             }}
           />
+          <PitLanePanel snapshot={snapshot} />
         </div>
         <aside aria-label={t("live.side")} className="flex flex-col gap-6 self-start">
           {selected && !finished && <PitNow car={selected} cars={cars} snapshot={snapshot} />}
+          {selected && !finished && <GapRing snapshot={snapshot} selected={selected} />}
+          <WeatherStrip snapshot={snapshot} />
           <Radio snapshot={snapshot} />
           <RaceControl snapshot={snapshot} />
         </aside>
@@ -389,90 +406,6 @@ function TrackStatus({ status }: { status: string }) {
     <span className={`rounded-md border border-line-strong px-2 py-0.5 text-sm font-bold ${tone}`}>
       {t(`live.track.${key as "clear"}`)}
     </span>
-  );
-}
-
-function gapText(car: Car, t: ReturnType<typeof useI18n>["t"], f: ReturnType<typeof useI18n>["f"]) {
-  if (car.position === 1) return t("live.leader");
-  if (car.laps_behind > 0)
-    return t(car.laps_behind === 1 ? "event.lapDown" : "event.lapsDown", { n: car.laps_behind });
-  return car.gap_s == null ? "" : `+${f.number(car.gap_s, 3)}`;
-}
-
-function Leaderboard({
-  cars,
-  selected,
-  onSelect,
-}: {
-  cars: readonly Car[];
-  selected: number | null;
-  onSelect: (car: number) => void;
-}) {
-  const { t, f } = useI18n();
-  return (
-    <div className="overflow-x-auto">
-      <table className="data-table">
-        <caption className="sr-only">{t("live.order")}</caption>
-        <thead>
-          <tr>
-            <th className="num">{t("col.position")}</th>
-            <th>{t("col.driver")}</th>
-            <th className="num">{t("live.gap")}</th>
-            <th className="num hidden sm:table-cell">{t("live.interval")}</th>
-            <th>{t("live.tyres")}</th>
-            <th className="num hidden md:table-cell">{t("live.stops")}</th>
-            <th className="num hidden md:table-cell">{t("live.lastLap")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cars.map((car) => (
-            <tr key={car.number} className={car.number === selected ? "bg-raised" : ""}>
-              <td className="num font-bold">{car.position ?? "—"}</td>
-              <td>
-                <button
-                  type="button"
-                  aria-pressed={car.number === selected}
-                  onClick={() => {
-                    onSelect(car.number);
-                  }}
-                  className="flex items-center gap-2 font-semibold hover:underline"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="h-4 w-1 rounded-full"
-                    style={{ backgroundColor: teamColour(car.colour) }}
-                  />
-                  {car.code}
-                  <span className="sr-only">
-                    {" "}
-                    {car.first_name} {car.last_name}
-                  </span>
-                  {(car.in_pit || car.retired) && (
-                    <span className="rounded bg-raised px-1.5 text-xs text-muted">
-                      {car.retired ? t("live.out") : t("live.inPit")}
-                    </span>
-                  )}
-                </button>
-              </td>
-              <td className="num">{gapText(car, t, f)}</td>
-              <td className="num hidden sm:table-cell">
-                {car.interval_s == null ? "" : `+${f.number(car.interval_s, 3)}`}
-              </td>
-              <td>
-                <span className="flex items-center gap-1.5">
-                  {car.compound && <CompoundBadge compound={car.compound} />}
-                  {car.tyre_age != null && (
-                    <span className="text-sm text-muted tabular-nums">{car.tyre_age}</span>
-                  )}
-                </span>
-              </td>
-              <td className="num hidden md:table-cell">{car.pit_stops}</td>
-              <td className="num hidden md:table-cell">{f.lapTime(car.last_lap_s)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   );
 }
 
@@ -592,15 +525,61 @@ function RaceControl({ snapshot }: { snapshot: LiveSnapshot }) {
       </h2>
       <ol className="flex flex-col gap-2 text-sm">
         {snapshot.race_control.slice(0, 10).map((message, index) => (
-          <li key={`${message.at ?? ""}-${String(index)}`} className="border-b border-line pb-2">
-            <span className="text-muted tabular-nums">
-              {clock(message.at, locale)}
-              {message.lap != null && ` · ${t("analysis.lap")} ${String(message.lap)}`}
+          <li
+            key={`${message.at ?? ""}-${String(index)}`}
+            className="flex flex-col gap-1 border-b border-line pb-2"
+          >
+            <span className="flex flex-wrap items-center gap-1.5 text-xs">
+              {message.lap != null && (
+                <span className="num rounded bg-raised px-1.5 py-0.5 font-bold">
+                  <span aria-hidden="true">L{message.lap}</span>
+                  <span className="sr-only">
+                    {t("analysis.lap")} {message.lap}
+                  </span>
+                </span>
+              )}
+              <RaceControlTag message={message} />
+              <span className="text-muted tabular-nums">{clock(message.at, locale)}</span>
             </span>
-            <span className="block">{message.message}</span>
+            <span>{message.message}</span>
           </li>
         ))}
       </ol>
     </section>
   );
+}
+
+const FLAGS = {
+  RED: ["bg-loss text-white", "live.rc.red"],
+  YELLOW: ["bg-caution text-tyre-ink", "live.rc.yellow"],
+  "DOUBLE YELLOW": ["bg-caution text-tyre-ink", "live.rc.doubleYellow"],
+  GREEN: ["bg-gain text-tyre-ink", "live.rc.green"],
+  CLEAR: ["bg-gain text-tyre-ink", "live.rc.green"],
+  CHEQUERED: ["bg-ink text-bg", "live.rc.chequered"],
+  BLUE: ["bg-t-blue text-white", "live.rc.blue"],
+} as const;
+
+/** The flag or kind of a race control message, as a coloured tag with its name. */
+function RaceControlTag({ message }: { message: Schema<"RaceControl"> }) {
+  const { t } = useI18n();
+  const flag = message.flag.toUpperCase();
+  if (flag in FLAGS) {
+    const [tone, key] = FLAGS[flag as keyof typeof FLAGS];
+    return <span className={`rounded px-1.5 py-0.5 font-bold ${tone}`}>{t(key)}</span>;
+  }
+  if (message.category === "SafetyCar") {
+    return (
+      <span className="rounded bg-caution px-1.5 py-0.5 font-bold text-tyre-ink">
+        {t("live.rc.safetyCar")}
+      </span>
+    );
+  }
+  if (/STEWARDS|INVESTIGAT|PENALTY/i.test(message.message)) {
+    return (
+      <span className="rounded border border-line-strong px-1.5 py-0.5 font-bold">
+        {t("live.rc.stewards")}
+      </span>
+    );
+  }
+  return null;
 }

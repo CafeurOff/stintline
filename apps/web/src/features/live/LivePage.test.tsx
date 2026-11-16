@@ -30,6 +30,13 @@ class FakeSocket {
   }
 }
 
+/** The line under the title: lap count, track status and connection. */
+function statusLine(lap: HTMLElement): HTMLElement {
+  const line = lap.parentElement;
+  if (!line) throw new Error("lap count outside its line");
+  return line;
+}
+
 function goLive() {
   server.use(
     http.get("*/api/v1/live", () =>
@@ -93,6 +100,61 @@ describe("Live page", () => {
     expect(screen.getByRole("heading", { name: "Race control" })).toBeVisible();
   });
 
+  it("colours mini-sectors and shows places won since the start", async () => {
+    goLive();
+    renderRoute("/live");
+
+    const order = await screen.findByRole("table", { name: "Running order" });
+    const verstappen = within(order).getByRole("row", { name: /VER/ });
+    expect(within(verstappen).getByText("Sector 1", { exact: false })).toBeInTheDocument();
+    expect(within(verstappen).getByText("(Fastest overall)")).toBeInTheDocument();
+    expect(
+      within(order).getByRole("columnheader", { name: "Places won since the start" }),
+    ).toBeInTheDocument();
+    expect(within(verstappen).getByText("places gained")).toBeInTheDocument();
+    expect(screen.getByText("Personal best")).toBeVisible();
+  });
+
+  it("draws the flag periods of the race on a timeline", async () => {
+    goLive();
+    renderRoute("/live");
+
+    const timeline = await screen.findByRole("region", { name: "Race timeline" });
+    expect(within(timeline).getByText("Virtual safety car")).toBeVisible();
+    expect(within(timeline).getByText("laps 6–8")).toBeVisible();
+    expect(within(timeline).getByText("lap 41")).toBeVisible();
+  });
+
+  it("averages the pit-lane times and shows the weather lap by lap", async () => {
+    goLive();
+    renderRoute("/live");
+
+    const pits = await screen.findByRole("region", { name: "Pit lane" });
+    expect(within(pits).getByText("4")).toBeVisible();
+    expect(within(pits).getByText("Quickest teams on average")).toBeVisible();
+    const weather = screen.getByRole("region", { name: "Weather at the track" });
+    expect(within(weather).getByText(/38\.2 °C on lap 1, 33\.9 °C on lap 71/)).toBeVisible();
+    expect(within(weather).getByText(/Blue marks: rain/)).toBeVisible();
+  });
+
+  it("tags race control messages with their lap", async () => {
+    goLive();
+    renderRoute("/live");
+
+    const side = await screen.findByRole("complementary");
+    expect(within(side).getAllByText("L71")[0]).toBeVisible();
+    expect(within(side).getAllByText("Stewards")).toHaveLength(2);
+  });
+
+  it("draws every car around the lap with the selected car's rejoin window", async () => {
+    goLive();
+    renderRoute("/live?car=44");
+
+    const ring = await screen.findByRole("img", { name: /Every car around one lap/ });
+    expect(within(ring).getByText("HAM")).toBeInTheDocument();
+    expect(screen.getByText(/where HAM would rejoin after a stop/)).toBeVisible();
+  });
+
   it("says where the selected driver would rejoin after a stop", async () => {
     goLive();
     const { router } = renderRoute("/live");
@@ -132,8 +194,9 @@ describe("Live page", () => {
       });
     });
 
-    expect(await screen.findByText("Lap 12/71")).toBeVisible();
-    expect(screen.getByText("Safety car")).toBeVisible();
+    const lap = await screen.findByText("Lap 12/71");
+    expect(lap).toBeVisible();
+    expect(within(statusLine(lap)).getByText("Safety car")).toBeVisible();
     await userEvent.click(screen.getByRole("radio", { name: "30 s" }));
     expect(localStorage.getItem("stintline-tv-delay")).toBe("30");
     expect(FakeSocket.instances[0]?.url).toMatch(/^ws:\/\/.+\/ws\/live$/);
@@ -177,7 +240,7 @@ describe("Live page", () => {
     const { router } = renderRoute("/live");
 
     const order = await screen.findByRole("table", { name: "Running order" });
-    expect(screen.getByText("Red flag")).toBeVisible();
+    expect(within(statusLine(screen.getByText("Lap 71/71"))).getByText("Red flag")).toBeVisible();
     expect(within(order).getByText("PIT")).toBeVisible();
     expect(within(order).getByText("OUT")).toBeVisible();
     expect(within(order).getByText("+2 laps")).toBeVisible();

@@ -6,6 +6,8 @@ import { Face } from "@/components/dash/Face";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
+import { useForecasts } from "@/features/forecast/api";
+import { ForecastBadge } from "@/features/forecast/components/ForecastBadge";
 import { timedSessions } from "@/features/session-picker/useRaces";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
@@ -33,7 +35,10 @@ export function GrandPrixCard({
   const name = eventName(event.name, locale);
   const race = timedSessions(event).find((s) => s.kind === "R");
   const winner = event.winner;
-  const scheduled = event.sessions.find((s) => s.kind === "R")?.scheduled_start ?? null;
+  const raceSession = event.sessions.find((s) => s.kind === "R");
+  const scheduled = raceSession?.scheduled_start ?? null;
+  const forecasts = useForecasts().data;
+  const forecast = winner ? undefined : forecasts?.find((f) => f.session_id === raceSession?.id);
   const raceStart = scheduled
     ? new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
         weekday: "short",
@@ -129,6 +134,7 @@ export function GrandPrixCard({
             <span className="block text-sm font-semibold first-letter:uppercase">
               {raceStart ?? weekendDates(event, locale)}
             </span>
+            {forecast && <ForecastBadge forecast={forecast} className="mt-0.5" />}
             {isNext && left && (
               <span
                 role="timer"

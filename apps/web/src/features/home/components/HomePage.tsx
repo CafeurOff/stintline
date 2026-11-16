@@ -21,6 +21,8 @@ import {
 } from "@/features/hub/RaceFacts";
 import { weekendDates } from "@/features/calendar/dates";
 import { useHome, useProgression, useSeasonEvents, useStandings } from "@/features/hub/api";
+import { useForecasts } from "@/features/forecast/api";
+import { ForecastBadge } from "@/features/forecast/components/ForecastBadge";
 import { useHeadlines, useReport } from "@/features/news/api";
 import { useAgo } from "@/features/news/useAgo";
 import { useSessionDetail } from "@/features/race/api";
@@ -123,6 +125,7 @@ function CountdownTile({ event }: { event: Event }) {
     .sort((a, b) => (a.scheduled_start ?? "").localeCompare(b.scheduled_start ?? ""))[0];
   const target = session?.scheduled_start ?? `${event.race_date}T12:00:00Z`;
   const left = timeLeft(new Date(target).getTime(), now);
+  const forecast = useForecasts(event.id).data?.find((f) => f.session_id === session?.id);
   const parts = [
     [left.days, t("countdown.days")],
     [left.hours, t("countdown.hours")],
@@ -166,6 +169,7 @@ function CountdownTile({ event }: { event: Event }) {
           </span>
         ))}
       </div>
+      {forecast && <ForecastBadge forecast={forecast} inverse className="relative" />}
     </section>
   );
 }

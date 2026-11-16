@@ -44,6 +44,7 @@ export async function mockApi(page: Page) {
     [`**/api/v1/sessions/${SESSION_ID}/replay`, replay],
     ["**/api/v1/model", model],
     ["**/api/v1/home", homeResponse],
+    ["**/api/v1/forecasts*", []],
     ["**/api/v1/drivers?*", drivers],
     ["**/api/v1/drivers/norris", driver],
     ["**/api/v1/drivers/norris/results*", driverResults],
