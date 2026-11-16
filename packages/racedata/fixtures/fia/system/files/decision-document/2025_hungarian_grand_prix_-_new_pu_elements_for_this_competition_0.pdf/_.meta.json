@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_new_pu_elements_for_this_competition_0.pdf",
+  "recorded_at": "2026-11-13T01:02:04+00:00",
+  "sha256": "aea93d90d94fba24d4f25de5d25941f5be842b5556a58fd52b77967aa7fc8dbe",
+  "bytes": 340456,
+  "dropped_fields": [
+    "images"
+  ]
+}

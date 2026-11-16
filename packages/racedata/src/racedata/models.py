@@ -411,3 +411,49 @@ class StewardsDecisionRecord(_DTO):
     issued_time: str | None = None
     """Local time printed in the header, ``HH:MM``. With the fia.com publication time it
     gives the circuit's UTC offset, which places the incident on a lap."""
+
+
+class UpgradeReason(StrEnum):
+    PERFORMANCE = "performance"
+    CIRCUIT = "circuit"
+    RELIABILITY = "reliability"
+    OTHER = "other"
+
+
+class CarUpgradeRecord(_DTO):
+    """One updated component declared by a team ("Car Presentation Submissions")."""
+
+    team_name: str
+    number: int
+    component: str
+    reason: UpgradeReason
+    reason_detail: str
+    """As printed: "Performance - Flow Conditioning", "Circuit specific - Cooling Range"."""
+    difference: str
+    description: str
+
+
+class PuUsageRecord(_DTO):
+    """Power-unit elements used so far by one car (running totals for the season)."""
+
+    car: int
+    label: str
+    """Team and driver as printed."""
+    used: dict[str, int]
+    """Element code (``ICE``, ``TC``, ``MGU-H``, ``MGU-K``, ``ES``, ``CE``, ``EX``, ``ANC``)."""
+
+
+class PuChangeRecord(_DTO):
+    """A new power-unit element fitted for a weekend."""
+
+    car: int
+    label: str
+    element: str
+    previous: int
+    number: int
+    """Which element of the season this is (the 7th ICE)."""
+    allowed: int | None
+    """The season's allowance as stated in the document."""
+    season: int | None
+    compliant: bool | None
+    """``False`` when the document says it is not in compliance (a grid penalty follows)."""

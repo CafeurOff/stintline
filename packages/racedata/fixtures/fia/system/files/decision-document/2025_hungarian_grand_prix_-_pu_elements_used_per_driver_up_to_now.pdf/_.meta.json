@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_pu_elements_used_per_driver_up_to_now.pdf",
+  "recorded_at": "2026-11-13T01:02:04+00:00",
+  "sha256": "438b6500d3c7c59f85b5cb5303f54ba2401b57eadf1dd54a12151f52ae8c189b",
+  "bytes": 350535,
+  "dropped_fields": [
+    "images"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "provider": "fia",
+  "url": "https://www.fia.com/system/files/decision-document/2025_hungarian_grand_prix_-_car_presentation_submissions.pdf",
+  "recorded_at": "2026-11-13T01:02:04+00:00",
+  "sha256": "81a917294f2f40a9d743983558e6552af8d17b2b4b4c44f03483cc49ac2029c5",
+  "bytes": 676189,
+  "dropped_fields": [
+    "pages without tables except one 'no updates' page"
+  ]
+}
