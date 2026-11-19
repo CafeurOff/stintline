@@ -4,8 +4,7 @@ import { Link, useParams } from "react-router";
 
 import { ShowAll } from "@/components/hub/Collapsible";
 import { DriverName } from "@/components/hub/DriverName";
-import { NO_BACKDROP } from "@/components/dash/backdrop";
-import { Face } from "@/components/dash/Face";
+import { Bust } from "@/components/dash/Bust";
 import { Panel } from "@/components/dash/Panel";
 import { Trails } from "@/components/glass/Trails";
 import { KeyFigures } from "@/components/hub/KeyFigures";
@@ -122,7 +121,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
               <li key={driver.ref}>
                 <Link
                   to={`/drivers/${driver.ref}`}
-                  className="group glass glow relative flex h-36 items-end overflow-hidden rounded-[20px] p-5"
+                  className="group glass glow relative flex h-44 items-end overflow-hidden rounded-[20px] p-5"
                   style={
                     { "--glow": glow, "--glow-x": "100%", "--glow-y": "100%" } as CSSProperties
                   }
@@ -133,12 +132,11 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
                       {driver.family_name}
                     </span>
                   </span>
-                  <Face
+                  <Bust
                     url={driver.photo_url}
                     label={driver.code ?? initials(driver.given_name, driver.family_name)}
                     colour={colour}
-                    className="absolute right-4 bottom-0 h-[125%] w-auto max-w-[45%] !object-contain object-bottom text-2xl"
-                    style={NO_BACKDROP}
+                    className="absolute top-0 right-0 h-full w-[42%] transition-transform duration-500 group-hover:scale-[1.04]"
                   />
                 </Link>
               </li>

@@ -4,8 +4,7 @@ import { Link, useNavigate, useParams } from "react-router";
 
 import { ChartLine, PieChart, Trophy } from "lucide-react";
 
-import { NO_BACKDROP } from "@/components/dash/backdrop";
-import { Face } from "@/components/dash/Face";
+import { Bust } from "@/components/dash/Bust";
 import { Move } from "@/components/dash/Move";
 import { Panel } from "@/components/dash/Panel";
 import { DriverName } from "@/components/hub/DriverName";
@@ -251,7 +250,7 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
           <li key={driver?.ref ?? line.team?.ref ?? index}>
             <Link
               to={href}
-              className="group glass glow reveal relative flex h-44 overflow-hidden rounded-[20px]"
+              className="group glass glow reveal relative flex h-48 overflow-hidden rounded-[20px]"
               style={
                 {
                   "--glow": teamColour(colour),
@@ -260,9 +259,11 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
                 } as CSSProperties
               }
             >
-              <span aria-hidden="true" className="watermark num absolute top-3 right-4 text-8xl">
-                {index + 1}
-              </span>
+              {!driver && (
+                <span aria-hidden="true" className="watermark num absolute top-3 right-4 text-8xl">
+                  {index + 1}
+                </span>
+              )}
               <span className="relative z-10 flex flex-1 flex-col justify-between p-5">
                 <span>
                   <span className="num timing text-5xl leading-none">{index + 1}</span>
@@ -280,12 +281,11 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
                 </span>
               </span>
               {driver ? (
-                <Face
+                <Bust
                   url={driver.photo_url}
                   label={driver.code ?? initials(driver.given_name, driver.family_name)}
                   colour={colour}
-                  className="absolute right-0 bottom-0 h-[92%] w-auto max-w-[45%] !object-contain object-bottom"
-                  style={NO_BACKDROP}
+                  className="absolute top-0 right-0 h-full w-[46%] transition-transform duration-500 group-hover:scale-[1.04]"
                 />
               ) : (
                 <span

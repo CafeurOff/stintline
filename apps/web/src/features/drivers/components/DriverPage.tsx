@@ -5,8 +5,7 @@ import { Link, useParams } from "react-router";
 import { ShowAll } from "@/components/hub/Collapsible";
 import { History } from "lucide-react";
 
-import { NO_BACKDROP } from "@/components/dash/backdrop";
-import { Face } from "@/components/dash/Face";
+import { Bust } from "@/components/dash/Bust";
 import { Panel } from "@/components/dash/Panel";
 import { Trails } from "@/components/glass/Trails";
 import { KeyFigures } from "@/components/hub/KeyFigures";
@@ -115,19 +114,19 @@ function DriverHeader({ career }: { career: Career }) {
       {number != null && (
         <span
           aria-hidden="true"
-          className="watermark num absolute top-4 right-6 hidden sm:block"
+          className="watermark num absolute top-4 right-[30%] hidden sm:block"
           style={{ fontSize: `${String(Math.min(30, 42 / String(number).length))}cqw` }}
         >
           {number}
         </span>
       )}
       {official && (
-        <Face
+        <Bust
           url={official}
           label={code}
           colour={colour}
-          className="absolute right-[4%] bottom-0 hidden h-[110%] w-auto max-w-[40%] !object-contain object-bottom sm:block"
-          style={NO_BACKDROP}
+          width={800}
+          className="absolute top-0 right-0 hidden h-full w-[34%] sm:block"
         />
       )}
       <div className="relative flex min-h-80 flex-col gap-6 p-6 sm:max-w-[60%] sm:flex-row sm:items-end sm:p-9">
@@ -167,12 +166,11 @@ function DriverHeader({ career }: { career: Career }) {
           </figure>
         )}
         {official && (
-          <Face
+          <Bust
             url={official}
             label={code}
             colour={colour}
-            className="h-64 w-auto self-center !object-contain object-bottom sm:hidden"
-            style={NO_BACKDROP}
+            className="h-72 w-full rounded-2xl sm:hidden"
           />
         )}
         <div className="min-w-0 pb-1">

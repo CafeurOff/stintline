@@ -4,11 +4,10 @@ import { Link, useParams } from "react-router";
 
 import { ListOrdered, Play, Scale } from "lucide-react";
 
-import { NO_BACKDROP } from "@/components/dash/backdrop";
 import { pillGlass, pillPrimary } from "@/components/glass/Glass";
 import { TrackMap } from "@/components/glass/TrackMap";
 import { Trails } from "@/components/glass/Trails";
-import { Face } from "@/components/dash/Face";
+import { Bust } from "@/components/dash/Bust";
 import { Panel } from "@/components/dash/Panel";
 import { DriverName } from "@/components/hub/DriverName";
 import { Flag } from "@/components/racing/Flag";
@@ -215,33 +214,34 @@ function EventHero({
               const colour = teamColour(entry.team_colour);
               return (
                 <li key={entry.car_number}>
-                  <Link to={`/drivers/${entry.driver.ref}`} className="group flex flex-col">
+                  <Link
+                    to={`/drivers/${entry.driver.ref}`}
+                    className="group glass glow relative flex flex-col overflow-hidden rounded-[20px]"
+                    style={
+                      { "--glow": colour, "--glow-x": "50%", "--glow-y": "100%" } as CSSProperties
+                    }
+                  >
+                    <Bust
+                      url={entry.media?.driver_image_url ?? entry.driver.photo_url}
+                      label={entry.driver.code ?? entry.driver.family_name.slice(0, 3)}
+                      colour={entry.team_colour}
+                      className={`w-full transition-transform duration-500 group-hover:scale-[1.03] ${
+                        index === 0 ? "h-60" : "h-48"
+                      }`}
+                    />
                     <span
-                      className={`relative block overflow-hidden ${index === 0 ? "h-60" : index === 1 ? "h-48" : "h-44"}`}
-                      style={{
-                        background: `radial-gradient(70% 60% at 50% 100%, color-mix(in oklab, ${colour} 60%, transparent), transparent 75%)`,
-                      }}
+                      aria-hidden="true"
+                      className="num timing absolute top-2 left-3 text-5xl leading-none"
                     >
-                      <Face
-                        url={entry.media?.driver_image_url ?? entry.driver.photo_url}
-                        label={entry.driver.code ?? entry.driver.family_name.slice(0, 3)}
-                        colour={entry.team_colour}
-                        className="absolute inset-x-0 bottom-0 mx-auto h-full w-auto max-w-full !object-contain object-bottom text-2xl"
-                        style={NO_BACKDROP}
-                      />
+                      {index + 1}
                     </span>
-                    <span className="glass flex items-center gap-2.5 rounded-xl px-3 py-2">
-                      <span className="num timing text-3xl leading-none">{index + 1}</span>
-                      <span className="min-w-0 leading-tight">
-                        <span className="block truncate text-sm font-bold group-hover:underline">
-                          {entry.driver.family_name}
-                        </span>
-                        <span
-                          className="block truncate text-xs font-semibold"
-                          style={{ color: readable(colour) }}
-                        >
-                          {entry.team.name}
-                        </span>
+                    <span className="relative -mt-6 flex flex-col px-4 pb-4 leading-tight">
+                      <span className="display truncate text-base">{entry.driver.family_name}</span>
+                      <span
+                        className="truncate text-xs font-bold"
+                        style={{ color: readable(colour) }}
+                      >
+                        {entry.team.name}
                       </span>
                     </span>
                   </Link>

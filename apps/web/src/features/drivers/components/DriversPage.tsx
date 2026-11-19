@@ -5,8 +5,7 @@ import { Link } from "react-router";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
-import { NO_BACKDROP } from "@/components/dash/backdrop";
-import { Face } from "@/components/dash/Face";
+import { Bust } from "@/components/dash/Bust";
 import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -111,21 +110,11 @@ function DriverCard({ driver }: { driver: DriverItem }) {
       className="group glass glow reveal relative flex h-52 overflow-hidden rounded-[20px]"
       style={{ "--glow": colour, "--glow-x": "100%", "--glow-y": "100%" } as CSSProperties}
     >
-      {season && (
-        <span
-          aria-hidden="true"
-          className="watermark num absolute top-3 right-3 text-8xl"
-          style={{ "--glow": colour } as CSSProperties}
-        >
-          {season.car_number}
-        </span>
-      )}
-      <Face
+      <Bust
         url={driver.photo_url ?? driver.portrait?.image_url}
         label={driver.code ?? initials(driver.given_name, driver.family_name)}
         colour={driver.team?.colour}
-        className="absolute right-0 bottom-0 h-[92%] w-auto max-w-[50%] !object-contain object-bottom text-2xl transition-transform duration-500 group-hover:scale-[1.04]"
-        style={NO_BACKDROP}
+        className="absolute top-0 right-0 h-full w-[48%] transition-transform duration-500 group-hover:scale-[1.04]"
       />
       <span className="relative z-10 flex w-3/5 flex-col justify-between p-5">
         <span>
@@ -136,6 +125,7 @@ function DriverCard({ driver }: { driver: DriverItem }) {
           {driver.team && (
             <span className="block text-sm font-bold" style={{ color: readable(colour) }}>
               {driver.team.name}
+              {season && <span className="num ml-1.5 text-muted">#{season.car_number}</span>}
             </span>
           )}
         </span>
