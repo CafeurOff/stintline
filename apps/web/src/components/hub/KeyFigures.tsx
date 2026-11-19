@@ -13,10 +13,10 @@ export function KeyFigures({ figures, label }: { figures: readonly Figure[]; lab
       {figures.map((figure) => (
         <div
           key={figure.label}
-          className="flex flex-col-reverse gap-1 rounded-xl border border-line bg-panel px-4 py-3"
+          className="glass reveal flex flex-col-reverse gap-1 rounded-2xl px-4 py-3.5"
         >
-          <dt className="text-xs text-muted">{figure.label}</dt>
-          <dd className="num text-2xl font-semibold">{figure.value}</dd>
+          <dt className="text-xs font-medium text-muted">{figure.label}</dt>
+          <dd className="num display text-2xl">{figure.value}</dd>
         </div>
       ))}
     </dl>

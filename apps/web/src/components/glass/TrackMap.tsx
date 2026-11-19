@@ -43,7 +43,7 @@ export function TrackMap({
         <path
           d={path}
           fill="none"
-          stroke="var(--color-raised)"
+          style={{ stroke: "var(--color-raised)" }}
           strokeWidth="7"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -51,11 +51,10 @@ export function TrackMap({
         <path
           d={path}
           fill="none"
-          stroke="var(--color-line-strong)"
           strokeWidth="7.6"
           strokeLinejoin="round"
           strokeOpacity="0.6"
-          style={{ mixBlendMode: "overlay" }}
+          style={{ stroke: "var(--color-line-strong)", mixBlendMode: "overlay" }}
         />
         <path
           d={path}

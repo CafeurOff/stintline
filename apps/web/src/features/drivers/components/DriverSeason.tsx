@@ -185,17 +185,17 @@ function SeasonTiles({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Tile label={t("driver.seasonWins", { season })} icon={<Trophy />}>
-        <p className="num text-4xl font-semibold">{wins}</p>
+        <p className="num display text-4xl">{wins}</p>
         <p className="text-xs text-muted">{t("driver.sprintWins", { n: sprintWins })}</p>
         <RoundBars bars={bars((r) => finish(r) === 1)} colour={colour} />
       </Tile>
       <Tile label={t("driver.seasonPodiums", { season })} icon={<Medal />}>
-        <p className="num text-4xl font-semibold">{podiums}</p>
+        <p className="num display text-4xl">{podiums}</p>
         <p className="text-xs text-muted">{t("driver.sprintPodiums", { n: sprintPodiums })}</p>
         <RoundBars bars={bars((r) => (finish(r) ?? 99) <= 3)} colour={colour} />
       </Tile>
       <Tile label={t("driver.seasonPoints", { season })} icon={<Sigma />}>
-        <p className="num text-4xl font-semibold">{f.number(points, points % 1 ? 1 : 0)}</p>
+        <p className="num display text-4xl">{f.number(points, points % 1 ? 1 : 0)}</p>
         <p className="text-xs text-muted">
           {t("driver.avgPoints", {
             avg: f.number(results.length ? points / results.length : 0, 1),
@@ -210,7 +210,7 @@ function SeasonTiles({
         />
       </Tile>
       <Tile label={t("driver.seasonPoles", { season })} icon={<FlagIcon />}>
-        <p className="num text-4xl font-semibold">{poles}</p>
+        <p className="num display text-4xl">{poles}</p>
         <p className="text-xs text-muted">{t("driver.polesFrom", { n: races.length })}</p>
         <RoundBars
           bars={races.map((r) => ({

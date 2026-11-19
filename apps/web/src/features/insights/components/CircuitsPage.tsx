@@ -30,7 +30,7 @@ import { teamColour } from "@/lib/teams";
 import { useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useCircuits } from "../api";
-import { AnalysisTabs, DriverChip, EngineBadge } from "./common";
+import { AnalysisTabs, DriverChip } from "./common";
 
 type Profile = Schema<"CircuitProfile">;
 
@@ -198,7 +198,7 @@ function CircuitCard({ profile: p, maxDeg }: { profile: Profile; maxDeg: number 
   const { t, f, locale } = useI18n();
   const latest = p.history[0];
   return (
-    <article className="relative flex h-full flex-col gap-4 rounded-xl border border-line bg-panel p-4 hover:border-line-strong">
+    <article className="glass relative flex h-full flex-col gap-4 rounded-[20px] p-4 hover:border-line-strong">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-sm text-muted">
@@ -355,7 +355,7 @@ function CircuitDetail({ circuitRef }: { circuitRef: string }) {
         actions={
           <Link
             to={`/events/${String(p.latest_event_id)}`}
-            className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm font-semibold hover:bg-raised"
+            className="glass rounded-xl px-3 py-1.5 text-sm font-semibold hover:bg-raised"
           >
             {t("dna.latestRace")}
           </Link>
@@ -372,7 +372,7 @@ function CircuitDetail({ circuitRef }: { circuitRef: string }) {
       <div className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Tile label={t("dna.length")} icon={<Ruler />}>
-            <p className="num text-4xl font-semibold">
+            <p className="num display text-4xl">
               {p.lap_length_m == null ? "—" : f.number(p.lap_length_m / 1000, 3)}
               <span className="ml-1 text-base text-muted">km</span>
             </p>
@@ -386,22 +386,21 @@ function CircuitDetail({ circuitRef }: { circuitRef: string }) {
             )}
           </Tile>
           <Tile label={t("dna.topSpeed")} icon={<Gauge />}>
-            <p className="num text-4xl font-semibold">
+            <p className="num display text-4xl">
               {p.top_speed_kph == null ? "—" : f.number(p.top_speed_kph, 0)}
               <span className="ml-1 text-base text-muted">km/h</span>
             </p>
             <p className="text-sm text-muted">{t("dna.fromFastest")}</p>
           </Tile>
           <Tile label={t("dna.throttle")} icon={<Zap />}>
-            <p className="num text-4xl font-semibold">
+            <p className="num display text-4xl">
               {p.full_throttle_share == null ? "—" : f.percent(p.full_throttle_share)}
             </p>
             <p className="text-sm text-muted">{t("dna.zonesN", { n: p.braking_zones ?? "—" })}</p>
           </Tile>
           <Tile label={t("dna.pitLoss")} icon={<Hourglass />}>
             <p className="flex items-center gap-2">
-              <span className="num text-4xl font-semibold">{f.seconds(p.pit_loss_s, 1)}</span>
-              <EngineBadge />
+              <span className="num display text-4xl">{f.seconds(p.pit_loss_s, 1)}</span>
             </p>
             {p.pit_loss_sigma_s != null && (
               <p className="num text-sm text-muted">± {f.seconds(p.pit_loss_sigma_s, 1)}</p>
@@ -436,7 +435,7 @@ function CircuitDetail({ circuitRef }: { circuitRef: string }) {
             </div>
           </Tile>
           <Tile label={t("dna.neutral")} icon={<Siren />}>
-            <p className="num text-4xl font-semibold">
+            <p className="num display text-4xl">
               {p.safety_car_races}
               <span className="text-xl text-muted">/{p.races}</span>
             </p>
@@ -445,17 +444,16 @@ function CircuitDetail({ circuitRef }: { circuitRef: string }) {
             </p>
           </Tile>
           <Tile label={t("dna.passes")} icon={<Users />}>
-            <p className="num text-4xl font-semibold">
+            <p className="num display text-4xl">
               {p.passes_per_race == null ? "—" : f.number(p.passes_per_race, 0)}
             </p>
             <p className="text-sm text-muted">{t("dna.passesNote")}</p>
           </Tile>
           <Tile label={t("dna.undercut")} icon={<ArrowLeftRight />}>
             <p className="flex items-center gap-2">
-              <span className="num text-4xl font-semibold">
+              <span className="num display text-4xl">
                 {undercutRate === null ? "—" : f.percent(undercutRate)}
               </span>
-              <EngineBadge />
             </p>
             <p className="text-sm text-muted">
               {t("stops.undercutNote", { ok: p.undercut_successes, n: p.undercut_attempts })}

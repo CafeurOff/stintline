@@ -26,12 +26,15 @@ export function Panel({
   return (
     <section
       aria-labelledby={titleId}
-      className={`flex min-w-0 flex-col overflow-hidden rounded-xl border border-line bg-panel ${className}`}
+      className={`glass reveal flex min-w-0 flex-col overflow-hidden rounded-[20px] ${className}`}
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-        <h2 id={titleId} className="flex items-center gap-2.5 text-lg font-bold">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-5 pt-5 pb-3">
+        <h2 id={titleId} className="display flex items-center gap-2.5 text-base">
           {icon && (
-            <span aria-hidden="true" className="text-mark-text [&>svg]:size-5">
+            <span
+              aria-hidden="true"
+              className="grid size-8 place-items-center rounded-xl border border-line text-muted [&>svg]:size-4"
+            >
               {icon}
             </span>
           )}
@@ -60,16 +63,16 @@ export function Tile({
   return (
     <section
       aria-labelledby={id}
-      className={`relative flex min-h-32 flex-col gap-3 overflow-hidden rounded-xl border border-line bg-panel p-5 ${className}`}
+      className={`glass reveal relative flex min-h-32 flex-col gap-3 overflow-hidden rounded-[20px] p-5 ${className}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 id={id} className="text-sm font-semibold">
+        <h2 id={id} className="text-sm font-bold">
           {label}
         </h2>
         {icon && (
           <span
             aria-hidden="true"
-            className="grid size-8 shrink-0 place-items-center rounded-lg border border-line text-muted [&>svg]:size-4"
+            className="grid size-9 shrink-0 place-items-center rounded-xl border border-line text-muted [&>svg]:size-4"
           >
             {icon}
           </span>
@@ -83,7 +86,7 @@ export function Tile({
 /** Link or button at the foot of a panel ("Full standings →"). */
 export function PanelFooter({ children }: { children: ReactNode }) {
   return (
-    <div className="mt-auto border-t border-line text-sm font-semibold [&>*]:flex [&>*]:items-center [&>*]:justify-center [&>*]:gap-2 [&>*]:py-3 [&>*:hover]:bg-raised">
+    <div className="mt-auto border-t border-line text-sm font-semibold [&>*]:flex [&>*]:items-center [&>*]:justify-center [&>*]:gap-2 [&>*]:py-3.5 [&>*:hover]:bg-ink/5">
       {children}
     </div>
   );

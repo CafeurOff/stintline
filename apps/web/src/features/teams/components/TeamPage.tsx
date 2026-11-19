@@ -99,7 +99,7 @@ function Team({ data }: { data: NonNullable<ReturnType<typeof useTeam>["data"]> 
               <li key={driver.ref}>
                 <Link
                   to={`/drivers/${driver.ref}`}
-                  className="group flex items-center gap-4 overflow-hidden rounded-xl border border-line bg-panel p-3 hover:bg-raised"
+                  className="group glass flex items-center gap-4 overflow-hidden rounded-[20px] p-3 hover:bg-raised"
                 >
                   <DriverPhoto
                     imageUrl={driver.photo_url}

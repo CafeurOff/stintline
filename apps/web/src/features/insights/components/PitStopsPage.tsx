@@ -25,7 +25,7 @@ import { teamColour } from "@/lib/teams";
 import { usePitStops } from "../api";
 import { LossBars } from "../charts/LossBars";
 import { FIRST_TIMED_SEASON, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip, EngineBadge } from "./common";
+import { AnalysisTabs, DriverChip } from "./common";
 
 type Stops = Schema<"PitStops">;
 
@@ -74,7 +74,7 @@ function PitStopsView({ data }: { data: Stops }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {fastest ? (
           <Tile label={t("dash.fastestStop")} icon={<Zap />}>
-            <p className="num text-4xl font-semibold text-t-purple">
+            <p className="num display text-4xl text-t-purple">
               {f.seconds(fastest.stationary_s, 2)}
             </p>
             <DriverChip
@@ -85,15 +85,13 @@ function PitStopsView({ data }: { data: Stops }) {
           </Tile>
         ) : (
           <Tile label={t("stops.tile.count")} icon={<Wrench />}>
-            <p className="num text-4xl font-semibold">{data.stops}</p>
+            <p className="num display text-4xl">{data.stops}</p>
             <p className="text-sm text-muted">{t("stops.noStationary")}</p>
           </Tile>
         )}
         {bestTeam ? (
           <Tile label={t("stops.tile.crew")} icon={<UsersRound />}>
-            <p className="num text-4xl font-semibold">
-              {f.seconds(bestTeam.median_stationary_s, 2)}
-            </p>
+            <p className="num display text-4xl">{f.seconds(bestTeam.median_stationary_s, 2)}</p>
             <p className="flex items-center gap-2 text-sm">
               <span
                 className="h-4 w-1.5 rounded-full"
@@ -107,8 +105,7 @@ function PitStopsView({ data }: { data: Stops }) {
         {dearest?.pit_loss_s != null && (
           <Tile label={t("stops.tile.dearest")} icon={<Hourglass />}>
             <p className="flex items-center gap-2">
-              <span className="num text-4xl font-semibold">{f.seconds(dearest.pit_loss_s, 1)}</span>
-              <EngineBadge />
+              <span className="num display text-4xl">{f.seconds(dearest.pit_loss_s, 1)}</span>
             </p>
             <p className="flex items-center gap-2 text-sm">
               <Flag country={dearest.country} />
@@ -118,10 +115,7 @@ function PitStopsView({ data }: { data: Stops }) {
         )}
         <Tile label={t("stops.tile.undercut")} icon={<ArrowLeftRight />}>
           <p className="flex items-center gap-2">
-            <span className="num text-4xl font-semibold">
-              {rate === null ? "—" : f.percent(rate)}
-            </span>
-            <EngineBadge />
+            <span className="num display text-4xl">{rate === null ? "—" : f.percent(rate)}</span>
           </p>
           <p className="text-sm text-muted">
             {t("stops.undercutNote", { ok: data.undercut_successes, n: data.undercut_attempts })}
@@ -232,7 +226,7 @@ function PitStopsView({ data }: { data: Stops }) {
             <Panel
               title={t("stops.loss")}
               icon={<Hourglass />}
-              action={<EngineBadge />}
+
               bodyClassName="gap-2 p-4"
             >
               <p className="text-sm text-muted">{t("stops.lossNote")}</p>

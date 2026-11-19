@@ -7,7 +7,7 @@ export function Skeleton({ className = "h-24", label }: { className?: string; la
     <div
       role="status"
       aria-live="polite"
-      className={`animate-pulse rounded-xl bg-raised ${className}`}
+      className={`animate-pulse rounded-[20px] bg-raised ${className}`}
     >
       <span className="sr-only">{label ?? t("common.loading")}</span>
     </div>

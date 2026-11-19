@@ -17,7 +17,7 @@ import { teamColour } from "@/lib/teams";
 import { useConsistency } from "../api";
 import { median, quantile } from "../duel";
 import { FIRST_TIMED_SEASON, driverLabel, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip, EngineBadge } from "./common";
+import { AnalysisTabs, DriverChip } from "./common";
 
 type Line = Schema<"Consistency">;
 type Race = Line["races"][number];
@@ -96,17 +96,14 @@ function ConsistencyView({ lines }: { lines: readonly Line[] }) {
         {best && (
           <Tile label={t("cons.tile.best")} icon={<Crosshair />}>
             <p className="flex items-center gap-2">
-              <span className="num text-4xl font-semibold">
-                {f.seconds(best.median_spread_s, 3)}
-              </span>
-              <EngineBadge />
+              <span className="num display text-4xl">{f.seconds(best.median_spread_s, 3)}</span>
             </p>
             <DriverChip driver={best.driver} colour={best.colour} sub={best.team.name} />
           </Tile>
         )}
         {singleBest && (
           <Tile label={t("cons.tile.single")} icon={<Sparkles />}>
-            <p className="num text-4xl font-semibold text-t-purple">
+            <p className="num display text-4xl text-t-purple">
               {f.seconds(singleBest.race.spread_s, 3)}
             </p>
             <DriverChip
@@ -121,7 +118,7 @@ function ConsistencyView({ lines }: { lines: readonly Line[] }) {
         )}
         {calmest && (
           <Tile label={t("cons.tile.calm")} icon={<TrendingDown />}>
-            <p className="num text-4xl font-semibold">{f.seconds(calmest.value, 3)}</p>
+            <p className="num display text-4xl">{f.seconds(calmest.value, 3)}</p>
             <p className="flex items-center gap-2 text-sm">
               <Flag country={calmest.race.country} />
               {eventName(calmest.race.name, locale)}
@@ -130,7 +127,7 @@ function ConsistencyView({ lines }: { lines: readonly Line[] }) {
         )}
         {wildest && (
           <Tile label={t("cons.tile.wild")} icon={<Shuffle />}>
-            <p className="num text-4xl font-semibold text-loss">{f.seconds(wildest.value, 3)}</p>
+            <p className="num display text-4xl text-loss">{f.seconds(wildest.value, 3)}</p>
             <p className="flex items-center gap-2 text-sm">
               <Flag country={wildest.race.country} />
               {eventName(wildest.race.name, locale)}
@@ -139,7 +136,7 @@ function ConsistencyView({ lines }: { lines: readonly Line[] }) {
         )}
       </div>
 
-      <Panel title={t("cons.ranking")} icon={<ListOrdered />} action={<EngineBadge />}>
+      <Panel title={t("cons.ranking")} icon={<ListOrdered />}>
         <div className="relative overflow-x-auto">
           <table className="data-table text-sm">
             <caption className="sr-only">{t("cons.ranking")}</caption>

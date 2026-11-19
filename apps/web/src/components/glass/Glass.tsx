@@ -36,7 +36,7 @@ export function GlassCard({
   return (
     <section
       aria-labelledby={title ? titleId : undefined}
-      className={`glass relative flex min-w-0 flex-col overflow-hidden rounded-[20px] ${
+      className={`glass reveal relative flex min-w-0 flex-col overflow-hidden rounded-[20px] ${
         glow ? "glow" : ""
       } ${className}`}
       style={style}

@@ -825,8 +825,6 @@ export const fr: Record<MessageKey, string> = {
   "nav.consistency": "Régularité",
   "nav.pitStops": "Arrêts aux stands",
   "nav.circuits": "ADN des circuits",
-  "insights.engine": "Notre moteur",
-  "insights.engineHint": "Calculé par le moteur de stratégie StintLine : voir comment",
   "h2h.title": "Face-à-face",
   "h2h.intro":
     "Le coéquipier est la seule comparaison juste en Formule 1 : même voiture, même week-end. Qualifs, courses et, depuis 2023, rythme de course sur les tours propres corrigés du carburant.",

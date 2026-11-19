@@ -115,7 +115,7 @@ function SearchBox({ value, onSearch }: { value: string; onSearch: (q: string) =
     <form
       role="search"
       onSubmit={submit}
-      className="flex items-center gap-2 rounded-lg border border-line bg-panel py-1 pr-1 pl-3"
+      className="glass flex items-center gap-2 rounded-xl py-1 pr-1 pl-3"
     >
       <label htmlFor={id} className="sr-only">
         {t("docs.search")}
@@ -183,22 +183,22 @@ function Documents({
       {summary && !search && (
         <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Tile label={t("docs.tile.documents")} icon={<FileText />}>
-            <p className="num text-4xl font-semibold">{summary.documents}</p>
+            <p className="num display text-4xl">{summary.documents}</p>
             <p className="flex items-center gap-2 text-sm text-muted">
               <Flag country={summary.event.country} />
               {eventName(summary.event.name, locale)}
             </p>
           </Tile>
           <Tile label={t("docs.tile.decisions")} icon={<Gavel />}>
-            <p className="num text-4xl font-semibold">{summary.decisions}</p>
+            <p className="num display text-4xl">{summary.decisions}</p>
             <p className="text-sm text-muted">{t("docs.tile.decisionsNote")}</p>
           </Tile>
           <Tile label={t("docs.tile.penalties")} icon={<ShieldAlert />}>
-            <p className="num text-4xl font-semibold text-loss">{summary.penalties}</p>
+            <p className="num display text-4xl text-loss">{summary.penalties}</p>
             <p className="text-sm text-muted">{t("docs.tile.penaltiesNote")}</p>
           </Tile>
           <Tile label={t("docs.tile.points")} icon={<TriangleAlert />}>
-            <p className="num text-4xl font-semibold">{points}</p>
+            <p className="num display text-4xl">{points}</p>
             {topPoints?.decision.driver && topPoints.points > 0 ? (
               <DriverChip
                 driver={topPoints.decision.driver}

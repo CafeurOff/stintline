@@ -813,8 +813,6 @@ export const en = {
   "nav.consistency": "Consistency",
   "nav.pitStops": "Pit stops",
   "nav.circuits": "Track DNA",
-  "insights.engine": "Our engine",
-  "insights.engineHint": "Computed by the StintLine strategy engine: see how it works",
   "h2h.title": "Head-to-head",
   "h2h.intro":
     "Teammates are the only fair comparison in Formula 1: same car, same weekend. Qualifying, races and, from 2023, race pace on clean laps corrected for fuel.",

@@ -17,9 +17,7 @@ export function Select({
 }: SelectProps) {
   const id = useId();
   return (
-    <div
-      className={`flex items-center gap-2 rounded-lg border border-line bg-panel py-1 pr-1 pl-3 ${className}`}
-    >
+    <div className={`glass flex items-center gap-2 rounded-xl py-1 pr-1 pl-3 ${className}`}>
       <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm font-semibold"}>
         {label}
       </label>

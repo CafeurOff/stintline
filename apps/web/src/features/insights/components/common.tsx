@@ -1,5 +1,4 @@
 import type { Schema } from "@stintline/api-types";
-import { Cpu } from "lucide-react";
 import { Link, NavLink } from "react-router";
 
 import { Face } from "@/components/dash/Face";
@@ -42,21 +41,6 @@ export function DriverChip({
         </span>
         {sub && <span className="block truncate text-xs text-muted">{sub}</span>}
       </span>
-    </Link>
-  );
-}
-
-/** Marks a figure computed by our strategy engine (fuel model, pit loss, undercuts). */
-export function EngineBadge() {
-  const { t } = useI18n();
-  return (
-    <Link
-      to="/model"
-      className="inline-flex items-center gap-1 rounded-md border border-mark/40 bg-mark/10 px-1.5 py-0.5 text-[0.65rem] font-bold tracking-wide text-mark-text uppercase hover:bg-mark/20"
-      title={t("insights.engineHint")}
-    >
-      <Cpu aria-hidden="true" className="size-3" />
-      {t("insights.engine")}
     </Link>
   );
 }

@@ -34,7 +34,7 @@ import { LapScatter } from "../charts/LapScatter";
 import { PaceBoxes } from "../charts/PaceBoxes";
 import { rollingMedian } from "../duel";
 import { FIRST_TIMED_SEASON, driverLabel, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip, EngineBadge } from "./common";
+import { AnalysisTabs, DriverChip } from "./common";
 
 type Pace = Schema<"SessionPace">;
 type PaceCar = Pace["cars"][number];
@@ -243,7 +243,7 @@ function PaceView({ data, sessionId }: { data: Pace; sessionId: number }) {
         <Panel
           title={t("pace.boxes")}
           icon={<Gauge />}
-          action={data.fuel_corrected ? <EngineBadge /> : undefined}
+
           bodyClassName="gap-2 p-4"
         >
           <p className="text-sm text-muted">{t("pace.boxesNote")}</p>
@@ -439,7 +439,7 @@ function PaceTiles({ data, ranked }: { data: Pace; ranked: readonly PaceCar[] })
       {best?.summary && (
         <Tile label={t("pace.tile.best")} icon={<Gauge />}>
           <p className="flex items-center gap-2">
-            <span className="num text-4xl font-semibold">{f.lapTime(best.summary.median_s)}</span>
+            <span className="num display text-4xl">{f.lapTime(best.summary.median_s)}</span>
           </p>
           <DriverChip
             driver={best.entry.driver}
@@ -455,7 +455,7 @@ function PaceTiles({ data, ranked }: { data: Pace; ranked: readonly PaceCar[] })
       )}
       {steady?.summary && (
         <Tile label={t("pace.tile.steady")} icon={<Target />}>
-          <p className="num text-4xl font-semibold">{f.seconds(steady.summary.std_s, 2)}</p>
+          <p className="num display text-4xl">{f.seconds(steady.summary.std_s, 2)}</p>
           <DriverChip
             driver={steady.entry.driver}
             colour={steady.entry.team_colour}
@@ -465,7 +465,7 @@ function PaceTiles({ data, ranked }: { data: Pace; ranked: readonly PaceCar[] })
       )}
       {fastest && fastestCar && (
         <Tile label={t("dash.fastestLap")} icon={<Timer />}>
-          <p className="num text-4xl font-semibold text-t-purple">{f.lapTime(fastest.time_s)}</p>
+          <p className="num display text-4xl text-t-purple">{f.lapTime(fastest.time_s)}</p>
           <DriverChip
             driver={fastestCar.entry.driver}
             colour={fastestCar.entry.team_colour}
@@ -475,8 +475,7 @@ function PaceTiles({ data, ranked }: { data: Pace; ranked: readonly PaceCar[] })
       )}
       <Tile label={t("pace.tile.fuel")} icon={<Fuel />}>
         <p className="flex items-center gap-2">
-          <span className="num text-4xl font-semibold">{f.seconds(fuelTotal, 1)}</span>
-          <EngineBadge />
+          <span className="num display text-4xl">{f.seconds(fuelTotal, 1)}</span>
         </p>
         <p className="text-sm text-muted">
           {t("pace.tile.fuelNote", {

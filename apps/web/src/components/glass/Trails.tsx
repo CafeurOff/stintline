@@ -7,6 +7,9 @@ const LINES = [
   "M 20 110 C 48 86, 70 64, 110 52",
 ] as const;
 
+/** Seconds for a glint to run along the first line. */
+const GLINT_SECONDS = 9;
+
 /**
  * Light trails, like a long exposure of cars at night, sweeping across a card in the context
  * colour: a soft blurred band and a sharp core for each line. Decorative.
@@ -22,9 +25,9 @@ export function Trails({ colour, className = "" }: { colour: string; className?:
     >
       <defs>
         <linearGradient id={`${id}-g`} x1="0" y1="1" x2="1" y2="0">
-          <stop offset="0" stopColor={colour} stopOpacity="0" />
-          <stop offset="0.55" stopColor={colour} stopOpacity="1" />
-          <stop offset="1" stopColor={colour} stopOpacity="0" />
+          <stop offset="0" style={{ stopColor: colour, stopOpacity: 0 }} />
+          <stop offset="0.55" style={{ stopColor: colour, stopOpacity: 1 }} />
+          <stop offset="1" style={{ stopColor: colour, stopOpacity: 0 }} />
         </linearGradient>
         <filter id={`${id}-b`} x="-10%" y="-10%" width="120%" height="120%">
           <feGaussianBlur stdDeviation="1.6" />
@@ -48,6 +51,21 @@ export function Trails({ colour, className = "" }: { colour: string; className?:
               stroke={`url(#${id}-g)`}
               strokeWidth="1.25"
               vectorEffect="non-scaling-stroke"
+            />
+            {/* A glint running down the line, slowly, out of step with the others. */}
+            <path
+              d={d}
+              pathLength={100}
+              fill="none"
+              stroke="white"
+              strokeOpacity="0.55"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeDasharray="6 94"
+              vectorEffect="non-scaling-stroke"
+              style={{
+                animation: `lap ${String(GLINT_SECONDS + i * 3)}s linear ${String(-i * 2.5)}s infinite reverse`,
+              }}
             />
           </g>
         ))}

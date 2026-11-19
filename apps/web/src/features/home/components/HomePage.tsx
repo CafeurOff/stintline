@@ -211,7 +211,8 @@ function NextRaceHero({ event }: { event: Event }) {
               {parts.map(([value, unit]) => (
                 <span key={unit} aria-hidden="true" className="flex flex-col">
                   <span
-                    className="num timing text-7xl leading-[0.85] sm:text-9xl"
+                    key={value}
+                    className="num timing animate-[tick_0.45s_ease-out] text-7xl leading-[0.85] sm:text-9xl"
                     style={{ color: readable(accent, 80) }}
                   >
                     {two(value)}
@@ -371,7 +372,7 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
       {winner && (
         <div
           aria-hidden="true"
-          className="@container relative h-72 overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[58%]"
+          className="@container relative h-72 overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[56%]"
         >
           <span
             className="watermark num absolute top-4 right-4"
@@ -379,21 +380,22 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
           >
             {winner.car_number}
           </span>
+          <span className="absolute right-[4%] bottom-3 left-[2%] z-0 h-6 rounded-[50%] bg-black/50 blur-xl" />
           <CarImage
             url={winnerEntry?.media?.car_image_url}
-            className="absolute bottom-5 left-[14%] z-[1] w-[72%] drop-shadow-[0_20px_30px_rgb(0_0_0/0.6)]"
+            className="absolute bottom-5 left-0 z-[1] w-[60%] drop-shadow-[0_18px_24px_rgb(0_0_0/0.55)]"
           />
           <Face
             url={photoOf(winnerEntry ?? winner)}
             label={codeOf(winner.driver)}
             colour={winner.team_colour}
-            className="absolute right-[6%] bottom-0 z-[2] h-[94%] w-auto max-w-[70%] !object-contain object-bottom text-5xl"
+            className="absolute right-[3%] bottom-0 z-[2] h-[94%] w-auto max-w-[44%] !object-contain object-bottom text-5xl"
             style={NO_BACKDROP}
           />
         </div>
       )}
 
-      <div className="relative z-10 flex flex-1 flex-col gap-5 p-6 sm:max-w-[50%] sm:p-9">
+      <div className="relative z-10 flex flex-1 flex-col gap-5 p-6 sm:max-w-[44%] sm:p-9">
         <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted">
           <span className="rounded-md bg-mark px-2 py-0.5 text-xs font-bold text-white uppercase">
             {t("home.lastRace")}

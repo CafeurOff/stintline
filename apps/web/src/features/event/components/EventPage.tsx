@@ -110,7 +110,7 @@ function EventLoader({ eventId }: { eventId: number }) {
       </div>
       <StewardsPanel eventId={data.id} season={data.season} />
       {shown && shown.has_data && shown.kind !== "Q" && (
-        <div className="rounded-xl border border-line bg-panel p-5">
+        <div className="glass rounded-[20px] p-5">
           <AnalysisLoader
             key={`analysis-${String(shown.id)}`}
             sessionId={shown.id}
@@ -162,7 +162,7 @@ function EventHero({
     .slice(0, 3);
 
   return (
-    <header className="relative grid gap-6 overflow-hidden rounded-xl border border-line bg-panel p-5 sm:p-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_14rem] lg:items-end">
+    <header className="glass relative grid gap-6 overflow-hidden rounded-[20px] p-5 sm:p-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_14rem] lg:items-end">
       <div className="flex flex-col gap-4 self-center">
         <div>
           <p className="flex items-center gap-2 text-sm text-muted">

@@ -21,7 +21,7 @@ import { Flag } from "@/components/racing/Flag";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { DriverChip, EngineBadge } from "@/features/insights/components/common";
+import { DriverChip } from "@/features/insights/components/common";
 import { useSeasonParam } from "@/features/insights/season";
 import { PenaltyTags } from "@/features/paddock/components/PenaltyTags";
 import { ApiError } from "@/lib/errors";
@@ -164,13 +164,13 @@ function UpgradesView({ data }: { data: Upgrades }) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Tile label={t("tech.tile.upgrades")} icon={<Layers />}>
-          <p className="num text-4xl font-semibold">{data.upgrades.length}</p>
+          <p className="num display text-4xl">{data.upgrades.length}</p>
           <p className="text-sm text-muted">
             {t("tech.tile.upgradesNote", { n: data.rounds.length })}
           </p>
         </Tile>
         <Tile label={t("tech.tile.busiest")} icon={<Wrench />}>
-          <p className="num text-4xl font-semibold">{data.teams[0]?.upgrades ?? 0}</p>
+          <p className="num display text-4xl">{data.teams[0]?.upgrades ?? 0}</p>
           <p className="flex items-center gap-2 text-sm">
             <span
               className="h-4 w-1.5 rounded-full"
@@ -182,7 +182,7 @@ function UpgradesView({ data }: { data: Upgrades }) {
           </p>
         </Tile>
         <Tile label={t("tech.tile.performance")} icon={<Sparkles />}>
-          <p className="num text-4xl font-semibold">
+          <p className="num display text-4xl">
             {data.upgrades.length ? f.percent(performance / data.upgrades.length) : "—"}
           </p>
           <p className="text-sm text-muted">{t("tech.tile.performanceNote")}</p>
@@ -192,11 +192,10 @@ function UpgradesView({ data }: { data: Upgrades }) {
             <>
               <p className="flex items-center gap-2">
                 <span
-                  className={`num text-4xl font-semibold ${bestGain.delta < 0 ? "text-gain" : "text-loss"}`}
+                  className={`num display text-4xl ${bestGain.delta < 0 ? "text-gain" : "text-loss"}`}
                 >
                   {f.number(bestGain.delta, 2)} %
                 </span>
-                <EngineBadge />
               </p>
               <p className="text-sm text-muted">
                 {(bestGain.team.team?.name ?? bestGain.team.team_name) +
@@ -376,9 +375,7 @@ function PaceShift({ cell }: { cell: Upgrades["teams"][number]["cells"][number] 
   const delta = after - before;
   return (
     <section aria-label={t("tech.pace")} className="flex w-full flex-col gap-2">
-      <p className="flex items-center justify-between text-sm font-semibold">
-        {t("tech.pace")} <EngineBadge />
-      </p>
+      <p className="flex items-center justify-between text-sm font-semibold">{t("tech.pace")}</p>
       <dl className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-raised p-2">
           <dt className="text-xs text-muted">{t("tech.before", { n: cell.races_before })}</dt>
@@ -426,22 +423,22 @@ function PowerUnitsView({ data }: { data: PowerUnits }) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Tile label={t("tech.pu.asOf")} icon={<FileText />}>
-          <p className="num text-4xl font-semibold">{t("tech.round", { n: data.as_of.round })}</p>
+          <p className="num display text-4xl">{t("tech.round", { n: data.as_of.round })}</p>
           <p className="flex items-center gap-2 text-sm text-muted">
             <Flag country={data.as_of.country} />
             {eventName(data.as_of.name, locale)}
           </p>
         </Tile>
         <Tile label={t("tech.pu.beyond")} icon={<TriangleAlert />}>
-          <p className="num text-4xl font-semibold text-loss">{beyond.length}</p>
+          <p className="num display text-4xl text-loss">{beyond.length}</p>
           <p className="text-sm text-muted">{t("tech.pu.beyondNote")}</p>
         </Tile>
         <Tile label={t("tech.pu.most")} icon={<Battery />}>
-          <p className="num text-4xl font-semibold">{most ? total(most) : "—"}</p>
+          <p className="num display text-4xl">{most ? total(most) : "—"}</p>
           {most?.driver && <DriverChip driver={most.driver} colour={most.colour} size="size-7" />}
         </Tile>
         <Tile label={t("tech.pu.nonCompliant")} icon={<ShieldAlert />}>
-          <p className="num text-4xl font-semibold">{nonCompliant}</p>
+          <p className="num display text-4xl">{nonCompliant}</p>
           <p className="text-sm text-muted">{t("tech.pu.nonCompliantNote")}</p>
         </Tile>
       </div>
@@ -622,23 +619,23 @@ function IncidentsView({ data }: { data: Incidents }) {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Tile label={t("tech.inc.decisions")} icon={<FileText />}>
-          <p className="num text-4xl font-semibold">{data.decisions.length}</p>
+          <p className="num display text-4xl">{data.decisions.length}</p>
           <p className="text-sm text-muted">
             {t("tech.inc.decisionsNote", { n: data.rounds.length })}
           </p>
         </Tile>
         <Tile label={t("tech.inc.penalties")} icon={<ShieldAlert />}>
-          <p className="num text-4xl font-semibold text-loss">{penalties}</p>
+          <p className="num display text-4xl text-loss">{penalties}</p>
           <p className="text-sm text-muted">{t("docs.tile.penaltiesNote")}</p>
         </Tile>
         <Tile label={t("tech.inc.most")} icon={<TriangleAlert />}>
-          <p className="num text-4xl font-semibold">{mostPenalised?.penalties ?? 0}</p>
+          <p className="num display text-4xl">{mostPenalised?.penalties ?? 0}</p>
           {mostPenalised && (
             <DriverChip driver={mostPenalised.driver} colour={mostPenalised.colour} size="size-7" />
           )}
         </Tile>
         <Tile label={t("tech.inc.points")} icon={<Gauge />}>
-          <p className="num text-4xl font-semibold">
+          <p className="num display text-4xl">
             {topPoints?.points_12m ?? 0}
             <span className="text-xl text-muted">/{data.threshold}</span>
           </p>

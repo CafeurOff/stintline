@@ -6,32 +6,30 @@
 @import "@fontsource/ibm-plex-mono/600.css";
 @import "flag-icons/css/flag-icons.min.css";
 
-/* Pilot skin (docs/design.md, "glass"): `glass:` utilities apply under [data-skin="glass"]. */
-@custom-variant glass (&:where([data-skin="glass"], [data-skin="glass"] *));
-
 /*
- * Design tokens, "pit wall" direction (docs/design.md). The look comes from timing sheets and
- * pit-wall screens: a graphite ground, hairlines instead of cards, numbers in a monospace,
- * and colour that carries timing meaning (purple fastest, green personal best, yellow
- * slower or flag, red live). Team colours identify cars and nothing else.
+ * Design tokens, "night race" glass design (ADR 0023, docs/design.md). A black ground,
+ * frosted cards lit from a corner by a context colour (team or circuit), light trails like a
+ * long exposure of cars at night, Archivo expanded for titles and condensed for timing
+ * figures. Colour still carries timing meaning (purple fastest, green personal best, yellow
+ * flag, red live) and team colours identify cars.
  *
- * Contrast (WCAG AA): text >= 12:1, muted >= 6:1 on bg and panel in both themes; timing
- * colours >= 4.5:1 as text on bg. `mark` is a fill; red text uses `mark-text`; white on
- * `action` >= 5:1. Compound fills are shared by both themes and carry a dark letter.
+ * Contrast (WCAG AA): text >= 12:1, muted >= 6:1 on bg in both themes; timing colours
+ * >= 4.5:1 as text on bg. `mark` is a fill; red text uses `mark-text`; white on `action`
+ * >= 5:1. Compound fills are shared by both themes and carry a dark letter.
  */
 @theme {
-  --color-bg: #0a0c11;
-  --color-panel: #11141b;
-  --color-raised: #191d27;
-  --color-line: #222836;
-  --color-line-strong: #323a4c;
-  --color-track: #262c3a;
-  --color-track-edge: #3a4256;
-  --color-ink: #eef0f5;
-  --color-muted: #9aa2b5;
-  --color-mark: #ff2d2d;
-  --color-mark-text: #ff6b66;
-  --color-action: #c8102e;
+  --color-bg: #060608;
+  --color-panel: #101014;
+  --color-raised: #1b1b21;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.16);
+  --color-track: #24242c;
+  --color-track-edge: #383844;
+  --color-ink: #f7f7f9;
+  --color-muted: #a2a2ad;
+  --color-mark: #ff1f2d;
+  --color-mark-text: #ff5c63;
+  --color-action: #e10613;
   --color-ghost: #ffffff;
   --color-zone: rgb(255 255 255 / 0.16);
   --color-gain: #34d07a;
@@ -56,18 +54,27 @@
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
+:root {
+  --glass-fill: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.025));
+  --glass-edge: rgb(255 255 255 / 0.09);
+  --glass-shine: rgb(255 255 255 / 0.09);
+  --glass-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.7);
+  --glow-strength: 50%;
+  --trail-strength: 85%;
+}
+
 :root[data-theme="light"] {
-  --color-bg: #f3f2ee;
-  --color-panel: #fbfaf7;
-  --color-raised: #e9e8e3;
-  --color-line: #dddcd6;
-  --color-line-strong: #c4c3bc;
-  --color-track: #d6d5cf;
-  --color-track-edge: #c2c1ba;
-  --color-ink: #141518;
-  --color-muted: #5b5d65;
-  --color-mark: #d4101a;
-  --color-mark-text: #b30d16;
+  --color-bg: #f1f1f4;
+  --color-panel: #ffffff;
+  --color-raised: #e8e8ed;
+  --color-line: rgb(0 0 0 / 0.08);
+  --color-line-strong: rgb(0 0 0 / 0.16);
+  --color-track: #d9d9e0;
+  --color-track-edge: #c4c4cd;
+  --color-ink: #0b0b0d;
+  --color-muted: #55555f;
+  --color-mark: #e10613;
+  --color-mark-text: #b8000c;
   --color-ghost: #141518;
   --color-zone: rgb(20 21 24 / 0.14);
   --color-gain: #12753a;
@@ -77,6 +84,12 @@
   --color-t-green: #12753a;
   --color-t-yellow: #7d6300;
   --color-t-blue: #1a62c2;
+  --glass-fill: linear-gradient(160deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.62));
+  --glass-edge: rgb(0 0 0 / 0.07);
+  --glass-shine: rgb(255 255 255 / 0.9);
+  --glass-shadow: 0 24px 48px -28px rgb(20 20 40 / 0.25);
+  --glow-strength: 28%;
+  --trail-strength: 70%;
 }
 
 html {
@@ -100,10 +113,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Every number on a timing sheet: monospace, aligned, zero told apart from O. */
+/* Every figure lines up digit by digit. */
 .num {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
@@ -123,6 +135,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .reveal {
+    animation: none;
+  }
+
   *,
   *::before,
   *::after {
@@ -137,71 +153,20 @@ body {
     @apply w-full border-collapse text-left;
   }
   .data-table th {
-    @apply border-b border-line px-3 py-2.5 text-xs font-semibold text-muted uppercase;
+    @apply border-b border-line px-3 py-3 text-[0.7rem] font-bold tracking-wider text-muted uppercase;
   }
   .data-table td {
-    @apply border-b border-line px-3 py-2 align-middle;
+    @apply border-b border-line px-3 py-2.5 align-middle;
   }
   .data-table tbody tr:last-child td {
     @apply border-b-0;
   }
   .data-table tbody tr:hover {
-    @apply bg-raised;
+    @apply bg-ink/[0.04];
   }
   .data-table .num {
     @apply text-right tabular-nums;
   }
-}
-
-/*
- * "Glass" skin, pilot on the home page (docs/design.md). A night-race look: a black ground,
- * frosted cards, a context colour (team or circuit) that lights each card from one corner,
- * light trails like a long exposure of cars at night, and Archivo stretched both ways:
- * expanded for titles (livery lettering), condensed and thin for timing figures.
- */
-[data-skin="glass"] {
-  --color-bg: #060608;
-  --color-panel: #101014;
-  --color-raised: #1b1b21;
-  --color-line: rgb(255 255 255 / 0.08);
-  --color-line-strong: rgb(255 255 255 / 0.16);
-  --color-ink: #f7f7f9;
-  --color-muted: #a2a2ad;
-  --color-mark: #ff1f2d;
-  --color-mark-text: #ff5c63;
-  --color-action: #e10613;
-  --glass-fill: linear-gradient(160deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.025));
-  --glass-edge: rgb(255 255 255 / 0.09);
-  --glass-shine: rgb(255 255 255 / 0.09);
-  --glass-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.7);
-  --glow-strength: 50%;
-  --trail-strength: 85%;
-  background-color: var(--color-bg);
-}
-
-:root[data-theme="light"] [data-skin="glass"] {
-  --color-bg: #f1f1f4;
-  --color-panel: #ffffff;
-  --color-raised: #e8e8ed;
-  --color-line: rgb(0 0 0 / 0.08);
-  --color-line-strong: rgb(0 0 0 / 0.16);
-  --color-ink: #0b0b0d;
-  --color-muted: #55555f;
-  --color-mark: #e10613;
-  --color-mark-text: #b8000c;
-  --glass-fill: linear-gradient(160deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.62));
-  --glass-edge: rgb(0 0 0 / 0.07);
-  --glass-shine: rgb(255 255 255 / 0.9);
-  --glass-shadow: 0 24px 48px -28px rgb(20 20 40 / 0.25);
-  --glow-strength: 28%;
-  --trail-strength: 70%;
-}
-
-/* Figures: Archivo, aligned digit by digit. */
-[data-skin="glass"] .num {
-  font-family: var(--font-sans);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
 }
 
 @layer components {
@@ -214,6 +179,27 @@ body {
       var(--glass-shadow);
     backdrop-filter: blur(24px) saturate(150%);
     -webkit-backdrop-filter: blur(24px) saturate(150%);
+    transition: border-color 0.25s ease;
+  }
+
+  a.glass:hover,
+  button.glass:hover {
+    border-color: var(--color-line-strong);
+  }
+
+  /*
+   * Light motion: a block rises into place as it scrolls into view (scroll-driven where the
+   * browser supports it, once on load otherwise). Nothing moves under reduced motion.
+   */
+  .reveal {
+    animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
   }
 
   /* Context colour lighting the card from a corner (--glow, --glow-x, --glow-y). */
@@ -256,5 +242,28 @@ body {
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A timing figure that just changed slides in from above. */
+@keyframes tick {
+  from {
+    opacity: 0;
+    transform: translateY(-0.18em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }

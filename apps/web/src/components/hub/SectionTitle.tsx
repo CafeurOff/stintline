@@ -16,7 +16,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <h2 id={id} className="text-xl font-bold tracking-tight">
+      <h2 id={id} className="display text-xl">
         {children}
       </h2>
       {to && linkLabel && (

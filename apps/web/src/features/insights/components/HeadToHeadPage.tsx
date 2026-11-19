@@ -24,7 +24,7 @@ import { RoundGapBars } from "../charts/RoundGapBars";
 import { SplitBar } from "../charts/SplitBar";
 import { duelColours, share } from "../duel";
 import { FIRST_TIMED_SEASON, driverLabel, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip, EngineBadge } from "./common";
+import { AnalysisTabs, DriverChip } from "./common";
 
 type Duel = Schema<"Teammates">;
 type HeadToHead = Schema<"HeadToHead">;
@@ -142,7 +142,7 @@ function DuelTiles({ duels }: { duels: readonly Duel[] }) {
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {sweep && (
         <Tile label={t("h2h.tile.sweep")} icon={<Flame />}>
-          <p className="num text-4xl font-semibold">
+          <p className="num display text-4xl">
             {Math.max(...sweep.quali)}–{Math.min(...sweep.quali)}
           </p>
           <TileDriver side={leader(sweep, sweep.quali)} note={t("h2h.inQuali")} />
@@ -150,7 +150,7 @@ function DuelTiles({ duels }: { duels: readonly Duel[] }) {
       )}
       {tight && (
         <Tile label={t("h2h.tile.tight")} icon={<Scale />}>
-          <p className="num text-4xl font-semibold">
+          <p className="num display text-4xl">
             {tight.race[0]}–{tight.race[1]}
           </p>
           <p className="text-sm text-muted">
@@ -161,17 +161,16 @@ function DuelTiles({ duels }: { duels: readonly Duel[] }) {
       {paceGap?.median_pace_gap_s != null ? (
         <Tile label={t("h2h.tile.paceGap")} icon={<Gauge />}>
           <p className="flex items-center gap-2">
-            <span className="num text-4xl font-semibold">
+            <span className="num display text-4xl">
               {f.seconds(Math.abs(paceGap.median_pace_gap_s), 3)}
             </span>
-            <EngineBadge />
           </p>
           <TileDriver side={faster(paceGap, paceGap.median_pace_gap_s)} note={t("h2h.perLap")} />
         </Tile>
       ) : (
         pointsGap && (
           <Tile label={t("h2h.tile.pointsGap")} icon={<Gauge />}>
-            <p className="num text-4xl font-semibold">
+            <p className="num display text-4xl">
               {f.number(pointsGap.a.points - pointsGap.b.points, 0)}
             </p>
             <TileDriver side={pointsGap.a} note={t("h2h.pointsAhead")} />
@@ -180,7 +179,7 @@ function DuelTiles({ duels }: { duels: readonly Duel[] }) {
       )}
       {closeQuali?.median_quali_gap_s != null && (
         <Tile label={t("h2h.tile.closeQuali")} icon={<Timer />}>
-          <p className="num text-4xl font-semibold">
+          <p className="num display text-4xl">
             {f.seconds(Math.abs(closeQuali.median_quali_gap_s), 3)}
           </p>
           <p className="text-sm text-muted">
@@ -321,7 +320,6 @@ function DuelCard({ duel, year }: { duel: Duel; year: number }) {
           <span className="text-muted">
             {t("h2h.forDriver", { driver: driverLabel(duel.a.driver) })}
           </span>
-          <EngineBadge />
         </p>
       )}
     </Panel>
@@ -480,7 +478,7 @@ function DuelView({ data, year }: { data: HeadToHead; year: number }) {
             <Panel
               title={t("h2h.paceGaps")}
               icon={<Gauge />}
-              action={<EngineBadge />}
+
               bodyClassName="gap-2 p-4"
             >
               <RoundGapBars
@@ -502,9 +500,7 @@ function DuelView({ data, year }: { data: HeadToHead; year: number }) {
             </Panel>
           )}
           {!hasPace && year < FIRST_TIMED_SEASON && (
-            <p className="rounded-xl border border-line bg-panel p-4 text-sm text-muted">
-              {t("h2h.noTiming")}
-            </p>
+            <p className="glass rounded-[20px] p-4 text-sm text-muted">{t("h2h.noTiming")}</p>
           )}
         </div>
       </div>

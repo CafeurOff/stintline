@@ -74,14 +74,14 @@ export function NewsWire({ headlines }: { headlines: readonly Headline[] }) {
             onClick={() => {
               setSource(key);
             }}
-            className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
+            className="glass rounded-xl px-3 py-1.5 text-sm font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
           >
             {label}
           </button>
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <ul className="flex max-h-[calc(100vh-10rem)] flex-col overflow-y-auto rounded-xl border border-line bg-panel">
+        <ul className="glass flex max-h-[calc(100vh-10rem)] flex-col overflow-y-auto rounded-[20px]">
           {shown.map((h) => {
             const active = h === current;
             return (
@@ -120,7 +120,7 @@ function Reader({ headline }: { headline: Headline }) {
   const ago = useAgo();
   return (
     <article className="flex flex-col gap-4 self-start lg:sticky lg:top-20">
-      <div className="overflow-hidden rounded-xl border border-line bg-panel">
+      <div className="glass overflow-hidden rounded-[20px]">
         <Thumb headline={headline} className="aspect-[16/9] w-full" />
         <div className="flex flex-col gap-3 p-5">
           <p className="text-xs font-bold text-mark-text uppercase">

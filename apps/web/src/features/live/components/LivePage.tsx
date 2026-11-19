@@ -422,10 +422,7 @@ function PitNow({
   const code = (n: number | null | undefined) => cars.find((c) => c.number === n)?.code ?? "";
   const stop = car.pit_now;
   return (
-    <section
-      aria-labelledby="live-pit"
-      className="flex flex-col gap-2 rounded-xl border border-line bg-panel p-5"
-    >
+    <section aria-labelledby="live-pit" className="glass flex flex-col gap-2 rounded-[20px] p-5">
       <h2 id="live-pit" className="text-lg leading-tight font-bold">
         {t("live.pit.question", { name: car.last_name })}
       </h2>

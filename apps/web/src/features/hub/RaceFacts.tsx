@@ -41,7 +41,7 @@ export function FastestStopTile({ report }: { report: Report }) {
   if (!stop) return null;
   return (
     <Tile label={t("dash.fastestStop")} icon={<Wrench className="size-4" />}>
-      <p className="num text-4xl font-semibold">{f.seconds(stop.duration_s, 2)}</p>
+      <p className="num display text-4xl">{f.seconds(stop.duration_s, 2)}</p>
       <DriverLine entry={stop.entry} />
     </Tile>
   );
@@ -53,7 +53,7 @@ export function ClimberTile({ entry }: { entry: Schema<"ReportEntry"> }) {
   return (
     <Tile label={t("dash.climber")} icon={<TrendingUp className="size-4" />}>
       <p className="flex items-baseline gap-3">
-        <span className="num text-4xl font-semibold text-gain">+{gained}</span>
+        <span className="num display text-4xl text-gain">+{gained}</span>
         <span className="num text-sm text-muted">
           {t("dash.climb", {
             grid: entry.grid_position ?? "?",
@@ -70,7 +70,7 @@ export function FastestLapTile({ entry }: { entry: Schema<"ReportEntry"> }) {
   const { t, f } = useI18n();
   return (
     <Tile label={t("dash.fastestLap")} icon={<Timer className="size-4" />}>
-      <p className="num text-4xl font-semibold text-t-purple">{f.lapTime(entry.fastest_lap_s)}</p>
+      <p className="num display text-4xl text-t-purple">{f.lapTime(entry.fastest_lap_s)}</p>
       <DriverLine entry={entry} />
     </Tile>
   );
