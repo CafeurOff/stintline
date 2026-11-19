@@ -45,3 +45,7 @@ then reworked into a look of our own, validated on the home page, and rolled out
 - Hero bands (home, Grand Prix, driver, team, live, report, not found) follow one recipe:
   glow + trails + watermark + cut-out photo or car, with photos kept clear of the text.
 - IBM Plex Mono stays only where code-like alignment matters (`font-mono`).
+- Full-length official portraits are cropped into busts (`Bust`) wherever a driver fills a
+  card; the technical upgrades sit on the team's own car render with lit, numbered areas.
+- Every chart can be zoomed into a dragged box, shows values under the pointer and offers
+  +, − and reset buttons (`components/charts/`).

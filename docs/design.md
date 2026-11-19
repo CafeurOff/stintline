@@ -21,6 +21,8 @@ by team and circuit colours, light trails, and real figures everywhere.
 | `GlassCard`, `PillSwitch`, `MoreLink`, `IconBubble` | Cards with a title, two-to-four way switches, "see all" links, icon holders. |
 | `pillPrimary` / `pillGlass` | Main action (ink on ground) and secondary action (frosted). |
 | `Panel`, `Tile`, `KeyFigures` | Sections with a title, key figures, rows of small figures (ADR 0016, restyled). |
+| `Bust` | A driver from head to chest, cropped from the full-length official portrait (sharper copy via `lib/portrait.ts`), faded at the bottom. Use it whenever a driver must fill a card. |
+| `components/charts/` | `useZoom`, `ZoomLayer`, `ChartTools`, `ChartTooltip`, `ClipArea`: every chart zooms into a dragged box, reads values under the pointer and has +, − and reset buttons. |
 | `Face`, `Move`, `RoundBars`, `Flag` | Driver photo or code, places gained or lost, one bar per race, flags. |
 
 ## Type and colour
@@ -37,6 +39,9 @@ by team and circuit colours, light trails, and real figures everywhere.
   glints on trails, a lapping car on track maps. Nothing else moves. Reduced motion stops all.
 
 ## Content rules
+- Never show the full-length portrait small: crop it with `Bust`; full-length only when it fills a tall hero (home winner).
+- Every chart is interactive: zoom into a box, tooltip with values, crosshair; lines can be picked by clicking.
+- Technical upgrades are drawn on the team's own car render with numbered lights.
 - Photos and cars never overlap text or each other awkwardly (a car stands beside a driver).
 - No empty column; facts are tagged cards with a colour bar; no engine badges.
 - Public pages never show commands or setup text.
