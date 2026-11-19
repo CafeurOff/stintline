@@ -40,6 +40,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 - `car_data?session_key=…&driver_number=…&date>…&date<…`: `speed` (km/h), `throttle` (%), `brake` (0 or 100), `n_gear`, `rpm`, `drs`, about 3.7 Hz. Always bounded to one lap (~300 rows); a race is ~20,000 rows per car.
 - Paired with `location` over the same window. Fixtures: the Hungarian 2025 podium's fastest laps (`car_data/` and `location/`, session 9928, cars 4, 81 and 63).
 - 2026 cars have no DRS: the channel stays at 0.
+- `location` also has `z`, the altitude in the same units as `x` and `y` (about decimetres: the Hungaroring climbs 348 units, ~35 m; Interlagos ~43 m). Kept with each fastest lap since ADR 0021; laps stored earlier get it from `ingest_telemetry --altitude` (one bounded request per lap).
 
 ## Jolpica
 - Base URL `https://api.jolpi.ca/ergast/f1`. Ergast-compatible schema (`MRData.RaceTable…`).

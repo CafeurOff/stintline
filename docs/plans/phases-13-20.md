@@ -1,6 +1,6 @@
 # Phases 13–20: dashboard design, paddock, technical and analysis pages
 
-Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Phase 15 done (2026-11-13, ADR 0019). Phase 17 done (2026-11-16, ADR 0020). Later phases validated as a direction on 2026-11-12; each
+Status: Phase 13 done (2026-11-12). Phase 16 done (2026-11-13, ADR 0017). Phase 14 done (2026-11-13, ADR 0018). Phase 15 done (2026-11-13, ADR 0019). Phase 17 done (2026-11-16, ADR 0020). Phase 18 done (2026-11-19, ADR 0021). Later phases validated as a direction on 2026-11-12; each
 still gets a short go/no-go before it starts. Decisions taken on 2026-11-12: FIA PDFs relayed by
 our API and shown in the page (A), incidents and penalties from official decisions, no money
 figures (B), sidebar navigation (C), headline pictures as URL references (E, ADR 0015), no
@@ -82,7 +82,10 @@ Original scope:
   race control with lap tags; pit lane and stop times with averages; weather strip.
   Recordings and the public demo replay all of it.
 
-## Phase 18 — Telemetry and 3D lap
+## Phase 18 — Telemetry and 3D lap (done, ADR 0021)
+Built on 2026-11-19. No migration was needed (positions are JSON); the circuit outline keeps
+`[x, y]` and the 3D track follows the first driver's line. Relief is drawn ×2 with
+embankments. Original scope:
 - Store `z` from OpenF1 `location` (migration and a bounded backfill), track ribbon with real
   elevation. 3D mode with `three` + `@react-three/fiber` (lazy, WebGL check, 2D fallback):
   original low-poly car in team colour, chase / top / trackside cameras, two drivers
@@ -108,4 +111,4 @@ performance budget (lazy chunks for pdf.js and three), README and screenshots, d
 ## New dependencies (all free, open licences)
 `lucide-react` (ISC), `flag-icons` (MIT), `@fontsource-variable/archivo` and
 `@fontsource/ibm-plex-mono` (OFL) — added in Phase 13. Later: `pypdf` (BSD), `pdfplumber`
-(MIT), `pdfjs-dist` (Apache-2.0), `three` and `@react-three/fiber` (MIT).
+(MIT), `pdfjs-dist` (Apache-2.0), `three` and `@react-three/fiber` (MIT, Phase 18).

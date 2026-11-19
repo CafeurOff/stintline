@@ -46,6 +46,9 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 | `TelemetryConfig.merge_gap_m` | 30 m | `telemetry.py` | Release and re-apply in the same corner count as one braking zone. |
 | `TelemetryConfig.max_samples_gap_s` | 2 s | `telemetry.py` | A longer hole in the car data would misplace every later point: the lap is refused. |
 | Full throttle | ≥ 99 % | `telemetry.py`, web | The feed rarely reports exactly 100 % on straights. |
+| `plane_scale` | measured | `telemetry.py` | Metres per plane unit = lap length / drawn path length. Used for altitude too, so the feed's unit is never assumed (ADR 0021). |
+| `ELEVATION_EXAGGERATION` | ×2 | web `track3d.ts` | Relief drawn twice its height in 3D: a 35 m climb over 4 km is otherwise a barely visible ramp. Shown on the view. |
+| `TRACK_WIDTH_M` / `EMBANKMENT_SPREAD` | 14 m / 2.5 | web `track3d.ts` | Drawing only: most circuits are 12–15 m wide; slopes of about 1 in 2.5 under raised track. |
 | `MIN_START_GAIN` / `MIN_START_LOSS` | 2 / 3 places | `news/story.py` | Lap-1 moves worth a sentence in a race report. |
 | `UNDERCUT_WINDOW_LAPS` | 5 | `news/story.py` | The winner's stop counts as an undercut when it came at most 5 laps before the stop of the car it passed. |
 | `PaceFilter.cutoff_pct` | 107 % | `analysis.py` | Race pace charts drop laps slower than 107 % of the race's fastest lap (the qualifying rule fans know). The user can change it or turn it off. Lap 1 is never kept. |
