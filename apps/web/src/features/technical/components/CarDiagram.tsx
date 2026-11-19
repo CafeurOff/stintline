@@ -1,7 +1,8 @@
-import { useId } from "react";
+import { useState } from "react";
 
 import { useI18n } from "@/lib/i18n/context";
-import { teamColour, teamTint } from "@/lib/teams";
+import { readable } from "@/lib/colour";
+import { teamColour } from "@/lib/teams";
 
 const ZONES = [
   "front_wing",
@@ -21,68 +22,120 @@ const ZONES = [
 type Zone = (typeof ZONES)[number];
 
 /**
- * An original top-down drawing of a single-seater (front at the top), each area a shape that
- * lights up in the team colour when an upgrade touches it. The parts are listed next to it.
+ * Where each area sits on the official side-view render (nose to the right), in percent of
+ * the picture's width and height. Measured on the 2026 renders, which share one framing.
  */
-const SHAPES: Record<Zone, readonly string[]> = {
-  front_wing: ["M14 12 h92 v14 h-92 z"],
-  nose: ["M52 26 h16 l-2 52 h-12 z"],
-  front_corner: ["M6 44 h20 v34 h-20 z", "M94 44 h20 v34 h-20 z"],
-  front_suspension: ["M26 56 L46 64 L46 68 L26 62 z", "M94 56 L74 64 L74 68 L94 62 z"],
-  floor: ["M24 118 L96 118 L102 236 L18 236 z"],
-  sidepod: ["M24 128 h20 v62 h-20 z", "M76 128 h20 v62 h-20 z"],
-  cockpit: ["M48 92 h24 v36 h-24 z"],
-  engine_cover: ["M46 132 h28 l-4 84 h-20 z"],
-  diffuser: ["M34 236 h52 l-6 16 h-40 z"],
-  rear_corner: ["M4 212 h22 v38 h-22 z", "M94 212 h22 v38 h-22 z"],
-  rear_suspension: ["M26 226 L46 222 L46 226 L26 232 z", "M94 226 L74 222 L74 226 L94 232 z"],
-  beam_wing: ["M36 256 h48 v6 h-48 z"],
-  rear_wing: ["M22 268 h76 v16 h-76 z"],
+const SPOTS: Record<Zone, readonly [x: number, y: number]> = {
+  front_wing: [97, 82],
+  nose: [91, 52],
+  front_corner: [81, 66],
+  front_suspension: [73, 48],
+  cockpit: [59, 30],
+  sidepod: [46, 58],
+  engine_cover: [37, 24],
+  floor: [62, 80],
+  diffuser: [22, 84],
+  rear_corner: [14, 66],
+  rear_suspension: [25, 56],
+  beam_wing: [8, 56],
+  rear_wing: [6, 22],
 };
 
-/** The floor sits under everything else. */
-const DRAW_ORDER: readonly Zone[] = ["floor", ...ZONES.filter((zone) => zone !== "floor")];
-
+/**
+ * The team's own car (official render, ADR 0006) with a light on every area an upgrade
+ * touches, numbered and named below. Without a render, the areas are listed on their own.
+ */
 export function CarDiagram({
   zones,
   colour,
+  imageUrl,
   className = "",
 }: {
   zones: ReadonlySet<string>;
   colour: string | null | undefined;
+  imageUrl?: string | null | undefined;
   className?: string;
 }) {
   const { t } = useI18n();
-  const titleId = useId();
+  const [failed, setFailed] = useState(false);
   const fill = teamColour(colour);
   const touched = ZONES.filter((zone) => zones.has(zone));
+  const label = touched.length
+    ? t("tech.diagram", { zones: touched.map((z) => t(`tech.zone.${z}`)).join(", ") })
+    : t("tech.diagramNone");
+  const showCar = Boolean(imageUrl) && !failed;
+
   return (
-    <svg
-      viewBox="0 0 120 296"
-      role="img"
-      aria-labelledby={titleId}
-      className={className}
-      preserveAspectRatio="xMidYMid meet"
-    >
-      <title id={titleId}>
-        {touched.length
-          ? t("tech.diagram", { zones: touched.map((z) => t(`tech.zone.${z}`)).join(", ") })
-          : t("tech.diagramNone")}
-      </title>
-      {DRAW_ORDER.map((zone) =>
-        SHAPES[zone].map((d, i) => (
-          <path
-            key={`${zone}-${String(i)}`}
-            d={d}
-            fill={zones.has(zone) ? fill : teamTint(colour, 8)}
-            stroke={zones.has(zone) ? "var(--color-ink)" : "var(--color-line-strong)"}
-            strokeWidth={zones.has(zone) ? 1.5 : 1}
-            opacity={zone === "floor" && !zones.has(zone) ? 0.6 : 1}
-          >
-            <title>{t(`tech.zone.${zone}`)}</title>
-          </path>
-        )),
+    <figure role="img" aria-label={label} className={`flex w-full flex-col gap-4 ${className}`}>
+      {showCar && (
+        <div className="relative w-full">
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-[6%] bottom-0 h-5 rounded-[50%] bg-black/50 blur-xl"
+          />
+          <img
+            src={imageUrl ?? undefined}
+            alt=""
+            referrerPolicy="no-referrer"
+            onError={() => {
+              setFailed(true);
+            }}
+            className="relative block w-full object-contain"
+          />
+          {ZONES.map((zone) => {
+            const [x, y] = SPOTS[zone];
+            const on = zones.has(zone);
+            const index = touched.indexOf(zone);
+            return (
+              <span
+                key={zone}
+                aria-hidden="true"
+                title={t(`tech.zone.${zone}`)}
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${String(x)}%`, top: `${String(y)}%` }}
+              >
+                {on ? (
+                  <span className="relative grid size-7 place-items-center">
+                    <span
+                      className="absolute inset-0 animate-ping rounded-full opacity-60"
+                      style={{ backgroundColor: fill }}
+                    />
+                    <span
+                      className="num relative grid size-7 place-items-center rounded-full border-2 border-white text-xs font-bold text-white shadow-[0_0_18px_4px]"
+                      style={{
+                        backgroundColor: fill,
+                        color: "white",
+                        boxShadow: `0 0 18px 4px ${fill}`,
+                      }}
+                    >
+                      {index + 1}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="block size-2 rounded-full bg-white/40 ring-2 ring-black/30" />
+                )}
+              </span>
+            );
+          })}
+        </div>
       )}
-    </svg>
+      <ol aria-hidden="true" className="flex flex-wrap gap-2">
+        {touched.map((zone, index) => (
+          <li
+            key={zone}
+            className="glass flex items-center gap-2 rounded-lg py-1 pr-3 pl-1 text-sm font-semibold"
+          >
+            <span
+              className="num grid size-6 place-items-center rounded-md text-xs font-bold text-white"
+              style={{ backgroundColor: fill }}
+            >
+              {index + 1}
+            </span>
+            <span style={{ color: readable(fill, 55) }}>{t(`tech.zone.${zone}`)}</span>
+          </li>
+        ))}
+        {touched.length === 0 && <li className="text-sm text-muted">{t("tech.diagramNone")}</li>}
+      </ol>
+    </figure>
   );
 }

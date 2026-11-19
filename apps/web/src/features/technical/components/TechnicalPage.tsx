@@ -22,6 +22,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { DriverChip } from "@/features/insights/components/common";
+import { useTeams } from "@/features/hub/api";
 import { useSeasonParam } from "@/features/insights/season";
 import { PenaltyTags } from "@/features/paddock/components/PenaltyTags";
 import { ApiError } from "@/lib/errors";
@@ -132,6 +133,8 @@ function UpgradesView({ data }: { data: Upgrades }) {
   const chosenRound = intParam(params, "round") ?? busiest?.cell.round ?? null;
   const team = data.teams.find((x) => teamKey(x) === chosenTeam) ?? busiest?.team;
   const cell = team?.cells.find((c) => c.round === chosenRound) ?? team?.cells.at(-1);
+  const seasonTeams = useTeams("", data.season).data?.results ?? [];
+  const carUrl = seasonTeams.find((x) => x.ref === team?.team?.ref)?.season?.car_image_url;
   const items =
     team && cell
       ? data.upgrades.filter(
@@ -292,7 +295,7 @@ function UpgradesView({ data }: { data: Upgrades }) {
       </Panel>
 
       {team && cell && (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <Panel
             title={`${team.team?.name ?? team.team_name} · ${roundName(cell.round)}`}
             icon={<Cog />}
@@ -301,7 +304,7 @@ function UpgradesView({ data }: { data: Upgrades }) {
             <CarDiagram
               zones={new Set(items.map((u) => u.zone))}
               colour={team.colour}
-              className="h-80 w-auto"
+              imageUrl={carUrl}
             />
             <PaceShift cell={cell} />
           </Panel>
