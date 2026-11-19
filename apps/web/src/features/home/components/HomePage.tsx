@@ -16,7 +16,6 @@ import { Link } from "react-router";
 import { NO_BACKDROP } from "@/components/dash/backdrop";
 import { Face } from "@/components/dash/Face";
 import { Move } from "@/components/dash/Move";
-import { ExtrudedCircuit } from "@/components/glass/ExtrudedCircuit";
 import {
   GlassCard,
   IconBubble,
@@ -25,6 +24,8 @@ import {
   pillGlass,
   pillPrimary,
 } from "@/components/glass/Glass";
+import { TrackMap } from "@/components/glass/TrackMap";
+import { Trails } from "@/components/glass/Trails";
 import { CarImage } from "@/components/racing/CarImage";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
@@ -40,7 +41,6 @@ import { ForecastBadge, WeatherIcon } from "@/features/forecast/components/Forec
 import { FILTERS, type Tag, useFacts } from "@/features/hub/facts";
 import { useHome, useProgression, useSeasonEvents, useStandings } from "@/features/hub/api";
 import { useCircuits } from "@/features/insights/api";
-import { EngineBadge } from "@/features/insights/components/common";
 import { useHeadlines, useReport } from "@/features/news/api";
 import { useAgo } from "@/features/news/useAgo";
 import { useSessionDetail } from "@/features/race/api";
@@ -71,14 +71,14 @@ function readable(colour: string, pct = 70): string {
 
 /**
  * Font size that makes a word fill `pct` % of its container's width (container query units),
- * for the watermark names: heavy italic capitals are about 0.78 em wide.
+ * for the hollow watermarks: expanded heavy capitals and digits are about 0.9 em wide.
  */
 function fitWidth(word: string, pct: number): string {
-  return `${(pct / (Math.max(word.length, 3) * 0.78)).toFixed(2)}cqw`;
+  return `${(pct / (Math.max(word.length, 1) * 0.9)).toFixed(2)}cqw`;
 }
 
-function glowStyle(colour: string, x = "70%"): CSSProperties {
-  return { "--glow": colour, "--glow-x": x } as CSSProperties;
+function glowStyle(colour: string, x = "100%", y = "100%"): CSSProperties {
+  return { "--glow": colour, "--glow-x": x, "--glow-y": y } as CSSProperties;
 }
 
 /**
@@ -92,7 +92,7 @@ export function HomePage() {
   useDocumentTitle(null);
 
   if (home.isError) return <ErrorState error={home.error} onRetry={() => void home.refetch()} />;
-  if (!home.data) return <Skeleton className="h-[70vh] rounded-[32px]" />;
+  if (!home.data) return <Skeleton className="h-[70vh] rounded-[20px]" />;
   if (!home.data.last_race && !home.data.next_event) {
     return (
       <EmptyState title={t("home.empty.title")}>
@@ -171,9 +171,10 @@ function NextRaceHero({ event }: { event: Event }) {
   return (
     <section
       aria-labelledby="home-next"
-      className="glass glow relative overflow-hidden rounded-[32px]"
-      style={glowStyle(accent, "85%")}
+      className="glass glow relative overflow-hidden rounded-[24px]"
+      style={glowStyle(accent, "90%", "45%")}
     >
+      <Trails colour={accent} />
       <div className="grid gap-6 p-6 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-10">
         <div className="relative z-10 flex flex-col gap-7">
           <div>
@@ -181,10 +182,7 @@ function NextRaceHero({ event }: { event: Event }) {
               <Flag country={event.circuit.country} className="text-base" />
               {t("picker.round", { round: event.round })}
             </p>
-            <h2
-              id="home-next"
-              className="mt-2 text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-6xl"
-            >
+            <h2 id="home-next" className="display mt-2 text-4xl leading-[0.95] sm:text-6xl">
               {eventName(event.name, locale)}
             </h2>
             <p className="mt-2 text-lg font-bold" style={{ color: readable(accent) }}>
@@ -213,7 +211,7 @@ function NextRaceHero({ event }: { event: Event }) {
               {parts.map(([value, unit]) => (
                 <span key={unit} aria-hidden="true" className="flex flex-col">
                   <span
-                    className="num text-6xl leading-none font-extralight sm:text-8xl"
+                    className="num timing text-7xl leading-[0.85] sm:text-9xl"
                     style={{ color: readable(accent, 80) }}
                   >
                     {two(value)}
@@ -238,10 +236,10 @@ function NextRaceHero({ event }: { event: Event }) {
 
         <div className="relative flex flex-col justify-between gap-4">
           {event.circuit.outline && (
-            <ExtrudedCircuit
+            <TrackMap
               path={event.circuit.outline}
               colour={accent}
-              className="mx-auto w-full max-w-[520px] lg:-mt-6"
+              className="mx-auto aspect-square w-full max-w-[460px] lg:-mt-4"
             />
           )}
           <CircuitFigures circuitRef={event.circuit.ref} />
@@ -257,49 +255,38 @@ function CircuitFigures({ circuitRef }: { circuitRef: string }) {
   const { t, f } = useI18n();
   const profile = useCircuits().data?.find((c) => c.circuit.ref === circuitRef);
   if (!profile) return null;
-  const stats: [string, string, string | null, boolean][] = [];
+  const stats: [string, string, string | null][] = [];
   if (profile.lap_length_m != null) {
-    stats.push([t("home.stat.lapLength"), f.number(profile.lap_length_m / 1000, 3), "km", false]);
+    stats.push([t("home.stat.lapLength"), f.number(profile.lap_length_m / 1000, 3), "km"]);
   }
   if (profile.top_speed_kph != null) {
-    stats.push([t("home.stat.topSpeed"), f.number(profile.top_speed_kph, 0), "km/h", false]);
+    stats.push([t("home.stat.topSpeed"), f.number(profile.top_speed_kph, 0), "km/h"]);
   }
   if (profile.pit_loss_s != null) {
-    stats.push([t("home.stat.pitLoss"), f.number(profile.pit_loss_s, 1), "s", true]);
+    stats.push([t("home.stat.pitLoss"), f.number(profile.pit_loss_s, 1), "s"]);
   }
   if (profile.degradation_s_per_lap != null) {
-    stats.push([
-      t("home.stat.wear"),
-      f.number(profile.degradation_s_per_lap, 3),
-      t("home.perLap"),
-      true,
-    ]);
+    stats.push([t("home.stat.wear"), f.number(profile.degradation_s_per_lap, 3), t("home.perLap")]);
   }
   if (profile.races > 0) {
     stats.push([
       t("home.stat.safetyCar"),
       `${String(profile.safety_car_races)}/${String(profile.races)}`,
       t("home.stat.races"),
-      false,
     ]);
   }
   if (stats.length === 0) return null;
   return (
     <dl className="relative z-10 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
-      {stats.map(([label, value, unit, ours]) => (
+      {stats.map(([label, value, unit]) => (
         <div key={label} className="flex flex-col gap-0.5">
           <dd className="order-2 flex items-baseline gap-1">
-            <span className="num text-2xl font-bold">{value}</span>
+            <span className="num display text-2xl">{value}</span>
             {unit && <span className="text-xs font-semibold text-muted">{unit}</span>}
           </dd>
           <dt className="order-3 flex items-center gap-1.5 text-xs font-medium text-muted">
             {label}
           </dt>
-          {ours && (
-            <span className="order-4 w-fit">
-              <EngineBadge />
-            </span>
-          )}
         </div>
       ))}
     </dl>
@@ -377,19 +364,20 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
   return (
     <section
       aria-labelledby="home-last"
-      className="glass glow relative flex min-h-[460px] flex-col overflow-hidden rounded-[32px] xl:col-span-2"
-      style={glowStyle(colour, "78%")}
+      className="glass glow relative flex min-h-[460px] flex-col overflow-hidden rounded-[24px] xl:col-span-2"
+      style={glowStyle(colour, "80%", "100%")}
     >
+      <Trails colour={colour} className="opacity-70" />
       {winner && (
         <div
           aria-hidden="true"
           className="@container relative h-72 overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[58%]"
         >
           <span
-            className="watermark absolute top-6 right-3 whitespace-nowrap uppercase"
-            style={{ fontSize: fitWidth(winner.driver.family_name, 96) }}
+            className="watermark num absolute top-4 right-4"
+            style={{ fontSize: fitWidth(String(winner.car_number), 62) }}
           >
-            {winner.driver.family_name}
+            {winner.car_number}
           </span>
           <CarImage
             url={winnerEntry?.media?.car_image_url}
@@ -407,16 +395,13 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
 
       <div className="relative z-10 flex flex-1 flex-col gap-5 p-6 sm:max-w-[50%] sm:p-9">
         <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted">
-          <span className="rounded-full bg-mark px-2.5 py-0.5 text-xs font-bold text-white">
+          <span className="rounded-md bg-mark px-2 py-0.5 text-xs font-bold text-white uppercase">
             {t("home.lastRace")}
           </span>
           {t("picker.round", { round: race.event.round })} · {f.date(race.event.race_date)}
         </p>
         <div>
-          <h2
-            id="home-last"
-            className="text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl"
-          >
+          <h2 id="home-last" className="display text-4xl leading-[0.95] sm:text-5xl">
             {eventName(race.event.name, locale)}
           </h2>
           <p className="mt-2 flex items-center gap-2 text-sm text-muted">
@@ -436,7 +421,7 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
           <dl className="flex gap-7">
             {figures.map(([value, label]) => (
               <div key={label} className="flex flex-col">
-                <dd className="num order-2 text-3xl font-bold" style={{ color: readable(colour) }}>
+                <dd className="num display order-2 text-3xl" style={{ color: readable(colour) }}>
                   {value}
                 </dd>
                 <dt className="order-3 text-xs font-semibold text-muted">{label}</dt>
@@ -464,9 +449,9 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
             <li key={entry.car_number}>
               <Link
                 to={`/drivers/${entry.driver.ref}`}
-                className="glass flex items-center gap-3 rounded-2xl py-2 pr-4 pl-3 hover:border-line-strong"
+                className="glass flex items-center gap-3 rounded-xl py-2 pr-4 pl-3 hover:border-line-strong"
               >
-                <span className="num w-7 text-center text-xl font-extrabold">{index + 1}</span>
+                <span className="num display w-7 text-center text-xl">{index + 1}</span>
                 <Face
                   url={photoOf(entry)}
                   label={codeOf(entry.driver)}
@@ -512,7 +497,7 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
       eyebrow={season !== null ? t("home.drivers", { season }) : undefined}
       title={t("dash.leader")}
       glow={colour}
-      className="@container min-h-[460px] rounded-[32px]"
+      className="@container min-h-[460px] rounded-[24px]"
       bodyClassName="justify-end"
     >
       <span
@@ -532,7 +517,7 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
       <div className="relative z-10 flex flex-col gap-4 bg-gradient-to-t from-bg/80 via-bg/30 to-transparent p-6 pt-24">
         <Link
           to={`/drivers/${first.driver.ref}`}
-          className="w-fit text-3xl leading-none font-extrabold tracking-tight hover:underline"
+          className="display w-fit text-3xl leading-none hover:underline"
         >
           {first.driver.given_name}
           <br />
@@ -541,14 +526,14 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
         <dl className="flex gap-6">
           {figures.map(([value, label]) => (
             <div key={label} className="flex flex-col">
-              <dd className="num order-2 text-3xl font-bold" style={{ color: readable(colour) }}>
+              <dd className="num display order-2 text-3xl" style={{ color: readable(colour) }}>
                 {value}
               </dd>
               <dt className="order-3 text-xs font-semibold text-muted uppercase">{label}</dt>
             </div>
           ))}
         </dl>
-        <div className="glass rounded-2xl px-4 py-3 text-sm">
+        <div className="glass rounded-xl px-4 py-3 text-sm">
           {summary && summary.kind !== "open" ? (
             <TitleSentence summary={summary} />
           ) : (
@@ -610,9 +595,9 @@ function Widget({
   return (
     <section
       aria-labelledby={id}
-      className={`relative flex min-h-44 flex-col gap-3 overflow-hidden rounded-[28px] p-5 ${
+      className={`relative flex min-h-44 flex-col gap-3 overflow-hidden rounded-[20px] p-5 ${
         solid
-          ? "bg-[#ffe600] text-[#0b0b0d] [&_.text-muted]:text-[#0b0b0d]/70 [&_a]:text-[#0b0b0d]"
+          ? "bg-gradient-to-br from-[#7b2cf5] to-[#3b1a9e] text-white [&_.text-muted]:text-white/75 [&_[style]]:!text-white/80"
           : "glass"
       }`}
     >
@@ -642,7 +627,7 @@ function Widgets({ report }: { report: Report }) {
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {stop && (
         <Widget label={t("dash.fastestStop")} icon={<Wrench />} solid>
-          <p className="num text-6xl leading-none font-extrabold tracking-tight">
+          <p className="num display text-6xl leading-none">
             {f.number(stop.duration_s, 2)}
             <span className="ml-1 text-2xl">s</span>
           </p>
@@ -652,7 +637,7 @@ function Widgets({ report }: { report: Report }) {
       {gain && (
         <Widget label={t("dash.climber")} icon={<TrendingUp />}>
           <p className="flex items-baseline gap-3">
-            <span className="num text-6xl leading-none font-extrabold tracking-tight text-gain">
+            <span className="num display text-6xl leading-none text-gain">
               +{(gain.grid_position ?? 0) - (gain.finish_position ?? 0)}
             </span>
             <span className="num text-sm font-semibold text-muted">
@@ -667,7 +652,7 @@ function Widgets({ report }: { report: Report }) {
       )}
       {lap && (
         <Widget label={t("dash.fastestLap")} icon={<Timer />}>
-          <p className="num text-5xl leading-none font-extrabold tracking-tight text-t-purple">
+          <p className="num timing text-7xl leading-none font-light text-t-purple">
             {f.lapTime(lap.fastest_lap_s)}
           </p>
           <DriverChip entry={lap} />
@@ -678,15 +663,15 @@ function Widgets({ report }: { report: Report }) {
           {counts.map(([label, count]) => (
             <span
               key={label}
-              className={`flex flex-1 flex-col items-center rounded-2xl py-2 ${
+              className={`flex flex-1 flex-col items-center rounded-xl py-2 ${
                 count > 0
                   ? label === "RED"
                     ? "bg-mark text-white"
-                    : "bg-[#ffe600] text-[#0b0b0d]"
+                    : "bg-t-yellow text-tyre-ink"
                   : "bg-ink/5 text-muted"
               }`}
             >
-              <span className="num text-3xl leading-none font-extrabold">{count}</span>
+              <span className="num display text-3xl leading-none">{count}</span>
               <span className="mt-1 text-[0.65rem] font-bold">{label}</span>
             </span>
           ))}
@@ -816,7 +801,7 @@ function StandingsCard({
                   </Link>
                 </td>
                 <td className="py-3 text-right whitespace-nowrap">
-                  <span className="num block text-base leading-tight font-extrabold">
+                  <span className="num display block text-base leading-tight">
                     {f.number(line.points ?? 0, 0)}
                   </span>
                   <span className="block text-[0.65rem] font-bold text-muted">
@@ -838,9 +823,9 @@ function StandingsCard({
 /* -------------------------------------------------------------------- facts */
 
 const TAG_COLOUR: Record<Tag, string> = {
-  driver: "#2f6bff",
-  team: "#1ed760",
-  race: "#ffe600",
+  driver: "var(--color-t-blue)",
+  team: "var(--color-t-green)",
+  race: "var(--color-t-yellow)",
 };
 
 function FactsCard({ report }: { report: Report }) {
@@ -864,11 +849,13 @@ function FactsCard({ report }: { report: Report }) {
       </div>
       <ul className="flex flex-col gap-3 px-4 pb-4">
         {shown.map((fact) => (
-          <li key={fact.key} className="flex flex-col gap-2 rounded-2xl bg-ink/[0.04] p-4">
-            <span
-              className="sticker w-fit text-[0.65rem] font-extrabold uppercase"
-              style={{ "--sticker": TAG_COLOUR[fact.tag] } as CSSProperties}
-            >
+          <li key={fact.key} className="flex flex-col gap-2 rounded-xl bg-ink/[0.04] p-4">
+            <span className="flex w-fit items-center gap-1.5 text-[0.65rem] font-bold tracking-wider uppercase">
+              <span
+                aria-hidden="true"
+                className="h-3 w-1 rounded-full"
+                style={{ backgroundColor: TAG_COLOUR[fact.tag] }}
+              />
               {t(`dash.tag.${fact.tag}`)}
             </span>
             <p className="leading-snug font-bold">{fact.title}</p>
@@ -935,7 +922,7 @@ function NewsCard() {
             href={lead.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group relative flex min-h-80 flex-col justify-end self-stretch overflow-hidden rounded-3xl"
+            className="group relative flex min-h-80 flex-col justify-end self-stretch overflow-hidden rounded-2xl"
           >
             <NewsThumb headline={lead} className="absolute inset-0 size-full" />
             <span
@@ -943,10 +930,10 @@ function NewsCard() {
               className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"
             />
             <span className="relative flex flex-col gap-2 p-5 text-white">
-              <span className="w-fit rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold backdrop-blur">
+              <span className="w-fit rounded-md bg-white/15 px-2 py-0.5 text-xs font-bold backdrop-blur">
                 {lead.source_name} · {ago(lead.published_at)}
               </span>
-              <span className="text-2xl leading-tight font-extrabold group-hover:underline">
+              <span className="display text-2xl leading-tight group-hover:underline">
                 {lead.title}
                 <span className="sr-only"> {t("news.opensNew")}</span>
               </span>
@@ -962,7 +949,7 @@ function NewsCard() {
                 rel="noopener noreferrer"
                 className="group flex items-center gap-4 py-3"
               >
-                <NewsThumb headline={h} className="h-16 w-24 shrink-0 rounded-2xl" />
+                <NewsThumb headline={h} className="h-16 w-24 shrink-0 rounded-xl" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="line-clamp-2 leading-snug font-bold group-hover:underline">
                     {h.title}

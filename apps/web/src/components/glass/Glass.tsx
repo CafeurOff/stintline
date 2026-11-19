@@ -30,11 +30,13 @@ export function GlassCard({
 }) {
   const generated = useId();
   const titleId = id ?? generated;
-  const style = glow ? ({ "--glow": glow } as CSSProperties) : undefined;
+  const style = glow
+    ? ({ "--glow": glow, "--glow-x": "100%", "--glow-y": "0%" } as CSSProperties)
+    : undefined;
   return (
     <section
       aria-labelledby={title ? titleId : undefined}
-      className={`glass relative flex min-w-0 flex-col overflow-hidden rounded-[28px] ${
+      className={`glass relative flex min-w-0 flex-col overflow-hidden rounded-[20px] ${
         glow ? "glow" : ""
       } ${className}`}
       style={style}
@@ -43,7 +45,7 @@ export function GlassCard({
         <div className="flex flex-wrap items-end justify-between gap-3 px-6 pt-6 pb-2">
           <div className="min-w-0">
             {eyebrow && <p className="text-xs font-semibold text-muted">{eyebrow}</p>}
-            <h2 id={titleId} className="text-xl font-extrabold tracking-tight">
+            <h2 id={titleId} className="display text-lg">
               {title}
             </h2>
           </div>
@@ -55,7 +57,7 @@ export function GlassCard({
   );
 }
 
-const PILL = "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition";
+const PILL = "inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition";
 
 /** White pill on dark (black on light): the one main action of a block. */
 export const pillPrimary = `${PILL} bg-ink text-bg hover:opacity-90`;
@@ -91,7 +93,7 @@ export function PillSwitch<T extends string>({
     <div
       role="group"
       aria-label={label}
-      className="flex w-fit gap-1 rounded-full border border-line bg-bg/60 p-1"
+      className="flex w-fit gap-1 rounded-xl border border-line bg-bg/60 p-1"
     >
       {options.map(([key, text]) => (
         <button
@@ -101,7 +103,7 @@ export function PillSwitch<T extends string>({
           onClick={() => {
             onChange(key);
           }}
-          className="rounded-full px-4 py-1.5 text-xs font-bold text-muted transition hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg"
+          className="rounded-lg px-4 py-1.5 text-xs font-bold text-muted transition hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg"
         >
           {text}
         </button>
@@ -115,7 +117,7 @@ export function IconBubble({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-9 shrink-0 place-items-center rounded-full border border-line bg-ink/5 [&>svg]:size-4"
+      className="grid size-9 shrink-0 place-items-center rounded-xl border border-line bg-ink/5 [&>svg]:size-4"
     >
       {children}
     </span>

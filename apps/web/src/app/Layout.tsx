@@ -78,8 +78,8 @@ const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
 const railLink = ({ isActive }: { isActive: boolean }) =>
   `mx-2 flex h-10 items-center gap-3 rounded-md px-3 text-[0.92rem] transition-colors ${
     isActive
-      ? "bg-mark/15 font-semibold text-ink [&>svg]:text-mark-text glass:rounded-full glass:bg-ink glass:text-bg glass:[&>svg]:text-bg"
-      : "text-muted hover:bg-raised hover:text-ink glass:rounded-full"
+      ? "bg-mark/15 font-semibold text-ink [&>svg]:text-mark-text glass:rounded-lg glass:bg-ink glass:text-bg glass:[&>svg]:text-bg"
+      : "text-muted hover:bg-raised hover:text-ink glass:rounded-lg"
   }`;
 
 const tabLink = ({ isActive }: { isActive: boolean }) =>
