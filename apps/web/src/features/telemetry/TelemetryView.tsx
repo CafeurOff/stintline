@@ -1,6 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 import { useState } from "react";
 
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useI18n } from "@/lib/i18n/context";
@@ -9,6 +10,7 @@ import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useTelemetryCompare, useTelemetryLaps } from "./api";
 import { type CarStyle, carStyles } from "./colours";
+import { Lap3DPanel } from "./Lap3DPanel";
 import { LapMap } from "./LapMap";
 import {
   cornerSections,
@@ -19,8 +21,10 @@ import {
   sectionStats,
 } from "./section";
 import { TelemetryChart } from "./TelemetryChart";
+import { hasWebGL } from "./webgl";
 
 type Compare = Schema<"TelemetryCompare">;
+type View = "2d" | "3d";
 const MAX_CARS = 3;
 /** Two zones of different drivers are the same corner when they start this close. */
 const SAME_CORNER_M = 80;
@@ -94,21 +98,66 @@ export function TelemetryView({ sessionId, cars }: { sessionId: number; cars: re
   const setSection = (next: Section | null) => {
     update({ zoom: next ? formatSection(next) : null });
   };
+  const view: View = params.get("lap") === "3d" ? "3d" : "2d";
+  const chart = (
+    <TelemetryChart
+      data={data}
+      styles={styles}
+      cursor={cursor}
+      onCursor={setCursor}
+      section={section}
+      onSection={setSection}
+    />
+  );
   return (
     <div className="flex flex-col gap-5">
       <Summary data={data} />
-      <ZoomBar data={data} section={section} onSection={setSection} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <LapMap data={data} styles={styles} cursor={cursor} section={section} />
-        <TelemetryChart
-          data={data}
-          styles={styles}
-          cursor={cursor}
-          onCursor={setCursor}
-          section={section}
-          onSection={setSection}
+      <div className="flex flex-wrap items-end gap-3">
+        <SegmentedControl
+          legend={t("telemetry.view")}
+          hideLegend
+          options={[
+            { value: "2d", label: t("telemetry.view.2d") },
+            { value: "3d", label: t("telemetry.view.3d") },
+          ]}
+          value={view}
+          onChange={(next) => {
+            update({ lap: next === "3d" ? "3d" : null });
+          }}
         />
       </div>
+      <ZoomBar data={data} section={section} onSection={setSection} />
+      {view === "3d" ? (
+        <>
+          {hasWebGL() ? (
+            <Lap3DPanel
+              data={data}
+              styles={styles}
+              cursor={cursor}
+              onCursor={setCursor}
+              visible={
+                section ? indexRange(section, data.step_m, data.points) : [0, data.points - 1]
+              }
+            />
+          ) : (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+              <div className="flex flex-col gap-3">
+                <p role="status" className="rounded-xl bg-panel p-3 text-sm text-muted">
+                  {t("telemetry.3d.unavailable")}
+                </p>
+                <LapMap data={data} styles={styles} cursor={cursor} section={section} />
+              </div>
+              {chart}
+            </div>
+          )}
+          {hasWebGL() && chart}
+        </>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <LapMap data={data} styles={styles} cursor={cursor} section={section} />
+          {chart}
+        </div>
+      )}
       {section && <SectionTable data={data} styles={styles} section={section} />}
       <BrakingTable data={data} />
       <p className="text-sm text-muted">{t("telemetry.note")}</p>

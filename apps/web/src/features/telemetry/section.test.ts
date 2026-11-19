@@ -18,6 +18,7 @@ function car(speeds: number[], throttle: number[], brake: boolean[]): Schema<"Te
     lap_time_s: 80,
     max_speed_kph: Math.max(...speeds),
     full_throttle_share: 0.5,
+    t_s: speeds.map((_, i) => i),
     speed_kph: speeds,
     throttle_pct: throttle,
     brake,
@@ -26,6 +27,8 @@ function car(speeds: number[], throttle: number[], brake: boolean[]): Schema<"Te
     x: speeds.map(() => 0),
     y: speeds.map(() => 0),
     delta_s: speeds.map(() => 0),
+    gap_m: speeds.map(() => 0),
+    elevation_m: null,
     braking_zones: [],
   };
 }

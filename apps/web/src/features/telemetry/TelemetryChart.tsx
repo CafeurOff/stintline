@@ -4,7 +4,7 @@ import { curveStepAfter } from "@visx/curve";
 import { GridRows } from "@visx/grid";
 import { Group } from "@visx/group";
 import { scaleLinear } from "@visx/scale";
-import { LinePath } from "@visx/shape";
+import { AreaClosed, LinePath } from "@visx/shape";
 import { type PointerEvent, useId, useState } from "react";
 
 import { useI18n } from "@/lib/i18n/context";
@@ -14,7 +14,7 @@ import type { CarStyle } from "./colours";
 import { clampSection, indexRange, type Section } from "./section";
 
 type Compare = Schema<"TelemetryCompare">;
-type Channel = "speed" | "throttle" | "brake" | "gear" | "delta";
+type Channel = "speed" | "throttle" | "brake" | "gear" | "delta" | "elevation";
 
 interface Panel {
   channel: Channel;
@@ -27,6 +27,7 @@ const PANELS: readonly Panel[] = [
   { channel: "brake", height: 16 },
   { channel: "gear", height: 80 },
   { channel: "delta", height: 110 },
+  { channel: "elevation", height: 60 },
 ];
 const GAP = 22;
 const MARGIN = { top: 8, right: 16, bottom: 36, left: 56 };
@@ -55,6 +56,8 @@ function values(car: Schema<"TelemetryCar">, channel: Channel): number[] {
       return car.gear;
     case "delta":
       return car.delta_s;
+    case "elevation":
+      return car.elevation_m ?? [];
     default:
       return car.brake.map(Number);
   }
@@ -83,7 +86,10 @@ export function TelemetryChart({
   const visible = indexRange(shown, data.step_m, data.points);
   const distance = (index: number) => index * data.step_m;
   const multi = data.cars.length > 1;
-  const panels = PANELS.filter((p) => p.channel !== "delta" || multi);
+  const relief = data.cars[0]?.elevation_m != null;
+  const panels = PANELS.filter(
+    (p) => (p.channel !== "delta" || multi) && (p.channel !== "elevation" || relief),
+  );
   const placed = panels.map((panel, index) => ({
     ...panel,
     top: panels.slice(0, index).reduce((sum, p) => sum + p.height + GAP, 0),
@@ -262,13 +268,15 @@ function PanelLines({
     );
   }
   const [first, last] = visible;
+  // Relief: the circuit's profile under the first car's line, the same for every driver.
+  const drawn = channel === "elevation" ? data.cars.slice(0, 1) : data.cars;
   const series = (car: Schema<"TelemetryCar">) => {
     const raw = values(car, channel);
     if (channel !== "delta" || !rebase) return raw;
     const base = raw[first] ?? 0;
     return raw.map((v) => v - base);
   };
-  const all = data.cars.flatMap((car) => series(car).slice(first, last + 1));
+  const all = drawn.flatMap((car) => series(car).slice(first, last + 1));
   const domain: [number, number] =
     channel === "throttle"
       ? [0, 100]
@@ -276,7 +284,9 @@ function PanelLines({
         ? [1, 8]
         : channel === "delta"
           ? [Math.min(-0.1, ...all), Math.max(0.1, ...all)]
-          : [Math.max(0, Math.min(...all) - 10), Math.max(...all) + 10];
+          : channel === "elevation"
+            ? [Math.min(...all), Math.max(Math.min(...all) + 5, ...all)]
+            : [Math.max(0, Math.min(...all) - 10), Math.max(...all) + 10];
   const y = scaleLinear({ domain, range: [height, 0] });
   const format =
     channel === "delta"
@@ -293,7 +303,20 @@ function PanelLines({
       {channel === "delta" && (
         <line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke="var(--color-line-strong)" />
       )}
-      {data.cars.map((car, index) => (
+      {channel === "elevation" &&
+        drawn.map((car) => (
+          <AreaClosed
+            key={car.car_number}
+            clipPath={`url(#${clipId})`}
+            data={series(car)}
+            x={(_, i) => x(i * data.step_m)}
+            y={(v) => y(v)}
+            yScale={y}
+            fill="var(--color-muted)"
+            fillOpacity={0.25}
+          />
+        ))}
+      {drawn.map((car, index) => (
         <LinePath
           key={car.car_number}
           clipPath={`url(#${clipId})`}
@@ -341,7 +364,17 @@ function Readout({
       aria-live="polite"
       className="pointer-events-none mt-2 flex flex-wrap gap-x-6 gap-y-1 rounded-lg bg-raised px-3 py-2 text-sm tabular-nums"
     >
-      <span className="text-muted">{f.number(distance / 1000, 2)} km</span>
+      <span className="text-muted">
+        {f.number(distance / 1000, 2)} km
+        {data.cars[0]?.elevation_m && (
+          <>
+            {" · "}
+            {t("telemetry.altitude", {
+              n: f.number(data.cars[0].elevation_m[index] ?? 0, 0),
+            })}
+          </>
+        )}
+      </span>
       {data.cars.map((car, i) => (
         <span key={car.car_number} className="flex items-center gap-1.5">
           <span
@@ -364,6 +397,8 @@ function Readout({
                 (car.delta_s[index] ?? 0) - (base === null ? 0 : (car.delta_s[base] ?? 0)),
                 3,
               )}
+              {base === null &&
+                ` · ${t("telemetry.gapMetres", { n: f.number(car.gap_m[index] ?? 0, 0) })}`}
             </span>
           )}
         </span>

@@ -60,6 +60,31 @@ describe("Telemetry", () => {
     if (overlay) fireEvent.pointerLeave(overlay);
   });
 
+  it("draws the relief under the charts and the gap in metres where the pointer is", async () => {
+    const { container } = renderRoute("/events/14?chart=telemetry");
+    await screen.findByLabelText("Fastest laps compared");
+    const overlay = container.querySelector('svg rect[fill="transparent"]');
+
+    if (overlay) fireEvent.pointerMove(overlay, { clientX: 120 });
+
+    expect(screen.getByText("Relief (m)")).toBeInTheDocument();
+    expect(await screen.findByText(/m up/)).toBeInTheDocument();
+    const readout = (await screen.findByText(/m up/)).closest("[aria-live]");
+    expect(readout?.textContent).toMatch(/s · [−-]?\d+ m/);
+  });
+
+  it("falls back to the map when the browser cannot draw 3D", async () => {
+    const { router } = renderRoute("/events/14?chart=telemetry");
+
+    await userEvent.click(await screen.findByRole("radio", { name: "3D lap" }));
+
+    expect(router.state.location.search).toContain("lap=3d");
+    expect(await screen.findByText(/cannot draw 3D/)).toBeVisible();
+    expect(screen.getByRole("img", { name: /Norris's fastest lap on the circuit/ })).toBeVisible();
+    await userEvent.click(screen.getByRole("radio", { name: "Map" }));
+    expect(router.state.location.search).not.toContain("lap=");
+  });
+
   it("lists the braking zones as a table", async () => {
     renderRoute("/events/14?chart=telemetry");
 
