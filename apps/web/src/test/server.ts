@@ -41,6 +41,7 @@ import { pitLoss } from "./fixtures/pitLoss";
 import { replay } from "./fixtures/replay";
 import { session } from "./fixtures/session";
 import { stints } from "./fixtures/stints";
+import { title } from "./fixtures/title";
 import { track } from "./fixtures/track";
 import { undercut } from "./fixtures/undercut";
 
@@ -183,6 +184,7 @@ export const handlers = [
   ),
   http.get("*/api/v1/seasons/:year/standings", () => HttpResponse.json(standings)),
   http.get("*/api/v1/seasons/:year/standings/progression", () => HttpResponse.json(progression)),
+  http.get("*/api/v1/seasons/:year/title", () => HttpResponse.json(title)),
 ];
 
 /** Shared MSW server. Unhandled requests fail the test: no network in tests. */

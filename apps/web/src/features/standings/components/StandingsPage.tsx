@@ -16,6 +16,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { TitleFight } from "@/features/championship/TitleFight";
 import { useProgression, useStandings } from "@/features/hub/api";
 import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { ApiError } from "@/lib/errors";
@@ -136,6 +137,14 @@ function Standings({ year }: { year: number }) {
           <Leaders
             lines={table === "drivers" ? standings.data.drivers : standings.data.constructors}
           />
+          {table === "drivers" && (
+            <TitleFight
+              year={year}
+              colours={
+                new Map(standings.data.drivers.map((line) => [line.driver?.ref ?? "", line.colour]))
+              }
+            />
+          )}
           <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <Panel
               title={table === "drivers" ? t("standings.drivers") : t("standings.constructors")}

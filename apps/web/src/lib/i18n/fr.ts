@@ -408,6 +408,30 @@ export const fr: Record<MessageKey, string> = {
   "telemetry.section.avg": "Moyenne",
   "telemetry.section.full": "Plein gaz",
   "telemetry.section.brake": "Freinage",
+  "title.panel": "Calcul du titre",
+  "title.bars":
+    "Points qui comptent aujourd'hui et maximum que chaque pilote peut encore atteindre",
+  "title.decided": "{name} était champion après la manche {round}, {race}.",
+  "title.spare": "Avec {n} Grands Prix d'avance.",
+  "title.clinchAt": "{name} est champion au {race} s'il :",
+  "title.beatBy": "marque plus de {n} points de plus que {rival}",
+  "title.beat": "marque plus de points que {rival}",
+  "title.unless": "ne perd pas {n} points ou plus face à {rival}",
+  "title.open":
+    "{n} pilotes peuvent encore être champions, avec {races} Grands Prix à courir : jusqu'à {points} points à prendre.",
+  "title.spare.one": "Avec un Grand Prix d'avance.",
+  "title.sprints.one": "Plus un sprint.",
+  "title.sprints": "Plus {n} sprints.",
+  "title.status.champion": "Champion",
+  "title.status.leader": "En tête",
+  "title.status.contender": "Encore en course",
+  "title.status.out": "Hors de portée",
+  "title.reach": "{points} pts · peut atteindre {max}",
+  "title.scored": "{n} marqués",
+  "title.note":
+    "Calcul exact à partir des points encore à prendre (une victoire, et le meilleur tour les saisons où il rapportait). En cas d'égalité, le pilote avec le plus de victoires l'emporte, puis le plus de deuxièmes places.",
+  "title.noteBest":
+    "Cette saison, seuls les meilleurs résultats comptaient : les points affichés sont ceux qui comptent, et le maximum suppose toutes les courses restantes gagnées.",
   "telemetry.title": "Télémétrie",
   "telemetry.none":
     "Pas encore de télémétrie pour cette course. Elle est importée après chaque course, et les courses plus anciennes sont complétées petit à petit.",

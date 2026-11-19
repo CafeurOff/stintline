@@ -7,6 +7,9 @@ import { NO_BACKDROP } from "@/components/dash/backdrop";
 import { Face } from "@/components/dash/Face";
 import { Move } from "@/components/dash/Move";
 import { Panel, Tile } from "@/components/dash/Panel";
+import { useTitle } from "@/features/championship/api";
+import { titleSummary } from "@/features/championship/summary";
+import { TitleSentence } from "@/features/championship/TitleFight";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
@@ -81,7 +84,7 @@ function Dashboard({ home }: { home: Schema<"Home"> }) {
         {season !== null && <SeasonTile season={season} next={next} events={events} />}
         {last && entries[0] && <WinnerTile race={last} winner={entries[0]} second={entries[1]} />}
         {report?.pit_stops?.fastest && <FastestStopTile report={report} />}
-        {home.drivers.length > 1 && <LeaderTile lines={home.drivers} />}
+        {home.drivers.length > 1 && <LeaderTile lines={home.drivers} season={season} />}
         {report?.biggest_gain && <ClimberTile entry={report.biggest_gain} />}
         {report?.fastest_lap && <FastestLapTile entry={report.fastest_lap} />}
         {report && <RaceControlTile report={report} />}
@@ -277,8 +280,9 @@ function WinnerTile({
   );
 }
 
-function LeaderTile({ lines }: { lines: readonly Line[] }) {
+function LeaderTile({ lines, season }: { lines: readonly Line[]; season: number | null }) {
   const { t, f } = useI18n();
+  const summary = titleSummary(useTitle(season).data);
   const [first, second] = lines;
   if (!first?.driver) return null;
   const lead = (first.points ?? 0) - (second?.points ?? 0);
@@ -303,11 +307,17 @@ function LeaderTile({ lines }: { lines: readonly Line[] }) {
           </p>
         </div>
       </div>
-      {second?.driver && (
-        <p className="mt-auto flex items-center gap-1.5 text-xs text-muted">
-          <TrendingUp aria-hidden="true" className="size-3.5 text-gain" />
-          {t("dash.leadBy", { points: f.number(lead, 0), second: second.driver.family_name })}
-        </p>
+      {summary && summary.kind !== "open" ? (
+        <div className="mt-auto text-xs text-muted">
+          <TitleSentence summary={summary} />
+        </div>
+      ) : (
+        second?.driver && (
+          <p className="mt-auto flex items-center gap-1.5 text-xs text-muted">
+            <TrendingUp aria-hidden="true" className="size-3.5 text-gain" />
+            {t("dash.leadBy", { points: f.number(lead, 0), second: second.driver.family_name })}
+          </p>
+        )
       )}
     </Tile>
   );
