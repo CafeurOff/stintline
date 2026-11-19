@@ -18,6 +18,17 @@ export const ELEVATION_EXAGGERATION = 2;
 export const EMBANKMENT_SPREAD = 2.5;
 /** Ground level, just under the lowest point of the track (scene units). */
 export const GROUND_LEVEL = -0.6;
+/**
+ * A car points along its line from this far behind it to this far ahead (m). Over a
+ * single 10 m step two samples can nearly coincide (the start of a lap) and the heading or
+ * slope goes wild; 20 m each way still follows the tightest hairpin.
+ */
+export const HEADING_SPAN_M = 20;
+/**
+ * Steepest nose-up or nose-down drawn (radians, about 17°). Relief is exaggerated, so the
+ * steepest real slopes (Eau Rouge, ~18 %) would otherwise tip the car unnaturally.
+ */
+export const MAX_PITCH = 0.3;
 /** Track width drawn, in metres (most F1 circuits are 12 to 15 m wide). */
 export const TRACK_WIDTH_M = 14;
 
@@ -67,18 +78,19 @@ export function trackPoint(data: Compare, index: number): Point3 {
 }
 
 /**
- * The track as a closed ribbon along the first car's line: two vertices (left, right) per
+ * The track as a ribbon along the first car's line: two vertices (left, right) per
  * point and two triangles between consecutive points. Plain arrays, turned into a
  * BufferGeometry by the scene.
  */
 export function trackRibbon(data: Compare): { positions: Float32Array; indices: Uint32Array } {
   const count = data.points;
   const half = TRACK_WIDTH_M / 2 / data.metres_per_unit;
+  const reach = Math.max(1, Math.round(HEADING_SPAN_M / data.step_m));
   const positions = new Float32Array(count * 6);
   const centre = Array.from({ length: count }, (_, i) => trackPoint(data, i));
   centre.forEach((p, i) => {
-    const before = centre[(i - 1 + count) % count] ?? p;
-    const after = centre[(i + 1) % count] ?? p;
+    const before = centre[Math.max(i - reach, 0)] ?? p;
+    const after = centre[Math.min(i + reach, count - 1)] ?? p;
     const dx = after.x - before.x;
     const dz = after.z - before.z;
     const length = Math.hypot(dx, dz) || 1;
@@ -89,10 +101,12 @@ export function trackRibbon(data: Compare): { positions: Float32Array; indices: 
       i * 6,
     );
   });
-  const indices = new Uint32Array(count * 6);
-  for (let i = 0; i < count; i++) {
+  // Open at the line: the two ends of a lap overlap by a few metres, and joining them
+  // would twist the last strip into a knot.
+  const indices = new Uint32Array((count - 1) * 6);
+  for (let i = 0; i < count - 1; i++) {
     const a = i * 2;
-    const b = ((i + 1) % count) * 2;
+    const b = (i + 1) * 2;
     indices.set([a, b, a + 1, a + 1, b, b + 1], i * 6);
   }
   return { positions, indices };
@@ -104,17 +118,27 @@ export function carPose(data: Compare, car: Car, clock: number): Pose {
   const index = indexAtTime(car.t_s, clock);
   const last = data.points - 1;
   const here = point(data, car, index, heights);
-  const before = point(data, car, Math.max(index - 1, 0), heights);
-  const after = point(data, car, Math.min(index + 1, last), heights);
+  const reach = Math.max(1, Math.round(HEADING_SPAN_M / data.step_m));
+  const before = point(data, car, Math.max(index - reach, 0), heights);
+  const after = point(data, car, Math.min(index + reach, last), heights);
   const dx = after.x - before.x;
   const dz = after.z - before.z;
   const flat = Math.hypot(dx, dz);
+  const slope = flat > 0 ? Math.atan2(after.y - before.y, flat) : 0;
   return {
     ...here,
     index,
     yaw: Math.atan2(-dz, dx),
-    pitch: flat > 0 ? Math.atan2(after.y - before.y, flat) : 0,
+    pitch: Math.max(-MAX_PITCH, Math.min(MAX_PITCH, slope)),
   };
+}
+
+/** The start and finish line: where the first car's lap begins, and the way it runs. */
+export function startLine(data: Compare): { at: Point3; yaw: number } {
+  const at = trackPoint(data, 0);
+  const reach = Math.max(1, Math.round(HEADING_SPAN_M / data.step_m));
+  const ahead = trackPoint(data, Math.min(reach, data.points - 1));
+  return { at, yaw: Math.atan2(-(ahead.z - at.z), ahead.x - at.x) };
 }
 
 /** Unit vector the car points along, in the ground plane. */
@@ -192,12 +216,52 @@ export function trackEmbankments(ribbon: Float32Array): {
       i * 12,
     );
   }
-  const indices = new Uint32Array(count * 12);
-  for (let i = 0; i < count; i++) {
+  const indices = new Uint32Array((count - 1) * 12);
+  for (let i = 0; i < count - 1; i++) {
     const a = i * 4;
-    const b = ((i + 1) % count) * 4;
+    const b = (i + 1) * 4;
     // Left slope (edge a, foot a + 1), right slope (edge a + 2, foot a + 3).
     indices.set([a, a + 1, b, b, a + 1, b + 1, a + 2, b + 2, a + 3, b + 2, b + 3, a + 3], i * 12);
   }
   return { positions, indices };
+}
+
+/**
+ * Cars closer than this along the lap (m) would overlap: a car is 5.6 m long, and two laps
+ * driven on almost the same line put one inside the other.
+ */
+export const SIDE_BY_SIDE_M = 8;
+/** Distance between the centres of two cars side by side (m): 2 m wide plus a gap. */
+export const LANE_M = 2.4;
+
+/**
+ * Moves a car that would overlap another out to the side, like two cars running side by
+ * side, and lets it back onto its own line as the gap opens. Drivers' lines differ by a
+ * metre or two, so the shift is measured from the car it would hit: the later car is
+ * pushed until the two are a lane apart across the track. It keeps the side it is already
+ * on (the first car's right when exactly behind, the left for a third car), and the shift
+ * eases in with the closeness, so nothing jumps.
+ */
+export function sideBySide(data: Compare, poses: readonly Pose[]): Pose[] {
+  const lane = LANE_M / data.metres_per_unit;
+  const reach = SIDE_BY_SIDE_M / data.metres_per_unit;
+  const placed: Pose[] = [];
+  poses.forEach((pose, index) => {
+    let moved = pose;
+    for (const other of placed) {
+      const ahead = heading(other);
+      const dx = moved.x - other.x;
+      const dz = moved.z - other.z;
+      const along = dx * ahead.x + dz * ahead.z;
+      const across = -dx * ahead.z + dz * ahead.x;
+      const closeness = Math.max(0, 1 - Math.abs(along) / reach);
+      const needed = lane * closeness * closeness * (3 - 2 * closeness);
+      if (Math.abs(across) >= needed) continue;
+      const side = Math.abs(across) > lane * 0.1 ? Math.sign(across) : index % 2 === 1 ? 1 : -1;
+      const push = side * needed - across;
+      moved = { ...moved, x: moved.x - ahead.z * push, z: moved.z + ahead.x * push };
+    }
+    placed.push(moved);
+  });
+  return placed;
 }

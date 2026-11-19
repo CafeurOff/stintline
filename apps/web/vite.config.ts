@@ -33,14 +33,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      // Lap3DScene only renders through WebGL, which jsdom lacks: its maths live in
-      // track3d.ts and playback.ts (tested), and the scene is checked in a real browser.
+      // Lap3DScene and Car3D only render through WebGL, which jsdom lacks: their maths live
+      // in track3d.ts, carShape.ts and playback.ts (tested); the scene is checked in a real
+      // browser.
       exclude: [
         "src/**/*.test.{ts,tsx}",
         "src/test/**",
         "src/main.tsx",
         "src/vite-env.d.ts",
         "src/features/telemetry/Lap3DScene.tsx",
+        "src/features/telemetry/Car3D.tsx",
       ],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },

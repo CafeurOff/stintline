@@ -11,6 +11,7 @@ import {
   Vector3,
 } from "three";
 
+import { Car3D } from "./Car3D";
 import type { CarStyle } from "./colours";
 import type { ReplayClock } from "./playback";
 import {
@@ -18,8 +19,10 @@ import {
   GROUND_LEVEL,
   heading,
   type Pose,
+  sideBySide,
+  startLine,
+  TRACK_WIDTH_M,
   trackEmbankments,
-  trackPoint,
   trackRibbon,
   tracksidePost,
 } from "./track3d";
@@ -103,10 +106,10 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
   // White lines along both edges of the track: they give the sense of speed and shape.
   const edges = useMemo(() => {
     const vertices = ribbon.getAttribute("position").array;
-    const count = vertices.length / 6;
+    const count = vertices.length / 6 - 1;
     const lines = new Float32Array(count * 12);
     for (let i = 0; i < count; i++) {
-      const next = (i + 1) % count;
+      const next = i + 1;
       for (const side of [0, 3]) {
         lines.set(vertices.slice(i * 6 + side, i * 6 + side + 3), i * 12 + side * 2);
         lines.set(vertices.slice(next * 6 + side, next * 6 + side + 3), i * 12 + side * 2 + 3);
@@ -145,11 +148,14 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
   );
   const span = Math.max(data.width, data.height);
   const unit = 1 / data.metres_per_unit;
-  const start = trackPoint(data, 0);
+  const start = startLine(data);
 
   useFrame((_, delta) => {
     const time = clock.tick(delta);
-    const poses: Pose[] = data.cars.map((car) => carPose(data, car, time));
+    const poses: Pose[] = sideBySide(
+      data,
+      data.cars.map((car) => carPose(data, car, time)),
+    );
     poses.forEach((pose, index) => {
       const group = cars.current[index];
       if (group) {
@@ -224,8 +230,11 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
       <lineSegments geometry={edges}>
         <lineBasicMaterial color="#e8e8e8" />
       </lineSegments>
-      <mesh position={[start.x, start.y + 0.05, start.z]}>
-        <boxGeometry args={[1.2 * unit, 0.1, 16 * unit]} />
+      <mesh
+        position={[start.at.x, start.at.y + EDGE_LIFT, start.at.z]}
+        rotation={[0, start.yaw, 0]}
+      >
+        <boxGeometry args={[1.2 * unit, 0.05, TRACK_WIDTH_M * unit]} />
         <meshStandardMaterial color="#f4f4f4" />
       </mesh>
       {data.cars.map((car, index) => (
@@ -235,7 +244,7 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
               cars.current[index] = node;
             }}
           >
-            <CarModel
+            <Car3D
               colour={styles[index]?.colour ?? "#cccccc"}
               striped={styles[index]?.dashed ?? false}
               unit={unit}
@@ -260,59 +269,6 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
         </group>
       ))}
     </>
-  );
-}
-
-/**
- * An original low-poly single-seater, built from boxes and cylinders at real size
- * (5.6 m long, 2 m wide): nose, chassis, sidepods, engine cover, wings, wheels and halo.
- * Local axes: +x forward, +y up. `unit` is scene units per metre.
- */
-function CarModel({ colour, striped, unit }: { colour: string; striped: boolean; unit: number }) {
-  const dark = "#15171c";
-  const parts: { size: [number, number, number]; at: [number, number, number]; colour: string }[] =
-    [
-      { size: [4.6, 0.06, 1.4], at: [0, 0.08, 0], colour: dark },
-      { size: [2.7, 0.55, 0.8], at: [0.1, 0.45, 0], colour },
-      { size: [1.7, 0.28, 0.36], at: [2.0, 0.32, 0], colour },
-      { size: [1.6, 0.42, 1.5], at: [-0.3, 0.36, 0], colour },
-      { size: [1.5, 0.5, 0.42], at: [-0.9, 0.85, 0], colour },
-      { size: [0.45, 0.05, 1.9], at: [2.75, 0.15, 0], colour: dark },
-      { size: [0.08, 0.2, 1.9], at: [2.95, 0.22, 0], colour },
-      { size: [0.35, 0.06, 1.05], at: [-2.45, 0.95, 0], colour },
-      { size: [0.5, 0.45, 0.04], at: [-2.4, 0.8, 0.52], colour: dark },
-      { size: [0.5, 0.45, 0.04], at: [-2.4, 0.8, -0.52], colour: dark },
-    ];
-  if (striped) parts.push({ size: [2.6, 0.02, 0.18], at: [0.6, 0.73, 0], colour: "#ffffff" });
-  const wheels: [number, number][] = [
-    [1.8, 0.8],
-    [1.8, -0.8],
-    [-1.6, 0.8],
-    [-1.6, -0.8],
-  ];
-  return (
-    <group scale={unit}>
-      {parts.map((part, index) => (
-        <mesh key={index} position={part.at}>
-          <boxGeometry args={part.size} />
-          <meshStandardMaterial color={part.colour} roughness={0.5} metalness={0.2} />
-        </mesh>
-      ))}
-      {wheels.map(([x, z]) => (
-        <mesh
-          key={`${String(x)}${String(z)}`}
-          position={[x, 0.36, z]}
-          rotation={[Math.PI / 2, 0, 0]}
-        >
-          <cylinderGeometry args={[0.36, 0.36, 0.38, 14]} />
-          <meshStandardMaterial color={dark} roughness={0.8} />
-        </mesh>
-      ))}
-      <mesh position={[0.55, 0.92, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <torusGeometry args={[0.36, 0.04, 6, 16, Math.PI]} />
-        <meshStandardMaterial color={dark} />
-      </mesh>
-    </group>
   );
 }
 
