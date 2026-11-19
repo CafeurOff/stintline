@@ -432,6 +432,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/seasons/{year}/title": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Title maths: who can still be champion, what the leader needs, when it was decided */
+    get: operations["season_title_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}": {
     parameters: {
       query?: never;
@@ -985,6 +1002,12 @@ export interface components {
       /** Format: double */
       spread_s: number | null;
       clean_laps: number;
+    };
+    CountBlock: {
+      /** @description Grands Prix in this part of the season; null: all the rest */
+      races: number | null;
+      /** @description Results that count among them; null: every one */
+      best: number | null;
     };
     Decision: {
       document_id: number;
@@ -2169,6 +2192,27 @@ export interface components {
       round: number;
       name: string;
     };
+    RoundRef: {
+      round: number;
+      event_id: number;
+      name: string;
+      /** Format: date */
+      race_date: string;
+      sprint: boolean;
+    };
+    Rules: {
+      /**
+       * Format: double
+       * @description Most points from one Grand Prix (win, fastest lap)
+       */
+      race_max: number;
+      /** Format: double */
+      sprint_max: number;
+      /** @description False when only the best results counted */
+      all_count: boolean;
+      blocks: components["schemas"]["CountBlock"][];
+      double_last_race: boolean;
+    };
     Season: {
       /** Format: int64 */
       year: number;
@@ -2660,6 +2704,59 @@ export interface components {
       /** Format: double */
       lap_time_s: number;
     };
+    Title: {
+      season: number;
+      rules: components["schemas"]["Rules"];
+      races_done: number;
+      races_left: number;
+      sprints_left: number;
+      /**
+       * Format: double
+       * @description Most points one driver can still score
+       */
+      points_left: number;
+      /** @description Round after which the title was settled by arithmetic */
+      decided: components["schemas"]["RoundRef"] | null;
+      next_round: components["schemas"]["RoundRef"] | null;
+      drivers: components["schemas"]["TitleDriver"][];
+    };
+    TitleDriver: {
+      driver: components["schemas"]["Driver"];
+      /**
+       * Format: double
+       * @description Points that count (after dropped results)
+       */
+      points: number;
+      /**
+       * Format: double
+       * @description Every point scored, dropped results included
+       */
+      scored: number;
+      /**
+       * Format: double
+       * @description Most points the driver can still finish with
+       */
+      ceiling: number;
+      /**
+       * Format: double
+       * @description Points behind the leader
+       */
+      gap: number;
+      status: components["schemas"]["TitleDriverStatusEnum"];
+      /**
+       * Format: double
+       * @description At the next round the leader is champion if he outscores this driver by more than this (negative: may even lose that much); null when not in play
+       */
+      clinch_margin: number | null;
+    };
+    /**
+     * @description * `champion` - champion
+     *     * `leader` - leader
+     *     * `contender` - contender
+     *     * `out` - out
+     * @enum {string}
+     */
+    TitleDriverStatusEnum: "champion" | "leader" | "contender" | "out";
     /** @description Circuit outline in screen coordinates, samples evenly spaced in time over one lap. */
     Track: {
       width: number;
@@ -3535,6 +3632,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Progression"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  season_title_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Title"];
         };
       };
       404: {

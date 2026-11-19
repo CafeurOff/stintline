@@ -788,6 +788,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/seasons/{year}/title:
+    get:
+      operationId: season_title_retrieve
+      summary: 'Title maths: who can still be champion, what the leader needs, when
+        it was decided'
+      parameters:
+      - in: path
+        name: year
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Title'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/sessions/{session_id}:
     get:
       operationId: session_retrieve
@@ -2018,6 +2046,20 @@ components:
       - round
       - session_id
       - spread_s
+    CountBlock:
+      type: object
+      properties:
+        races:
+          type: integer
+          nullable: true
+          description: 'Grands Prix in this part of the season; null: all the rest'
+        best:
+          type: integer
+          nullable: true
+          description: 'Results that count among them; null: every one'
+      required:
+      - best
+      - races
     Decision:
       type: object
       properties:
@@ -5022,6 +5064,51 @@ components:
       required:
       - name
       - round
+    RoundRef:
+      type: object
+      properties:
+        round:
+          type: integer
+        event_id:
+          type: integer
+        name:
+          type: string
+        race_date:
+          type: string
+          format: date
+        sprint:
+          type: boolean
+      required:
+      - event_id
+      - name
+      - race_date
+      - round
+      - sprint
+    Rules:
+      type: object
+      properties:
+        race_max:
+          type: number
+          format: double
+          description: Most points from one Grand Prix (win, fastest lap)
+        sprint_max:
+          type: number
+          format: double
+        all_count:
+          type: boolean
+          description: False when only the best results counted
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountBlock'
+        double_last_race:
+          type: boolean
+      required:
+      - all_count
+      - blocks
+      - double_last_race
+      - race_max
+      - sprint_max
     Season:
       type: object
       properties:
@@ -6317,6 +6404,96 @@ components:
       - entry
       - lap_number
       - lap_time_s
+    Title:
+      type: object
+      properties:
+        season:
+          type: integer
+        rules:
+          $ref: '#/components/schemas/Rules'
+        races_done:
+          type: integer
+        races_left:
+          type: integer
+        sprints_left:
+          type: integer
+        points_left:
+          type: number
+          format: double
+          description: Most points one driver can still score
+        decided:
+          allOf:
+          - $ref: '#/components/schemas/RoundRef'
+          nullable: true
+          description: Round after which the title was settled by arithmetic
+        next_round:
+          allOf:
+          - $ref: '#/components/schemas/RoundRef'
+          nullable: true
+        drivers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TitleDriver'
+      required:
+      - decided
+      - drivers
+      - next_round
+      - points_left
+      - races_done
+      - races_left
+      - rules
+      - season
+      - sprints_left
+    TitleDriver:
+      type: object
+      properties:
+        driver:
+          $ref: '#/components/schemas/Driver'
+        points:
+          type: number
+          format: double
+          description: Points that count (after dropped results)
+        scored:
+          type: number
+          format: double
+          description: Every point scored, dropped results included
+        ceiling:
+          type: number
+          format: double
+          description: Most points the driver can still finish with
+        gap:
+          type: number
+          format: double
+          description: Points behind the leader
+        status:
+          $ref: '#/components/schemas/TitleDriverStatusEnum'
+        clinch_margin:
+          type: number
+          format: double
+          nullable: true
+          description: 'At the next round the leader is champion if he outscores this
+            driver by more than this (negative: may even lose that much); null when
+            not in play'
+      required:
+      - ceiling
+      - clinch_margin
+      - driver
+      - gap
+      - points
+      - scored
+      - status
+    TitleDriverStatusEnum:
+      enum:
+      - champion
+      - leader
+      - contender
+      - out
+      type: string
+      description: |-
+        * `champion` - champion
+        * `leader` - leader
+        * `contender` - contender
+        * `out` - out
     Track:
       type: object
       description: Circuit outline in screen coordinates, samples evenly spaced in

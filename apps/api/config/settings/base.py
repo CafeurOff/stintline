@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "stintline.paddock",
     "stintline.technical",
     "stintline.forecast",
+    "stintline.championship",
 ]
 
 MIDDLEWARE = [
