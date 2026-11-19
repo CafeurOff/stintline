@@ -186,3 +186,15 @@ def test_plane_scale_refuses_a_still_car() -> None:
 
     with pytest.raises(TelemetryError):
         plane_scale(trace(still))
+
+
+def test_positions_carry_on_to_the_line_before_the_first_sample() -> None:
+    base = lap(speed_kph=180.0, lap_time_s=60.0)
+    late = dataclasses.replace(base, pos_t_s=base.pos_t_s[2:-2], x=base.x[2:-2], y=base.y[2:-2])
+
+    first = trace(late)
+
+    # The circle starts at (1000, 0): extrapolated back, not held at the first sample.
+    assert first.x[0] == pytest.approx(1000.0, abs=5.0)
+    assert first.y[0] == pytest.approx(0.0, abs=15.0)
+    assert first.y[0] < late.y[0]

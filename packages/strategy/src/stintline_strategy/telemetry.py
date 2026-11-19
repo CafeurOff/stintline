@@ -152,10 +152,26 @@ def trace(
         brake=nearest(samples.brake.astype(np.float64)) > 0.5,
         gear=nearest(samples.gear),
         drs_open=nearest(samples.drs) >= 10,
-        x=np.interp(t, samples.pos_t_s, samples.x),
-        y=np.interp(t, samples.pos_t_s, samples.y),
-        z=None if samples.z is None else np.interp(t, samples.pos_t_s, samples.z),
+        x=_interp_extended(t, samples.pos_t_s, samples.x),
+        y=_interp_extended(t, samples.pos_t_s, samples.y),
+        z=None if samples.z is None else _interp_extended(t, samples.pos_t_s, samples.z),
     )
+
+
+def _interp_extended(t: FloatArray, xp: FloatArray, fp: FloatArray) -> FloatArray:
+    """Linear interpolation that carries on in a straight line before the first sample and
+    after the last. Positions come at ~3.7 Hz, so the first one can be 0.27 s after the line:
+    holding it would leave the car ~20 m short of the line at 300 km/h."""
+    out = np.interp(t, xp, fp)
+    if len(xp) < 2:
+        return out
+    before = t < xp[0]
+    after = t > xp[-1]
+    start_slope = (fp[1] - fp[0]) / (xp[1] - xp[0])
+    end_slope = (fp[-1] - fp[-2]) / (xp[-1] - xp[-2])
+    out[before] = fp[0] + (t[before] - xp[0]) * start_slope
+    out[after] = fp[-1] + (t[after] - xp[-1]) * end_slope
+    return out
 
 
 def natural_length(samples: LapSamples, config: TelemetryConfig = DEFAULT_CONFIG) -> float:
