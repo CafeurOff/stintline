@@ -59,6 +59,9 @@ class LapSamples:
     x: FloatArray
     y: FloatArray
     lap_time_s: float
+    z: FloatArray | None = None
+    """Altitude at each position, in the plane's units. ``None`` for laps stored before
+    altitude was kept."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +77,7 @@ class Trace:
     drs_open: NDArray[np.bool_]
     x: FloatArray
     y: FloatArray
+    z: FloatArray | None = None
 
     @property
     def length_m(self) -> float:
@@ -150,6 +154,7 @@ def trace(
         drs_open=nearest(samples.drs) >= 10,
         x=np.interp(t, samples.pos_t_s, samples.x),
         y=np.interp(t, samples.pos_t_s, samples.y),
+        z=None if samples.z is None else np.interp(t, samples.pos_t_s, samples.z),
     )
 
 
@@ -204,3 +209,29 @@ def time_delta(reference: Trace, other: Trace) -> FloatArray:
 def full_throttle_share(lap: Trace) -> float:
     """Share of the lap distance at full throttle (≥ 99 %)."""
     return float(np.mean(lap.throttle_pct >= 99))
+
+
+def time_gap_to_distance(reference: Trace, other: Trace) -> FloatArray:
+    """Metres ``other`` is behind ``reference`` at the moment ``reference`` passes each
+    point (negative when ahead): the gap a viewer sees between two cars on track. Both
+    traces must share the same grid."""
+    size = min(len(reference.t_s), len(other.t_s))
+    where = np.interp(reference.t_s[:size], other.t_s[:size], other.distance_m[:size])
+    return reference.distance_m[:size] - where
+
+
+def plane_scale(lap: Trace) -> float:
+    """Metres per plane unit: the lap length divided by the length of its drawn path. The
+    feed's units are close to decimetres, but this keeps any circuit honest."""
+    path = float(np.sum(np.hypot(np.diff(lap.x), np.diff(lap.y))))
+    if path <= 0:
+        raise TelemetryError("the positions do not move")
+    return lap.length_m / path
+
+
+def elevation(lap: Trace) -> FloatArray | None:
+    """Altitude in metres above the lowest point of the lap, or ``None`` without altitude.
+    The plane's units are used for ``z`` too, so ``plane_scale`` turns them into metres."""
+    if lap.z is None:
+        return None
+    return (lap.z - float(lap.z.min())) * plane_scale(lap)
