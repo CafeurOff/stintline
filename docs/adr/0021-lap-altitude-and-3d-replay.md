@@ -44,7 +44,9 @@ Hungaroring for ~35 m), but we dropped it at the provider boundary.
   again (car data is kept). `refresh_recent` queues 4 such races per run
   (`ALTITUDE_BACKFILL_PER_RUN`, ~80 requests); `manage.py ingest_telemetry --altitude
   [--session ID | --season YEAR] [--sync]` does it on demand.
-- Engine (`stintline_strategy.telemetry`): `Trace.z`, `plane_scale` (metres per plane unit:
+- Engine (`stintline_strategy.telemetry`): positions are extrapolated in a straight line
+  before their first sample and after their last (the first one can come 0.27 s after the
+  line, ~20 m at 300 km/h), `Trace.z`, `plane_scale` (metres per plane unit:
   the lap length over its drawn path, so the feed's units are never assumed),
   `elevation` (metres above the lap's lowest point) and `time_gap_to_distance` (metres a car
   is behind the first one when it passes each point).
@@ -55,7 +57,12 @@ Hungaroring for ~35 m), but we dropped it at the provider boundary.
   even requested, else the map is shown with a note. `Lap3DScene` (the only module that
   imports `three`, `React.lazy`) draws the reference line as a ribbon with white edges and
   embankments down to the ground, relief exaggerated ×2 (`ELEVATION_EXAGGERATION`), an
-  original low-poly single-seater per driver in its team colour (a stripe on the team-mate),
+  original low-poly single-seater per driver in its team colour (a stripe on the team-mate;
+  bodywork lofted from rounded sections in `carShape.ts`: nose, survival cell, sidepods,
+  engine cover, multi-element wings, wishbones, tyres with rims, halo and helmet). Cars
+  closer than 8 m along the lap are eased a lane apart (`sideBySide`, 2.4 m between
+  centres) so one never drives through another; heading and slope are read over ±20 m and
+  the pitch is capped at 0.3 rad,
   and three cameras: chase, above (frames the whole circuit, driver labels) and trackside
   (posts every 180 m with a long lens). `ReplayClock` runs every car at its own lap time;
   play, pause, ×0.25 to ×4, a lap-time slider. The replay moves the 2D charts' pointer
