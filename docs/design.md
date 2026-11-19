@@ -1,40 +1,46 @@
-# Design guide (ADR 0016)
+# Design guide (ADR 0023, frame from ADR 0016)
 
-StintLine is a data dashboard for F1 fans. Pages must feel full: every element shows real data.
+StintLine is a data hub for F1 fans with a night-race look: a black ground, frosted cards lit
+by team and circuit colours, light trails, and real figures everywhere.
 
 ## Frame
-- Sidebar with icons (`lucide-react`), grouped: race weekend, championship, paddock, about.
-  Phones get a top bar and a drawer. Top bar: next session with the time left, theme.
+- Sidebar with icons (`lucide-react`), grouped: race weekend, championship, analysis,
+  paddock, about. The active link is a solid ink pill. Phones get a top bar and a drawer.
+- Frosted sticky top bar: next session with the time left, theme.
 - Content up to 1840 px wide, 16 px gutter on phones.
 
-## Building blocks (`apps/web/src/components/dash/`)
+## Building blocks
 | Block | Use |
 | --- | --- |
-| `Panel` | Any section with a title: icon + title on the left, filters or links on the right, content below. Tables always live in a panel. |
-| `Tile` | One key figure: label, icon square, a big `.num` value, a driver line or `RoundBars`. Use 4 per row on desktop. |
-| `Face` | Driver photo (official, else Wikipedia), else the code on the team colour. |
-| `Move` | Places gained or lost since the previous round (arrow + count, screen-reader text). |
-| `RoundBars` | One bar per race under a figure (hit, sprint outline, miss, retirement). |
-| `Flag` (`components/racing`) | Country flag from `flag-icons`, decorative next to the name. |
-| `PageHeader` | Page title in sentence case, short intro, filters as pills on the right. |
-| `KeyFigures` | A row of small figure tiles. |
+| `.glass` | Frosted surface: every card, panel, tile, secondary button. |
+| `.glow` + `--glow` | Lights a card from a corner (`--glow-x`, `--glow-y`) in a team or circuit colour. |
+| `Trails` (`components/glass`) | Light trails across a hero band, in the context colour. |
+| `TrackMap` (`components/glass`) | Tilted circuit with a car of light lapping it. |
+| `.watermark` | Hollow number, position or code behind a subject (size with `cqw` in an `@container`). |
+| `PageHeader` | Lit title band: eyebrow, `.display` title, intro, filters; `colour` and `aside` props. |
+| `GlassCard`, `PillSwitch`, `MoreLink`, `IconBubble` | Cards with a title, two-to-four way switches, "see all" links, icon holders. |
+| `pillPrimary` / `pillGlass` | Main action (ink on ground) and secondary action (frosted). |
+| `Panel`, `Tile`, `KeyFigures` | Sections with a title, key figures, rows of small figures (ADR 0016, restyled). |
+| `Face`, `Move`, `RoundBars`, `Flag` | Driver photo or code, places gained or lost, one bar per race, flags. |
 
 ## Type and colour
-- Archivo for text; IBM Plex Mono through `.num` for every figure (times, points, gaps).
-- Titles in sentence case, bold. Small uppercase only for table headers and tags.
-- Tokens in `src/index.css`. Race red (`action`, `mark`) for live state and primary actions.
-  Team colours identify drivers and teams (tints with `teamTint`). Timing colours carry
-  meaning: `t-purple` fastest, `gain` green, `t-yellow` flags and sprints, `loss` red.
-- Radius: `rounded-xl` for panels and tiles, `rounded-lg` for buttons and pills.
+- Archivo only. Titles: `.display` (expanded, heavy). Timing figures: `.timing` (condensed,
+  thin). Every figure: `.num` (tabular).
+- Tokens in `src/index.css`. Race red for live state and actions. Team colours identify
+  drivers and teams; circuits get a fixed accent (`circuitAccent`). Text in a context colour
+  uses `readable()`. Timing colours keep their meaning: `t-purple` fastest, `gain` green,
+  `t-yellow` flags and sprints, `loss` red.
+- Radius: 24 px hero bands, 20 px cards, `rounded-xl` buttons and inner blocks.
+
+## Motion
+- `.reveal` on cards (rise on scroll into view), `tick` on changing timing figures, slow
+  glints on trails, a lapping car on track maps. Nothing else moves. Reduced motion stops all.
 
 ## Content rules
-- No empty column: if a column ends early, add a panel of related data.
-- Facts are tagged cards (driver, team, race) with a flag and a date.
-- Lists of news show the publisher's picture (ADR 0015) or an icon tile.
-- No gradients except the race-red countdown stripes; no glows; no decorative text.
+- Photos and cars never overlap text or each other awkwardly (a car stands beside a driver).
+- No empty column; facts are tagged cards with a colour bar; no engine badges.
 - Public pages never show commands or setup text.
 
 ## Checking a page
-Point the dev server at a stack with real data and take screenshots at 1600 px and 390 px:
-`VITE_API_PROXY_TARGET=http://localhost:8080 pnpm --filter web dev` (the demo stack), then
-review every page as a fan would.
+Run a dev server against real data (`VITE_API_PROXY_TARGET=http://localhost:8000` or the demo
+stack on 8080) and screenshot every page at 1600 px and 390 px, in dark and light.

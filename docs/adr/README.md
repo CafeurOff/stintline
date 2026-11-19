@@ -26,3 +26,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0020](0020-weather-forecasts-and-live-timing-tower.md) | Weather forecasts from Open-Meteo, and a fuller live timing tower | Accepted |
 | [0021](0021-lap-altitude-and-3d-replay.md) | Lap altitude and a 3D replay of the fastest laps | Accepted |
 | [0022](0022-title-maths-and-points-rules.md) | Title maths from a table of points rules since 1950 | Accepted |
+| [0023](0023-night-race-glass-design.md) | Night-race glass design for the whole site | Accepted |
