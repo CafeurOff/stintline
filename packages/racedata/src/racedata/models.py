@@ -218,11 +218,13 @@ class WeatherRecord(_DTO):
 
 class PositionSample(_DTO):
     """Car position on the circuit plane (OpenF1 ``location``, about 3.7 Hz). Units are
-    the feed's own (roughly decimetres) and only meaningful relative to each other."""
+    the feed's own (roughly decimetres) and only meaningful relative to each other. ``z`` is
+    the altitude in the same units (``None`` when the feed left it out)."""
 
     at: datetime
     x: float
     y: float
+    z: float | None = None
 
 
 class CarSample(_DTO):

@@ -182,7 +182,13 @@ def _openf1_instant(value: datetime) -> str:
 
 
 def _location(r: dict[str, Any]) -> PositionSample:
-    return PositionSample(at=parse_datetime(PROVIDER, r["date"]), x=float(r["x"]), y=float(r["y"]))
+    z = r.get("z")
+    return PositionSample(
+        at=parse_datetime(PROVIDER, r["date"]),
+        x=float(r["x"]),
+        y=float(r["y"]),
+        z=None if z is None else float(z),
+    )
 
 
 def _session(r: dict[str, Any]) -> TimingSession:
