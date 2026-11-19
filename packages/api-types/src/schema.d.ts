@@ -2607,6 +2607,8 @@ export interface components {
       max_speed_kph: number;
       /** Format: double */
       full_throttle_share: number;
+      /** @description Seconds from the start of the lap at each point */
+      t_s: number[];
       speed_kph: number[];
       throttle_pct: number[];
       brake: boolean[];
@@ -2617,12 +2619,21 @@ export interface components {
       y: number[];
       /** @description Seconds behind the first car at each point */
       delta_s: number[];
+      /** @description Metres behind the first car when it passes each point (negative: ahead) */
+      gap_m: number[];
+      /** @description Metres above the lap's lowest point; null for laps stored without altitude */
+      elevation_m: number[] | null;
       braking_zones: components["schemas"]["BrakingZone"][];
     };
     TelemetryCompare: {
       /** @description Screen box of x and y, like the track drawing */
       width: number;
       height: number;
+      /**
+       * Format: double
+       * @description Metres per screen unit of x and y, to draw altitude at the same scale
+       */
+      metres_per_unit: number;
       /** @description Common lap length the laps are drawn on */
       length_m: number;
       /**

@@ -334,6 +334,9 @@ class TelemetryCarSerializer(serializers.Serializer[Any]):
     lap_time_s = serializers.FloatField()
     max_speed_kph = serializers.FloatField()
     full_throttle_share = serializers.FloatField()
+    t_s = serializers.ListField(
+        child=serializers.FloatField(), help_text="Seconds from the start of the lap at each point"
+    )
     speed_kph = serializers.ListField(child=serializers.FloatField())
     throttle_pct = serializers.ListField(child=serializers.FloatField())
     brake = serializers.ListField(child=serializers.BooleanField())
@@ -344,12 +347,24 @@ class TelemetryCarSerializer(serializers.Serializer[Any]):
     delta_s = serializers.ListField(
         child=serializers.FloatField(), help_text="Seconds behind the first car at each point"
     )
+    gap_m = serializers.ListField(
+        child=serializers.FloatField(),
+        help_text="Metres behind the first car when it passes each point (negative: ahead)",
+    )
+    elevation_m = serializers.ListField(
+        child=serializers.FloatField(),
+        allow_null=True,
+        help_text="Metres above the lap's lowest point; null for laps stored without altitude",
+    )
     braking_zones = BrakingZoneSerializer(many=True)
 
 
 class TelemetryCompareSerializer(serializers.Serializer[Any]):
     width = serializers.IntegerField(help_text="Screen box of x and y, like the track drawing")
     height = serializers.IntegerField()
+    metres_per_unit = serializers.FloatField(
+        help_text="Metres per screen unit of x and y, to draw altitude at the same scale"
+    )
     length_m = serializers.IntegerField(help_text="Common lap length the laps are drawn on")
     step_m = serializers.FloatField(help_text="Distance between two points")
     points = serializers.IntegerField()

@@ -6156,6 +6156,12 @@ components:
         full_throttle_share:
           type: number
           format: double
+        t_s:
+          type: array
+          items:
+            type: number
+            format: double
+          description: Seconds from the start of the lap at each point
         speed_kph:
           type: array
           items:
@@ -6195,6 +6201,21 @@ components:
             type: number
             format: double
           description: Seconds behind the first car at each point
+        gap_m:
+          type: array
+          items:
+            type: number
+            format: double
+          description: 'Metres behind the first car when it passes each point (negative:
+            ahead)'
+        elevation_m:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+          description: Metres above the lap's lowest point; null for laps stored without
+            altitude
         braking_zones:
           type: array
           items:
@@ -6205,13 +6226,16 @@ components:
       - car_number
       - delta_s
       - drs_open
+      - elevation_m
       - entry
       - full_throttle_share
+      - gap_m
       - gear
       - lap_number
       - lap_time_s
       - max_speed_kph
       - speed_kph
+      - t_s
       - throttle_pct
       - x
       - y
@@ -6223,6 +6247,11 @@ components:
           description: Screen box of x and y, like the track drawing
         height:
           type: integer
+        metres_per_unit:
+          type: number
+          format: double
+          description: Metres per screen unit of x and y, to draw altitude at the
+            same scale
         length_m:
           type: integer
           description: Common lap length the laps are drawn on
@@ -6240,6 +6269,7 @@ components:
       - cars
       - height
       - length_m
+      - metres_per_unit
       - points
       - step_m
       - width
