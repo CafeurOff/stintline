@@ -92,7 +92,11 @@ embankments. Original scope:
   synchronised, gap in metres and seconds, playback speeds, shared scrub and zoom with the 2D
   charts. ADR for the 3D stack.
 
-## Phase 19 — Ideas of our own (proposed, to validate one by one)
+## Phase 19 — Ideas of our own (validated 2026-11-19, in progress)
+Order: title maths (done, ADR 0022), driver form, undercut atlas, strategy preview (no
+temperature adjustment until one is calibrated: the forecast is shown next to it), season
+review, eras comparison.
+
 - **Title maths**: what each contender needs in the remaining rounds, when a title can be
   decided, eliminated drivers (exact arithmetic from the points system of the season).
 - **Strategy preview** before a race: likely one- and two-stop windows for the circuit from our
