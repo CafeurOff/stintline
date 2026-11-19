@@ -1,39 +1,55 @@
 import type { Schema } from "@stintline/api-types";
-import { ArrowRight, CalendarDays, Newspaper, Play, TrendingUp, Trophy } from "lucide-react";
-import { useState } from "react";
+import {
+  ChevronRight,
+  Flag as FlagIcon,
+  Newspaper,
+  Play,
+  Route,
+  Siren,
+  Timer,
+  TrendingUp,
+  Wrench,
+} from "lucide-react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 import { Link } from "react-router";
 
 import { NO_BACKDROP } from "@/components/dash/backdrop";
 import { Face } from "@/components/dash/Face";
 import { Move } from "@/components/dash/Move";
-import { Panel, Tile } from "@/components/dash/Panel";
-import { useTitle } from "@/features/championship/api";
-import { titleSummary } from "@/features/championship/summary";
-import { TitleSentence } from "@/features/championship/TitleFight";
+import { ExtrudedCircuit } from "@/components/glass/ExtrudedCircuit";
+import {
+  GlassCard,
+  IconBubble,
+  MoreLink,
+  PillSwitch,
+  pillGlass,
+  pillPrimary,
+} from "@/components/glass/Glass";
+import { CarImage } from "@/components/racing/CarImage";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import {
-  ClimberTile,
-  FactsPanel,
-  FastestLapTile,
-  FastestStopTile,
-  RaceControlTile,
-} from "@/features/hub/RaceFacts";
 import { weekendDates } from "@/features/calendar/dates";
-import { useHome, useProgression, useSeasonEvents, useStandings } from "@/features/hub/api";
+import { useTitle } from "@/features/championship/api";
+import { titleSummary } from "@/features/championship/summary";
+import { TitleSentence } from "@/features/championship/TitleFight";
 import { useForecasts } from "@/features/forecast/api";
-import { ForecastBadge } from "@/features/forecast/components/ForecastBadge";
+import { ForecastBadge, WeatherIcon } from "@/features/forecast/components/ForecastBadge";
+import { FILTERS, type Tag, useFacts } from "@/features/hub/facts";
+import { useHome, useProgression, useSeasonEvents, useStandings } from "@/features/hub/api";
+import { useCircuits } from "@/features/insights/api";
+import { EngineBadge } from "@/features/insights/components/common";
 import { useHeadlines, useReport } from "@/features/news/api";
 import { useAgo } from "@/features/news/useAgo";
 import { useSessionDetail } from "@/features/race/api";
+import { circuitAccent } from "@/lib/accent";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
 import { sessionLabel } from "@/lib/sessions";
-import { inkOn, teamColour, teamTint } from "@/lib/teams";
+import { teamColour } from "@/lib/teams";
 import { timeLeft, useClock } from "@/lib/useClock";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
@@ -41,13 +57,34 @@ type Entry = Schema<"Entry">;
 type Line = Schema<"StandingLine">;
 type Headline = Schema<"Headline">;
 type Event = Schema<"Event">;
+type Report = Schema<"RaceReport">;
 
 /** Standings rows shown on the home page; the full tables are on the standings page. */
 const STANDINGS_ROWS = 10;
+/** Facts shown at once in the facts card. */
+const FACTS_SHOWN = 4;
+
+/** Text in a context colour that stays readable in both themes (mixed towards the ink). */
+function readable(colour: string, pct = 70): string {
+  return `color-mix(in oklab, ${colour} ${String(pct)}%, var(--color-ink))`;
+}
 
 /**
- * Home page as a dashboard: key figures of the weekend and the season in tiles, both
- * championships with their last move, the last race in facts, the news and the calendar.
+ * Font size that makes a word fill `pct` % of its container's width (container query units),
+ * for the watermark names: heavy italic capitals are about 0.78 em wide.
+ */
+function fitWidth(word: string, pct: number): string {
+  return `${(pct / (Math.max(word.length, 3) * 0.78)).toFixed(2)}cqw`;
+}
+
+function glowStyle(colour: string, x = "70%"): CSSProperties {
+  return { "--glow": colour, "--glow-x": x } as CSSProperties;
+}
+
+/**
+ * Home page in the glass skin (pilot): the next Grand Prix in a hero with its countdown and
+ * our circuit figures, the last race around its winner, key figures as widgets, both
+ * championships, the facts, the news and the season's races.
  */
 export function HomePage() {
   const { t } = useI18n();
@@ -55,7 +92,7 @@ export function HomePage() {
   useDocumentTitle(null);
 
   if (home.isError) return <ErrorState error={home.error} onRetry={() => void home.refetch()} />;
-  if (!home.data) return <Skeleton className="h-[70vh]" />;
+  if (!home.data) return <Skeleton className="h-[70vh] rounded-[32px]" />;
   if (!home.data.last_race && !home.data.next_event) {
     return (
       <EmptyState title={t("home.empty.title")}>
@@ -70,44 +107,36 @@ function Dashboard({ home }: { home: Schema<"Home"> }) {
   const { t } = useI18n();
   const { last_race: last, next_event: next, season } = home;
   const report = useReport(last?.session_id ?? 0, last !== null).data ?? null;
-  const detail = useSessionDetail(last?.session_id ?? 0, last !== null).data ?? null;
   const events = useSeasonEvents(season).data?.results ?? [];
-  const entries = [...(detail?.entries ?? [])]
-    .filter((e) => e.finish_position != null)
-    .sort((a, b) => (a.finish_position ?? 99) - (b.finish_position ?? 99));
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       <h1 className="sr-only">{t("home.title")}</h1>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {next && <CountdownTile event={next} />}
-        {season !== null && <SeasonTile season={season} next={next} events={events} />}
-        {last && entries[0] && <WinnerTile race={last} winner={entries[0]} second={entries[1]} />}
-        {report?.pit_stops?.fastest && <FastestStopTile report={report} />}
-        {home.drivers.length > 1 && <LeaderTile lines={home.drivers} season={season} />}
-        {report?.biggest_gain && <ClimberTile entry={report.biggest_gain} />}
-        {report?.fastest_lap && <FastestLapTile entry={report.fastest_lap} />}
-        {report && <RaceControlTile report={report} />}
+      {next && <NextRaceHero event={next} />}
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        {last && <LastRaceCard race={last} report={report} />}
+        {home.drivers.length > 1 && <LeaderCard lines={home.drivers} season={season} />}
       </div>
 
-      {last && <LastRaceBanner race={last} />}
+      {report && <Widgets report={report} />}
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        {season !== null && <StandingsPanels season={season} />}
-        {report && <FactsPanel report={report} />}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        {season !== null && <StandingsCards season={season} />}
+        {report && <FactsCard report={report} />}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <NewsPanel />
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <NewsCard />
         {events.length > 0 && season !== null && (
-          <CalendarPanel season={season} events={events} nextId={next?.id ?? null} />
+          <RacesCard season={season} events={events} nextId={next?.id ?? null} />
         )}
       </div>
     </div>
   );
 }
 
-/* ------------------------------------------------------------------ shells */
+/* ------------------------------------------------------------------ helpers */
 
 function photoOf(entry: { driver: Schema<"Driver">; media?: Schema<"Media"> | null }) {
   return entry.media?.driver_image_url ?? entry.driver.photo_url;
@@ -117,12 +146,16 @@ function codeOf(driver: Schema<"Driver">): string {
   return driver.code ?? initials(driver.given_name, driver.family_name);
 }
 
-/* ------------------------------------------------------------------- tiles */
+function two(n: number): string {
+  return String(n).padStart(2, "0");
+}
 
-/** The next session, counted down on a race-red tile. */
-function CountdownTile({ event }: { event: Event }) {
+/* ---------------------------------------------------------------- next race */
+
+function NextRaceHero({ event }: { event: Event }) {
   const { t, locale } = useI18n();
   const now = useClock(1000);
+  const accent = circuitAccent(event.circuit.ref);
   const session = event.sessions
     .filter((s) => s.scheduled_start && new Date(s.scheduled_start).getTime() > now)
     .sort((a, b) => (a.scheduled_start ?? "").localeCompare(b.scheduled_start ?? ""))[0];
@@ -133,300 +166,541 @@ function CountdownTile({ event }: { event: Event }) {
     [left.days, t("countdown.days")],
     [left.hours, t("countdown.hours")],
     [left.minutes, t("countdown.minutes")],
-    [left.seconds, t("countdown.seconds")],
   ] as const;
+
   return (
     <section
-      aria-labelledby="home-countdown"
-      className="relative flex min-h-36 flex-col justify-between gap-3 overflow-hidden rounded-xl bg-action p-5 text-white"
+      aria-labelledby="home-next"
+      className="glass glow relative overflow-hidden rounded-[32px]"
+      style={glowStyle(accent, "85%")}
     >
-      <span
-        aria-hidden="true"
-        className="absolute inset-0 opacity-[0.12]"
-        style={{
-          backgroundImage: "repeating-linear-gradient(120deg, #fff 0 2px, transparent 2px 18px)",
-        }}
-      />
-      <h2 id="home-countdown" className="relative flex items-center gap-2 text-sm font-semibold">
-        <span className="rounded border border-white/50 px-1.5 text-xs">R{event.round}</span>
-        <span className="truncate">
-          {eventName(event.name, locale)}
-          {session ? ` · ${sessionLabel(session.kind, t)}` : ""}
-        </span>
-      </h2>
-      <div
-        role="timer"
-        aria-label={t("countdown.label", {
-          days: left.days,
-          hours: left.hours,
-          minutes: left.minutes,
-        })}
-        className="relative flex gap-5"
-      >
-        {parts.map(([value, unit]) => (
-          <span key={unit} aria-hidden="true" className="flex flex-col items-center">
-            <span className="num text-4xl leading-none font-semibold">
-              {String(value).padStart(2, "0")}
-            </span>
-            <span className="mt-1 text-[0.65rem] font-semibold uppercase opacity-80">{unit}</span>
-          </span>
-        ))}
-      </div>
-      {forecast && <ForecastBadge forecast={forecast} inverse className="relative" />}
-    </section>
-  );
-}
-
-/** Where the season stands: next Grand Prix with its flag and circuit, rounds done. */
-function SeasonTile({
-  season,
-  next,
-  events,
-}: {
-  season: number;
-  next: Event | null;
-  events: readonly Event[];
-}) {
-  const { t, locale } = useI18n();
-  const done = events.filter((e) => e.winner).length;
-  const total = events.length;
-  const share = total > 0 ? done / total : 0;
-  return (
-    <Tile label={t("dash.season", { season })} icon={<CalendarDays className="size-4" />}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          {next && (
-            <Link
-              to={`/events/${String(next.id)}`}
-              className="flex items-center gap-2 text-2xl font-extrabold hover:underline"
+      <div className="grid gap-6 p-6 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-10">
+        <div className="relative z-10 flex flex-col gap-7">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold">
+              <Flag country={event.circuit.country} className="text-base" />
+              {t("picker.round", { round: event.round })}
+            </p>
+            <h2
+              id="home-next"
+              className="mt-2 text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-6xl"
             >
-              <Flag country={next.circuit.country} className="text-xl" />
-              <span className="truncate">{next.circuit.locality}</span>
-            </Link>
-          )}
-          <p className="mt-1 text-xs text-muted">{next ? weekendDates(next, locale) : ""}</p>
-        </div>
-        {next?.circuit.outline && (
-          <CircuitMark path={next.circuit.outline} width={2.5} className="size-16 shrink-0" />
-        )}
-      </div>
-      {total > 0 && (
-        <div className="mt-auto flex items-center gap-3">
-          <span aria-hidden="true" className="flex flex-1 gap-[3px]">
-            {events.map((e) => (
-              <span
-                key={e.id}
-                className={`h-2 flex-1 rounded-[1px] ${
-                  e.winner ? "bg-gain" : e.id === next?.id ? "bg-mark" : "bg-raised"
-                }`}
-              />
-            ))}
-          </span>
-          <span className="num text-xs whitespace-nowrap text-muted">
-            {t("dash.seasonDone", { done, total })} · {Math.round(share * 100)}%
-          </span>
-        </div>
-      )}
-    </Tile>
-  );
-}
+              {eventName(event.name, locale)}
+            </h2>
+            <p className="mt-2 text-lg font-bold" style={{ color: readable(accent) }}>
+              {event.circuit.name}
+            </p>
+            <p className="text-sm font-medium text-muted">
+              {weekendDates(event, locale)} · {countryName(event.circuit.country, locale)}
+            </p>
+          </div>
 
-function WinnerTile({
-  race,
-  winner,
-  second,
-}: {
-  race: Schema<"LastRace">;
-  winner: Entry;
-  second: Entry | undefined;
-}) {
-  const { t, locale } = useI18n();
-  const margin =
-    second?.race_time_s != null && winner.race_time_s != null
-      ? `+${(second.race_time_s - winner.race_time_s).toFixed(3)} s`
-      : null;
-  return (
-    <section
-      aria-labelledby="home-winner"
-      className="relative flex min-h-36 overflow-hidden rounded-xl border border-line p-5"
-      style={{ backgroundColor: teamTint(winner.team_colour, 28) }}
-    >
-      <div className="relative z-10 flex max-w-[60%] min-w-0 flex-1 flex-col gap-1">
-        <h2 id="home-winner" className="flex items-center gap-2 text-sm font-semibold">
-          <Flag country={race.event.circuit.country} />
-          {t("dash.winner")}
-        </h2>
-        <Link
-          to={`/drivers/${winner.driver.ref}`}
-          className="mt-1 text-2xl leading-tight font-extrabold hover:underline"
-        >
-          {winner.driver.given_name}
-          <br />
-          {winner.driver.family_name}
-        </Link>
-        <p className="text-sm text-muted">
-          {eventName(race.event.name, locale)}
-          {margin ? ` · ${margin}` : ""}
-        </p>
+          <div>
+            <p className="text-sm font-semibold text-muted">
+              {session
+                ? t("home.startsIn", { session: sessionLabel(session.kind, t) })
+                : t("home.nextRace")}
+            </p>
+            <div
+              role="timer"
+              aria-label={t("countdown.label", {
+                days: left.days,
+                hours: left.hours,
+                minutes: left.minutes,
+              })}
+              className="mt-1 flex gap-6 sm:gap-9"
+            >
+              {parts.map(([value, unit]) => (
+                <span key={unit} aria-hidden="true" className="flex flex-col">
+                  <span
+                    className="num text-6xl leading-none font-extralight sm:text-8xl"
+                    style={{ color: readable(accent, 80) }}
+                  >
+                    {two(value)}
+                  </span>
+                  <span className="mt-1 text-xs font-semibold text-muted">{unit}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link to={`/events/${String(event.id)}`} className={pillPrimary}>
+              {t("home.schedule")}
+            </Link>
+            <Link to={`/circuits/${event.circuit.ref}`} className={pillGlass}>
+              <Route aria-hidden="true" className="size-4" />
+              {t("home.circuitStats")}
+            </Link>
+            {forecast && <ForecastBadge forecast={forecast} />}
+          </div>
+        </div>
+
+        <div className="relative flex flex-col justify-between gap-4">
+          {event.circuit.outline && (
+            <ExtrudedCircuit
+              path={event.circuit.outline}
+              colour={accent}
+              className="mx-auto w-full max-w-[520px] lg:-mt-6"
+            />
+          )}
+          <CircuitFigures circuitRef={event.circuit.ref} />
+        </div>
       </div>
-      <Face
-        url={photoOf(winner)}
-        label={codeOf(winner.driver)}
-        colour={winner.team_colour}
-        className="absolute -right-2 bottom-0 h-[125%] w-36"
-        style={NO_BACKDROP}
-      />
+      <WeekendStrip event={event} nextId={session?.id ?? null} />
     </section>
   );
 }
 
-function LeaderTile({ lines, season }: { lines: readonly Line[]; season: number | null }) {
+/** Our figures for the circuit (track DNA, ADR 0017), in the style of a stat sheet. */
+function CircuitFigures({ circuitRef }: { circuitRef: string }) {
   const { t, f } = useI18n();
-  const summary = titleSummary(useTitle(season).data);
-  const [first, second] = lines;
-  if (!first?.driver) return null;
-  const lead = (first.points ?? 0) - (second?.points ?? 0);
+  const profile = useCircuits().data?.find((c) => c.circuit.ref === circuitRef);
+  if (!profile) return null;
+  const stats: [string, string, string | null, boolean][] = [];
+  if (profile.lap_length_m != null) {
+    stats.push([t("home.stat.lapLength"), f.number(profile.lap_length_m / 1000, 3), "km", false]);
+  }
+  if (profile.top_speed_kph != null) {
+    stats.push([t("home.stat.topSpeed"), f.number(profile.top_speed_kph, 0), "km/h", false]);
+  }
+  if (profile.pit_loss_s != null) {
+    stats.push([t("home.stat.pitLoss"), f.number(profile.pit_loss_s, 1), "s", true]);
+  }
+  if (profile.degradation_s_per_lap != null) {
+    stats.push([
+      t("home.stat.wear"),
+      f.number(profile.degradation_s_per_lap, 3),
+      t("home.perLap"),
+      true,
+    ]);
+  }
+  if (profile.races > 0) {
+    stats.push([
+      t("home.stat.safetyCar"),
+      `${String(profile.safety_car_races)}/${String(profile.races)}`,
+      t("home.stat.races"),
+      false,
+    ]);
+  }
+  if (stats.length === 0) return null;
   return (
-    <Tile label={t("dash.leader")} icon={<Trophy className="size-4" />}>
-      <div className="flex items-center gap-3">
-        <Face
-          url={first.driver.photo_url}
-          label={codeOf(first.driver)}
-          colour={first.colour}
-          className="size-14 shrink-0 rounded-full"
-        />
-        <div className="min-w-0">
-          <Link
-            to={`/drivers/${first.driver.ref}`}
-            className="block truncate text-xl font-extrabold hover:underline"
-          >
-            {first.driver.family_name}
-          </Link>
-          <p className="num text-2xl font-semibold">
-            {f.number(first.points ?? 0, 0)} <span className="text-sm text-muted">pts</span>
-          </p>
+    <dl className="relative z-10 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+      {stats.map(([label, value, unit, ours]) => (
+        <div key={label} className="flex flex-col gap-0.5">
+          <dd className="order-2 flex items-baseline gap-1">
+            <span className="num text-2xl font-bold">{value}</span>
+            {unit && <span className="text-xs font-semibold text-muted">{unit}</span>}
+          </dd>
+          <dt className="order-3 flex items-center gap-1.5 text-xs font-medium text-muted">
+            {label}
+          </dt>
+          {ours && (
+            <span className="order-4 w-fit">
+              <EngineBadge />
+            </span>
+          )}
         </div>
-      </div>
-      {summary && summary.kind !== "open" ? (
-        <div className="mt-auto text-xs text-muted">
-          <TitleSentence summary={summary} />
-        </div>
-      ) : (
-        second?.driver && (
-          <p className="mt-auto flex items-center gap-1.5 text-xs text-muted">
-            <TrendingUp aria-hidden="true" className="size-3.5 text-gain" />
-            {t("dash.leadBy", { points: f.number(lead, 0), second: second.driver.family_name })}
-          </p>
-        )
-      )}
-    </Tile>
+      ))}
+    </dl>
   );
 }
 
-/* ----------------------------------------------------------- last race band */
+/** The sessions of the weekend in a row: day, name, local time and the sky. */
+function WeekendStrip({ event, nextId }: { event: Event; nextId: number | null }) {
+  const { t, locale } = useI18n();
+  const forecasts = useForecasts(event.id).data ?? [];
+  const tag = locale === "fr" ? "fr-FR" : "en-GB";
+  const day = new Intl.DateTimeFormat(tag, { day: "2-digit" });
+  const weekday = new Intl.DateTimeFormat(tag, { weekday: "short" });
+  const time = new Intl.DateTimeFormat(tag, { hour: "2-digit", minute: "2-digit" });
+  const sessions = event.sessions
+    .filter((s): s is typeof s & { scheduled_start: string } => Boolean(s.scheduled_start))
+    .sort((a, b) => a.scheduled_start.localeCompare(b.scheduled_start));
+  if (sessions.length === 0) return null;
+  return (
+    <div className="relative border-t border-line">
+      <h3 className="sr-only">{t("home.weekend")}</h3>
+      <ol className="flex overflow-x-auto">
+        {sessions.map((s) => {
+          const start = new Date(s.scheduled_start);
+          const forecast = forecasts.find((fc) => fc.session_id === s.id);
+          const isNext = s.id === nextId;
+          return (
+            <li
+              key={s.id}
+              className={`flex min-w-44 flex-1 items-center gap-3 border-r border-line px-6 py-4 last:border-r-0 ${
+                isNext ? "bg-ink/[0.06]" : ""
+              }`}
+            >
+              <span className="flex w-9 flex-col items-center leading-none">
+                <span className="num text-2xl font-bold">{day.format(start)}</span>
+                <span className="mt-1 text-[0.65rem] font-bold text-muted uppercase">
+                  {weekday.format(start)}
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-bold">{sessionLabel(s.kind, t)}</span>
+                <span className="num block text-xs text-muted">{time.format(start)}</span>
+              </span>
+              {forecast && (
+                <span className="flex items-center gap-1 text-xs text-muted">
+                  <WeatherIcon code={forecast.weather_code} className="size-4" />
+                  {forecast.air_c != null && (
+                    <span className="num">{Math.round(forecast.air_c)}°</span>
+                  )}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
 
-function LastRaceBanner({ race }: { race: Schema<"LastRace"> }) {
+/* ---------------------------------------------------------------- last race */
+
+function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Report | null }) {
   const { t, f, locale } = useI18n();
+  const detail = useSessionDetail(race.session_id).data ?? null;
+  const winner = race.podium[0];
+  const colour = teamColour(winner?.team_colour);
+  const winnerEntry: Entry | undefined =
+    detail?.entries.find((e) => e.car_number === winner?.car_number) ?? winner;
+  const margin = report?.podium[1]?.gap_s;
+  const figures: [string, string][] = [];
+  if (margin != null) figures.push([`+${f.number(margin, 3)}`, t("home.marginLabel")]);
+  if (report?.winner_wins != null) figures.push([two(report.winner_wins), t("home.seasonWins")]);
+  if (report?.winner_strategy) figures.push([two(report.winner_strategy.stops), t("home.pits")]);
+
   return (
     <section
       aria-labelledby="home-last"
-      className="relative overflow-hidden rounded-xl border border-line bg-panel"
+      className="glass glow relative flex min-h-[460px] flex-col overflow-hidden rounded-[32px] xl:col-span-2"
+      style={glowStyle(colour, "78%")}
     >
-      {race.event.circuit.outline && (
-        <CircuitMark
-          path={race.event.circuit.outline}
-          stroke="var(--color-line-strong)"
-          width={10}
-          className="pointer-events-none absolute top-1/2 left-[30%] hidden h-[150%] -translate-y-1/2 lg:block"
-        />
+      {winner && (
+        <div
+          aria-hidden="true"
+          className="@container relative h-72 overflow-hidden sm:absolute sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[58%]"
+        >
+          <span
+            className="watermark absolute top-6 right-3 whitespace-nowrap uppercase"
+            style={{ fontSize: fitWidth(winner.driver.family_name, 96) }}
+          >
+            {winner.driver.family_name}
+          </span>
+          <CarImage
+            url={winnerEntry?.media?.car_image_url}
+            className="absolute bottom-5 left-[14%] z-[1] w-[72%] drop-shadow-[0_20px_30px_rgb(0_0_0/0.6)]"
+          />
+          <Face
+            url={photoOf(winnerEntry ?? winner)}
+            label={codeOf(winner.driver)}
+            colour={winner.team_colour}
+            className="absolute right-[6%] bottom-0 z-[2] h-[94%] w-auto max-w-[70%] !object-contain object-bottom text-5xl"
+            style={NO_BACKDROP}
+          />
+        </div>
       )}
-      <div className="relative grid items-end gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        <div className="flex flex-col gap-3 self-center">
-          <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
-            <Flag country={race.event.circuit.country} className="text-base" />
-            <span className="font-semibold text-mark-text">{t("home.lastRace")}</span>
-            <span>
-              · {t("picker.round", { round: race.event.round })} · {f.date(race.event.race_date)}
-            </span>
-          </p>
-          <h2 id="home-last" className="text-4xl leading-none font-extrabold sm:text-5xl">
+
+      <div className="relative z-10 flex flex-1 flex-col gap-5 p-6 sm:max-w-[50%] sm:p-9">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted">
+          <span className="rounded-full bg-mark px-2.5 py-0.5 text-xs font-bold text-white">
+            {t("home.lastRace")}
+          </span>
+          {t("picker.round", { round: race.event.round })} · {f.date(race.event.race_date)}
+        </p>
+        <div>
+          <h2
+            id="home-last"
+            className="text-4xl leading-[0.95] font-extrabold tracking-tight sm:text-5xl"
+          >
             {eventName(race.event.name, locale)}
           </h2>
-          <p className="text-muted">
-            {race.event.circuit.name} · {countryName(race.event.circuit.country, locale)}
+          <p className="mt-2 flex items-center gap-2 text-sm text-muted">
+            <Flag country={race.event.circuit.country} />
+            {race.event.circuit.name}
           </p>
-          {race.podium[0] && (
-            <p className="text-lg font-semibold">
-              {t("home.winnerLine", {
-                winner: `${race.podium[0].driver.given_name} ${race.podium[0].driver.family_name}`,
-                team: race.podium[0].team.name,
-              })}
-            </p>
-          )}
-          <div className="mt-2 flex flex-wrap gap-3">
-            {race.has_data && (
-              <Link
-                to={`/sessions/${String(race.session_id)}`}
-                className="inline-flex items-center gap-2 rounded-lg bg-action px-4 py-2.5 font-semibold text-white hover:brightness-110"
-              >
-                <Play aria-hidden="true" className="size-4 fill-current" />
-                {t("home.replay")}
-              </Link>
-            )}
-            <Link
-              to={`/events/${String(race.event.id)}`}
-              className="inline-flex items-center gap-2 rounded-lg border border-line-strong bg-raised px-4 py-2.5 font-semibold hover:border-ink"
-            >
-              {t("home.results")}
-            </Link>
-            <Link
-              to={`/news/${String(race.session_id)}`}
-              className="inline-flex items-center gap-2 rounded-lg px-2 py-2.5 font-semibold hover:underline"
-            >
-              {t("home.report")}
-              <ArrowRight aria-hidden="true" className="size-4" />
-            </Link>
-          </div>
         </div>
-        <ol aria-label={t("home.podium")} className="grid grid-cols-3 items-end gap-3">
-          {[1, 0, 2].map((index) => {
-            const entry = race.podium[index];
-            if (!entry) return <li key={index} />;
-            const colour = teamColour(entry.team_colour);
-            return (
-              <li key={entry.car_number}>
-                <Link
-                  to={`/drivers/${entry.driver.ref}`}
-                  className="group flex flex-col overflow-hidden rounded-lg"
-                  style={{ backgroundColor: teamTint(entry.team_colour, 30) }}
-                >
-                  <Face
-                    url={photoOf(entry)}
-                    label={codeOf(entry.driver)}
-                    colour={entry.team_colour}
-                    className={`w-full text-3xl ${index === 0 ? "h-60" : "h-48"}`}
-                    style={NO_BACKDROP}
-                  />
+        {winner && (
+          <p className="text-lg font-bold">
+            {t("home.winnerLine", {
+              winner: `${winner.driver.given_name} ${winner.driver.family_name}`,
+              team: winner.team.name,
+            })}
+          </p>
+        )}
+        {figures.length > 0 && (
+          <dl className="flex gap-7">
+            {figures.map(([value, label]) => (
+              <div key={label} className="flex flex-col">
+                <dd className="num order-2 text-3xl font-bold" style={{ color: readable(colour) }}>
+                  {value}
+                </dd>
+                <dt className="order-3 text-xs font-semibold text-muted">{label}</dt>
+              </div>
+            ))}
+          </dl>
+        )}
+        <div className="flex flex-wrap gap-3">
+          {race.has_data && (
+            <Link to={`/sessions/${String(race.session_id)}`} className={pillPrimary}>
+              <Play aria-hidden="true" className="size-4 fill-current" />
+              {t("home.replay")}
+            </Link>
+          )}
+          <Link to={`/events/${String(race.event.id)}`} className={pillGlass}>
+            {t("home.results")}
+          </Link>
+          <Link to={`/news/${String(race.session_id)}`} className={pillGlass}>
+            {t("home.report")}
+          </Link>
+        </div>
+
+        <ol aria-label={t("home.podium")} className="mt-auto flex flex-col gap-2">
+          {race.podium.map((entry, index) => (
+            <li key={entry.car_number}>
+              <Link
+                to={`/drivers/${entry.driver.ref}`}
+                className="glass flex items-center gap-3 rounded-2xl py-2 pr-4 pl-3 hover:border-line-strong"
+              >
+                <span className="num w-7 text-center text-xl font-extrabold">{index + 1}</span>
+                <Face
+                  url={photoOf(entry)}
+                  label={codeOf(entry.driver)}
+                  colour={entry.team_colour}
+                  className="size-9 shrink-0 rounded-full text-[0.6rem]"
+                />
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate font-bold">{entry.driver.family_name}</span>
                   <span
-                    className="flex items-center gap-2 p-2.5"
-                    style={{ backgroundColor: colour, color: inkOn(colour) }}
+                    className="block truncate text-xs font-semibold"
+                    style={{ color: readable(teamColour(entry.team_colour)) }}
                   >
-                    <span className="num text-xl leading-none font-bold">{index + 1}</span>
-                    <span className="truncate font-extrabold uppercase group-hover:underline">
-                      {entry.driver.family_name}
-                    </span>
+                    {entry.team.name}
                   </span>
-                </Link>
-              </li>
-            );
-          })}
+                </span>
+                <ChevronRight aria-hidden="true" className="size-4 text-muted" />
+              </Link>
+            </li>
+          ))}
         </ol>
       </div>
     </section>
   );
 }
 
-/* --------------------------------------------------------------- standings */
+/* ------------------------------------------------------------------- leader */
+
+function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number | null }) {
+  const { t, f } = useI18n();
+  const summary = titleSummary(useTitle(season).data);
+  const [first, second] = lines;
+  if (!first?.driver) return null;
+  const colour = teamColour(first.colour);
+  const lead = (first.points ?? 0) - (second?.points ?? 0);
+  const figures: [string, string][] = [
+    [two(first.position ?? 1), t("home.pos")],
+    [f.number(first.points ?? 0, 0), t("home.pts")],
+    [two(first.wins ?? 0), t("home.wins")],
+  ];
+  return (
+    <GlassCard
+      id="home-leader"
+      eyebrow={season !== null ? t("home.drivers", { season }) : undefined}
+      title={t("dash.leader")}
+      glow={colour}
+      className="@container min-h-[460px] rounded-[32px]"
+      bodyClassName="justify-end"
+    >
+      <span
+        aria-hidden="true"
+        className="watermark absolute top-2 right-4 uppercase"
+        style={{ fontSize: fitWidth(codeOf(first.driver), 88) }}
+      >
+        {codeOf(first.driver)}
+      </span>
+      <Face
+        url={first.driver.photo_url}
+        label={codeOf(first.driver)}
+        colour={first.colour}
+        className="absolute right-0 bottom-0 h-[82%] w-auto max-w-[80%] !object-contain object-bottom text-4xl"
+        style={NO_BACKDROP}
+      />
+      <div className="relative z-10 flex flex-col gap-4 bg-gradient-to-t from-bg/80 via-bg/30 to-transparent p-6 pt-24">
+        <Link
+          to={`/drivers/${first.driver.ref}`}
+          className="w-fit text-3xl leading-none font-extrabold tracking-tight hover:underline"
+        >
+          {first.driver.given_name}
+          <br />
+          {first.driver.family_name}
+        </Link>
+        <dl className="flex gap-6">
+          {figures.map(([value, label]) => (
+            <div key={label} className="flex flex-col">
+              <dd className="num order-2 text-3xl font-bold" style={{ color: readable(colour) }}>
+                {value}
+              </dd>
+              <dt className="order-3 text-xs font-semibold text-muted uppercase">{label}</dt>
+            </div>
+          ))}
+        </dl>
+        <div className="glass rounded-2xl px-4 py-3 text-sm">
+          {summary && summary.kind !== "open" ? (
+            <TitleSentence summary={summary} />
+          ) : (
+            second?.driver && (
+              <p className="flex items-center gap-2">
+                <TrendingUp aria-hidden="true" className="size-4 text-gain" />
+                {t("dash.leadBy", {
+                  points: f.number(lead, 0),
+                  second: second.driver.family_name,
+                })}
+              </p>
+            )
+          )}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+/* ------------------------------------------------------------------ widgets */
+
+function DriverChip({ entry }: { entry: Schema<"ReportEntry"> }) {
+  return (
+    <Link
+      to={`/drivers/${entry.driver.ref}`}
+      className="mt-auto flex items-center gap-2 text-sm hover:underline"
+    >
+      <Face
+        url={entry.driver.photo_url}
+        label={codeOf(entry.driver)}
+        colour={entry.team_colour}
+        className="size-8 shrink-0 rounded-full text-[0.6rem]"
+      />
+      <span className="min-w-0 leading-tight">
+        <span className="block truncate font-bold">{entry.driver.family_name}</span>
+        <span
+          className="block truncate text-xs font-semibold"
+          style={{ color: readable(teamColour(entry.team_colour)) }}
+        >
+          {entry.team.name}
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function Widget({
+  label,
+  icon,
+  children,
+  solid = false,
+}: {
+  label: string;
+  icon: ReactNode;
+  children: ReactNode;
+  solid?: boolean;
+}) {
+  const id = `widget-${label.replace(/\W+/g, "-").toLowerCase()}`;
+  return (
+    <section
+      aria-labelledby={id}
+      className={`relative flex min-h-44 flex-col gap-3 overflow-hidden rounded-[28px] p-5 ${
+        solid
+          ? "bg-[#ffe600] text-[#0b0b0d] [&_.text-muted]:text-[#0b0b0d]/70 [&_a]:text-[#0b0b0d]"
+          : "glass"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 id={id} className="text-sm font-bold">
+          {label}
+        </h2>
+        <IconBubble>{icon}</IconBubble>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Widgets({ report }: { report: Report }) {
+  const { t, f } = useI18n();
+  const stop = report.pit_stops?.fastest;
+  const gain = report.biggest_gain;
+  const lap = report.fastest_lap;
+  const n = report.neutralisations;
+  const counts = [
+    ["SC", n?.safety_cars ?? 0],
+    ["VSC", n?.virtual_safety_cars ?? 0],
+    ["RED", n?.red_flags ?? 0],
+  ] as const;
+  return (
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      {stop && (
+        <Widget label={t("dash.fastestStop")} icon={<Wrench />} solid>
+          <p className="num text-6xl leading-none font-extrabold tracking-tight">
+            {f.number(stop.duration_s, 2)}
+            <span className="ml-1 text-2xl">s</span>
+          </p>
+          <DriverChip entry={stop.entry} />
+        </Widget>
+      )}
+      {gain && (
+        <Widget label={t("dash.climber")} icon={<TrendingUp />}>
+          <p className="flex items-baseline gap-3">
+            <span className="num text-6xl leading-none font-extrabold tracking-tight text-gain">
+              +{(gain.grid_position ?? 0) - (gain.finish_position ?? 0)}
+            </span>
+            <span className="num text-sm font-semibold text-muted">
+              {t("dash.climb", {
+                grid: gain.grid_position ?? "?",
+                finish: gain.finish_position ?? "?",
+              })}
+            </span>
+          </p>
+          <DriverChip entry={gain} />
+        </Widget>
+      )}
+      {lap && (
+        <Widget label={t("dash.fastestLap")} icon={<Timer />}>
+          <p className="num text-5xl leading-none font-extrabold tracking-tight text-t-purple">
+            {f.lapTime(lap.fastest_lap_s)}
+          </p>
+          <DriverChip entry={lap} />
+        </Widget>
+      )}
+      <Widget label={t("dash.raceControl")} icon={<Siren />}>
+        <div className="flex gap-2">
+          {counts.map(([label, count]) => (
+            <span
+              key={label}
+              className={`flex flex-1 flex-col items-center rounded-2xl py-2 ${
+                count > 0
+                  ? label === "RED"
+                    ? "bg-mark text-white"
+                    : "bg-[#ffe600] text-[#0b0b0d]"
+                  : "bg-ink/5 text-muted"
+              }`}
+            >
+              <span className="num text-3xl leading-none font-extrabold">{count}</span>
+              <span className="mt-1 text-[0.65rem] font-bold">{label}</span>
+            </span>
+          ))}
+        </div>
+        <p className="mt-auto flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <FlagIcon aria-hidden="true" className="size-3.5" />
+          {t("dash.leadChanges", { n: report.story?.lead_changes ?? 0 })}
+        </p>
+      </Widget>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- standings */
 
 /** Places won (positive) or lost since the previous round. */
 function lastMove(positions: readonly (number | null)[]): number {
@@ -436,7 +710,7 @@ function lastMove(positions: readonly (number | null)[]): number {
   return now === undefined || before === undefined ? 0 : before - now;
 }
 
-function StandingsPanels({ season }: { season: number }) {
+function StandingsCards({ season }: { season: number }) {
   const { t } = useI18n();
   const standings = useStandings(season, null).data;
   const progression = useProgression(season).data;
@@ -448,14 +722,14 @@ function StandingsPanels({ season }: { season: number }) {
   );
   return (
     <>
-      <StandingsTable
+      <StandingsCard
         id="home-drivers"
         title={t("home.drivers", { season })}
         lines={standings?.drivers.slice(0, STANDINGS_ROWS) ?? []}
         moves={driverMoves}
         to={`/standings/${String(season)}`}
       />
-      <StandingsTable
+      <StandingsCard
         id="home-teams"
         title={t("home.constructors", { season })}
         lines={standings?.constructors.slice(0, STANDINGS_ROWS) ?? []}
@@ -466,7 +740,7 @@ function StandingsPanels({ season }: { season: number }) {
   );
 }
 
-function StandingsTable({
+function StandingsCard({
   id,
   title,
   lines,
@@ -480,72 +754,76 @@ function StandingsTable({
   to: string;
 }) {
   const { t, f } = useI18n();
-  const top = lines[0]?.points ?? 0;
+  const leader = lines[0];
+  const isDrivers = Boolean(leader?.driver);
   return (
-    <Panel id={id} title={title} icon={<Trophy className="size-5" />}>
+    <GlassCard
+      id={id}
+      title={title}
+      glow={leader ? teamColour(leader.colour) : null}
+      action={<MoreLink to={to}>{t("home.allStandings")}</MoreLink>}
+    >
       <table className="w-full text-sm">
-        <thead>
-          <tr className="text-xs text-muted uppercase">
-            <th scope="col" className="py-2.5 pl-5 text-left font-semibold">
-              {t("col.position")}
-            </th>
-            <th scope="col" className="py-2.5 text-left font-semibold">
-              {lines[0]?.driver ? t("col.driver") : t("col.team")}
-            </th>
-            <th scope="col" className="py-2.5 text-right font-semibold">
-              {t("col.points")}
-            </th>
-            <th scope="col" className="py-2.5 pr-5 text-right font-semibold">
-              {t("dash.evo")}
-            </th>
+        <thead className="sr-only">
+          <tr>
+            <th scope="col">{t("col.position")}</th>
+            <th scope="col">{isDrivers ? t("col.driver") : t("col.team")}</th>
+            <th scope="col">{t("col.points")}</th>
+            <th scope="col">{t("dash.evo")}</th>
           </tr>
         </thead>
         <tbody>
           {lines.map((line, index) => {
             const driver = line.driver;
             const ref = driver?.ref ?? line.team?.ref ?? String(index);
-            const points = line.points ?? 0;
+            const colour = teamColour(line.colour);
             return (
-              <tr key={ref} className="border-t border-line hover:bg-raised/60">
-                <td className="num py-2 pl-5 font-semibold">{line.position_text}</td>
-                <td className="py-2">
+              <tr key={ref} className="group border-t border-line first:border-0">
+                <td className="num w-12 py-3 pl-6 text-sm font-bold text-muted">
+                  {line.position != null ? two(line.position) : line.position_text}
+                </td>
+                <td className="py-3">
                   <Link
                     to={driver ? `/drivers/${driver.ref}` : `/teams/${line.team?.ref ?? ""}`}
-                    className="flex items-center gap-2.5 hover:underline"
+                    className="flex items-center gap-3"
                   >
                     {driver ? (
                       <Face
                         url={driver.photo_url}
                         label={codeOf(driver)}
                         colour={line.colour}
-                        className="size-8 shrink-0 rounded-full text-[0.6rem]"
+                        className="size-9 shrink-0 rounded-full text-[0.6rem]"
                       />
                     ) : (
                       <span
                         aria-hidden="true"
-                        className="h-6 w-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: teamColour(line.colour) }}
+                        className="h-8 w-1.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: colour }}
                       />
                     )}
-                    <span className="truncate font-semibold">
-                      {driver ? driver.family_name : line.team?.name}
-                    </span>
-                    {driver && (
+                    <span className="min-w-0 leading-tight">
+                      <span className="block truncate font-bold group-hover:underline">
+                        {driver ? driver.family_name : line.team?.name}
+                      </span>
                       <span
-                        aria-hidden="true"
-                        className="size-2 shrink-0 rounded-full"
-                        style={{ backgroundColor: teamColour(line.colour) }}
-                      />
-                    )}
+                        className="block truncate text-xs font-semibold"
+                        style={{ color: readable(colour) }}
+                      >
+                        {driver ? (line.team?.name ?? codeOf(driver)) : t("home.wins")}
+                        {!driver && ` ${String(line.wins ?? 0)}`}
+                      </span>
+                    </span>
                   </Link>
                 </td>
-                <td className="num py-2 text-right whitespace-nowrap">
-                  <span className="font-semibold">{f.number(points, 0)}</span>
-                  {index > 0 && (
-                    <span className="ml-2 text-xs text-muted">−{f.number(top - points, 0)}</span>
-                  )}
+                <td className="py-3 text-right whitespace-nowrap">
+                  <span className="num block text-base leading-tight font-extrabold">
+                    {f.number(line.points ?? 0, 0)}
+                  </span>
+                  <span className="block text-[0.65rem] font-bold text-muted">
+                    {t("home.pts").toUpperCase()}
+                  </span>
                 </td>
-                <td className="py-2 pr-5 text-right">
+                <td className="w-16 py-3 pr-6 text-right">
                   <Move value={moves.get(ref) ?? 0} />
                 </td>
               </tr>
@@ -553,14 +831,59 @@ function StandingsTable({
           })}
         </tbody>
       </table>
+    </GlassCard>
+  );
+}
+
+/* -------------------------------------------------------------------- facts */
+
+const TAG_COLOUR: Record<Tag, string> = {
+  driver: "#2f6bff",
+  team: "#1ed760",
+  race: "#ffe600",
+};
+
+function FactsCard({ report }: { report: Report }) {
+  const { t, f, locale } = useI18n();
+  const facts = useFacts(report);
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
+  const shown = facts.filter((x) => filter === "all" || x.tag === filter).slice(0, FACTS_SHOWN);
+  return (
+    <GlassCard
+      id="home-facts"
+      title={t("dash.facts")}
+      eyebrow={`${eventName(report.event.name, locale)} · ${f.date(report.event.race_date)}`}
+    >
+      <div className="px-6 pt-2 pb-4">
+        <PillSwitch
+          label={t("dash.facts")}
+          value={filter}
+          options={FILTERS.map((v) => [v, v === "all" ? t("dash.all") : t(`dash.tag.${v}`)])}
+          onChange={setFilter}
+        />
+      </div>
+      <ul className="flex flex-col gap-3 px-4 pb-4">
+        {shown.map((fact) => (
+          <li key={fact.key} className="flex flex-col gap-2 rounded-2xl bg-ink/[0.04] p-4">
+            <span
+              className="sticker w-fit text-[0.65rem] font-extrabold uppercase"
+              style={{ "--sticker": TAG_COLOUR[fact.tag] } as CSSProperties}
+            >
+              {t(`dash.tag.${fact.tag}`)}
+            </span>
+            <p className="leading-snug font-bold">{fact.title}</p>
+            {fact.body && <p className="text-sm text-muted">{fact.body}</p>}
+          </li>
+        ))}
+      </ul>
       <Link
-        to={to}
-        className="mt-auto flex items-center justify-center gap-2 border-t border-line py-3 text-sm font-semibold hover:bg-raised"
+        to={`/news/${String(report.session_id)}`}
+        className="mt-auto flex items-center justify-center gap-2 border-t border-line py-4 text-sm font-bold hover:bg-ink/5"
       >
-        {t("home.allStandings")}
-        <ArrowRight aria-hidden="true" className="size-4" />
+        {t("home.report")}
+        <ChevronRight aria-hidden="true" className="size-4" />
       </Link>
-    </Panel>
+    </GlassCard>
   );
 }
 
@@ -585,74 +908,67 @@ function NewsThumb({ headline, className }: { headline: Headline; className: str
   return (
     <span
       aria-hidden="true"
-      className={`grid place-items-center bg-raised text-muted ${className}`}
+      className={`glow grid place-items-center text-muted ${className}`}
+      style={{ "--glow": "#2f6bff", "--glow-x": "50%" } as CSSProperties}
     >
-      <Newspaper className="size-6" />
+      <Newspaper className="size-7" />
     </span>
   );
 }
 
-function NewsPanel() {
+function NewsCard() {
   const { t, locale } = useI18n();
   const ago = useAgo();
   const headlines = useHeadlines(locale, 8).data ?? [];
   if (headlines.length === 0) return null;
   const [lead, ...rest] = headlines;
   return (
-    <Panel
+    <GlassCard
       id="home-news"
       title={t("news.latest")}
-      icon={<Newspaper className="size-5" />}
       className="xl:col-span-2"
-      action={
-        <Link
-          to="/news"
-          className="flex items-center gap-1 text-sm font-semibold text-muted hover:text-ink"
-        >
-          {t("news.all")}
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
-      }
+      action={<MoreLink to="/news">{t("news.all")}</MoreLink>}
     >
-      <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 p-4 pt-2 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         {lead && (
           <a
             href={lead.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="group flex flex-col self-start overflow-hidden rounded-lg border border-line bg-raised/50"
+            className="group relative flex min-h-80 flex-col justify-end self-stretch overflow-hidden rounded-3xl"
           >
-            <NewsThumb
-              headline={lead}
-              className={lead.image_url ? "aspect-[16/9] w-full" : "h-28 w-full"}
+            <NewsThumb headline={lead} className="absolute inset-0 size-full" />
+            <span
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"
             />
-            <span className="flex flex-col gap-1.5 p-4">
-              <span className="text-xs font-bold text-mark-text uppercase">
+            <span className="relative flex flex-col gap-2 p-5 text-white">
+              <span className="w-fit rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-bold backdrop-blur">
                 {lead.source_name} · {ago(lead.published_at)}
               </span>
-              <span className="text-xl leading-snug font-bold group-hover:underline">
+              <span className="text-2xl leading-tight font-extrabold group-hover:underline">
                 {lead.title}
                 <span className="sr-only"> {t("news.opensNew")}</span>
               </span>
             </span>
           </a>
         )}
-        <ul className="flex flex-col divide-y divide-line">
-          {rest.slice(0, 6).map((h) => (
-            <li key={h.url}>
+        <ul className="flex flex-col">
+          {rest.slice(0, 5).map((h) => (
+            <li key={h.url} className="border-t border-line first:border-0">
               <a
                 href={h.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex gap-3 py-2.5"
+                className="group flex items-center gap-4 py-3"
               >
-                <NewsThumb headline={h} className="h-16 w-24 shrink-0 rounded-md" />
-                <span className="flex min-w-0 flex-col gap-1">
-                  <span className="line-clamp-2 leading-snug font-semibold group-hover:underline">
+                <NewsThumb headline={h} className="h-16 w-24 shrink-0 rounded-2xl" />
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="line-clamp-2 leading-snug font-bold group-hover:underline">
                     {h.title}
                     <span className="sr-only"> {t("news.opensNew")}</span>
                   </span>
-                  <span className="text-xs text-muted">
+                  <span className="text-xs font-medium text-muted">
                     {h.source_name} · {ago(h.published_at)}
                   </span>
                 </span>
@@ -661,13 +977,13 @@ function NewsPanel() {
           ))}
         </ul>
       </div>
-    </Panel>
+    </GlassCard>
   );
 }
 
-/* ----------------------------------------------------------------- calendar */
+/* -------------------------------------------------------------------- races */
 
-function CalendarPanel({
+function RacesCard({
   season,
   events,
   nextId,
@@ -677,68 +993,78 @@ function CalendarPanel({
   nextId: number | null;
 }) {
   const { t, locale } = useI18n();
+  const upcoming = events.filter((e) => !e.winner);
+  const past = events.filter((e) => e.winner).reverse();
+  const [view, setView] = useState<"upcoming" | "past">(upcoming.length > 0 ? "upcoming" : "past");
+  const shown = view === "upcoming" ? upcoming : past;
+  const tag = locale === "fr" ? "fr-FR" : "en-GB";
+  const day = new Intl.DateTimeFormat(tag, { day: "2-digit", timeZone: "UTC" });
+  const month = new Intl.DateTimeFormat(tag, { month: "short", timeZone: "UTC" });
   return (
-    <Panel
+    <GlassCard
       id="home-season"
       title={t("home.season", { season })}
-      icon={<CalendarDays className="size-5" />}
-      action={
-        <Link
-          to={`/calendar/${String(season)}`}
-          className="flex items-center gap-1 text-sm font-semibold text-muted hover:text-ink"
-        >
-          {t("home.calendar")}
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </Link>
-      }
+      eyebrow={t("dash.seasonDone", { done: past.length, total: events.length })}
+      action={<MoreLink to={`/calendar/${String(season)}`}>{t("home.calendar")}</MoreLink>}
     >
-      <ol className="flex max-h-[34rem] flex-col overflow-y-auto">
-        {events.map((event) => {
+      <div className="px-6 pt-2 pb-3">
+        <PillSwitch
+          label={t("home.season", { season })}
+          value={view}
+          options={[
+            ["upcoming", t("home.upcomingRaces")],
+            ["past", t("home.pastRaces")],
+          ]}
+          onChange={setView}
+        />
+      </div>
+      <ol className="flex max-h-[30rem] flex-col overflow-y-auto">
+        {shown.map((event) => {
+          const raceDay = new Date(`${event.race_date}T12:00:00Z`);
+          const accent = circuitAccent(event.circuit.ref);
           const winner = event.winner;
-          const isNext = event.id === nextId;
           return (
-            <li key={event.id} className="border-t border-line first:border-0">
+            <li key={event.id} className="border-t border-line">
               <Link
                 to={`/events/${String(event.id)}`}
-                className={`flex items-center gap-3 px-4 py-2.5 hover:bg-raised/60 ${
-                  isNext ? "bg-mark/10" : ""
+                className={`flex items-center gap-4 px-6 py-3 hover:bg-ink/5 ${
+                  event.id === nextId ? "bg-ink/[0.06]" : ""
                 }`}
               >
-                <span className="num w-7 text-xs text-muted">R{event.round}</span>
-                <Flag country={event.circuit.country} className="text-base" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">
-                    {eventName(event.name, locale)}
+                <span className="flex w-10 flex-col leading-none">
+                  <span className="num text-xl font-bold">{day.format(raceDay)}</span>
+                  <span className="text-xs font-semibold text-muted">{month.format(raceDay)}</span>
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate font-bold">{eventName(event.name, locale)}</span>
+                  <span className="block truncate text-xs font-semibold text-muted">
+                    R{event.round} ·{" "}
+                    <span style={{ color: readable(accent) }}>{event.circuit.locality}</span>
                   </span>
-                  <span className="block text-xs text-muted">{weekendDates(event, locale)}</span>
                 </span>
                 {winner ? (
-                  <span className="flex items-center gap-2 text-xs">
-                    <span className="hidden font-semibold sm:inline">
-                      {winner.driver.code ?? winner.driver.family_name}
-                    </span>
-                    <Face
-                      url={winner.driver.photo_url}
-                      label={codeOf(winner.driver)}
-                      colour={winner.team_colour}
-                      className="size-7 rounded-full text-[0.55rem]"
-                    />
-                  </span>
+                  <Face
+                    url={winner.driver.photo_url}
+                    label={codeOf(winner.driver)}
+                    colour={winner.team_colour}
+                    className="size-9 shrink-0 rounded-full text-[0.55rem]"
+                  />
                 ) : (
                   event.circuit.outline && (
                     <CircuitMark
                       path={event.circuit.outline}
                       width={2}
-                      stroke={isNext ? "var(--color-mark)" : "var(--color-muted)"}
-                      className="size-7"
+                      stroke="var(--color-ink)"
+                      className="size-9 shrink-0"
                     />
                   )
                 )}
+                <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted" />
               </Link>
             </li>
           );
         })}
       </ol>
-    </Panel>
+    </GlassCard>
   );
 }

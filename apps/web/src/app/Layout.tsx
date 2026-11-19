@@ -78,8 +78,8 @@ const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
 const railLink = ({ isActive }: { isActive: boolean }) =>
   `mx-2 flex h-10 items-center gap-3 rounded-md px-3 text-[0.92rem] transition-colors ${
     isActive
-      ? "bg-mark/15 font-semibold text-ink [&>svg]:text-mark-text"
-      : "text-muted hover:bg-raised hover:text-ink"
+      ? "bg-mark/15 font-semibold text-ink [&>svg]:text-mark-text glass:rounded-full glass:bg-ink glass:text-bg glass:[&>svg]:text-bg"
+      : "text-muted hover:bg-raised hover:text-ink glass:rounded-full"
   }`;
 
 const tabLink = ({ isActive }: { isActive: boolean }) =>
@@ -92,10 +92,15 @@ export function Layout() {
   const tyres = useMatch("/sessions/:sessionId/tyres");
   const race = useMatch("/sessions/:sessionId");
   const raw = (tyres ?? race)?.params.sessionId;
+  // Pilot of the glass skin (docs/design.md): the home page only, until it is validated.
+  const skin = useLocation().pathname === "/" ? "glass" : undefined;
   const sessionId = raw && /^\d+$/.test(raw) ? Number(raw) : null;
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]">
+    <div
+      data-skin={skin}
+      className="min-h-screen bg-bg lg:grid lg:grid-cols-[14.5rem_minmax(0,1fr)]"
+    >
       <a
         href="#main"
         className="sr-only z-50 bg-panel px-3 py-2 focus:not-sr-only focus:absolute focus:top-2 focus:left-2"
@@ -125,7 +130,7 @@ function Wordmark() {
     <Link to="/" className="flex items-center gap-2.5" aria-label="StintLine">
       <span
         aria-hidden="true"
-        className="grid size-8 place-items-center rounded-md bg-mark text-white"
+        className="grid size-8 place-items-center rounded-md bg-mark text-white glass:rounded-[10px] glass:shadow-[0_6px_18px_-4px_var(--color-mark)]"
       >
         <Gauge className="size-5" strokeWidth={2.25} />
       </span>
@@ -172,7 +177,7 @@ function NavGroups({ onPick }: { onPick?: () => void }) {
 function Rail() {
   const { t } = useI18n();
   return (
-    <div className="hidden border-r border-line bg-panel lg:block">
+    <div className="hidden border-r border-line bg-panel lg:block glass:bg-bg">
       <div className="sticky top-0 flex h-screen flex-col">
         <div className="flex h-14 shrink-0 items-center border-b border-line px-5">
           <Wordmark />
@@ -217,7 +222,7 @@ function ContextBar({ children }: { children: ReactNode }) {
   const open = openOn === pathname;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-bg">
+    <header className="sticky top-0 z-40 border-b border-line bg-bg glass:bg-bg/70 glass:backdrop-blur-xl">
       <div className="flex flex-wrap items-center gap-x-4 px-4 sm:px-8">
         <div className="flex h-14 items-center lg:hidden">
           <Wordmark />

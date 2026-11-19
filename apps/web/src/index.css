@@ -4,7 +4,12 @@
 @import "@fontsource/ibm-plex-mono/400.css";
 @import "@fontsource/ibm-plex-mono/500.css";
 @import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource-variable/montserrat/wght.css";
+@import "@fontsource-variable/montserrat/wght-italic.css";
 @import "flag-icons/css/flag-icons.min.css";
+
+/* Pilot skin (docs/design.md, "glass"): `glass:` utilities apply under [data-skin="glass"]. */
+@custom-variant glass (&:where([data-skin="glass"], [data-skin="glass"] *));
 
 /*
  * Design tokens, "pit wall" direction (docs/design.md). The look comes from timing sheets and
@@ -147,5 +152,111 @@ body {
   }
   .data-table .num {
     @apply text-right tabular-nums;
+  }
+}
+
+/*
+ * "Glass" skin, pilot on the home page. Inspired by phone racing apps: a black ground with a
+ * dot grid, a coloured glow per context (team or circuit), frosted cards with large radii,
+ * Montserrat with heavy titles and light, very large figures. Tokens are redefined on the
+ * skinned subtree, so the rest of the site keeps its look until the skin is rolled out.
+ */
+[data-skin="glass"] {
+  --font-sans: "Montserrat Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --color-bg: #050506;
+  --color-panel: #101013;
+  --color-raised: #1b1b20;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.16);
+  --color-ink: #fafafa;
+  --color-muted: #a3a3ad;
+  --color-mark: #ff1f2d;
+  --color-mark-text: #ff5c63;
+  --color-action: #e10613;
+  --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.075), rgb(255 255 255 / 0.03));
+  --glass-edge: rgb(255 255 255 / 0.1);
+  --glass-shine: rgb(255 255 255 / 0.1);
+  --glass-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.7);
+  --dot: rgb(255 255 255 / 0.07);
+  --glow-strength: 55%;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
+}
+
+:root[data-theme="light"] [data-skin="glass"] {
+  --color-bg: #f2f2f5;
+  --color-panel: #ffffff;
+  --color-raised: #e9e9ee;
+  --color-line: rgb(0 0 0 / 0.08);
+  --color-line-strong: rgb(0 0 0 / 0.16);
+  --color-ink: #0b0b0d;
+  --color-muted: #55555f;
+  --color-mark: #e10613;
+  --color-mark-text: #b8000c;
+  --glass-fill: linear-gradient(180deg, rgb(255 255 255 / 0.85), rgb(255 255 255 / 0.6));
+  --glass-edge: rgb(0 0 0 / 0.07);
+  --glass-shine: rgb(255 255 255 / 0.9);
+  --glass-shadow: 0 24px 48px -28px rgb(20 20 40 / 0.25);
+  --dot: rgb(0 0 0 / 0.07);
+  --glow-strength: 30%;
+}
+
+/* Figures stay proportional Montserrat in the skin, aligned digit by digit. */
+[data-skin="glass"] .num {
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+@layer components {
+  /* Frosted card: translucent fill, hairline edge, a light top edge, soft drop. */
+  .glass {
+    background: var(--glass-fill);
+    border: 1px solid var(--glass-edge);
+    box-shadow:
+      inset 0 1px 0 var(--glass-shine),
+      var(--glass-shadow);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  /* The dot grid of the ground. */
+  .dots {
+    background-image: radial-gradient(var(--dot) 1px, transparent 1.2px);
+    background-size: 16px 16px;
+  }
+
+  /* A coloured glow from the top of a block; the colour comes from --glow. */
+  .glow {
+    background-image:
+      radial-gradient(
+        110% 85% at var(--glow-x, 70%) -10%,
+        color-mix(in oklab, var(--glow, var(--color-mark)) var(--glow-strength), transparent),
+        transparent 70%
+      ),
+      radial-gradient(var(--dot) 1px, transparent 1.2px);
+    background-size:
+      100% 100%,
+      16px 16px;
+  }
+
+  /* Huge word behind a subject (driver name, team), tinted with --glow. */
+  .watermark {
+    font-weight: 900;
+    font-style: italic;
+    line-height: 0.8;
+    letter-spacing: -0.06em;
+    color: color-mix(in oklab, var(--glow, var(--color-mark)) 42%, transparent);
+    user-select: none;
+  }
+
+  /* A word highlighted on a tilted coloured block, the way race apps tag a headline. */
+  .sticker {
+    display: inline-block;
+    padding: 0 0.35em 0.06em;
+    border-radius: 0.3em;
+    transform: rotate(-2deg);
+    background: var(--sticker, #ffe600);
+    color: #0b0b0d;
   }
 }
