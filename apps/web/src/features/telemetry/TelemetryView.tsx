@@ -142,7 +142,7 @@ export function TelemetryView({ sessionId, cars }: { sessionId: number; cars: re
           ) : (
             <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
               <div className="flex flex-col gap-3">
-                <p role="status" className="rounded-xl bg-panel p-3 text-sm text-muted">
+                <p role="status" className="glass rounded-[20px] p-3 text-sm text-muted">
                   {t("telemetry.3d.unavailable")}
                 </p>
                 <LapMap data={data} styles={styles} cursor={cursor} section={section} />
@@ -180,7 +180,7 @@ function ZoomBar({
   const same = (a: Section) =>
     section !== null && Math.abs(a.start - section.start) < 1 && Math.abs(a.end - section.end) < 1;
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-panel p-3">
+    <div className="glass flex flex-col gap-2 rounded-[20px] p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted">
           {section
@@ -245,7 +245,7 @@ function SectionTable({
   }));
   const reference = rows[0]?.stats.time_s ?? 0;
   return (
-    <div className="overflow-x-auto rounded-xl bg-panel p-4">
+    <div className="glass overflow-x-auto rounded-[20px] p-4">
       <table className="data-table">
         <caption className="mb-2 text-left font-bold">{t("telemetry.section.title")}</caption>
         <thead>
@@ -302,7 +302,7 @@ function Summary({ data }: { data: Compare }) {
       {data.cars.map((car, index) => (
         <div
           key={car.car_number}
-          className="flex flex-col gap-1 rounded-xl border-l-4 bg-panel px-4 py-3"
+          className="glass flex flex-col gap-1 rounded-xl border-l-4 px-4 py-3"
           style={{ borderLeftColor: styles[index]?.colour }}
         >
           <dt className="font-bold">
@@ -339,7 +339,7 @@ function BrakingTable({ data }: { data: Compare }) {
   const match = (car: Schema<"TelemetryCar">, start: number) =>
     car.braking_zones.find((z) => Math.abs(z.start_m - start) <= SAME_CORNER_M);
   return (
-    <details className="rounded-xl bg-panel p-4">
+    <details className="glass rounded-[20px] p-4">
       <summary className="cursor-pointer font-semibold">{t("telemetry.zones")}</summary>
       <div className="mt-3 overflow-x-auto">
         <table className="data-table">

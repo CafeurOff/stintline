@@ -450,7 +450,7 @@ function Ruling({
   return (
     <section
       aria-label={t("docs.ruling")}
-      className="flex flex-col gap-3 rounded-xl border border-line bg-raised/50 p-4"
+      className="flex flex-col gap-3 rounded-xl bg-ink/[0.04] p-4"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         {decision.driver ? (

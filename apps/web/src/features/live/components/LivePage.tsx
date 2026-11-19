@@ -2,6 +2,11 @@ import type { Schema } from "@stintline/api-types";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
+import type { CSSProperties } from "react";
+
+import { pillPrimary } from "@/components/glass/Glass";
+import { TrackMap as GlowTrack } from "@/components/glass/TrackMap";
+import { Trails } from "@/components/glass/Trails";
 import { Countdown } from "@/components/hub/Countdown";
 import { SectionTitle } from "@/components/hub/SectionTitle";
 import { CircuitMark } from "@/components/racing/CircuitMark";
@@ -12,6 +17,7 @@ import { useEvent, useHome } from "@/features/hub/api";
 import { useTrack } from "@/features/race/api";
 import { type CarMarker, type Ghost, TrackMap } from "@/features/race/components/TrackMap";
 import { pointAt } from "@/features/race/replay";
+import { circuitAccent } from "@/lib/accent";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { sessionLabel } from "@/lib/sessions";
@@ -120,6 +126,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
     hour: "2-digit",
     minute: "2-digit",
   });
+  const accent = event ? circuitAccent(event.circuit.ref) : "var(--color-mark)";
   const sessions = (event?.sessions ?? []).filter((s) => s.scheduled_start);
   const running = sessions.find((s) => {
     const start = new Date(s.scheduled_start ?? "").getTime();
@@ -127,22 +134,23 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
   });
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5">
       <section
         aria-labelledby="live-title"
-        className="relative overflow-hidden rounded-xl border border-line border-mark bg-panel"
+        className="glass glow relative overflow-hidden rounded-[24px]"
+        style={{ "--glow": accent, "--glow-x": "90%", "--glow-y": "50%" } as CSSProperties}
       >
+        <Trails colour={accent} />
         {event?.circuit.outline && (
-          <CircuitMark
+          <GlowTrack
             path={event.circuit.outline}
-            stroke="var(--color-mark)"
-            width={6}
-            className="pointer-events-none absolute -right-8 -bottom-10 size-80 opacity-20 sm:size-96"
+            colour={accent}
+            className="pointer-events-none absolute top-1/2 right-6 hidden aspect-square w-[34%] max-w-md -translate-y-1/2 lg:block"
           />
         )}
-        <div className="relative flex flex-col gap-6 p-6 sm:p-10">
+        <div className="relative flex flex-col gap-6 p-6 sm:p-10 lg:max-w-[62%]">
           <p className="flex items-center gap-2 text-xs font-bold tracking-wide uppercase">
-            <span className="flex items-center gap-1.5 rounded-sm bg-raised px-2 py-0.5">
+            <span className="flex items-center gap-1.5 rounded-md bg-ink/10 px-2 py-0.5">
               <span
                 className={`size-2 rounded-full ${running ? "animate-pulse bg-mark" : "bg-line-strong"}`}
               />
@@ -150,7 +158,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
             </span>
           </p>
           <div>
-            <h1 id="live-title" className="text-3xl leading-tight font-extrabold sm:text-5xl">
+            <h1 id="live-title" className="display text-3xl leading-[0.95] sm:text-6xl">
               {running ? t("live.running.title") : t("live.offline.title")}
             </h1>
             <p className="mt-2 max-w-2xl text-lg text-muted">
@@ -163,7 +171,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
                 <p className="text-xs font-bold tracking-wide text-mark-text uppercase">
                   {t("live.next")} · {sessionLabel(next.kind, t)}
                 </p>
-                <h2 className="text-2xl font-extrabold">
+                <h2 className="display text-2xl">
                   <Link to={`/events/${String(next.event_id)}`} className="hover:underline">
                     {eventName(next.event_name, locale)}
                   </Link>
@@ -177,11 +185,11 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
           )}
         </div>
       </section>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-5 lg:grid-cols-2">
         {sessions.length > 0 && event && (
           <section
             aria-labelledby="live-weekend"
-            className="flex flex-col gap-3 rounded-xl bg-panel p-5"
+            className="glass reveal flex flex-col gap-3 rounded-[20px] p-5"
           >
             <SectionTitle id="live-weekend">{eventName(event.name, locale)}</SectionTitle>
             <ul className="flex flex-col">
@@ -218,7 +226,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
         {last?.has_data && (
           <section
             aria-labelledby="live-replay"
-            className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-panel p-5"
+            className="glass reveal relative flex flex-col justify-between gap-6 overflow-hidden rounded-[20px] p-5"
           >
             {last.event.circuit.outline && (
               <CircuitMark
@@ -232,16 +240,13 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
               <p className="text-xs font-bold tracking-wide text-muted uppercase">
                 {t("live.meanwhile")}
               </p>
-              <h2 id="live-replay" className="mt-1 max-w-[70%] text-2xl font-extrabold">
+              <h2 id="live-replay" className="display mt-1 max-w-[70%] text-2xl">
                 {eventName(last.event.name, locale)} {last.event.season}
               </h2>
               <p className="mt-2 max-w-md text-muted">{t("live.replayBody")}</p>
             </div>
             <div className="relative flex flex-wrap gap-3">
-              <Link
-                to={`/sessions/${String(last.session_id)}`}
-                className="inline-flex items-center gap-2 rounded-lg bg-action px-5 py-3 font-bold text-white hover:brightness-110"
-              >
+              <Link to={`/sessions/${String(last.session_id)}`} className={pillPrimary}>
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="currentColor">
                   <path d="M7 4l13 8-13 8z" />
                 </svg>
@@ -249,7 +254,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
               </Link>
               <Link
                 to={`/news/${String(last.session_id)}`}
-                className="rounded-lg border border-line-strong px-5 py-3 font-bold hover:border-ink"
+                className="glass rounded-xl px-5 py-3 font-bold"
               >
                 {t("home.report")}
               </Link>

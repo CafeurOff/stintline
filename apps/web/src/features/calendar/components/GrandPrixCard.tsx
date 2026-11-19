@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Play } from "lucide-react";
 import { Link } from "react-router";
@@ -12,7 +13,9 @@ import { timedSessions } from "@/features/session-picker/useRaces";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
-import { teamColour, teamTint } from "@/lib/teams";
+import { circuitAccent } from "@/lib/accent";
+import { readable } from "@/lib/colour";
+import { teamColour } from "@/lib/teams";
 import { timeLeft } from "@/lib/useClock";
 
 import { weekendDates } from "../dates";
@@ -49,32 +52,34 @@ export function GrandPrixCard({
       }).format(new Date(scheduled))
     : null;
   const left = scheduled ? timeLeft(Date.parse(scheduled), now) : null;
+  const accent = circuitAccent(event.circuit.ref);
 
   return (
     <article
-      className={`relative flex h-full flex-col overflow-hidden rounded-xl border bg-panel transition-colors hover:border-line-strong ${
-        isNext ? "border-mark" : "border-line"
+      className={`glass glow reveal relative flex h-full flex-col overflow-hidden rounded-[20px] ${
+        isNext ? "ring-2 ring-mark" : ""
       }`}
+      style={{ "--glow": accent, "--glow-x": "100%", "--glow-y": "0%" } as CSSProperties}
     >
-      <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-2.5 text-xs">
+      <div className="flex items-center justify-between gap-2 px-4 pt-4 text-xs">
         <span className="flex items-center gap-2 font-semibold">
           <Flag country={event.circuit.country} className="text-sm" />
-          <span className="num rounded border border-line px-1.5">R{event.round}</span>
+          <span className="num rounded-md bg-ink/10 px-1.5 py-0.5">R{event.round}</span>
           <span className="text-muted">{weekendDates(event, locale)}</span>
         </span>
         <span className="flex gap-1.5">
           {event.format === "sprint" && (
-            <span className="rounded bg-t-yellow/15 px-1.5 py-0.5 font-bold text-t-yellow">
+            <span className="rounded-md bg-t-yellow/15 px-1.5 py-0.5 font-bold text-t-yellow">
               {t("picker.sprint")}
             </span>
           )}
           {isNext && (
-            <span className="rounded bg-mark px-1.5 py-0.5 font-bold text-white">
+            <span className="rounded-md bg-mark px-1.5 py-0.5 font-bold text-white">
               {t("calendar.next")}
             </span>
           )}
           {!winner && !isNext && (
-            <span className="rounded bg-raised px-1.5 py-0.5 font-bold text-muted">
+            <span className="rounded-md bg-ink/10 px-1.5 py-0.5 font-bold text-muted">
               {t("picker.upcoming")}
             </span>
           )}
@@ -82,7 +87,7 @@ export function GrandPrixCard({
       </div>
       <div className="flex flex-1 items-center gap-3 px-4 pt-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg leading-tight font-bold">
+          <h2 className="display text-lg leading-tight">
             <Link
               to={`/events/${String(event.id)}`}
               className="after:absolute after:inset-0 hover:underline"
@@ -97,13 +102,7 @@ export function GrandPrixCard({
         {event.circuit.outline && (
           <CircuitMark
             path={event.circuit.outline}
-            stroke={
-              winner
-                ? teamColour(winner.team_colour)
-                : isNext
-                  ? "var(--color-mark)"
-                  : "var(--color-muted)"
-            }
+            stroke={readable(accent, 85)}
             width={2.5}
             className="size-20 shrink-0"
           />
@@ -111,21 +110,23 @@ export function GrandPrixCard({
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 px-4 pb-4">
         {winner ? (
-          <span
-            className="flex min-w-0 items-center gap-2.5 rounded-lg py-1 pr-3 pl-1"
-            style={{ backgroundColor: teamTint(winner.team_colour, 22) }}
-          >
+          <span className="glass flex min-w-0 items-center gap-2.5 rounded-xl py-1 pr-3 pl-1">
             <Face
               url={winner.driver.photo_url}
               label={
                 winner.driver.code ?? initials(winner.driver.given_name, winner.driver.family_name)
               }
               colour={winner.team_colour}
-              className="size-9 shrink-0 rounded-md text-xs"
+              className="size-9 shrink-0 rounded-lg text-xs"
             />
             <span className="min-w-0 leading-tight">
               <span className="block text-[0.7rem] text-muted">{t("col.winner")}</span>
-              <span className="block truncate font-bold">{winner.driver.family_name}</span>
+              <span
+                className="block truncate font-bold"
+                style={{ color: readable(teamColour(winner.team_colour)) }}
+              >
+                {winner.driver.family_name}
+              </span>
             </span>
           </span>
         ) : (
@@ -143,7 +144,7 @@ export function GrandPrixCard({
                   hours: left.hours,
                   minutes: left.minutes,
                 })}
-                className="num mt-0.5 block text-lg font-semibold text-mark-text"
+                className="num timing mt-0.5 block text-3xl leading-none font-light text-mark-text"
               >
                 {left.days}d {pad(left.hours)}:{pad(left.minutes)}:{pad(left.seconds)}
               </span>
@@ -153,7 +154,7 @@ export function GrandPrixCard({
         {race && (
           <Link
             to={`/sessions/${String(race.id)}`}
-            className="relative z-10 flex shrink-0 items-center gap-1.5 rounded-lg border border-line bg-raised px-3 py-1.5 text-sm font-semibold hover:border-transparent hover:bg-action hover:text-white"
+            className="glass relative z-10 flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-bold hover:bg-ink hover:text-bg"
             aria-label={t("calendar.replayOf", { name })}
           >
             <Play aria-hidden="true" className="size-3.5 fill-current" />

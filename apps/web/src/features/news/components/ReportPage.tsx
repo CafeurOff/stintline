@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
@@ -9,7 +10,8 @@ import { ErrorState } from "@/components/ui/States";
 import { useSessionDetail } from "@/features/race/api";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
-import { teamColour, teamTint } from "@/lib/teams";
+import { Trails } from "@/components/glass/Trails";
+import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 import { useReport, useReports } from "../api";
@@ -40,8 +42,14 @@ export function ReportPage() {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
       <article className="flex min-w-0 flex-col gap-8">
         <header
-          className="overflow-hidden rounded-xl border border-line"
-          style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 12) }}
+          className="glass glow relative overflow-hidden rounded-[24px]"
+          style={
+            {
+              "--glow": teamColour(colour),
+              "--glow-x": "0%",
+              "--glow-y": "100%",
+            } as CSSProperties
+          }
         >
           <DriverPhoto
             imageUrl={data.winner.driver.portrait_url}
@@ -49,15 +57,16 @@ export function ReportPage() {
             colour={colour}
             className="aspect-[16/6] w-full"
           />
-          <div className="flex flex-col gap-2 p-6">
-            <p className="text-sm text-muted">
+          <Trails colour={teamColour(colour)} className="opacity-60" />
+          <div className="relative flex flex-col gap-3 p-6 sm:p-8">
+            <p className="text-sm font-semibold text-muted">
               {data.kind === "SPRINT" ? t("news.sprint") : t("news.race")} ·{" "}
               <Link to={`/events/${String(data.event.id)}`} className="hover:underline">
                 {eventName(data.event.name, locale)}
               </Link>{" "}
               · <time dateTime={data.finished_at}>{f.date(data.event.race_date)}</time>
             </p>
-            <h1 className="text-3xl leading-tight font-bold sm:text-4xl">{written.title}</h1>
+            <h1 className="display text-3xl leading-[1.05] sm:text-5xl">{written.title}</h1>
             <p className="text-lg">{written.lede}</p>
           </div>
         </header>
@@ -95,7 +104,7 @@ export function ReportPage() {
           )}
           <Link
             to={`/events/${String(data.event.id)}${data.kind === "SPRINT" ? "?session=SPRINT" : ""}`}
-            className="rounded-lg border border-line-strong px-4 py-3 font-bold hover:border-ink"
+            className="glass rounded-xl px-4 py-3 font-bold"
           >
             {t("news.seeResults")}
           </Link>
@@ -149,7 +158,7 @@ function Podium({ report }: { report: Report }) {
       {report.podium.map((place, index) => (
         <li
           key={place.entry.car_number}
-          className="flex items-center gap-3 rounded-xl bg-panel p-3"
+          className="glass flex items-center gap-3 rounded-[20px] p-3"
         >
           <span className="text-2xl font-bold tabular-nums">{index + 1}</span>
           <span className="flex min-w-0 flex-col">

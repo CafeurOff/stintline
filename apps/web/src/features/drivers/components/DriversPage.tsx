@@ -1,10 +1,12 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
-import { DriverPhoto } from "@/components/racing/DriverPhoto";
+import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { Face } from "@/components/dash/Face";
 import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -12,7 +14,8 @@ import { useDrivers } from "@/features/hub/api";
 import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
-import { teamColour, teamTint } from "@/lib/teams";
+import { readable } from "@/lib/colour";
+import { teamColour } from "@/lib/teams";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
@@ -45,7 +48,7 @@ export function DriversPage() {
             onChange={(event) => {
               update({ q: event.target.value || null });
             }}
-            className="rounded-lg border border-line-strong bg-panel px-3 py-2 text-ink placeholder:text-muted"
+            className="glass rounded-xl px-4 py-2.5 text-ink placeholder:text-muted"
           />
         </label>
         <SeasonSelect
@@ -97,50 +100,56 @@ export function DriversPage() {
 
 type DriverItem = Schema<"DriverListItem">;
 
-/** A driver of the chosen season: number, name, team and championship place over a photo. */
+/** A driver of the chosen season: name, team, place and points, the car number behind. */
 function DriverCard({ driver }: { driver: DriverItem }) {
   const { t, f } = useI18n();
-  const colour = driver.team?.colour;
+  const colour = teamColour(driver.team?.colour);
   const season = driver.season;
   return (
     <Link
       to={`/drivers/${driver.ref}`}
-      className="group relative flex h-48 overflow-hidden rounded-xl border border-line transition hover:brightness-110"
-      style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 22) }}
+      className="group glass glow reveal relative flex h-52 overflow-hidden rounded-[20px]"
+      style={{ "--glow": colour, "--glow-x": "100%", "--glow-y": "100%" } as CSSProperties}
     >
-      <span className="relative z-10 flex w-3/5 flex-col justify-between p-4">
+      {season && (
+        <span
+          aria-hidden="true"
+          className="watermark num absolute top-3 right-3 text-8xl"
+          style={{ "--glow": colour } as CSSProperties}
+        >
+          {season.car_number}
+        </span>
+      )}
+      <Face
+        url={driver.photo_url ?? driver.portrait?.image_url}
+        label={driver.code ?? initials(driver.given_name, driver.family_name)}
+        colour={driver.team?.colour}
+        className="absolute right-0 bottom-0 h-[92%] w-auto max-w-[50%] !object-contain object-bottom text-2xl transition-transform duration-500 group-hover:scale-[1.04]"
+        style={NO_BACKDROP}
+      />
+      <span className="relative z-10 flex w-3/5 flex-col justify-between p-5">
         <span>
-          <span className="block text-sm text-muted">{driver.given_name}</span>
-          <span className="block text-2xl leading-tight font-bold group-hover:underline">
+          <span className="block text-sm font-medium text-muted">{driver.given_name}</span>
+          <span className="display block text-2xl leading-tight group-hover:underline">
             {driver.family_name}
           </span>
-          {driver.team && <span className="block text-sm text-muted">{driver.team.name}</span>}
-        </span>
-        <span className="flex items-end justify-between gap-2">
-          {season && (
-            <span
-              className="text-4xl leading-none font-bold tabular-nums"
-              style={{ color: teamColour(colour) }}
-            >
-              {season.car_number}
-            </span>
-          )}
-          {season?.position != null && (
-            <span className="text-right text-sm">
-              <span className="block font-bold">{f.ordinal(season.position)}</span>
-              <span className="text-muted">
-                {t("common.points", { n: f.number(season.points ?? 0, 0) })}
-              </span>
+          {driver.team && (
+            <span className="block text-sm font-bold" style={{ color: readable(colour) }}>
+              {driver.team.name}
             </span>
           )}
         </span>
+        {season?.position != null && (
+          <span className="flex items-end gap-3">
+            <span className="num timing text-5xl leading-none">
+              {String(season.position).padStart(2, "0")}
+            </span>
+            <span className="pb-1 text-xs font-semibold text-muted">
+              {t("common.points", { n: f.number(season.points ?? 0, 0) })}
+            </span>
+          </span>
+        )}
       </span>
-      <DriverPhoto
-        imageUrl={driver.photo_url ?? driver.portrait?.image_url}
-        label={driver.code ?? initials(driver.given_name, driver.family_name)}
-        colour={colour}
-        className="absolute inset-y-0 right-0 h-full w-2/5"
-      />
     </Link>
   );
 }

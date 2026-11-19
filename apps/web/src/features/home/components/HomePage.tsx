@@ -45,6 +45,7 @@ import { useHeadlines, useReport } from "@/features/news/api";
 import { useAgo } from "@/features/news/useAgo";
 import { useSessionDetail } from "@/features/race/api";
 import { circuitAccent } from "@/lib/accent";
+import { readable } from "@/lib/colour";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
@@ -63,11 +64,6 @@ type Report = Schema<"RaceReport">;
 const STANDINGS_ROWS = 10;
 /** Facts shown at once in the facts card. */
 const FACTS_SHOWN = 4;
-
-/** Text in a context colour that stays readable in both themes (mixed towards the ink). */
-function readable(colour: string, pct = 70): string {
-  return `color-mix(in oklab, ${colour} ${String(pct)}%, var(--color-ink))`;
-}
 
 /**
  * Font size that makes a word fill `pct` % of its container's width (container query units),

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
@@ -11,7 +12,8 @@ import { useTeams } from "@/features/hub/api";
 import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
-import { teamColour, teamTint } from "@/lib/teams";
+import { readable } from "@/lib/colour";
+import { teamColour } from "@/lib/teams";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
@@ -48,7 +50,7 @@ export function TeamsPage() {
             onChange={(event) => {
               update({ q: event.target.value || null });
             }}
-            className="rounded-lg border border-line-strong bg-panel px-3 py-2 text-ink placeholder:text-muted"
+            className="glass rounded-xl px-4 py-2.5 text-ink placeholder:text-muted"
           />
         </label>
         <SeasonSelect
@@ -84,26 +86,28 @@ export function TeamsPage() {
 
 function SeasonTeamCard({ team, season }: { team: TeamItem; season: Schema<"SeasonTeam"> }) {
   const { t, f } = useI18n();
+  const colour = teamColour(team.colour);
   return (
     <Link
       to={`/teams/${team.ref}`}
-      className="group flex h-full flex-col gap-4 rounded-xl border border-line p-5 transition hover:brightness-110"
-      style={{ borderTopColor: teamColour(team.colour), backgroundColor: teamTint(team.colour) }}
+      className="group glass glow reveal relative flex h-full min-h-72 flex-col gap-4 overflow-hidden rounded-[20px] p-5"
+      style={{ "--glow": colour, "--glow-x": "100%", "--glow-y": "100%" } as CSSProperties}
     >
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="text-2xl leading-tight font-bold group-hover:underline">{team.name}</h2>
+      {season.position !== null && (
+        <span aria-hidden="true" className="watermark num absolute top-3 right-4 text-8xl">
+          {season.position}
+        </span>
+      )}
+      <div className="relative">
+        <h2 className="display text-2xl leading-tight group-hover:underline">{team.name}</h2>
         {season.position !== null && (
-          <span className="shrink-0 text-right">
-            <span className="block text-2xl leading-none font-bold tabular-nums">
-              {f.ordinal(season.position)}
-            </span>
-            <span className="text-sm text-muted">
-              {t("common.points", { n: f.number(season.points ?? 0, 0) })}
-            </span>
-          </span>
+          <p className="text-sm font-bold" style={{ color: readable(colour) }}>
+            {f.ordinal(season.position)} ·{" "}
+            {t("common.points", { n: f.number(season.points ?? 0, 0) })}
+          </p>
         )}
       </div>
-      <ul className="flex flex-wrap gap-x-5 gap-y-2">
+      <ul className="relative flex flex-wrap gap-x-5 gap-y-2">
         {season.lineup.map((entry) => (
           <li key={entry.driver.ref} className="flex items-center gap-2">
             <DriverAvatar
@@ -116,12 +120,21 @@ function SeasonTeamCard({ team, season }: { team: TeamItem; season: Schema<"Seas
             />
             <span className="leading-tight">
               <span className="block text-xs text-muted">{entry.driver.given_name}</span>
-              <span className="block font-semibold">{entry.driver.family_name}</span>
+              <span className="block font-bold">{entry.driver.family_name}</span>
             </span>
           </li>
         ))}
       </ul>
-      <CarImage url={season.car_image_url} className="mt-auto h-20 w-full object-left" />
+      <span className="relative mt-auto">
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-[8%] bottom-0 h-4 rounded-[50%] bg-black/50 blur-lg"
+        />
+        <CarImage
+          url={season.car_image_url}
+          className="relative h-24 w-full object-left transition-transform duration-500 group-hover:translate-x-2"
+        />
+      </span>
     </Link>
   );
 }
@@ -129,10 +142,7 @@ function SeasonTeamCard({ team, season }: { team: TeamItem; season: Schema<"Seas
 function TeamRow({ team }: { team: TeamItem }) {
   const { locale } = useI18n();
   return (
-    <Link
-      to={`/teams/${team.ref}`}
-      className="flex items-center gap-4 rounded-xl border border-line p-4 hover:border-ink"
-    >
+    <Link to={`/teams/${team.ref}`} className="glass flex items-center gap-4 rounded-xl p-4">
       <span
         aria-hidden="true"
         className="h-10 w-1.5 shrink-0 rounded-full"

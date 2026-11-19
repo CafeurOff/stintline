@@ -162,7 +162,7 @@ export function FactsPanel({
               onClick={() => {
                 setFilter(value);
               }}
-              className="rounded-md border border-line px-2.5 py-1 text-xs font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
+              className="rounded-lg border border-line px-2.5 py-1 text-xs font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
             >
               {value === "all" ? t("dash.all") : t(`dash.tag.${value}`)}
             </button>
@@ -172,10 +172,7 @@ export function FactsPanel({
     >
       <ul className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-1">
         {shown.map((fact) => (
-          <li
-            key={fact.key}
-            className="flex flex-col gap-2 rounded-lg border border-line bg-raised/50 p-4"
-          >
+          <li key={fact.key} className="flex flex-col gap-2 rounded-xl bg-ink/[0.04] p-4">
             <span
               className={`w-fit rounded px-2 py-0.5 text-[0.65rem] font-bold uppercase ${TAG_TONE[fact.tag]}`}
             >

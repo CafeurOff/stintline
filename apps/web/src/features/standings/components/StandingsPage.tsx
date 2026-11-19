@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useNavigate, useParams } from "react-router";
 
@@ -22,7 +23,7 @@ import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
-import { teamColour, teamTint } from "@/lib/teams";
+import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { ProgressionChart } from "./ProgressionChart";
@@ -250,18 +251,27 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
           <li key={driver?.ref ?? line.team?.ref ?? index}>
             <Link
               to={href}
-              className="group relative flex h-36 overflow-hidden rounded-xl border border-line transition-colors hover:border-line-strong"
-              style={{ backgroundColor: teamTint(colour, 26) }}
+              className="group glass glow reveal relative flex h-44 overflow-hidden rounded-[20px]"
+              style={
+                {
+                  "--glow": teamColour(colour),
+                  "--glow-x": "100%",
+                  "--glow-y": "100%",
+                } as CSSProperties
+              }
             >
-              <span className="relative z-10 flex flex-1 flex-col justify-between p-4">
+              <span aria-hidden="true" className="watermark num absolute top-3 right-4 text-8xl">
+                {index + 1}
+              </span>
+              <span className="relative z-10 flex flex-1 flex-col justify-between p-5">
                 <span>
-                  <span className="num text-4xl leading-none font-semibold">{index + 1}</span>
-                  <span className="mt-1 block text-xl leading-tight font-extrabold group-hover:underline">
+                  <span className="num timing text-5xl leading-none">{index + 1}</span>
+                  <span className="display mt-1 block text-xl leading-tight group-hover:underline">
                     {driver ? driver.family_name : line.team?.name}
                   </span>
                 </span>
                 <span className="text-sm">
-                  <span className="num font-semibold">{f.number(line.points ?? 0, 0)}</span>{" "}
+                  <span className="num display text-lg">{f.number(line.points ?? 0, 0)}</span>{" "}
                   <span className="text-muted">
                     {t("standings.pts")}
                     {index > 0 && ` · −${f.number(leader - (line.points ?? 0), 0)}`}
@@ -274,13 +284,13 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
                   url={driver.photo_url}
                   label={driver.code ?? initials(driver.given_name, driver.family_name)}
                   colour={colour}
-                  className="h-full w-32 shrink-0"
+                  className="absolute right-0 bottom-0 h-[92%] w-auto max-w-[45%] !object-contain object-bottom"
                   style={NO_BACKDROP}
                 />
               ) : (
                 <span
                   aria-hidden="true"
-                  className="absolute top-0 right-0 h-full w-2"
+                  className="absolute right-0 bottom-0 h-1.5 w-full"
                   style={{ backgroundColor: teamColour(colour) }}
                 />
               )}

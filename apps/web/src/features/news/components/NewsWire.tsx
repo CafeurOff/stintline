@@ -170,7 +170,7 @@ function Context({ title }: { title: string }) {
                 <li key={key}>
                   <Link
                     to={driver ? `/drivers/${driver.ref}` : `/teams/${line.team?.ref ?? ""}`}
-                    className="flex items-center gap-3 rounded-lg border border-line p-2 hover:bg-raised"
+                    className="flex items-center gap-3 rounded-xl border border-line p-2 hover:bg-ink/5"
                   >
                     {driver ? (
                       <Face

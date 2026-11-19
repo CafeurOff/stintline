@@ -1,7 +1,7 @@
 import { useI18n } from "@/lib/i18n/context";
 import { timeLeft, useClock } from "@/lib/useClock";
 
-/** Days, hours, minutes and seconds to `target`, as broadcast-style blocks. */
+/** Days, hours, minutes and seconds to `target`, as tall timing-board figures. */
 export function Countdown({ target, compact = false }: { target: string; compact?: boolean }) {
   const { t } = useI18n();
   const now = useClock(1000);
@@ -20,20 +20,19 @@ export function Countdown({ target, compact = false }: { target: string; compact
         hours: left.hours,
         minutes: left.minutes,
       })}
-      className="flex gap-2"
+      className={`flex ${compact ? "gap-3" : "gap-6 sm:gap-8"}`}
     >
       {parts.map(([value, unit]) => (
-        <span
-          key={unit}
-          aria-hidden="true"
-          className={`flex flex-col items-center rounded-lg border border-line bg-raised ${
-            compact ? "min-w-12 px-2 py-1" : "min-w-16 px-3 py-2"
-          }`}
-        >
-          <span className={`num leading-none font-semibold ${compact ? "text-xl" : "text-3xl"}`}>
+        <span key={unit} aria-hidden="true" className="flex flex-col">
+          <span
+            key={value}
+            className={`num timing animate-[tick_0.45s_ease-out] leading-[0.85] ${
+              compact ? "text-4xl" : "text-7xl sm:text-8xl"
+            }`}
+          >
             {String(value).padStart(2, "0")}
           </span>
-          <span className="mt-1 text-[0.65rem] font-semibold text-muted uppercase">{unit}</span>
+          <span className="mt-1 text-xs font-semibold text-muted">{unit}</span>
         </span>
       ))}
     </div>

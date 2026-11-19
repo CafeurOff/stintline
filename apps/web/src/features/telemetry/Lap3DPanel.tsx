@@ -106,7 +106,7 @@ export function Lap3DPanel({ data, styles, cursor, onCursor, visible }: Lap3DPan
 
   return (
     <section className="flex flex-col gap-3" aria-label={t("telemetry.3d.title")}>
-      <div className="relative h-[420px] overflow-hidden rounded-xl bg-panel sm:h-[520px]">
+      <div className="glass relative h-[420px] overflow-hidden rounded-[20px] sm:h-[520px]">
         <Suspense fallback={<Skeleton className="h-full" />}>
           <Lap3DScene
             data={data}
@@ -122,7 +122,7 @@ export function Lap3DPanel({ data, styles, cursor, onCursor, visible }: Lap3DPan
           {flat ? t("telemetry.3d.flat") : t("telemetry.3d.relief", { n: ELEVATION_EXAGGERATION })}
         </p>
       </div>
-      <div className="flex flex-wrap items-center gap-3 rounded-xl bg-panel p-3">
+      <div className="glass flex flex-wrap items-center gap-3 rounded-[20px] p-3">
         <button
           type="button"
           onClick={() => {

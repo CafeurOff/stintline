@@ -1,15 +1,17 @@
 import type { Schema } from "@stintline/api-types";
+import type { CSSProperties } from "react";
 import { Link, useParams } from "react-router";
 
 import { ListOrdered, Play, Scale } from "lucide-react";
 
 import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { pillGlass, pillPrimary } from "@/components/glass/Glass";
+import { TrackMap } from "@/components/glass/TrackMap";
+import { Trails } from "@/components/glass/Trails";
 import { Face } from "@/components/dash/Face";
 import { Panel } from "@/components/dash/Panel";
 import { DriverName } from "@/components/hub/DriverName";
-import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
-import { CircuitOutline } from "@/components/racing/CircuitOutline";
 import { TeamName } from "@/components/hub/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -24,13 +26,15 @@ import {
   RaceControlTile,
 } from "@/features/hub/RaceFacts";
 import { useReport } from "@/features/news/api";
-import { inkOn, teamColour, teamTint } from "@/lib/teams";
+import { teamColour } from "@/lib/teams";
+import { circuitAccent } from "@/lib/accent";
+import { readable } from "@/lib/colour";
 import type { LapMark } from "@/features/analysis/components/LapChart";
 import { RaceAnalysis } from "@/features/analysis/components/RaceAnalysis";
 import { WeekendForecast } from "@/features/forecast/components/WeekendForecast";
 import { useDecisions } from "@/features/paddock/api";
 import { DecisionTable } from "@/features/paddock/components/DecisionTable";
-import { useSessionDetail, useTrack } from "@/features/race/api";
+import { useSessionDetail } from "@/features/race/api";
 import { byFinish } from "@/features/race/entries";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
@@ -154,98 +158,108 @@ function EventHero({
   raceId: number | null;
 }) {
   const { t, f, locale } = useI18n();
-  const track = useTrack(raceId ?? 0, raceId !== null);
   const podium = useSessionDetail(raceId ?? 0, raceId !== null);
   const top3 = [...(podium.data?.entries ?? [])]
     .sort(byFinish)
     .filter((e) => e.finish_position != null)
     .slice(0, 3);
+  const accent = circuitAccent(event.circuit.ref);
+  const glow = top3[0] ? teamColour(top3[0].team_colour) : accent;
 
   return (
-    <header className="glass relative grid gap-6 overflow-hidden rounded-[20px] p-5 sm:p-7 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_14rem] lg:items-end">
-      <div className="flex flex-col gap-4 self-center">
-        <div>
-          <p className="flex items-center gap-2 text-sm text-muted">
-            <Flag country={event.circuit.country} className="text-base" />
-            <Link to={`/calendar/${String(event.season)}`} className="hover:underline">
-              {t("event.eyebrow", { season: event.season, round: event.round })}
-            </Link>
-          </p>
-          <h1 className="mt-1 text-4xl leading-none font-extrabold sm:text-5xl">
-            {eventName(event.name, locale)}
-          </h1>
-          <p className="mt-2 text-muted">
-            {event.circuit.name} · {event.circuit.locality},{" "}
-            {countryName(event.circuit.country, locale)} · {f.date(event.race_date)}
-          </p>
-        </div>
-        {replays.length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {replays.map((s) => (
-              <Link
-                key={s.id}
-                to={`/sessions/${String(s.id)}`}
-                className={
-                  s.kind === "R"
-                    ? "inline-flex items-center gap-2 rounded-lg bg-action px-4 py-2.5 font-semibold text-white hover:brightness-110"
-                    : "inline-flex items-center gap-2 rounded-lg border border-line-strong bg-raised px-4 py-2.5 font-semibold hover:border-ink"
-                }
-              >
-                <Play aria-hidden="true" className="size-4 fill-current" />
-                {s.kind === "R" ? t("event.replay") : t("event.replaySprint")}
+    <header
+      className="glass glow relative overflow-hidden rounded-[24px]"
+      style={{ "--glow": glow, "--glow-x": "70%", "--glow-y": "100%" } as CSSProperties}
+    >
+      <Trails colour={glow} className="opacity-70" />
+      <div className="relative grid gap-8 p-6 sm:p-9 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-end xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_15rem]">
+        <div className="flex flex-col gap-5 self-center">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-muted">
+              <Flag country={event.circuit.country} className="text-base" />
+              <Link to={`/calendar/${String(event.season)}`} className="hover:underline">
+                {t("event.eyebrow", { season: event.season, round: event.round })}
               </Link>
-            ))}
+            </p>
+            <h1 className="display mt-2 text-4xl leading-[0.95] sm:text-6xl">
+              {eventName(event.name, locale)}
+            </h1>
+            <p className="mt-3 font-bold" style={{ color: readable(accent) }}>
+              {event.circuit.name}
+            </p>
+            <p className="text-sm text-muted">
+              {event.circuit.locality}, {countryName(event.circuit.country, locale)} ·{" "}
+              {f.date(event.race_date)}
+            </p>
           </div>
+          {replays.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {replays.map((s) => (
+                <Link
+                  key={s.id}
+                  to={`/sessions/${String(s.id)}`}
+                  className={s.kind === "R" ? pillPrimary : pillGlass}
+                >
+                  <Play aria-hidden="true" className="size-4 fill-current" />
+                  {s.kind === "R" ? t("event.replay") : t("event.replaySprint")}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+        {top3.length > 0 ? (
+          <ol aria-label={t("home.podium")} className="grid grid-cols-3 items-end gap-3">
+            {[1, 0, 2].map((index) => {
+              const entry = top3[index];
+              if (!entry) return <li key={index} />;
+              const colour = teamColour(entry.team_colour);
+              return (
+                <li key={entry.car_number}>
+                  <Link to={`/drivers/${entry.driver.ref}`} className="group flex flex-col">
+                    <span
+                      className={`relative block overflow-hidden ${index === 0 ? "h-60" : index === 1 ? "h-48" : "h-44"}`}
+                      style={{
+                        background: `radial-gradient(70% 60% at 50% 100%, color-mix(in oklab, ${colour} 60%, transparent), transparent 75%)`,
+                      }}
+                    >
+                      <Face
+                        url={entry.media?.driver_image_url ?? entry.driver.photo_url}
+                        label={entry.driver.code ?? entry.driver.family_name.slice(0, 3)}
+                        colour={entry.team_colour}
+                        className="absolute inset-x-0 bottom-0 mx-auto h-full w-auto max-w-full !object-contain object-bottom text-2xl"
+                        style={NO_BACKDROP}
+                      />
+                    </span>
+                    <span className="glass flex items-center gap-2.5 rounded-xl px-3 py-2">
+                      <span className="num timing text-3xl leading-none">{index + 1}</span>
+                      <span className="min-w-0 leading-tight">
+                        <span className="block truncate text-sm font-bold group-hover:underline">
+                          {entry.driver.family_name}
+                        </span>
+                        <span
+                          className="block truncate text-xs font-semibold"
+                          style={{ color: readable(colour) }}
+                        >
+                          {entry.team.name}
+                        </span>
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <span />
+        )}
+        {event.circuit.outline && (
+          <TrackMap
+            path={event.circuit.outline}
+            colour={accent}
+            className="hidden aspect-square w-full self-center xl:block"
+          />
         )}
       </div>
-      {top3.length > 0 ? (
-        <ol aria-label={t("home.podium")} className="grid grid-cols-3 items-end gap-3">
-          {[1, 0, 2].map((index) => {
-            const entry = top3[index];
-            if (!entry) return <li key={index} />;
-            const colour = teamColour(entry.team_colour);
-            return (
-              <li key={entry.car_number}>
-                <Link
-                  to={`/drivers/${entry.driver.ref}`}
-                  className="group flex flex-col overflow-hidden rounded-lg"
-                  style={{ backgroundColor: teamTint(entry.team_colour, 30) }}
-                >
-                  <Face
-                    url={entry.media?.driver_image_url ?? entry.driver.photo_url}
-                    label={entry.driver.code ?? entry.driver.family_name.slice(0, 3)}
-                    colour={entry.team_colour}
-                    className={`w-full text-2xl ${index === 0 ? "h-48" : "h-40"}`}
-                    style={NO_BACKDROP}
-                  />
-                  <span
-                    className="flex items-center gap-2 px-2.5 py-2"
-                    style={{ backgroundColor: colour, color: inkOn(colour) }}
-                  >
-                    <span className="num font-bold">{index + 1}</span>
-                    <span className="truncate text-sm font-extrabold uppercase group-hover:underline">
-                      {entry.driver.family_name}
-                    </span>
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-      ) : (
-        <span />
-      )}
-      {track.data ? (
-        <CircuitOutline track={track.data} className="hidden h-48 w-full self-center lg:block" />
-      ) : (
-        event.circuit.outline && (
-          <CircuitMark
-            path={event.circuit.outline}
-            width={3}
-            className="hidden h-48 w-full self-center lg:block"
-          />
-        )
-      )}
     </header>
   );
 }

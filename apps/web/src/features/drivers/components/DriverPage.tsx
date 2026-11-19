@@ -1,10 +1,14 @@
 import type { Schema } from "@stintline/api-types";
+import type { CSSProperties } from "react";
 import { Link, useParams } from "react-router";
 
 import { ShowAll } from "@/components/hub/Collapsible";
 import { History } from "lucide-react";
 
+import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { Face } from "@/components/dash/Face";
 import { Panel } from "@/components/dash/Panel";
+import { Trails } from "@/components/glass/Trails";
 import { KeyFigures } from "@/components/hub/KeyFigures";
 import { SeasonBars } from "@/components/hub/SeasonBars";
 import { useCollapsed } from "@/components/hub/useCollapsed";
@@ -19,7 +23,8 @@ import { useDriver } from "@/features/hub/api";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
-import { teamColour, teamTint } from "@/lib/teams";
+import { readable } from "@/lib/colour";
+import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 type Career = Schema<"DriverCareer">;
@@ -98,71 +103,95 @@ function DriverHeader({ career }: { career: Career }) {
   const number = driver.permanent_number ?? career.latest_car_number;
   const colour = team?.colour;
 
+  const glow = teamColour(colour);
+  const code = driver.code ?? initials(driver.given_name, driver.family_name);
+
   return (
     <header
-      className="relative overflow-hidden rounded-xl border border-line"
-      style={{ backgroundColor: teamTint(colour, 22) }}
+      className="glass glow @container relative overflow-hidden rounded-[24px]"
+      style={{ "--glow": glow, "--glow-x": "85%", "--glow-y": "100%" } as CSSProperties}
     >
+      <Trails colour={glow} className="opacity-60" />
       {number != null && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute -top-6 right-4 text-[10rem] leading-none font-bold opacity-20 sm:text-[14rem]"
-          style={{ color: teamColour(colour) }}
+          className="watermark num absolute top-4 right-6 hidden sm:block"
+          style={{ fontSize: `${String(Math.min(30, 42 / String(number).length))}cqw` }}
         >
           {number}
         </span>
       )}
-      <div className="relative flex flex-col gap-6 p-5 sm:flex-row sm:items-end sm:p-7">
-        <figure className="flex shrink-0 flex-col gap-2">
-          <DriverPhoto
-            imageUrl={official ?? portrait?.image_url}
-            label={driver.code ?? initials(driver.given_name, driver.family_name)}
-            colour={colour}
-            className="h-52 w-40 rounded-lg"
-          />
-          {portrait && (
-            <figcaption className="max-w-44 text-xs text-muted">
-              <a
-                href={portrait.file_page_url}
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
-              >
-                {t("driver.photo", { artist: portrait.artist })}
-              </a>
-              {", "}
-              {portrait.license_url ? (
+      {official && (
+        <Face
+          url={official}
+          label={code}
+          colour={colour}
+          className="absolute right-[4%] bottom-0 hidden h-[110%] w-auto max-w-[40%] !object-contain object-bottom sm:block"
+          style={NO_BACKDROP}
+        />
+      )}
+      <div className="relative flex min-h-80 flex-col gap-6 p-6 sm:max-w-[60%] sm:flex-row sm:items-end sm:p-9">
+        {!official && (
+          <figure className="flex shrink-0 flex-col gap-2">
+            <DriverPhoto
+              imageUrl={portrait?.image_url}
+              label={code}
+              colour={colour}
+              className="h-52 w-40 rounded-2xl"
+            />
+            {portrait && (
+              <figcaption className="max-w-44 text-xs text-muted">
                 <a
-                  href={portrait.license_url}
+                  href={portrait.file_page_url}
                   target="_blank"
                   rel="noreferrer"
                   className="underline"
                 >
-                  {portrait.license}
+                  {t("driver.photo", { artist: portrait.artist })}
                 </a>
-              ) : (
-                portrait.license
-              )}
-            </figcaption>
-          )}
-        </figure>
-        <div className="min-w-0 pb-2">
-          <p className="text-xl text-muted">{driver.given_name}</p>
-          <h1 className="text-5xl leading-none font-extrabold sm:text-6xl">{driver.family_name}</h1>
+                {", "}
+                {portrait.license_url ? (
+                  <a
+                    href={portrait.license_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline"
+                  >
+                    {portrait.license}
+                  </a>
+                ) : (
+                  portrait.license
+                )}
+              </figcaption>
+            )}
+          </figure>
+        )}
+        {official && (
+          <Face
+            url={official}
+            label={code}
+            colour={colour}
+            className="h-64 w-auto self-center !object-contain object-bottom sm:hidden"
+            style={NO_BACKDROP}
+          />
+        )}
+        <div className="min-w-0 pb-1">
+          <p className="text-xl font-medium text-muted">{driver.given_name}</p>
+          <h1 className="display text-5xl leading-[0.9] sm:text-7xl">{driver.family_name}</h1>
           {team && (
-            <p className="mt-3 text-lg">
+            <p className="mt-4 text-lg font-bold" style={{ color: readable(glow) }}>
               <TeamName team={team} colour={colour} />
             </p>
           )}
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <dl className="mt-4 flex flex-wrap gap-2 text-sm">
             {driver.nationality && (
-              <div className="flex gap-1">
+              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
                 <dt className="text-muted">{t("driver.nationality")}</dt>
                 <dd className="font-semibold">{nationalityCountry(driver.nationality, locale)}</dd>
               </div>
             )}
             {driver.date_of_birth && (
-              <div className="flex gap-1">
+              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
                 <dt className="text-muted">{t("driver.born")}</dt>
                 <dd className="font-semibold">
                   {f.date(driver.date_of_birth)}
@@ -173,18 +202,18 @@ function DriverHeader({ career }: { career: Career }) {
               </div>
             )}
             {number != null && (
-              <div className="flex gap-1">
+              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
                 <dt className="text-muted">{t("driver.number")}</dt>
                 <dd className="font-semibold tabular-nums">{number}</dd>
               </div>
             )}
             {driver.wikipedia_url && (
-              <div>
+              <div className="flex items-center px-1">
                 <a
                   href={driver.wikipedia_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-semibold text-mark-text underline"
+                  className="font-semibold text-muted underline hover:text-ink"
                 >
                   {t("driver.wikipedia")}
                 </a>

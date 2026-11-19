@@ -1,8 +1,9 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router";
 
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { useI18n } from "@/lib/i18n/context";
-import { teamColour, teamTint } from "@/lib/teams";
+import { teamColour } from "@/lib/teams";
 
 import { type Report, writeReport } from "../write";
 
@@ -17,14 +18,16 @@ export function ReportCard({ report, lead = false }: { report: Report; lead?: bo
   const colour = winner.team_colour;
   return (
     <article
-      className={`relative flex overflow-hidden rounded-xl bg-panel ${
-        lead ? "flex-col self-start border border-line sm:flex-row" : "items-stretch border-l-4"
+      className={`glass glow reveal relative flex overflow-hidden ${
+        lead ? "flex-col self-start rounded-[20px] sm:flex-row" : "items-stretch rounded-2xl"
       }`}
-      style={{
-        borderTopColor: teamColour(colour),
-        borderLeftColor: teamColour(colour),
-        backgroundColor: teamTint(colour, 10),
-      }}
+      style={
+        {
+          "--glow": teamColour(colour),
+          "--glow-x": "100%",
+          "--glow-y": "100%",
+        } as CSSProperties
+      }
     >
       <DriverPhoto
         imageUrl={winner.driver.portrait_url}
@@ -39,7 +42,9 @@ export function ReportCard({ report, lead = false }: { report: Report; lead?: bo
           {report.kind === "SPRINT" ? t("news.sprint") : t("news.race")} ·{" "}
           {f.date(report.event.race_date)}
         </p>
-        <h3 className={`leading-tight font-bold ${lead ? "text-2xl sm:text-3xl" : "text-base"}`}>
+        <h3
+          className={`leading-tight ${lead ? "display text-2xl sm:text-3xl" : "text-base font-bold"}`}
+        >
           <Link
             to={`/news/${String(report.session_id)}`}
             className="after:absolute after:inset-0 hover:underline"
