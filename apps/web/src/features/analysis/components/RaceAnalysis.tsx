@@ -118,6 +118,7 @@ export function RaceAnalysis({
           highlighted={highlighted}
           kind={chart}
           marks={marks}
+          onPick={toggle}
         />
       ) : chart === "pace" ? (
         <>
@@ -243,6 +244,7 @@ function RunningChart({
   highlighted,
   kind,
   marks,
+  onPick,
 }: {
   sessionId: number;
   entries: readonly Entry[];
@@ -250,6 +252,7 @@ function RunningChart({
   highlighted: ReadonlySet<number>;
   kind: "positions" | "gaps";
   marks: readonly LapMark[];
+  onPick: (car: number) => void;
 }) {
   const { t, f } = useI18n();
   const replay = useReplay(sessionId);
@@ -275,6 +278,7 @@ function RunningChart({
           yDomain={[1, entries.length]}
           xLabel={t("analysis.lap")}
           marks={marks}
+          onPick={onPick}
         />
       </>
     );
@@ -295,8 +299,10 @@ function RunningChart({
         totalLaps={laps}
         invert
         yFormat={(value) => f.seconds(value, 0)}
+        tipFormat={(value) => f.seconds(value, 1)}
         xLabel={t("analysis.lap")}
         marks={marks}
+        onPick={onPick}
       />
     </>
   );

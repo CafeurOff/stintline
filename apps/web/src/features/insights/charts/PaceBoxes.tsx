@@ -2,7 +2,14 @@ import { AxisBottom } from "@visx/axis";
 import { GridColumns } from "@visx/grid";
 import { Group } from "@visx/group";
 import { scaleLinear } from "@visx/scale";
-import { useId } from "react";
+import { useId, useState } from "react";
+
+import { ChartTools } from "@/components/charts/ChartTools";
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
+import { ClipArea } from "@/components/charts/ClipArea";
+import { type Range, useZoom } from "@/components/charts/zoom";
+import { ZoomLayer } from "@/components/charts/ZoomLayer";
+import { useI18n } from "@/lib/i18n/context";
 
 import { teamColour, teamTint } from "@/lib/teams";
 import { useElementWidth } from "@/lib/useElementWidth";
@@ -41,17 +48,50 @@ export function PaceBoxes({
   const titleId = useId();
   const height = MARGIN.top + MARGIN.bottom + boxes.length * ROW;
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 120);
+  const { t } = useI18n();
   const lows = boxes.map((b) => b.low);
   const highs = boxes.map((b) => b.high);
-  const x = scaleLinear({
-    domain: [Math.min(...lows), Math.max(...highs)],
-    range: [0, innerWidth],
-    nice: true,
-  });
+  const base = scaleLinear({ domain: [Math.min(...lows), Math.max(...highs)], nice: true });
+  const rows = boxes.length * ROW;
+  const full = { x: base.domain() as unknown as Range, y: [0, rows] as Range };
+  const zoom = useZoom(full, boxes.map((b) => b.key).join(","));
+  const [hoverRow, setHoverRow] = useState<number | null>(null);
+  const x = scaleLinear({ domain: [...zoom.view.x], range: [0, innerWidth] });
+  const rowScale = scaleLinear({ domain: [0, rows], range: [0, rows] });
   const [lo, hi] = x.domain() as [number, number];
+  const hovered = hoverRow === null ? undefined : boxes[hoverRow];
   const clamp = (v: number) => x(Math.max(lo, Math.min(hi, v)));
   return (
-    <div ref={ref} className="w-full min-w-0">
+    <div ref={ref} className="relative w-full min-w-0">
+      <ChartTools zoom={zoom} />
+      {hovered && hoverRow !== null && (
+        <ChartTooltip
+          left={MARGIN.left + clamp(hovered.median)}
+          top={MARGIN.top + 44 + hoverRow * ROW}
+          width={width}
+          title={hovered.label}
+          rows={[
+            ["median", t("chart.median"), hovered.median, true],
+            ["q", t("chart.middleHalf"), null, false],
+            ["low", t("chart.fastestKept"), hovered.low, false],
+            ["high", t("chart.slowestKept"), hovered.high, false],
+          ].map(([key, name, value, strong]) => ({
+            key: String(key),
+            colour: teamColour(hovered.colour),
+            label: String(name),
+            value:
+              value === null
+                ? `${format(hovered.q1)} – ${format(hovered.q3)}`
+                : format(Number(value)),
+            strong: Boolean(strong),
+          }))}
+          footer={
+            hovered.outliers.length > 0
+              ? t("chart.outliers", { n: hovered.outliers.length })
+              : undefined
+          }
+        />
+      )}
       <svg width={width} height={height} role="img" aria-labelledby={titleId} className="block">
         <title id={titleId}>{label}</title>
         <Group left={MARGIN.left} top={MARGIN.top}>
@@ -61,12 +101,21 @@ export function PaceBoxes({
             numTicks={6}
             stroke="var(--color-line)"
           />
+          {hoverRow !== null && (
+            <rect
+              y={hoverRow * ROW}
+              width={innerWidth}
+              height={ROW}
+              fill="var(--color-ink)"
+              fillOpacity={0.05}
+              pointerEvents="none"
+            />
+          )}
           {boxes.map((box, i) => {
             const cy = i * ROW + ROW / 2;
             const fill = teamColour(box.colour);
             return (
               <g key={box.key}>
-                <title>{`${box.label}: ${format(box.median)} (${format(box.q1)} – ${format(box.q3)})`}</title>
                 <text
                   x={-8}
                   y={cy}
@@ -112,6 +161,24 @@ export function PaceBoxes({
               </g>
             );
           })}
+          <ClipArea width={innerWidth} height={rows}>
+            <ZoomLayer
+              width={innerWidth}
+              height={rows}
+              x={x}
+              y={rowScale}
+              onZoom={(next) => {
+                if (next.x) zoom.zoomTo({ x: next.x, y: full.y });
+              }}
+              onReset={zoom.reset}
+              onHover={(pt) => {
+                setHoverRow(Math.min(Math.floor(pt.y / ROW), boxes.length - 1));
+              }}
+              onLeave={() => {
+                setHoverRow(null);
+              }}
+            />
+          </ClipArea>
           <AxisBottom
             top={boxes.length * ROW}
             scale={x}

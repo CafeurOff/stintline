@@ -82,7 +82,7 @@ describe("analysis charts", () => {
       />,
     );
 
-    const bars = container.querySelectorAll("rect");
+    const bars = container.querySelectorAll('rect:not([data-testid="zoom-layer"])');
     expect(bars).toHaveLength(2);
     expect(bars[0]).toHaveAttribute("fill", COLOURS[0]);
     expect(bars[1]).toHaveAttribute("fill", COLOURS[1]);

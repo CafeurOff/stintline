@@ -2,7 +2,9 @@ import { AxisBottom } from "@visx/axis";
 import { GridColumns } from "@visx/grid";
 import { Group } from "@visx/group";
 import { scaleLinear } from "@visx/scale";
-import { useId } from "react";
+import { useId, useState } from "react";
+
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
 
 import { useElementWidth } from "@/lib/useElementWidth";
 
@@ -34,8 +36,27 @@ export function LossBars({
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 100);
   const top = Math.max(...rows.map((r) => r.value + (r.sigma ?? 0)), 1);
   const x = scaleLinear({ domain: [0, top], range: [0, innerWidth], nice: true });
+  const [hover, setHover] = useState<number | null>(null);
+  const hovered = hover === null ? undefined : rows[hover];
   return (
-    <div ref={ref} className="w-full min-w-0">
+    <div ref={ref} className="relative w-full min-w-0">
+      {hovered && hover !== null && (
+        <ChartTooltip
+          left={MARGIN.left + x(hovered.value)}
+          top={MARGIN.top + hover * ROW}
+          width={width}
+          title={hovered.label}
+          rows={[
+            {
+              key: "loss",
+              colour: "var(--color-t-blue)",
+              label: axisLabel,
+              value: `${format(hovered.value)}${hovered.sigma ? ` ± ${format(hovered.sigma)}` : ""}`,
+              strong: true,
+            },
+          ]}
+        />
+      )}
       <svg width={width} height={height} role="img" aria-labelledby={titleId} className="block">
         <title id={titleId}>{label}</title>
         <Group left={MARGIN.left} top={MARGIN.top}>
@@ -50,8 +71,23 @@ export function LossBars({
             const lo = x(Math.max(0, row.value - (row.sigma ?? 0)));
             const hi = x(row.value + (row.sigma ?? 0));
             return (
-              <g key={row.key}>
-                <title>{`${row.label}: ${format(row.value)}${row.sigma ? ` ± ${format(row.sigma)}` : ""}`}</title>
+              <g
+                key={row.key}
+                opacity={hover !== null && hover !== i ? 0.35 : 1}
+                onPointerEnter={() => {
+                  setHover(i);
+                }}
+                onPointerLeave={() => {
+                  setHover(null);
+                }}
+              >
+                <rect
+                  x={-MARGIN.left}
+                  y={cy - ROW / 2}
+                  width={width}
+                  height={ROW}
+                  fill="transparent"
+                />
                 <text
                   x={-8}
                   y={cy}

@@ -3,7 +3,12 @@ import { GridRows } from "@visx/grid";
 import { Group } from "@visx/group";
 import { scaleBand, scaleLinear } from "@visx/scale";
 import { Bar } from "@visx/shape";
-import { useId } from "react";
+import { useId, useState } from "react";
+
+import { ChartTools } from "@/components/charts/ChartTools";
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
+import { type Range, useZoom } from "@/components/charts/zoom";
+import { ZoomLayer } from "@/components/charts/ZoomLayer";
 
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
@@ -33,12 +38,20 @@ export function SeasonBars({
   colour: string | null | undefined;
   label: string;
 }) {
-  const { f } = useI18n();
+  const { t, f } = useI18n();
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const titleId = useId();
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 120);
   const innerHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
-  const ordered = [...seasons].sort((a, b) => a.year - b.year);
+  const all = [...seasons].sort((a, b) => a.year - b.year);
+  const full = { x: [0, all.length] as Range, y: [0, 1] as Range };
+  const zoom = useZoom(full, all.map((s) => s.year).join(","));
+  const [hover, setHover] = useState<number | null>(null);
+  const from = Math.max(0, Math.floor(zoom.view.x[0]));
+  const to = Math.min(all.length, Math.ceil(zoom.view.x[1]));
+  const ordered = all.slice(from, to);
+  const index = scaleLinear({ domain: [from, to], range: [0, innerWidth] });
+  const hovered = hover === null ? undefined : all[hover];
   const x = scaleBand({
     domain: ordered.map((s) => s.year),
     range: [0, innerWidth],
@@ -54,7 +67,35 @@ export function SeasonBars({
   const showPlaces = x.bandwidth() >= 18;
 
   return (
-    <div ref={ref} className="w-full min-w-0 overflow-hidden">
+    <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
+      {all.length > 6 && <ChartTools zoom={zoom} />}
+      {hovered && (
+        <ChartTooltip
+          left={MARGIN.left + (x(hovered.year) ?? 0) + x.bandwidth() / 2}
+          top={MARGIN.top + 44}
+          width={width}
+          title={String(hovered.year)}
+          rows={[
+            {
+              key: "pts",
+              colour: fill,
+              label: t("chart.points"),
+              value: f.number(hovered.points, hovered.points % 1 ? 1 : 0),
+              strong: true,
+            },
+            ...(hovered.position !== null
+              ? [
+                  {
+                    key: "pos",
+                    colour: fill,
+                    label: t("chart.place"),
+                    value: f.ordinal(hovered.position),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      )}
       <svg width={width} height={HEIGHT} role="img" aria-labelledby={titleId} className="block">
         <title id={titleId}>{label}</title>
         <Group left={MARGIN.left} top={MARGIN.top}>
@@ -70,7 +111,13 @@ export function SeasonBars({
                   width={x.bandwidth()}
                   height={innerHeight - barY}
                   fill={fill}
-                  opacity={season.position === 1 ? 1 : OTHER_OPACITY}
+                  opacity={
+                    hovered && hovered.year !== season.year
+                      ? 0.3
+                      : season.position === 1
+                        ? 1
+                        : OTHER_OPACITY
+                  }
                   rx={2}
                 />
                 {showPlaces && season.position !== null && (
@@ -88,6 +135,23 @@ export function SeasonBars({
               </g>
             );
           })}
+          <ZoomLayer
+            width={innerWidth}
+            height={innerHeight}
+            x={index}
+            y={y}
+            onZoom={(next) => {
+              if (next.x)
+                zoom.zoomTo({ x: [Math.floor(next.x[0]), Math.ceil(next.x[1])], y: full.y });
+            }}
+            onReset={zoom.reset}
+            onHover={(p) => {
+              setHover(Math.min(Math.floor(index.invert(p.x)), to - 1));
+            }}
+            onLeave={() => {
+              setHover(null);
+            }}
+          />
           <AxisLeft
             scale={y}
             numTicks={4}

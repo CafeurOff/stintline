@@ -2,7 +2,13 @@ import { AxisBottom, AxisLeft } from "@visx/axis";
 import { GridRows } from "@visx/grid";
 import { Group } from "@visx/group";
 import { scaleLinear } from "@visx/scale";
-import { useId } from "react";
+import { useId, useState } from "react";
+
+import { ChartTools } from "@/components/charts/ChartTools";
+import { ChartTooltip } from "@/components/charts/ChartTooltip";
+import { ClipArea } from "@/components/charts/ClipArea";
+import { type Range, useZoom } from "@/components/charts/zoom";
+import { ZoomLayer } from "@/components/charts/ZoomLayer";
 
 import { compoundInfo } from "@/lib/compounds";
 import { useElementWidth } from "@/lib/useElementWidth";
@@ -15,6 +21,8 @@ export interface ScatterSeries {
 
 const MARGIN = { top: 12, right: 16, bottom: 40, left: 60 };
 const SHAPES = ["circle", "square", "diamond"] as const;
+/** A point counts as under the pointer within this many pixels. */
+const NEAR_PX = 24;
 
 /**
  * Every kept lap of the chosen drivers: lap on x, time on y, the compound as the fill and
@@ -40,39 +48,102 @@ export function LapScatter({
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 120);
   const innerHeight = height - MARGIN.top - MARGIN.bottom;
   const values = series.flatMap((s) => s.points.map((p) => p.value));
-  const x = scaleLinear({ domain: [1, Math.max(totalLaps, 2)], range: [0, innerWidth] });
-  const y = scaleLinear({
-    domain: [Math.min(...values), Math.max(...values)],
-    range: [innerHeight, 0],
-    nice: true,
-  });
+  const spread = Math.max((Math.max(...values) - Math.min(...values)) * 0.05, 0.05);
+  const full = {
+    x: [0.5, Math.max(totalLaps, 2) + 0.5] as Range,
+    y: [Math.min(...values) - spread, Math.max(...values) + spread] as Range,
+  };
+  const zoom = useZoom(full, `${series.map((s) => s.key).join(",")}|${String(totalLaps)}`);
+  const [hover, setHover] = useState<{ px: number; py: number } | null>(null);
+  const x = scaleLinear({ domain: [...zoom.view.x], range: [0, innerWidth] });
+  const y = scaleLinear({ domain: [...zoom.view.y], range: [innerHeight, 0] });
+  const near = hover
+    ? series
+        .flatMap((s) => s.points.map((p) => ({ s, p })))
+        .map((d) => ({
+          ...d,
+          distance: Math.hypot(x(d.p.lap) - hover.px, y(d.p.value) - hover.py),
+        }))
+        .filter((d) => d.distance < NEAR_PX)
+        .sort((a, b) => a.distance - b.distance)[0]
+    : undefined;
   return (
-    <div ref={ref} className="w-full min-w-0">
+    <div ref={ref} className="relative w-full min-w-0">
+      <ChartTools zoom={zoom} />
+      {near && (
+        <ChartTooltip
+          left={MARGIN.left + x(near.p.lap)}
+          top={MARGIN.top + 44 + y(near.p.value) / 2}
+          width={width}
+          title={near.s.label}
+          rows={[
+            {
+              key: "v",
+              colour: compoundInfo(near.p.compound).fill,
+              label: xLabel + " " + String(near.p.lap),
+              value: format(near.p.value),
+              strong: true,
+            },
+          ]}
+          footer={near.p.tip}
+        />
+      )}
       <svg width={width} height={height} role="img" aria-labelledby={titleId} className="block">
         <title id={titleId}>{label}</title>
         <Group left={MARGIN.left} top={MARGIN.top}>
           <GridRows scale={y} width={innerWidth} numTicks={6} stroke="var(--color-line)" />
-          {series.map((s, index) =>
-            s.points.map((p) => {
-              const fill = compoundInfo(p.compound).fill;
-              const cx = x(p.lap);
-              const cy = y(p.value);
-              const shape = SHAPES[index % SHAPES.length];
-              const common = { fill, stroke: "var(--color-panel)", strokeWidth: 1 };
-              return (
-                <g key={`${String(s.key)}-${String(p.lap)}`}>
-                  <title>{p.tip}</title>
-                  {shape === "circle" ? (
-                    <circle cx={cx} cy={cy} r={4} {...common} />
-                  ) : shape === "square" ? (
-                    <rect x={cx - 3.5} y={cy - 3.5} width={7} height={7} {...common} />
-                  ) : (
-                    <path d={`M${String(cx)} ${String(cy - 5)}l5 5l-5 5l-5-5z`} {...common} />
-                  )}
-                </g>
-              );
-            }),
-          )}
+          <ClipArea width={innerWidth} height={innerHeight}>
+            {series.map((s, index) =>
+              s.points.map((p) => {
+                const fill = compoundInfo(p.compound).fill;
+                const cx = x(p.lap);
+                const cy = y(p.value);
+                const shape = SHAPES[index % SHAPES.length];
+                const common = { fill, stroke: "var(--color-panel)", strokeWidth: 1 };
+                return (
+                  <g
+                    key={`${String(s.key)}-${String(p.lap)}`}
+                    opacity={near && near.s.key !== s.key ? 0.3 : 1}
+                  >
+                    {shape === "circle" ? (
+                      <circle cx={cx} cy={cy} r={4} {...common} />
+                    ) : shape === "square" ? (
+                      <rect x={cx - 3.5} y={cy - 3.5} width={7} height={7} {...common} />
+                    ) : (
+                      <path d={`M${String(cx)} ${String(cy - 5)}l5 5l-5 5l-5-5z`} {...common} />
+                    )}
+                  </g>
+                );
+              }),
+            )}
+            {near && (
+              <circle
+                cx={x(near.p.lap)}
+                cy={y(near.p.value)}
+                r={7}
+                fill="none"
+                stroke="var(--color-ink)"
+                strokeWidth={2}
+                pointerEvents="none"
+              />
+            )}
+          </ClipArea>
+          <ZoomLayer
+            width={innerWidth}
+            height={innerHeight}
+            x={x}
+            y={y}
+            onZoom={(next) => {
+              zoom.zoomTo({ x: next.x ?? zoom.view.x, y: next.y ?? zoom.view.y });
+            }}
+            onReset={zoom.reset}
+            onHover={(pt) => {
+              setHover({ px: pt.x, py: pt.y });
+            }}
+            onLeave={() => {
+              setHover(null);
+            }}
+          />
           <AxisLeft
             scale={y}
             numTicks={6}
@@ -84,7 +155,7 @@ export function LapScatter({
           <AxisBottom
             top={innerHeight}
             scale={x}
-            numTicks={Math.min(totalLaps, 12)}
+            numTicks={Math.min(Math.ceil(zoom.view.x[1] - zoom.view.x[0]), 12)}
             stroke="var(--color-line-strong)"
             tickStroke="var(--color-line-strong)"
             tickLabelProps={{ fill: "var(--color-muted)", fontSize: 11 }}
