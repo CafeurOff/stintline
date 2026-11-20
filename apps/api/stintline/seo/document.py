@@ -70,7 +70,7 @@ PAGE_MODULES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
         (r"circuits(/[\w-]+)?", "analysis/components/CircuitsPage"),
         (r"documents", "paddock/components/DocumentsPage"),
         (r"technical", "technical/components/TechnicalPage"),
-        (r"model", "model-about/components/ModelPage"),
+        (r"model", "model/components/ModelPage"),
         (r"about", "about/components/AboutPage"),
     )
 )
