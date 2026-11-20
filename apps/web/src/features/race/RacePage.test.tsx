@@ -43,6 +43,9 @@ describe("RacePage", () => {
       ),
     ).toBeVisible();
     expect(within(panel()).getByText(/Close with ALO/)).toBeVisible();
+    expect(within(panel()).getByText(/before the stop to 5th after it/)).toBeVisible();
+    expect(await within(panel()).findByText("Green flag")).toBeVisible();
+    expect(within(panel()).getByText(/measured on \d+ green-flag/)).toBeVisible();
     expect(bodies).toEqual([{ car: 4, pit_lap: 30 }]);
   });
 
@@ -89,6 +92,8 @@ describe("RacePage", () => {
 
     expect(await within(panel()).findByText("PIA would stay behind")).toBeVisible();
     expect(within(panel()).getByText(/Chance of coming out ahead: <1%/)).toBeVisible();
+    expect(within(panel()).getByText(/Net effect of the undercut for PIA/)).toBeVisible();
+    expect(within(panel()).getByRole("table", { name: /lap by lap/ })).toBeVisible();
   });
 
   it("says when there is nobody to undercut", async () => {

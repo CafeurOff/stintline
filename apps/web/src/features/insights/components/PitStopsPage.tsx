@@ -217,7 +217,14 @@ function PitStopsView({ data }: { data: Stops }) {
                         )}
                       </td>
                       <td className="num text-muted">{f.seconds(team.best_stationary_s, 2)}</td>
-                      <td className="num text-muted">{f.seconds(team.median_lane_s, 1)}</td>
+                      <td className="num text-muted">
+                        {f.seconds(team.median_lane_s, 1)}
+                        {team.best_lane_s != null && (
+                          <span className="block text-[0.7rem]">
+                            {t("stops.bestLane", { time: f.seconds(team.best_lane_s, 1) })}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

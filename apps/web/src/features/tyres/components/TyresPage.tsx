@@ -239,6 +239,8 @@ function WearChart({
                     "tyres.col.stint",
                     "tyres.col.compound",
                     "tyres.col.wear",
+                    "tyres.col.range",
+                    "tyres.col.fit",
                     "tyres.col.laps",
                   ] as const
                 ).map((key) => (
@@ -259,6 +261,12 @@ function WearChart({
                     <CompoundBadge compound={s.compound} />
                   </td>
                   <td className="py-1 pr-4">{f.millis(s.slope_s_per_lap)}</td>
+                  <td className="py-1 pr-4 text-muted">
+                    {s.slope_ci.length === 2
+                      ? `${f.millis(s.slope_ci[0] ?? 0)} – ${f.millis(s.slope_ci[1] ?? 0)}`
+                      : "—"}
+                  </td>
+                  <td className="py-1 pr-4 text-muted">{f.number(s.r_squared, 2)}</td>
                   <td className="py-1">{s.n_laps}</td>
                 </tr>
               ))}

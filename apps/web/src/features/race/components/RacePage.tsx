@@ -406,6 +406,7 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
                   {t("stop.question", { name: entry.driver.family_name })}
                 </h2>
                 <StopPanel
+                  sessionId={sessionId}
                   entry={entry}
                   canStop={canStop}
                   maxLap={totalLaps - 1}
