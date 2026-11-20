@@ -1,7 +1,7 @@
 # Live and historical data landscape (November 2026)
 
 Survey of every known way to obtain Formula 1 timing, strategy and driver data, official or not, API or not. It was done before designing ingestion and live mode.
-It feeds `docs/data-sources.md` (Phase 1) and the provider ADR (Phase 3).
+It fed `docs/data-sources.md` and ADR 0002, which records the decisions taken; where they differ, the ADR wins.
 
 Snapshot date: 2026-11-03. This ecosystem changes often (see the October 2026 archive lockdown below). Re-check before relying on any limit or price quoted here.
 
@@ -52,7 +52,7 @@ Snapshot date: 2026-11-03. This ecosystem changes often (see the October 2026 ar
 - **Team radio audio + speech-to-text**: OpenF1 `team_radio` exposes clip URLs. Transcribing them (e.g. Whisper) could detect "box box" calls, but the audio is FOM content. Out of scope. Possibly an opt-in local experiment later.
 - **Weather**: OpenF1 `weather` gives on-track samples (air/track temperature, rainfall, wind). Open-Meteo adds a forecast (rain probability for the next hour), which is relevant to strategy and free under CC-BY 4.0.
 - **Community datasets**: TracingInsights (Apache-2.0 per its docs) re-publishes lap and telemetry JSON. Its provenance relies on FastF1 / MultiViewer, so the same upstream terms apply.
-- **MultiViewer** (desktop app, F1 TV based) and its undocumented circuits API: not a data source for us (used by v1, dropped).
+- **MultiViewer** (desktop app, F1 TV based) and its undocumented circuits API: not a data source for us.
 - **Game telemetry (EA F1 UDP)**: real-time and well documented, but it describes the video game, not real races. Out of scope.
 
 ## 3. Consequences for StintLine
@@ -66,4 +66,4 @@ Snapshot date: 2026-11-03. This ecosystem changes often (see the October 2026 ar
 3. **Live mode requires the user's own OpenF1 Sponsor token** (`OPENF1_CLIENT_ID` / `OPENF1_CLIENT_SECRET`). The worker uses MQTT when available and falls back to REST polling within the 6 req/s and 60 req/min budget.
 4. **The public demo never serves live data.** It runs replay mode from data stored in the database (seeded fixtures), which respects the personal-use terms of OpenF1 Sponsor and formula1.com.
 5. **Fixtures**: keep recorded fixtures small (3 reference races, only the endpoints needed) and document their origin in `docs/data-sources.md`.
-6. **FIA PDFs** are an optional validation source for pit-loss backtesting (Phase 4), not ingested in production.
+6. **FIA PDFs** are an optional validation source for pit-loss backtesting, not ingested in production.

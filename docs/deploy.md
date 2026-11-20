@@ -47,7 +47,7 @@ Any machine with Docker works. The stack is light: under 1 GB of RAM in use with
 
 ## Media
 
-`OFFICIAL_MEDIA_ENABLED=true` is the default (maintainer decision, ADR 0014): drivers show their latest official portrait and teams their car render, only ever linked from their original URLs and never stored (ADR 0006). Set it to `false` to fall back at once to Wikipedia portraits with their credit (ADR 0009) and the original numbered avatars and team-colour illustrations.
+`OFFICIAL_MEDIA_ENABLED=true` is the default (ADR 0014): drivers show their latest official portrait and teams their car render, only ever linked from their original URLs and never stored (ADR 0006). Set it to `false` to fall back at once to Wikipedia portraits with their credit (ADR 0009) and the original numbered avatars and team-colour illustrations.
 
 ## Audience
 
