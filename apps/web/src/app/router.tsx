@@ -33,20 +33,20 @@ const StandingsPage = page(
 const RacePage = page(() => import("@/features/race/components/RacePage"), "RacePage");
 const TyresPage = page(() => import("@/features/tyres/components/TyresPage"), "TyresPage");
 const HeadToHeadPage = page(
-  () => import("@/features/insights/components/HeadToHeadPage"),
+  () => import("@/features/analysis/components/HeadToHeadPage"),
   "HeadToHeadPage",
 );
-const PacePage = page(() => import("@/features/insights/components/PacePage"), "PacePage");
+const PacePage = page(() => import("@/features/analysis/components/PacePage"), "PacePage");
 const ConsistencyPage = page(
-  () => import("@/features/insights/components/ConsistencyPage"),
+  () => import("@/features/analysis/components/ConsistencyPage"),
   "ConsistencyPage",
 );
 const PitStopsPage = page(
-  () => import("@/features/insights/components/PitStopsPage"),
+  () => import("@/features/analysis/components/PitStopsPage"),
   "PitStopsPage",
 );
 const CircuitsPage = page(
-  () => import("@/features/insights/components/CircuitsPage"),
+  () => import("@/features/analysis/components/CircuitsPage"),
   "CircuitsPage",
 );
 const DocumentsPage = page(

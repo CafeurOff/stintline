@@ -3,9 +3,9 @@ import type { Schema } from "@stintline/api-types";
 
 import { SeasonBars } from "@/components/hub/SeasonBars";
 import { LapChart } from "@/features/race-analysis/components/LapChart";
-import { LapScatter } from "@/features/insights/charts/LapScatter";
-import { PaceBoxes } from "@/features/insights/charts/PaceBoxes";
-import { RoundGapBars } from "@/features/insights/charts/RoundGapBars";
+import { LapScatter } from "@/features/analysis/charts/LapScatter";
+import { PaceBoxes } from "@/features/analysis/charts/PaceBoxes";
+import { RoundGapBars } from "@/features/analysis/charts/RoundGapBars";
 import { ProgressionChart } from "@/features/standings/components/ProgressionChart";
 import { DegradationChart } from "@/features/tyres/components/DegradationChart";
 import { renderWithProviders } from "@/test/render";

@@ -40,7 +40,7 @@ import { useForecasts } from "@/features/forecast/api";
 import { ForecastBadge, WeatherIcon } from "@/features/forecast/components/ForecastBadge";
 import { FILTERS, type Tag, useFacts } from "@/features/hub/facts";
 import { useHome, useProgression, useSeasonEvents, useStandings } from "@/features/hub/api";
-import { useCircuits } from "@/features/insights/api";
+import { useCircuits } from "@/features/analysis/api";
 import { useHeadlines, useReport } from "@/features/news/api";
 import { useAgo } from "@/features/news/useAgo";
 import { useSessionDetail } from "@/features/race/api";

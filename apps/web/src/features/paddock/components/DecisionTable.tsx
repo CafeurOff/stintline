@@ -2,7 +2,7 @@ import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
 import { Flag } from "@/components/racing/Flag";
-import { DriverChip } from "@/features/insights/components/common";
+import { DriverChip } from "@/features/analysis/components/common";
 import { eventName, fiaSessionLabel } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";

@@ -5,7 +5,7 @@ import { Link } from "react-router";
 
 import { Panel } from "@/components/dash/Panel";
 import { Term } from "@/components/ui/Term";
-import { useCircuits } from "@/features/insights/api";
+import { useCircuits } from "@/features/analysis/api";
 import { useSessionDetail } from "@/features/race/api";
 import { byFinish } from "@/features/race/entries";
 import { compoundInfo } from "@/lib/compounds";
