@@ -151,3 +151,28 @@ export function assumptionText(
 ): string {
   return locale === "fr" ? (ASSUMPTIONS_FR[`${group}/${name}`] ?? english) : english;
 }
+
+/** French names of the session labels the FIA writes in stewards' decisions. */
+const FIA_SESSIONS_FR: Readonly<Record<string, string>> = {
+  Race: "Course",
+  Sprint: "Sprint",
+  Qualifying: "Qualifications",
+  "Sprint Qualifying": "Qualifications sprint",
+  "Sprint Shootout": "Qualifications sprint",
+  "Free Practice 1": "Essais libres 1",
+  "Free Practice 2": "Essais libres 2",
+  "Free Practice 3": "Essais libres 3",
+  "Practice 1": "Essais libres 1",
+  "Practice 2": "Essais libres 2",
+  "Practice 3": "Essais libres 3",
+  "Reconnaissance Laps": "Tours de reconnaissance",
+  "Grid Procedure": "Procédure de grille",
+  "Thursday Press Conference": "Conférence de presse du jeudi",
+};
+
+/** A session label from an FIA document in the reader's language ("Free Practice 3"). */
+export function fiaSessionLabel(label: string | null | undefined, locale: Locale): string {
+  if (!label) return "";
+  if (locale === "en") return label.replace(/^Practice (\d)$/, "Free Practice $1");
+  return FIA_SESSIONS_FR[label] ?? label;
+}

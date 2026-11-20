@@ -156,10 +156,11 @@ function PitStopsView({ data }: { data: Stops }) {
                       <td>
                         <Link
                           to={`/events/${String(stop.event_id)}`}
-                          className="flex items-center gap-2 hover:underline"
+                          title={eventName(stop.name, locale)}
+                          className="flex max-w-[13rem] min-w-0 items-center gap-2 hover:underline"
                         >
                           <Flag country={stop.country} />
-                          <span className="truncate">{eventName(stop.name, locale)}</span>
+                          <span className="min-w-0 truncate">{eventName(stop.name, locale)}</span>
                         </Link>
                       </td>
                       <td className="num text-muted">{stop.lap}</td>

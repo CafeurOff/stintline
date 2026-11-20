@@ -9,8 +9,12 @@ import { TrackMap } from "@/components/glass/TrackMap";
 import { Trails } from "@/components/glass/Trails";
 import { Bust } from "@/components/dash/Bust";
 import { Panel } from "@/components/dash/Panel";
+import { ShowAll } from "@/components/hub/Collapsible";
 import { DriverName } from "@/components/hub/DriverName";
+import { useCollapsed } from "@/components/hub/useCollapsed";
 import { Flag } from "@/components/racing/Flag";
+import { GridSlot, ResultPosition } from "@/components/racing/ResultStatus";
+import { useOutText } from "@/lib/useOutText";
 import { TeamName } from "@/components/hub/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -235,8 +239,13 @@ function EventHero({
                     >
                       {index + 1}
                     </span>
-                    <span className="relative -mt-6 flex flex-col px-4 pb-4 leading-tight">
-                      <span className="display truncate text-base">{entry.driver.family_name}</span>
+                    <span className="relative -mt-6 flex flex-col px-2.5 pb-4 leading-tight sm:px-4">
+                      <span className="display truncate text-base">
+                        <span className="sm:hidden" title={entry.driver.family_name}>
+                          {entry.driver.code ?? entry.driver.family_name}
+                        </span>
+                        <span className="hidden sm:inline">{entry.driver.family_name}</span>
+                      </span>
                       <span
                         className="truncate text-xs font-bold"
                         style={{ color: readable(colour) }}
@@ -265,10 +274,24 @@ function EventHero({
 }
 
 /** Stewards' decisions of the weekend (ADR 0018); nothing when there are none. */
+/** Races first, then qualifying and practice: what changed the result comes first. */
+const DECISION_ORDER = ["R", "SPRINT", "Q", "SQ", "FP3", "FP2", "FP1"];
+/** Decisions shown before "show all": a weekend can have forty. */
+const DECISIONS_SHOWN = 8;
+
+function decisionRank(kind: string | null | undefined): number {
+  const index = DECISION_ORDER.indexOf(kind ?? "");
+  return index === -1 ? DECISION_ORDER.length : index;
+}
+
 function StewardsPanel({ eventId, season }: { eventId: number; season: number }) {
   const { t } = useI18n();
   const decisions = useDecisions({ event: eventId });
-  if (!decisions.data || decisions.data.length === 0) return null;
+  const sorted = [...(decisions.data ?? [])].sort(
+    (a, b) => decisionRank(a.session_kind) - decisionRank(b.session_kind),
+  );
+  const collapsed = useCollapsed(sorted, DECISIONS_SHOWN);
+  if (sorted.length === 0) return null;
   return (
     <Panel
       title={t("docs.decisions")}
@@ -282,7 +305,18 @@ function StewardsPanel({ eventId, season }: { eventId: number; season: number })
         </Link>
       }
     >
-      <DecisionTable decisions={decisions.data} />
+      <DecisionTable decisions={collapsed.shown} />
+      {collapsed.hidden > 0 || collapsed.open ? (
+        <div className="flex px-5 pt-1 pb-5">
+          <ShowAll
+            hidden={collapsed.hidden}
+            open={collapsed.open}
+            onToggle={() => {
+              collapsed.setOpen(!collapsed.open);
+            }}
+          />
+        </div>
+      ) : null}
     </Panel>
   );
 }
@@ -334,17 +368,20 @@ function SessionResults({ sessionId, kind }: { sessionId: number; kind: Kind }) 
 
 function RaceTable({ entries }: { entries: Entry[] }) {
   const { t, f } = useI18n();
+  const outText = useOutText();
   const winner = entries[0];
   const gap = (entry: Entry): string => {
     if (!winner) return "";
     if (entry === winner) return f.lapTime(entry.race_time_s);
+    const out = outText(entry.classification, entry.status);
+    if (out !== null) return out;
     // Lapped cars also have a time (for fewer laps): the gap is in laps, not seconds.
     const down = (winner.laps_completed ?? 0) - (entry.laps_completed ?? 0);
     if (entry.finish_position != null && down > 0) {
       return t(down === 1 ? "event.lapDown" : "event.lapsDown", { n: down });
     }
     if (entry.race_time_s != null && winner.race_time_s != null) {
-      return `+${f.number(entry.race_time_s - winner.race_time_s, 3)}`;
+      return `+${f.seconds(entry.race_time_s - winner.race_time_s, 3)}`;
     }
     return entry.status ?? "";
   };
@@ -365,7 +402,12 @@ function RaceTable({ entries }: { entries: Entry[] }) {
         <tbody>
           {entries.map((entry) => (
             <tr key={entry.car_number}>
-              <td className="num font-bold">{entry.classification ?? entry.finish_position}</td>
+              <td className="num font-bold">
+                <ResultPosition
+                  classification={entry.classification}
+                  position={entry.finish_position}
+                />
+              </td>
               <td>
                 <DriverName
                   driver={entry.driver}
@@ -386,7 +428,7 @@ function RaceTable({ entries }: { entries: Entry[] }) {
                 <TeamName team={entry.team} colour={entry.team_colour} />
               </td>
               <td className="num hidden text-muted md:table-cell">
-                {entry.grid_position === 0 ? "—" : (entry.grid_position ?? "—")}
+                <GridSlot grid={entry.grid_position} />
               </td>
               <td className="num hidden text-muted md:table-cell">{entry.laps_completed}</td>
               <td className="num whitespace-nowrap">{gap(entry)}</td>

@@ -7,3 +7,9 @@ export function sessionLabel(kind: string, t: ReturnType<typeof useI18n>["t"]): 
   const known = SESSION_KINDS.find((k) => k === kind);
   return known ? t(`session.${known}`) : kind;
 }
+
+/** Short session name for narrow places ("FP1", "Q"), the full one otherwise. */
+export function sessionShort(kind: string, t: ReturnType<typeof useI18n>["t"]): string {
+  const known = SESSION_KINDS.find((k) => k === kind);
+  return known ? t(`session.short.${known}`) : kind;
+}

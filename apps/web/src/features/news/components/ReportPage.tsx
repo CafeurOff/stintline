@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { useSessionDetail } from "@/features/race/api";
 import { eventName } from "@/lib/i18n/content";
+import { ResultPosition } from "@/components/racing/ResultStatus";
+import { useOutText } from "@/lib/useOutText";
 import { useI18n } from "@/lib/i18n/context";
 import { Trails } from "@/components/glass/Trails";
 import { teamColour } from "@/lib/teams";
@@ -212,6 +214,7 @@ function Figures({ report }: { report: Report }) {
 
 function Results({ report }: { report: Report }) {
   const { t, f } = useI18n();
+  const outText = useOutText();
   return (
     <section aria-labelledby="report-results" className="flex flex-col gap-3">
       <h2 id="report-results" className="text-2xl font-bold">
@@ -233,9 +236,11 @@ function Results({ report }: { report: Report }) {
             {report.results.map((line) => (
               <tr key={line.entry.car_number}>
                 <td className="num font-bold">
-                  {line.position != null && /^\d+$/.test(line.classification)
-                    ? line.position
-                    : line.classification || "—"}
+                  {line.position != null && /^\d+$/.test(line.classification) ? (
+                    line.position
+                  ) : (
+                    <ResultPosition classification={line.classification} position={null} />
+                  )}
                 </td>
                 <td>
                   <DriverName
@@ -245,7 +250,7 @@ function Results({ report }: { report: Report }) {
                   />
                 </td>
                 <td className="hidden text-muted sm:table-cell">{line.entry.team.name}</td>
-                <td className="num">{gapText(line, t, f)}</td>
+                <td className="num">{gapText(line, t, f, outText)}</td>
                 <td className="num font-semibold">
                   {line.points > 0 ? f.number(line.points, line.points % 1 ? 1 : 0) : ""}
                 </td>
@@ -262,12 +267,12 @@ function gapText(
   line: Schema<"ResultLine">,
   t: ReturnType<typeof useI18n>["t"],
   f: ReturnType<typeof useI18n>["f"],
+  outText: ReturnType<typeof useOutText>,
 ): string {
   if (line.position === 1) return "";
   const code = line.classification;
-  if (code === "R" || code === "W" || code === "D" || code === "E" || code === "N") {
-    return t(`report.status.${code}`);
-  }
+  const out = outText(code, line.entry.status);
+  if (out !== null) return out;
   if (!/^\d+$/.test(code)) return line.entry.status ?? code;
   if (line.laps_down > 0) {
     return t(line.laps_down === 1 ? "event.lapDown" : "event.lapsDown", { n: line.laps_down });

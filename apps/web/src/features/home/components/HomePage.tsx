@@ -2,7 +2,6 @@ import type { Schema } from "@stintline/api-types";
 import {
   ChevronRight,
   Flag as FlagIcon,
-  Newspaper,
   Play,
   Route,
   Siren,
@@ -14,6 +13,7 @@ import { type CSSProperties, type ReactNode, useState } from "react";
 import { Link } from "react-router";
 
 import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { Bust } from "@/components/dash/Bust";
 import { Face } from "@/components/dash/Face";
 import { Move } from "@/components/dash/Move";
 import {
@@ -47,16 +47,16 @@ import { useSessionDetail } from "@/features/race/api";
 import { circuitAccent } from "@/lib/accent";
 import { readable } from "@/lib/colour";
 import { eventName } from "@/lib/i18n/content";
+import { HeadlineThumb } from "@/features/news/components/HeadlineThumb";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
-import { sessionLabel } from "@/lib/sessions";
+import { sessionLabel, sessionShort } from "@/lib/sessions";
 import { teamColour } from "@/lib/teams";
 import { timeLeft, useClock } from "@/lib/useClock";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 type Entry = Schema<"Entry">;
 type Line = Schema<"StandingLine">;
-type Headline = Schema<"Headline">;
 type Event = Schema<"Event">;
 type Report = Schema<"RaceReport">;
 
@@ -313,7 +313,7 @@ function WeekendStrip({ event, nextId }: { event: Event; nextId: number | null }
           return (
             <li
               key={s.id}
-              className={`flex min-w-44 flex-1 items-center gap-3 border-r border-line px-6 py-4 last:border-r-0 ${
+              className={`flex min-w-36 flex-1 items-center gap-3 border-r border-line px-4 py-4 last:border-r-0 sm:min-w-44 sm:px-6 ${
                 isNext ? "bg-ink/[0.06]" : ""
               }`}
             >
@@ -324,7 +324,12 @@ function WeekendStrip({ event, nextId }: { event: Event; nextId: number | null }
                 </span>
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold">{sessionLabel(s.kind, t)}</span>
+                <span className="block truncate text-sm font-bold">
+                  <span className="sm:hidden" title={sessionLabel(s.kind, t)}>
+                    {sessionShort(s.kind, t)}
+                  </span>
+                  <span className="hidden sm:inline">{sessionLabel(s.kind, t)}</span>
+                </span>
                 <span className="num block text-xs text-muted">{time.format(start)}</span>
               </span>
               {forecast && (
@@ -354,7 +359,7 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
     detail?.entries.find((e) => e.car_number === winner?.car_number) ?? winner;
   const margin = report?.podium[1]?.gap_s;
   const figures: [string, string][] = [];
-  if (margin != null) figures.push([`+${f.number(margin, 3)}`, t("home.marginLabel")]);
+  if (margin != null) figures.push([`+${f.seconds(margin, 3)}`, t("home.marginLabel")]);
   if (report?.winner_wins != null) figures.push([two(report.winner_wins), t("home.seasonWins")]);
   if (report?.winner_strategy) figures.push([two(report.winner_strategy.stops), t("home.pits")]);
 
@@ -505,11 +510,18 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
       >
         {codeOf(first.driver)}
       </span>
+      {/* Phones: a bust in the top corner, so the figures and the sentence stay clear. */}
+      <Bust
+        url={first.driver.photo_url}
+        label={codeOf(first.driver)}
+        colour={first.colour}
+        className="absolute top-12 right-0 h-52 w-[58%] sm:hidden"
+      />
       <Face
         url={first.driver.photo_url}
         label={codeOf(first.driver)}
         colour={first.colour}
-        className="absolute right-0 bottom-0 h-[82%] w-auto max-w-[80%] !object-contain object-bottom text-4xl"
+        className="absolute right-0 bottom-0 hidden h-[82%] w-auto max-w-[80%] !object-contain object-bottom text-4xl sm:block"
         style={NO_BACKDROP}
       />
       <div className="relative z-10 flex flex-col gap-4 bg-gradient-to-t from-bg/80 via-bg/30 to-transparent p-6 pt-24">
@@ -874,33 +886,6 @@ function FactsCard({ report }: { report: Report }) {
 
 /* --------------------------------------------------------------------- news */
 
-function NewsThumb({ headline, className }: { headline: Headline; className: string }) {
-  const [failed, setFailed] = useState(false);
-  if (headline.image_url && !failed) {
-    return (
-      <img
-        src={headline.image_url}
-        alt=""
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          setFailed(true);
-        }}
-        className={`object-cover ${className}`}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={`glow grid place-items-center text-muted ${className}`}
-      style={{ "--glow": "#2f6bff", "--glow-x": "50%" } as CSSProperties}
-    >
-      <Newspaper className="size-7" />
-    </span>
-  );
-}
-
 function NewsCard() {
   const { t, locale } = useI18n();
   const ago = useAgo();
@@ -922,7 +907,7 @@ function NewsCard() {
             rel="noopener noreferrer"
             className="group relative flex min-h-80 flex-col justify-end self-stretch overflow-hidden rounded-2xl"
           >
-            <NewsThumb headline={lead} className="absolute inset-0 size-full" />
+            <HeadlineThumb headline={lead} className="absolute inset-0 size-full" eager />
             <span
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"
@@ -947,7 +932,7 @@ function NewsCard() {
                 rel="noopener noreferrer"
                 className="group flex items-center gap-4 py-3"
               >
-                <NewsThumb headline={h} className="h-16 w-24 shrink-0 rounded-xl" />
+                <HeadlineThumb headline={h} className="h-16 w-24 shrink-0 rounded-xl" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="line-clamp-2 leading-snug font-bold group-hover:underline">
                     {h.title}

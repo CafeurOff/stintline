@@ -180,8 +180,8 @@ describe("Hub pages", () => {
 
     const row = (await screen.findByRole("link", { name: "Las Vegas Grand Prix" })).closest("tr");
 
-    expect(row).not.toBeNull();
-    expect(row).toHaveTextContent("DDisqualified");
+    if (!row) throw new Error("no row for the Las Vegas Grand Prix");
+    expect(within(row).getByTitle("Disqualified")).toHaveTextContent("DSQ");
     expect(row).not.toHaveTextContent("19");
   });
 

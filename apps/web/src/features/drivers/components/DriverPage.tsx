@@ -53,6 +53,7 @@ export function DriverPage() {
         <DriverSeason
           driverRef={data.driver.ref}
           seasons={data.seasons.map((s) => s.year)}
+          defaultSeason={openingSeason(data)}
           colour={data.latest_team?.colour}
         />
       )}
@@ -304,4 +305,23 @@ function SeasonsTable({ career }: { career: Career }) {
       />
     </Panel>
   );
+}
+
+/** Seasons since the last one that still count as a current career. */
+const ACTIVE_YEARS = 1;
+
+/**
+ * The season a profile opens on: the latest for a driver still racing, else the driver's
+ * best one (highest championship place, then most points), so a legend does not open on a
+ * three-race final season.
+ */
+function openingSeason(career: Schema<"DriverCareer">): number | null {
+  const last = career.totals.last_season;
+  if (last === null) return null;
+  if (last >= new Date().getUTCFullYear() - ACTIVE_YEARS) return last;
+  const best = [...career.seasons].sort(
+    (a, b) =>
+      (a.championship_position ?? 99) - (b.championship_position ?? 99) || b.points - a.points,
+  )[0];
+  return best?.year ?? last;
 }

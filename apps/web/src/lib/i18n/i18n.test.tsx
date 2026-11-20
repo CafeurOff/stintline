@@ -1,3 +1,4 @@
+import { interpolate } from "./interpolate";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -69,5 +70,20 @@ describe("i18n", () => {
     expect(assumptionGroup("Fuel", "fr")).toBe("Carburant");
     expect(assumptionText("Fuel", "unknown", "as is", "fr")).toBe("as is");
     expect(assumptionText("Pit loss", "outlier_k", "en", "fr")).toMatch(/arrêts trop éloignés/);
+  });
+});
+
+describe("interpolate", () => {
+  it("agrees words with a number in each language", () => {
+    expect(interpolate("{n} {n|lap|laps}", { n: 1 }, "en")).toBe("1 lap");
+    expect(interpolate("{n} {n|lap|laps}", { n: 0 }, "en")).toBe("0 laps");
+    expect(interpolate("{n} {n|tour|tours}", { n: 0 }, "fr")).toBe("0 tour");
+    expect(interpolate("{n} {n|tour|tours}", { n: 3 }, "fr")).toBe("3 tours");
+    expect(interpolate("{n|a|b}", {}, "en")).toBe("{n|a|b}");
+  });
+
+  it("keeps French punctuation on the line of its word", () => {
+    expect(interpolate("Et maintenant ?", undefined, "fr")).toBe("Et maintenant ?");
+    expect(interpolate("Now ?", undefined, "en")).toBe("Now ?");
   });
 });
