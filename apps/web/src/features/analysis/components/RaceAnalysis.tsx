@@ -92,7 +92,7 @@ export function RaceAnalysis({
                   key={entry.car_number}
                   type="button"
                   aria-pressed={on}
-                  aria-label={driverName(entry)}
+                  aria-label={`${driverCode(entry)} ${driverName(entry)}`}
                   onClick={() => {
                     toggle(entry.car_number);
                   }}

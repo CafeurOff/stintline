@@ -19,7 +19,7 @@ describe("Race analysis on the Grand Prix page", () => {
     expect(
       await screen.findByRole("img", { name: "Position of each driver at the end of every lap" }),
     ).toBeVisible();
-    expect(screen.getByRole("button", { name: "Lando Norris" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "NOR Lando Norris" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -28,7 +28,7 @@ describe("Race analysis on the Grand Prix page", () => {
   it("highlights another driver and keeps the choice in the address", async () => {
     const { router } = renderRoute("/events/14");
 
-    await userEvent.click(await screen.findByRole("button", { name: "Fernando Alonso" }));
+    await userEvent.click(await screen.findByRole("button", { name: "ALO Fernando Alonso" }));
 
     expect(router.state.location.search).toContain("drivers=");
     expect(router.state.location.search).toContain("14");
