@@ -17,7 +17,7 @@ import { GridSlot, ResultPosition } from "@/components/racing/ResultStatus";
 import { useOutText } from "@/lib/useOutText";
 import { TeamName } from "@/components/hub/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, SkeletonTiles } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useEvent } from "@/features/hub/api";
@@ -148,12 +148,15 @@ function EventLoader({ eventId }: { eventId: number }) {
   );
 }
 
+const FIGURES_GRID = "grid gap-4 sm:grid-cols-2 xl:grid-cols-4";
+
 /** The race in tiles: fastest stop, biggest climber, fastest lap, race control. */
 function RaceFigures({ sessionId }: { sessionId: number }) {
-  const report = useReport(sessionId).data;
+  const { data: report, isPending } = useReport(sessionId);
+  if (isPending) return <SkeletonTiles className={FIGURES_GRID} tile="h-[170px]" />;
   if (!report) return null;
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={FIGURES_GRID}>
       {report.pit_stops?.fastest && <FastestStopTile report={report} />}
       {report.biggest_gain && <ClimberTile entry={report.biggest_gain} />}
       {report.fastest_lap && <FastestLapTile entry={report.fastest_lap} />}
@@ -277,6 +280,9 @@ function EventHero({
               );
             })}
           </ol>
+        ) : event.winner !== null && podium.isPending ? (
+          // The podium's height, held while the race loads so the page below stays put.
+          <Skeleton className="h-[17rem]" />
         ) : (
           <span />
         )}

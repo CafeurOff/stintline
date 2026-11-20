@@ -9,6 +9,8 @@ import { useDocumentTitle } from "@/lib/useDocumentTitle";
 interface PageHeaderProps {
   eyebrow?: ReactNode;
   title: string;
+  /** Browser tab title when it says more than the band's title. */
+  tabTitle?: string;
   children?: ReactNode;
   actions?: ReactNode;
   /** Context colour (team, circuit) lighting the band; race red by default. */
@@ -26,13 +28,14 @@ interface PageHeaderProps {
 export function PageHeader({
   eyebrow,
   title,
+  tabTitle,
   children,
   actions,
   colour = "var(--color-mark)",
   aside,
   terms = [],
 }: PageHeaderProps) {
-  useDocumentTitle(title);
+  useDocumentTitle(tabTitle ?? title);
   return (
     <header
       className="glass glow relative mb-5 overflow-hidden rounded-[24px]"
@@ -40,8 +43,12 @@ export function PageHeader({
     >
       <Trails colour={colour} className="opacity-60" />
       <div className="relative flex flex-wrap items-end justify-between gap-5 p-6 sm:p-8">
-        <div className="min-w-0 flex-1">
-          {eyebrow && <p className="mb-2 text-sm font-semibold text-muted">{eyebrow}</p>}
+        {/* The text keeps at least 30rem (all the width on phones): filters that fill in
+            late wrap below it instead of squeezing it into a narrow column (layout shift). */}
+        <div className="min-w-0 grow basis-[min(100%,30rem)]">
+          {eyebrow !== undefined && (
+            <p className="mb-2 min-h-5 text-sm font-semibold text-muted">{eyebrow}</p>
+          )}
           <h1 className="display text-3xl leading-[0.95] sm:text-5xl">{title}</h1>
           {children && <div className="mt-3 max-w-3xl text-muted">{children}</div>}
           <TermList ids={terms} />

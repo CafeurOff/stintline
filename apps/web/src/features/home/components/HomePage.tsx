@@ -30,7 +30,7 @@ import { CarImage } from "@/components/racing/CarImage";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, SkeletonTiles } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { weekendDates } from "@/features/calendar/dates";
 import { useTitle } from "@/features/championship/api";
@@ -102,7 +102,8 @@ export function HomePage() {
 function Dashboard({ home }: { home: Schema<"Home"> }) {
   const { t } = useI18n();
   const { last_race: last, next_event: next, season } = home;
-  const report = useReport(last?.session_id ?? 0, last !== null).data ?? null;
+  const reportQuery = useReport(last?.session_id ?? 0, last !== null);
+  const report = reportQuery.data ?? null;
   const events = useSeasonEvents(season).data?.results ?? [];
 
   return (
@@ -116,6 +117,7 @@ function Dashboard({ home }: { home: Schema<"Home"> }) {
       </div>
 
       {report && <Widgets report={report} />}
+      {last && reportQuery.isPending && <SkeletonTiles className={WIDGETS_GRID} tile="h-44" />}
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {season !== null && <StandingsCards season={season} />}
@@ -250,7 +252,10 @@ function NextRaceHero({ event }: { event: Event }) {
 /** Our figures for the circuit (track DNA, ADR 0017), in the style of a stat sheet. */
 function CircuitFigures({ circuitRef }: { circuitRef: string }) {
   const { t, f } = useI18n();
-  const profile = useCircuits().data?.find((c) => c.circuit.ref === circuitRef);
+  const circuits = useCircuits();
+  // Two rows of figures: held while they load so the weekend strip below stays put.
+  if (circuits.isPending) return <Skeleton className="relative z-10 h-[7.5rem]" />;
+  const profile = circuits.data?.find((c) => c.circuit.ref === circuitRef);
   if (!profile) return null;
   const stats: [string, string, string | null][] = [];
   if (profile.lap_length_m != null) {
@@ -399,7 +404,7 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
 
       <div className="relative z-10 flex flex-1 flex-col gap-5 p-6 sm:max-w-[44%] sm:p-9">
         <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted">
-          <span className="rounded-md bg-mark px-2 py-0.5 text-xs font-bold text-white uppercase">
+          <span className="rounded-md bg-action px-2 py-0.5 text-xs font-bold text-white uppercase">
             {t("home.lastRace")}
           </span>
           {t("picker.round", { round: race.event.round })} · {f.date(race.event.race_date)}
@@ -623,6 +628,8 @@ function Widget({
   );
 }
 
+const WIDGETS_GRID = "grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4";
+
 function Widgets({ report }: { report: Report }) {
   const { t, f } = useI18n();
   const stop = report.pit_stops?.fastest;
@@ -635,7 +642,7 @@ function Widgets({ report }: { report: Report }) {
     ["RED", n?.red_flags ?? 0],
   ] as const;
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={WIDGETS_GRID}>
       {stop && (
         <Widget label={t("dash.fastestStop")} icon={<Wrench />} solid>
           <p className="num display text-6xl leading-none">

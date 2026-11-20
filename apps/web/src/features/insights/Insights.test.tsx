@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 
@@ -49,9 +49,11 @@ describe("Analysis pages", () => {
   it("ranks race pace and switches to raw lap times", async () => {
     const { router } = renderRoute("/analysis/pace?session=70");
 
-    expect(
-      await screen.findByRole("heading", { name: "Race pace: Hungarian Grand Prix" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Race pace" })).toBeVisible();
+    expect(await screen.findByText("Hungarian Grand Prix")).toBeVisible();
+    await waitFor(() => {
+      expect(document.title).toContain("Race pace: Hungarian Grand Prix");
+    });
     const ranking = await screen.findByRole("table", { name: "Pace ranking" });
     expect(within(ranking).getAllByRole("row")).toHaveLength(5);
     expect(

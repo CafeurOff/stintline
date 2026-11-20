@@ -111,7 +111,9 @@ export function Layout() {
           {sessionId !== null && <RaceBar sessionId={sessionId} onTyres={tyres !== null} />}
         </ContextBar>
         <div className="mx-auto flex w-full max-w-[1840px] flex-1 flex-col px-4 pt-6 sm:px-8">
-          <main id="main" tabIndex={-1} className="flex-1 pb-16 outline-none">
+          {/* At least a screen tall: the footer starts below the fold, so a page filling in after
+              its data arrives does not push it down in view (layout shift). */}
+          <main id="main" tabIndex={-1} className="min-h-svh flex-1 pb-16 outline-none">
             <Suspense fallback={<Skeleton className="h-[60vh]" />}>
               <Outlet />
             </Suspense>
