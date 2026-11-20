@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router";
 
 /**
  * Shareable view state in the URL. Updates replace the history entry so dragging a slider
- * does not flood the back button.
+ * does not flood the back button, and keep the scroll position (a filter or a tab is not a
+ * new page).
  */
 export function useSearchParamsState() {
   const [params, setParams] = useSearchParams();
@@ -19,7 +20,7 @@ export function useSearchParamsState() {
           }
           return next;
         },
-        { replace: true },
+        { replace: true, preventScrollReset: true },
       );
     },
     [setParams],

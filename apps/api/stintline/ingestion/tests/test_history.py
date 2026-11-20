@@ -9,7 +9,7 @@ from django.core.management import call_command
 
 from racedata.errors import UpstreamUnavailableError
 from racedata.sources import Sources, build_fixture_sources
-from stintline.ingestion import history, services, tasks
+from stintline.ingestion import history, schedule, tasks
 from stintline.racing.models import (
     Driver,
     Event,
@@ -190,7 +190,7 @@ def test_calendar_is_synced_when_missing_then_left_alone_while_fresh() -> None:
 
     with (
         mock.patch.object(tasks, "open_sources", side_effect=FixtureSources),
-        mock.patch.object(services, "ingest_calendar", side_effect=calendar) as sync,
+        mock.patch.object(schedule, "ingest_calendar", side_effect=calendar) as sync,
     ):
         tasks._sync_calendar_if_stale(2026, now)
         tasks._sync_calendar_if_stale(2026, now + timedelta(hours=1))
@@ -204,7 +204,7 @@ def test_calendar_sync_failure_is_logged_not_raised() -> None:
     with (
         mock.patch.object(tasks, "open_sources", side_effect=FixtureSources),
         mock.patch.object(
-            services, "ingest_calendar", side_effect=UpstreamUnavailableError("jolpica", "down")
+            schedule, "ingest_calendar", side_effect=UpstreamUnavailableError("jolpica", "down")
         ),
     ):
         tasks._sync_calendar_if_stale(2026, datetime(2026, 11, 3, tzinfo=UTC))
@@ -214,7 +214,7 @@ def test_calendar_sync_failure_is_logged_not_raised() -> None:
 
 def test_season_task_queues_results_import() -> None:
     with (
-        mock.patch.object(services, "ingest_calendar", return_value=[]),
+        mock.patch.object(schedule, "ingest_calendar", return_value=[]),
         mock.patch.object(tasks.ingest_season_results, "delay") as results_delay,
     ):
         tasks.ingest_season(2025)
@@ -225,7 +225,7 @@ def test_season_task_queues_results_import() -> None:
 def test_results_and_calendar_tasks_use_the_configured_sources() -> None:
     with (
         mock.patch.object(tasks, "open_sources", side_effect=FixtureSources),
-        mock.patch.object(services, "ingest_calendar", return_value=[1, 2]) as calendar,
+        mock.patch.object(schedule, "ingest_calendar", return_value=[1, 2]) as calendar,
     ):
         assert tasks.ingest_season_results(1950)["r_results"] > 0
         assert tasks.refresh_calendar() == 2

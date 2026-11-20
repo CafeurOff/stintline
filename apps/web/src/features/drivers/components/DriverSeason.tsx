@@ -12,17 +12,19 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/dash/Panel";
-import { type RoundBar, RoundBars } from "@/components/dash/RoundBars";
-import { TeamName } from "@/components/hub/TeamName";
+import { Panel, Tile } from "@/components/layout/Panel";
+import { GridSlot, ResultPosition } from "@/components/racing/ResultStatus";
+import { type RoundBar, RoundBars } from "@/components/racing/RoundBars";
+import { TeamName } from "@/components/racing/TeamName";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useDriverResults } from "@/features/hub/api";
 import { useDecisions } from "@/features/paddock/api";
 import { DecisionTable } from "@/features/paddock/components/DecisionTable";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { useDriverResults } from "@/lib/queries";
+import { outCause } from "@/lib/results";
 import { teamColour } from "@/lib/teams";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
@@ -47,15 +49,18 @@ function byRound(a: Result, b: Result): number {
 export function DriverSeason({
   driverRef,
   seasons,
+  defaultSeason,
   colour,
 }: {
   driverRef: string;
   seasons: number[];
+  /** Season shown without `?season=`; the latest by default. */
+  defaultSeason?: number | null;
   colour: string | null | undefined;
 }) {
   const { t } = useI18n();
   const [params, update] = useSearchParamsState();
-  const latest = seasons[seasons.length - 1] ?? null;
+  const latest = defaultSeason ?? seasons[seasons.length - 1] ?? null;
   const fromUrl = intParam(params, "season");
   const season = fromUrl !== null && seasons.includes(fromUrl) ? fromUrl : latest;
   const results = useDriverResults(driverRef, season);
@@ -185,17 +190,21 @@ function SeasonTiles({
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Tile label={t("driver.seasonWins", { season })} icon={<Trophy />}>
-        <p className="num text-4xl font-semibold">{wins}</p>
-        <p className="text-xs text-muted">{t("driver.sprintWins", { n: sprintWins })}</p>
+        <p className="num display text-4xl">{wins}</p>
+        {sprints.length > 0 && (
+          <p className="text-xs text-muted">{t("driver.sprintWins", { n: sprintWins })}</p>
+        )}
         <RoundBars bars={bars((r) => finish(r) === 1)} colour={colour} />
       </Tile>
       <Tile label={t("driver.seasonPodiums", { season })} icon={<Medal />}>
-        <p className="num text-4xl font-semibold">{podiums}</p>
-        <p className="text-xs text-muted">{t("driver.sprintPodiums", { n: sprintPodiums })}</p>
+        <p className="num display text-4xl">{podiums}</p>
+        {sprints.length > 0 && (
+          <p className="text-xs text-muted">{t("driver.sprintPodiums", { n: sprintPodiums })}</p>
+        )}
         <RoundBars bars={bars((r) => (finish(r) ?? 99) <= 3)} colour={colour} />
       </Tile>
       <Tile label={t("driver.seasonPoints", { season })} icon={<Sigma />}>
-        <p className="num text-4xl font-semibold">{f.number(points, points % 1 ? 1 : 0)}</p>
+        <p className="num display text-4xl">{f.number(points, points % 1 ? 1 : 0)}</p>
         <p className="text-xs text-muted">
           {t("driver.avgPoints", {
             avg: f.number(results.length ? points / results.length : 0, 1),
@@ -210,7 +219,7 @@ function SeasonTiles({
         />
       </Tile>
       <Tile label={t("driver.seasonPoles", { season })} icon={<FlagIcon />}>
-        <p className="num text-4xl font-semibold">{poles}</p>
+        <p className="num display text-4xl">{poles}</p>
         <p className="text-xs text-muted">{t("driver.polesFrom", { n: races.length })}</p>
         <RoundBars
           bars={races.map((r) => ({
@@ -264,7 +273,7 @@ function ResultsTable({ results }: { results: readonly Result[] }) {
                   <TeamName team={result.team} />
                 </td>
                 <td className="num hidden text-muted sm:table-cell">
-                  {result.grid_position === 0 ? "—" : (result.grid_position ?? "—")}
+                  <GridSlot grid={result.grid_position} />
                 </td>
                 <td className="num">
                   {finished !== null ? (
@@ -280,10 +289,14 @@ function ResultsTable({ results }: { results: readonly Result[] }) {
                       {finished}
                     </span>
                   ) : (
-                    <span className="font-bold text-loss">{result.classification ?? "—"}</span>
+                    <span className="font-bold">
+                      <ResultPosition classification={result.classification} position={null} />
+                    </span>
                   )}
-                  {finished == null && result.status && (
-                    <span className="block text-xs font-normal text-muted">{result.status}</span>
+                  {finished == null && outCause(result.status, locale) && (
+                    <span className="block text-xs font-normal text-muted">
+                      {outCause(result.status, locale)}
+                    </span>
                   )}
                 </td>
                 <td className="num font-semibold">
@@ -378,19 +391,22 @@ function Performance({ results, colour }: { results: readonly Result[]; colour: 
     <Panel title={t("driver.performance")} icon={<Trophy />}>
       <dl className="flex flex-col gap-3 p-4">
         {rows.map(([label, count, fill]) => (
-          <div key={label} className="flex flex-col gap-1">
-            <div className="flex justify-between text-sm">
-              <dt>{label}</dt>
-              <dd className="num font-semibold">
+          <div key={label} className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1 text-sm">
+            <dt>{label}</dt>
+            <dd className="contents">
+              <span className="num font-semibold">
                 {count} / {races.length}
-              </dd>
-            </div>
-            <span aria-hidden="true" className="h-2 rounded-full bg-raised">
-              <span
-                className="block h-full rounded-full"
-                style={{ width: `${String((count / races.length) * 100)}%`, backgroundColor: fill }}
-              />
-            </span>
+              </span>
+              <span aria-hidden="true" className="col-span-2 h-2 rounded-full bg-raised">
+                <span
+                  className="block h-full rounded-full"
+                  style={{
+                    width: `${String((count / races.length) * 100)}%`,
+                    backgroundColor: fill,
+                  }}
+                />
+              </span>
+            </dd>
           </div>
         ))}
       </dl>

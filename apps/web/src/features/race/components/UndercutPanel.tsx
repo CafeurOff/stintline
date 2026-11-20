@@ -116,6 +116,38 @@ export function UndercutPanel(props: UndercutPanelProps) {
               p: f.probability(result.p_attacker_ahead),
             })}
           </p>
+          <p className="text-sm text-muted">
+            {t("undercut.netGain", {
+              attacker: a,
+              gain: f.delta(result.net_gain_s),
+              sigma: f.seconds(result.sigma_s, 1),
+            })}
+          </p>
+          {result.lap_gaps.length > 0 && (
+            <table className="data-table text-sm">
+              <caption className="sr-only">
+                {t("undercut.lapGaps", { attacker: a, defender: d })}
+              </caption>
+              <thead>
+                <tr>
+                  <th>{t("pace.lap")}</th>
+                  <th className="num">{t("undercut.gapCol", { defender: d })}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.lap_gaps.map((row) => (
+                  <tr key={row.lap}>
+                    <td className="num">{row.lap}</td>
+                    <td
+                      className={`num font-semibold ${row.gap_s < 0 ? "text-gain" : "text-loss"}`}
+                    >
+                      {f.delta(row.gap_s)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
           <Button variant="quiet" className="self-start" onClick={props.onClear}>
             {t("common.clear")}
           </Button>

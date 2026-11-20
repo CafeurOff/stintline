@@ -39,7 +39,7 @@ export function WeatherStrip({ snapshot }: { snapshot: LiveSnapshot }) {
   return (
     <section
       aria-labelledby="live-weather"
-      className="flex flex-col gap-3 rounded-xl border border-line bg-panel p-5"
+      className="glass flex flex-col gap-3 rounded-[20px] p-5"
     >
       <h2 id="live-weather" className="text-lg font-bold">
         {t("live.weather.title")}

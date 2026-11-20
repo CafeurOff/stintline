@@ -1,4 +1,4 @@
-"""Celery tasks. Thin wrappers around :mod:`stintline.ingestion.services`; every task is
+"""Celery tasks. Thin wrappers around the ingestion modules; every task is
 idempotent, so retries and re-runs are safe."""
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from django.utils import timezone
 
 from racedata.errors import ProviderError, RateLimitedError, UpstreamUnavailableError
 from stintline.analysis.tasks import build_race_analysis, build_stale_analysis
-from stintline.ingestion import history, portraits, services, telemetry
+from stintline.ingestion import history, portraits, schedule, telemetry, timing
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import RACE_KINDS, Event, Season, Session
 
@@ -28,7 +28,7 @@ MAX_RETRIES = 5
 def _queue_finished_race_sessions(events: list[Event]) -> list[int]:
     queued: list[int] = []
     for session in Session.objects.filter(event__in=events).select_related("event__season"):
-        if services.is_ingestable(session):
+        if timing.is_ingestable(session):
             ingest_session.delay(session.pk)
             queued.append(session.pk)
     return queued
@@ -45,7 +45,7 @@ def _queue_finished_race_sessions(events: list[Event]) -> list[int]:
 def ingest_season(season: int) -> list[int]:
     """Upsert the season calendar, then queue every finished race and sprint."""
     with open_sources() as sources:
-        events = services.ingest_calendar(season, sources)
+        events = schedule.ingest_calendar(season, sources)
     queued = _queue_finished_race_sessions(events)
     ingest_season_results.delay(season)
     log.info("ingest_season_queued", season=season, sessions=len(queued))
@@ -63,7 +63,7 @@ def ingest_season(season: int) -> list[int]:
 def ingest_event(season: int, round_: int) -> list[int]:
     """Refresh the calendar and queue the finished race sessions of one round."""
     with open_sources() as sources:
-        events = [e for e in services.ingest_calendar(season, sources) if e.round == round_]
+        events = [e for e in schedule.ingest_calendar(season, sources) if e.round == round_]
     return _queue_finished_race_sessions(events)
 
 
@@ -78,7 +78,7 @@ def ingest_event(season: int, round_: int) -> list[int]:
 def ingest_session(session_id: int) -> dict[str, int]:
     session = Session.objects.select_related("event__season").get(pk=session_id)
     with open_sources() as sources:
-        report = services.ingest_session(session, sources)
+        report = timing.ingest_session(session, sources)
     build_race_analysis.delay(session.pk)
     ingest_telemetry.delay(session.pk)
     return report.counts
@@ -102,9 +102,27 @@ def ingest_telemetry(session_id: int) -> int:
     return stored
 
 
+@shared_task(
+    autoretry_for=RETRYABLE,
+    retry_backoff=RETRY_BACKOFF_S,
+    retry_backoff_max=RETRY_BACKOFF_MAX_S,
+    retry_jitter=True,
+    max_retries=MAX_RETRIES,
+    acks_late=True,
+)
+def add_telemetry_altitude(session_id: int) -> int:
+    """Altitude for laps stored before it was kept (one bounded request per lap)."""
+    session = Session.objects.get(pk=session_id)
+    with open_sources() as sources:
+        return telemetry.add_altitude(session, sources)
+
+
 TELEMETRY_BACKFILL_PER_RUN = 4
 """Older races given telemetry per ``refresh_recent`` run: ~160 requests, about 6 minutes
 of the OpenF1 budget every 30 minutes, so new races are never held up behind the backlog."""
+ALTITUDE_BACKFILL_PER_RUN = 4
+"""Races whose stored laps get their altitude per ``refresh_recent`` run (ADR 0021): one
+``location`` request per lap, ~80 requests, under 3 minutes of the OpenF1 budget."""
 
 
 RESULTS_DELAY = timedelta(hours=1)
@@ -141,7 +159,7 @@ def refresh_calendar() -> int:
     """On demand: refresh the current season's calendar and OpenF1 session links now."""
     now = timezone.now()
     with open_sources() as sources:
-        events = services.ingest_calendar(now.year, sources)
+        events = schedule.ingest_calendar(now.year, sources)
     Season.objects.filter(year=now.year).update(calendar_synced_at=now)
     return len(events)
 
@@ -158,7 +176,7 @@ def _sync_calendar_if_stale(year: int, now: datetime) -> None:
         return
     try:
         with open_sources() as sources:
-            services.ingest_calendar(year, sources)
+            schedule.ingest_calendar(year, sources)
     except ProviderError as exc:
         log.warning("calendar_sync_failed", season=year, error=type(exc).__name__)
         return
@@ -209,12 +227,16 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
     backlog = telemetry.missing_telemetry().exclude(pk__in=queued)[:TELEMETRY_BACKFILL_PER_RUN]
     for session in backlog:
         ingest_telemetry.delay(session.pk)
+    flat = telemetry.missing_altitude().exclude(pk__in=queued)[:ALTITUDE_BACKFILL_PER_RUN]
+    for session in flat:
+        add_telemetry_altitude.delay(session.pk)
     build_stale_analysis.delay()
     log.info(
         "refresh_recent_queued",
         sessions=len(queued),
         seasons=sorted(seasons),
         telemetry=len(backlog),
+        altitude=len(flat),
     )
     return queued
 

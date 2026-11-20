@@ -22,3 +22,19 @@ export function storeLocale(locale: Locale) {
     // The choice still applies for this page view.
   }
 }
+
+/** French pages live under `/fr`, English ones at the root: each language has its own URL. */
+export const FRENCH_PREFIX = "/fr";
+const FRENCH_PATH = /^\/fr(?=\/|$)/;
+
+/** The language a path is written in. */
+export function pathLocale(pathname: string): Locale {
+  return FRENCH_PATH.test(pathname) ? "fr" : "en";
+}
+
+/** The same page in `locale`: `/drivers/norris` and `/fr/drivers/norris`. */
+export function localePath(pathname: string, locale: Locale): string {
+  const bare = pathname.replace(FRENCH_PATH, "") || "/";
+  if (locale === "en") return bare;
+  return bare === "/" ? `${FRENCH_PREFIX}/` : `${FRENCH_PREFIX}${bare}`;
+}

@@ -1,10 +1,10 @@
 import { useI18n } from "@/lib/i18n/context";
 import { LOCALES } from "@/lib/i18n/locale";
 
-export function LanguageToggle() {
+export function LanguageToggle({ className = "" }: { className?: string }) {
   const { locale, setLocale, t } = useI18n();
   return (
-    <div role="group" aria-label={t("header.language")} className="flex">
+    <div role="group" aria-label={t("header.language")} className={`flex ${className}`}>
       {LOCALES.map((option) => (
         <button
           key={option}

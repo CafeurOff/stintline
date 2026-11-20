@@ -40,10 +40,7 @@ export function GapRing({ snapshot, selected }: { snapshot: LiveSnapshot; select
   if (stop?.behind != null) named.add(stop.behind);
 
   return (
-    <section
-      aria-labelledby="live-ring"
-      className="flex flex-col gap-2 rounded-xl border border-line bg-panel p-5"
-    >
+    <section aria-labelledby="live-ring" className="glass flex flex-col gap-2 rounded-[20px] p-5">
       <h2 id="live-ring" className="text-lg leading-tight font-bold">
         {t("live.ring.title")}
       </h2>

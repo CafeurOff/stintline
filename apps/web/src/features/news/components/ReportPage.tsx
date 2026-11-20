@@ -1,16 +1,20 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
-import { DriverName } from "@/components/hub/DriverName";
-import { KeyFigures, type Figure as KeyFigure } from "@/components/hub/KeyFigures";
+import { KeyFigures, type Figure as KeyFigure } from "@/components/layout/KeyFigures";
+import { Trails } from "@/components/layout/Trails";
+import { DriverName } from "@/components/racing/DriverName";
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
+import { ResultPosition } from "@/components/racing/ResultStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { useSessionDetail } from "@/features/race/api";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
-import { teamColour, teamTint } from "@/lib/teams";
+import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { useOutText } from "@/lib/useOutText";
 
 import { useReport, useReports } from "../api";
 import { type Report, type Section, writeReport } from "../write";
@@ -40,8 +44,14 @@ export function ReportPage() {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
       <article className="flex min-w-0 flex-col gap-8">
         <header
-          className="overflow-hidden rounded-xl border border-line"
-          style={{ borderTopColor: teamColour(colour), backgroundColor: teamTint(colour, 12) }}
+          className="glass glow relative overflow-hidden rounded-[24px]"
+          style={
+            {
+              "--glow": teamColour(colour),
+              "--glow-x": "0%",
+              "--glow-y": "100%",
+            } as CSSProperties
+          }
         >
           <DriverPhoto
             imageUrl={data.winner.driver.portrait_url}
@@ -49,15 +59,16 @@ export function ReportPage() {
             colour={colour}
             className="aspect-[16/6] w-full"
           />
-          <div className="flex flex-col gap-2 p-6">
-            <p className="text-sm text-muted">
+          <Trails colour={teamColour(colour)} className="opacity-60" />
+          <div className="relative flex flex-col gap-3 p-6 sm:p-8">
+            <p className="text-sm font-semibold text-muted">
               {data.kind === "SPRINT" ? t("news.sprint") : t("news.race")} ·{" "}
               <Link to={`/events/${String(data.event.id)}`} className="hover:underline">
                 {eventName(data.event.name, locale)}
               </Link>{" "}
               · <time dateTime={data.finished_at}>{f.date(data.event.race_date)}</time>
             </p>
-            <h1 className="text-3xl leading-tight font-bold sm:text-4xl">{written.title}</h1>
+            <h1 className="display text-3xl leading-[1.05] sm:text-5xl">{written.title}</h1>
             <p className="text-lg">{written.lede}</p>
           </div>
         </header>
@@ -95,7 +106,7 @@ export function ReportPage() {
           )}
           <Link
             to={`/events/${String(data.event.id)}${data.kind === "SPRINT" ? "?session=SPRINT" : ""}`}
-            className="rounded-lg border border-line-strong px-4 py-3 font-bold hover:border-ink"
+            className="glass rounded-xl px-4 py-3 font-bold"
           >
             {t("news.seeResults")}
           </Link>
@@ -149,7 +160,7 @@ function Podium({ report }: { report: Report }) {
       {report.podium.map((place, index) => (
         <li
           key={place.entry.car_number}
-          className="flex items-center gap-3 rounded-xl bg-panel p-3"
+          className="glass flex items-center gap-3 rounded-[20px] p-3"
         >
           <span className="text-2xl font-bold tabular-nums">{index + 1}</span>
           <span className="flex min-w-0 flex-col">
@@ -203,6 +214,7 @@ function Figures({ report }: { report: Report }) {
 
 function Results({ report }: { report: Report }) {
   const { t, f } = useI18n();
+  const outText = useOutText();
   return (
     <section aria-labelledby="report-results" className="flex flex-col gap-3">
       <h2 id="report-results" className="text-2xl font-bold">
@@ -224,9 +236,11 @@ function Results({ report }: { report: Report }) {
             {report.results.map((line) => (
               <tr key={line.entry.car_number}>
                 <td className="num font-bold">
-                  {line.position != null && /^\d+$/.test(line.classification)
-                    ? line.position
-                    : line.classification || "—"}
+                  {line.position != null && /^\d+$/.test(line.classification) ? (
+                    line.position
+                  ) : (
+                    <ResultPosition classification={line.classification} position={null} />
+                  )}
                 </td>
                 <td>
                   <DriverName
@@ -236,7 +250,7 @@ function Results({ report }: { report: Report }) {
                   />
                 </td>
                 <td className="hidden text-muted sm:table-cell">{line.entry.team.name}</td>
-                <td className="num">{gapText(line, t, f)}</td>
+                <td className="num">{gapText(line, t, f, outText)}</td>
                 <td className="num font-semibold">
                   {line.points > 0 ? f.number(line.points, line.points % 1 ? 1 : 0) : ""}
                 </td>
@@ -253,12 +267,12 @@ function gapText(
   line: Schema<"ResultLine">,
   t: ReturnType<typeof useI18n>["t"],
   f: ReturnType<typeof useI18n>["f"],
+  outText: ReturnType<typeof useOutText>,
 ): string {
   if (line.position === 1) return "";
   const code = line.classification;
-  if (code === "R" || code === "W" || code === "D" || code === "E" || code === "N") {
-    return t(`report.status.${code}`);
-  }
+  const out = outText(code, line.entry.status);
+  if (out !== null) return out;
   if (!/^\d+$/.test(code)) return line.entry.status ?? code;
   if (line.laps_down > 0) {
     return t(line.laps_down === 1 ? "event.lapDown" : "event.lapsDown", { n: line.laps_down });

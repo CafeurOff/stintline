@@ -10,7 +10,7 @@ export interface Section {
 }
 
 /** Shortest section the zoom accepts: below that the 4 Hz samples say too little. */
-export const MIN_SECTION_M = 60;
+const MIN_SECTION_M = 60;
 /** A corner section starts this far before the braking point... */
 const CORNER_BEFORE_M = 120;
 /** ...and ends this far after the driver is back on full throttle. */
@@ -51,7 +51,7 @@ export function cornerSections(zones: readonly Zone[], length: number): Section[
     .filter((section): section is Section => section !== null);
 }
 
-export interface SectionStats {
+interface SectionStats {
   /** Time to cover the section, from speed (the feed has no distance channel). */
   time_s: number;
   min_kph: number;

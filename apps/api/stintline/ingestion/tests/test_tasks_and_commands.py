@@ -36,8 +36,7 @@ def test_ingest_event_task_only_queues_the_requested_round() -> None:
     delay.assert_called_once_with(queued[0])
 
 
-def test_ingest_session_task_returns_counts() -> None:
-    call_command("seed_demo", stdout=StringIO())
+def test_ingest_session_task_returns_counts(seeded: None) -> None:
     session = Session.objects.get(event__round=16, kind=SessionKind.RACE)
 
     with patch.object(tasks.ingest_telemetry, "delay") as telemetry_delay:

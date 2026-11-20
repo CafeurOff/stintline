@@ -20,11 +20,6 @@ from stintline.technical.models import (
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def analysed(seeded: None) -> None:
-    call_command("build_analysis", "--all", stdout=StringIO())
-
-
 def hungary() -> Event:
     return Event.objects.get(season__year=2025, round=14)
 

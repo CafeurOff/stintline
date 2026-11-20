@@ -1,57 +1,48 @@
 # Architecture
 
-StintLine ingests public timing data into its own database, runs a pure-Python strategy engine on it, and serves the results through a versioned REST API, a WebSocket channel and a React frontend.
+StintLine imports public timing and results data into its own database, runs a pure-Python strategy engine on it, and serves the results through a versioned REST API, a WebSocket channel and a React app.
 
 ## Overview
 
 ```mermaid
 flowchart LR
     subgraph Sources["External sources"]
-        OF[OpenF1 REST<br/>historical, free]
-        JO[Jolpica<br/>calendar, results, pit stops]
-        LT[Official live timing<br/>SignalR Core, no auth<br/>local only]
+        OF[OpenF1<br/>timing, telemetry, radio]
+        JO[Jolpica<br/>results since 1950]
+        FIA[fia.com<br/>documents]
+        OM[Open-Meteo<br/>forecasts]
+        WK[Wikipedia<br/>portraits]
+        RSS[RSS feeds<br/>headlines]
+        LT[Official live timing<br/>local only]
     end
 
-    subgraph RD["packages/racedata (pure Python)"]
-        HTTP[HTTP client<br/>rate limit · retry · cache · timeout]
-        AD[Provider adapters<br/>openf1 · jolpica · livetiming]
-        DTO[Typed DTOs]
-        REC[Recorder<br/>raw .jsonl sessions]
+    subgraph RD["packages/racedata"]
+        HTTP[HTTP client<br/>rate limit · retry · cache]
+        AD[Provider adapters<br/>typed DTOs]
+        LC[Live client<br/>merge · snapshot · recordings]
     end
 
-    subgraph API["apps/api (Django 5.2)"]
-        ING[Celery ingestion<br/>ingest_season / event / session<br/>idempotent upserts]
-        BEAT[Celery beat<br/>schedules]
+    subgraph API["apps/api (Django)"]
+        ING[Celery ingestion and beat<br/>idempotent upserts]
         DB[(PostgreSQL)]
-        SVC[Services and selectors]
-        REST[DRF /api/v1<br/>OpenAPI · pagination · HTTP cache]
-        LIVE[Live worker and replay engine]
-        WS[Channels WebSocket]
+        AN[Analysis figures<br/>stored per race]
+        REST[DRF /api/v1<br/>OpenAPI · HTTP cache]
+        LIVE[manage.py live<br/>feed or replay]
+        WS[Channels /ws/live]
     end
 
-    STRAT[packages/strategy<br/>lap cleaning · fuel · degradation<br/>pit loss · undercut · pit exit · window]
+    STRAT[packages/strategy<br/>numpy + scipy, no I/O]
     REDIS[(Redis<br/>broker · channel layer · cache)]
-    TYPES[packages/api-types<br/>generated TS types]
-    WEB[apps/web<br/>React 19 + TS<br/>TanStack Query]
+    WEB[apps/web<br/>React + TanStack Query]
 
-    OF --> HTTP
-    JO --> HTTP
-    LT --> AD
-    HTTP --> AD --> DTO
-    AD --> REC
-    DTO --> ING --> DB
-    BEAT --> ING
-    DTO --> LIVE
-    REC -. replay files .-> LIVE
-    LIVE --> DB
-    LIVE --> REDIS --> WS
-    DB --> SVC
-    SVC --> STRAT
-    STRAT --> SVC
-    SVC --> REST
-    REST -- OpenAPI schema --> TYPES --> WEB
+    OF & JO & FIA & OM & WK & RSS --> HTTP --> AD --> ING --> DB
+    LT --> LC --> LIVE --> REDIS --> WS --> WEB
+    DB --> AN
+    STRAT --> AN
+    DB --> REST
+    STRAT --> REST
+    AN --> REST
     REST --> WEB
-    WS --> WEB
     ING <--> REDIS
 ```
 
@@ -59,28 +50,30 @@ flowchart LR
 
 | Component | Responsibility | Must not |
 | --- | --- | --- |
-| `packages/racedata` | Talk to upstream sources, normalise payloads into typed DTOs (UTC datetimes, explicit units), record raw live sessions | Know about Django or the database |
-| `apps/api` ingestion | Map DTOs to models with natural-key upserts. Schedule ingestion | Call upstream directly (always via `racedata`) |
+| `packages/racedata` | Talk to upstream sources, normalise payloads into typed DTOs (UTC datetimes, explicit units), follow and record the live feed | Know about Django or the database |
+| `apps/api` ingestion | Map DTOs to models with natural-key upserts, on a schedule and after each Grand Prix | Call upstream directly (always through `racedata`) |
 | PostgreSQL | Source of truth for everything served | — |
 | `packages/strategy` | Deterministic models and simulations on plain inputs | Do I/O, import Django or `racedata` |
-| `apps/api` analysis | Run the engine once per imported race and store the figures the season and circuit pages read (`RaceStats`, `EntryRaceStats`, ADR 0017) | Run the engine over a whole season inside a request |
-| `apps/api` REST | Expose data and strategy results under `/api/v1/`, documented with OpenAPI | Compute strategy logic inline in views |
-| Live process (`manage.py live`) | Consume the live feed (or a recording), build a snapshot with the pit-now answer, keep the latest in Redis and broadcast it once per second (ADR 0011) | Write to Postgres, or run on the public demo server against the live feed |
-| Channels | Push snapshots to subscribed browsers on `/ws/live`; the browser applies the TV delay | — |
-| `apps/web` | Session picker, strategy timeline, degradation, simulator, model page, live/replay view | Call upstream APIs or redeclare API types |
+| `apps/api` analysis | Run the engine once per imported race and store the figures the season and circuit pages read (ADR 0017) | Run the engine over a whole season inside a request |
+| `apps/api` REST | Expose data and strategy results under `/api/v1/`, documented with OpenAPI | Compute strategy logic in views |
+| Live process | Consume the live feed or a recording, build a snapshot with the pit-now answer, keep the latest in Redis and broadcast it once per second (ADR 0011) | Write to Postgres, or follow the live feed on a public server |
+| `apps/web` | Pages, charts and simulators, in English and French | Call upstream services or redeclare API types |
 
-## Runtime topology (docker compose)
+Two API views may reach upstream on request, both through `racedata` and a cache: the FIA PDF relay (ADR 0018) and the Wikipedia portrait relay (ADR 0024).
 
-`postgres`, `redis`, `api` (ASGI: Django + Channels), `worker` (Celery), `beat` (Celery beat), `web` (Vite dev server in dev, static build behind nginx in prod). One command: `make up`.
+## Runtime topology
 
-The public demo (`infra/docker-compose.demo.yml`, `make demo-up`) runs the production images of the same services plus a one-shot `migrate`, publishes only nginx, and never runs `live` (replay-only, ADR 0002). See [`deploy.md`](deploy.md).
+`make up` starts `postgres`, `redis`, `api` (ASGI: Django and Channels), `worker` (Celery, one process because rate limits are enforced in-process), `beat` (Celery beat) and `web` (Vite dev server). `make live` adds the live process.
+
+The public demo (`infra/docker-compose.demo.yml`, `make demo-up`) runs the production images of the same services behind nginx, with a one-shot `migrate`, and never runs `live` (replay only, ADR 0002). See [`deploy.md`](deploy.md).
 
 ## Key flows
 
-1. **Historical ingestion.** `ingest_season(2025)` → `ingest_event` per round → `ingest_session` per session. This fetches OpenF1 laps, stints, pit, race control and weather, plus Jolpica results and pit stops, then upserts. Re-running is a no-op.
-2. **Strategy query.** `GET /api/v1/sessions/{id}/undercut?attacker=…&defender=…&lap=…` → selector loads cleaned laps and stints → strategy engine fits degradation and pit loss → simulation → JSON with the expected gain and an uncertainty interval.
-3. **Live (local).** `manage.py live` subscribes to the SignalR topics (TimingData, TimingAppData, TrackStatus, SessionData, RaceControlMessages, WeatherData, PitLaneTimeCollection, LapCount, TeamRadio…), merges them, keeps what the feed shows only once (pit-lane times, weather per lap) and publishes a snapshot at most once per second to the cache and the `live` Channels group. `GET /api/v1/live` gives the state and latest snapshot; `/ws/live` streams the next ones. The browser applies the user's TV delay. Finished sessions are stored by the usual import, not by the live process.
-4. **Replay (demo).** `manage.py live --replay FILE --speed N` plays a recorded `.jsonl` (or one rebuilt from a stored race by `manage.py live_demo`) through the same publisher, so the frontend cannot tell replay from live.
-5. **News.** Celery beat reads the news feeds every 30 minutes through `racedata` and stores headlines (title and link). Race reports are built on request from stored results, timing and standings, and written in EN/FR by the web (ADR 0012).
+1. **Import.** `refresh_recent` runs every 30 minutes: it refreshes the calendar, imports each finished race or sprint (OpenF1 timing and Jolpica results), then builds its analysis figures and telemetry. Re-running is a no-op.
+2. **Strategy query.** `POST /api/v1/sessions/{id}/simulate/undercut` → the race context (cleaned laps, degradation fits, pace model, pit loss) is built once per session and cached → the simulation runs → JSON with the expected gain and an uncertainty interval.
+3. **Live (local).** `manage.py live` subscribes to the SignalR topics, merges their updates, keeps what the feed shows only once (pit-lane times, weather per lap) and publishes a snapshot at most once per second to the cache and the `live` Channels group. `GET /api/v1/live` gives the state; `/ws/live` streams the snapshots, and the browser applies the user's TV delay.
+4. **Replay.** `manage.py live --replay FILE --speed N` plays a recording (or one rebuilt from a stored race by `live_demo`) through the same publisher, so the web app cannot tell a replay from a live session.
+5. **News.** Beat reads the news feeds every 30 minutes and stores headlines (title and link). Race reports are built from stored data and written in English or French by the web app (ADR 0012).
+6. **Page heads.** Any path that is not an asset is rendered by the API from the built `index.html`, with the page's title, description, canonical address, language alternates and structured data, or a real 404 (ADR 0025).
 
-See `docs/data-sources.md` for source limits and terms, and the ADRs for the reasoning behind these choices.
+See [`data-sources.md`](data-sources.md) for source limits and terms, and the [ADRs](adr/) for the reasoning behind these choices.

@@ -1,67 +1,11 @@
+import eventNamesFr from "./event-names.fr.json";
 import type { Locale } from "./locale";
 
-/** French names of the Grands Prix, keyed by the API (Jolpica) English name. */
-const EVENT_NAMES_FR: Record<string, string> = {
-  "Australian Grand Prix": "Grand Prix d'Australie",
-  "Chinese Grand Prix": "Grand Prix de Chine",
-  "Japanese Grand Prix": "Grand Prix du Japon",
-  "Bahrain Grand Prix": "Grand Prix de Bahreïn",
-  "Saudi Arabian Grand Prix": "Grand Prix d'Arabie saoudite",
-  "Miami Grand Prix": "Grand Prix de Miami",
-  "Emilia Romagna Grand Prix": "Grand Prix d'Émilie-Romagne",
-  "Monaco Grand Prix": "Grand Prix de Monaco",
-  "Spanish Grand Prix": "Grand Prix d'Espagne",
-  "Canadian Grand Prix": "Grand Prix du Canada",
-  "Austrian Grand Prix": "Grand Prix d'Autriche",
-  "British Grand Prix": "Grand Prix de Grande-Bretagne",
-  "Belgian Grand Prix": "Grand Prix de Belgique",
-  "Hungarian Grand Prix": "Grand Prix de Hongrie",
-  "Dutch Grand Prix": "Grand Prix des Pays-Bas",
-  "Italian Grand Prix": "Grand Prix d'Italie",
-  "Azerbaijan Grand Prix": "Grand Prix d'Azerbaïdjan",
-  "Singapore Grand Prix": "Grand Prix de Singapour",
-  "United States Grand Prix": "Grand Prix des États-Unis",
-  "Mexico City Grand Prix": "Grand Prix de Mexico",
-  "São Paulo Grand Prix": "Grand Prix de São Paulo",
-  "Las Vegas Grand Prix": "Grand Prix de Las Vegas",
-  "Qatar Grand Prix": "Grand Prix du Qatar",
-  "Abu Dhabi Grand Prix": "Grand Prix d'Abou Dhabi",
-  // Past Grands Prix (1950 onwards).
-  "Argentine Grand Prix": "Grand Prix d'Argentine",
-  "Brazilian Grand Prix": "Grand Prix du Brésil",
-  "Caesars Palace Grand Prix": "Grand Prix de Caesars Palace",
-  "Dallas Grand Prix": "Grand Prix de Dallas",
-  "Detroit Grand Prix": "Grand Prix de Détroit",
-  "Eifel Grand Prix": "Grand Prix de l'Eifel",
-  "European Grand Prix": "Grand Prix d'Europe",
-  "French Grand Prix": "Grand Prix de France",
-  "German Grand Prix": "Grand Prix d'Allemagne",
-  "Indian Grand Prix": "Grand Prix d'Inde",
-  "Indianapolis 500": "500 miles d'Indianapolis",
-  "Korean Grand Prix": "Grand Prix de Corée",
-  "Luxembourg Grand Prix": "Grand Prix du Luxembourg",
-  "Malaysian Grand Prix": "Grand Prix de Malaisie",
-  "Mexican Grand Prix": "Grand Prix du Mexique",
-  "Moroccan Grand Prix": "Grand Prix du Maroc",
-  "Pacific Grand Prix": "Grand Prix du Pacifique",
-  "Pescara Grand Prix": "Grand Prix de Pescara",
-  "Portuguese Grand Prix": "Grand Prix du Portugal",
-  "Russian Grand Prix": "Grand Prix de Russie",
-  "Sakhir Grand Prix": "Grand Prix de Sakhir",
-  "San Marino Grand Prix": "Grand Prix de Saint-Marin",
-  "South African Grand Prix": "Grand Prix d'Afrique du Sud",
-  "Styrian Grand Prix": "Grand Prix de Styrie",
-  "Swedish Grand Prix": "Grand Prix de Suède",
-  "Swiss Grand Prix": "Grand Prix de Suisse",
-  "Turkish Grand Prix": "Grand Prix de Turquie",
-  "Tuscan Grand Prix": "Grand Prix de Toscane",
-  "United States Grand Prix West": "Grand Prix des États-Unis Ouest",
-  "70th Anniversary Grand Prix": "Grand Prix du 70e anniversaire",
-  // New names from 2026.
-  "Barcelona Grand Prix": "Grand Prix de Barcelone",
-  "Madrid Grand Prix": "Grand Prix de Madrid",
-  "Bahrain Grand Prix in Malaysia": "Grand Prix de Bahreïn en Malaisie",
-};
+/**
+ * French names of the Grands Prix, keyed by the API (Jolpica) English name. The JSON is shared
+ * with the API, which writes the French page titles (ADR 0025).
+ */
+const EVENT_NAMES_FR: Readonly<Record<string, string>> = eventNamesFr;
 
 /** Event name in the reader's language, falling back to the API name. */
 export function eventName(name: string, locale: Locale): string {
@@ -150,4 +94,29 @@ export function assumptionText(
   locale: Locale,
 ): string {
   return locale === "fr" ? (ASSUMPTIONS_FR[`${group}/${name}`] ?? english) : english;
+}
+
+/** French names of the session labels the FIA writes in stewards' decisions. */
+const FIA_SESSIONS_FR: Readonly<Record<string, string>> = {
+  Race: "Course",
+  Sprint: "Sprint",
+  Qualifying: "Qualifications",
+  "Sprint Qualifying": "Qualifications sprint",
+  "Sprint Shootout": "Qualifications sprint",
+  "Free Practice 1": "Essais libres 1",
+  "Free Practice 2": "Essais libres 2",
+  "Free Practice 3": "Essais libres 3",
+  "Practice 1": "Essais libres 1",
+  "Practice 2": "Essais libres 2",
+  "Practice 3": "Essais libres 3",
+  "Reconnaissance Laps": "Tours de reconnaissance",
+  "Grid Procedure": "Procédure de grille",
+  "Thursday Press Conference": "Conférence de presse du jeudi",
+};
+
+/** A session label from an FIA document in the reader's language ("Free Practice 3"). */
+export function fiaSessionLabel(label: string | null | undefined, locale: Locale): string {
+  if (!label) return "";
+  if (locale === "en") return label.replace(/^Practice (\d)$/, "Free Practice $1");
+  return FIA_SESSIONS_FR[label] ?? label;
 }

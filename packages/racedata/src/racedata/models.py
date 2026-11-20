@@ -218,11 +218,13 @@ class WeatherRecord(_DTO):
 
 class PositionSample(_DTO):
     """Car position on the circuit plane (OpenF1 ``location``, about 3.7 Hz). Units are
-    the feed's own (roughly decimetres) and only meaningful relative to each other."""
+    the feed's own (roughly decimetres) and only meaningful relative to each other. ``z`` is
+    the altitude in the same units (``None`` when the feed left it out)."""
 
     at: datetime
     x: float
     y: float
+    z: float | None = None
 
 
 class CarSample(_DTO):
@@ -319,6 +321,14 @@ class WikiPortrait(_DTO):
     artist: str
     license: str
     license_url: str
+
+
+class WikiImage(_DTO):
+    """A portrait thumbnail fetched from upload.wikimedia.org for the API's cached relay
+    (ADR 0024): the browser gets it from our origin, without Wikimedia's cookies."""
+
+    content: bytes
+    content_type: str
 
 
 class Headline(_DTO):

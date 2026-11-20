@@ -11,18 +11,9 @@ import {
   teammates,
 } from "./fixtures/analysis";
 import { degradation } from "./fixtures/degradation";
-import { incidents, powerUnits, upgrades } from "./fixtures/technical";
-import {
-  decisions,
-  documentDetail,
-  documentEvents,
-  documentList,
-  documentSearch,
-} from "./fixtures/paddock";
 import { events } from "./fixtures/events";
 import { forecasts } from "./fixtures/forecast";
 import { homeResponse } from "./fixtures/home";
-import { strategyResponse } from "./fixtures/strategy";
 import {
   driver,
   driverResults,
@@ -33,18 +24,30 @@ import {
   team,
   teams,
 } from "./fixtures/hub";
+import { lapsResponse } from "./fixtures/laps";
+import { offlineLive } from "./fixtures/live";
 import { model } from "./fixtures/model";
 import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
-import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
+import {
+  decisions,
+  documentDetail,
+  documentEvents,
+  documentList,
+  documentSearch,
+} from "./fixtures/paddock";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
 import { replay } from "./fixtures/replay";
 import { session } from "./fixtures/session";
 import { stints } from "./fixtures/stints";
+import { strategyResponse } from "./fixtures/strategy";
+import { incidents, powerUnits, upgrades } from "./fixtures/technical";
+import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
+import { title } from "./fixtures/title";
 import { track } from "./fixtures/track";
 import { undercut } from "./fixtures/undercut";
 
-export const healthyResponse: Schema<"Health"> = {
+const healthyResponse: Schema<"Health"> = {
   status: "ok",
   version: "0.1.0",
   database: "ok",
@@ -62,40 +65,6 @@ export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   results: [{ year: 2025, events_count: events.count }],
 };
 
-/** Lap rows derived from the recorded replay (lap 1 excluded, as the engine does). */
-export const lapsResponse: Schema<"Lap">[] = replay.cars.flatMap((car) =>
-  car.line_times_s.flatMap((time, index) => {
-    const before = index === 0 ? 0 : car.line_times_s[index - 1];
-    if (time == null || before == null) return [];
-    return [
-      {
-        car_number: car.car_number,
-        lap: index + 1,
-        time_s: time - before,
-        corrected_time_s: null,
-        compound: car.compounds[index] ?? "UNKNOWN",
-        tyre_age: car.tyre_ages[index] ?? null,
-        stint: null,
-        is_pit_in: false,
-        is_pit_out: false,
-        race_time_s: time,
-        excluded: index === 0 ? "first_lap" : null,
-      },
-    ];
-  }),
-);
-
-export const offlineLive: Schema<"LiveStatus"> = {
-  state: "offline",
-  snapshot: null,
-  next_session: {
-    event_id: 14,
-    event_name: "Hungarian Grand Prix",
-    kind: "FP1",
-    starts_at: "2026-11-06T15:30:00Z",
-  },
-};
-
 export function problem(status: number, code: string, title: string, detail = title) {
   return HttpResponse.json(
     { type: "about:blank", title, status, detail, code } satisfies Schema<"Problem">,
@@ -103,7 +72,7 @@ export function problem(status: number, code: string, title: string, detail = ti
   );
 }
 
-export const handlers = [
+const handlers = [
   http.get("*/api/v1/health", () => HttpResponse.json(healthyResponse)),
   http.get("*/api/v1/seasons", () => HttpResponse.json(seasonsResponse)),
   http.get("*/api/v1/seasons/:year/events", () => HttpResponse.json(events)),
@@ -183,6 +152,7 @@ export const handlers = [
   ),
   http.get("*/api/v1/seasons/:year/standings", () => HttpResponse.json(standings)),
   http.get("*/api/v1/seasons/:year/standings/progression", () => HttpResponse.json(progression)),
+  http.get("*/api/v1/seasons/:year/title", () => HttpResponse.json(title)),
 ];
 
 /** Shared MSW server. Unhandled requests fail the test: no network in tests. */

@@ -1,47 +1,21 @@
 import type { Schema } from "@stintline/api-types";
-import { ExternalLink, Newspaper, Users } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { Face } from "@/components/dash/Face";
-import { Panel } from "@/components/dash/Panel";
+import { Panel } from "@/components/layout/Panel";
+import { Face } from "@/components/racing/Face";
 import { initials } from "@/components/racing/initials";
-import { useStandings } from "@/features/hub/api";
-import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
+import { HeadlineThumb } from "@/features/news/components/HeadlineThumb";
 import { useI18n } from "@/lib/i18n/context";
+import { useStandings } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 
 import { useAgo } from "../useAgo";
 
 type Headline = Schema<"Headline">;
 type Line = Schema<"StandingLine">;
-
-/** The publisher's picture (ADR 0015), else a plain tile with an icon. */
-function Thumb({ headline, className }: { headline: Headline; className: string }) {
-  const [failed, setFailed] = useState(false);
-  if (headline.image_url && !failed) {
-    return (
-      <img
-        src={headline.image_url}
-        alt=""
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          setFailed(true);
-        }}
-        className={`object-cover ${className}`}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={`grid place-items-center bg-raised text-muted ${className}`}
-    >
-      <Newspaper className="size-6" />
-    </span>
-  );
-}
 
 /** Whole-word, case-insensitive match of a name in a headline. */
 function names(title: string, name: string): boolean {
@@ -74,14 +48,14 @@ export function NewsWire({ headlines }: { headlines: readonly Headline[] }) {
             onClick={() => {
               setSource(key);
             }}
-            className="rounded-lg border border-line bg-panel px-3 py-1.5 text-sm font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
+            className="glass rounded-xl px-3 py-1.5 text-sm font-semibold text-muted aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg"
           >
             {label}
           </button>
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <ul className="flex max-h-[calc(100vh-10rem)] flex-col overflow-y-auto rounded-xl border border-line bg-panel">
+        <ul className="glass flex max-h-[calc(100vh-10rem)] flex-col overflow-y-auto rounded-[20px]">
           {shown.map((h) => {
             const active = h === current;
             return (
@@ -97,7 +71,7 @@ export function NewsWire({ headlines }: { headlines: readonly Headline[] }) {
                     active ? "bg-raised" : "hover:bg-raised/60"
                   }`}
                 >
-                  <Thumb headline={h} className="h-16 w-24 shrink-0 rounded-md" />
+                  <HeadlineThumb headline={h} className="h-16 w-24 shrink-0 rounded-md" />
                   <span className="flex min-w-0 flex-col gap-1">
                     <span className="line-clamp-2 leading-snug font-semibold">{h.title}</span>
                     <span className="text-xs text-muted">
@@ -120,8 +94,8 @@ function Reader({ headline }: { headline: Headline }) {
   const ago = useAgo();
   return (
     <article className="flex flex-col gap-4 self-start lg:sticky lg:top-20">
-      <div className="overflow-hidden rounded-xl border border-line bg-panel">
-        <Thumb headline={headline} className="aspect-[16/9] w-full" />
+      <div className="glass overflow-hidden rounded-[20px]">
+        <HeadlineThumb headline={headline} className="aspect-[16/9] w-full" eager />
         <div className="flex flex-col gap-3 p-5">
           <p className="text-xs font-bold text-mark-text uppercase">
             {headline.source_name} · {ago(headline.published_at)}
@@ -170,7 +144,7 @@ function Context({ title }: { title: string }) {
                 <li key={key}>
                   <Link
                     to={driver ? `/drivers/${driver.ref}` : `/teams/${line.team?.ref ?? ""}`}
-                    className="flex items-center gap-3 rounded-lg border border-line p-2 hover:bg-raised"
+                    className="flex items-center gap-3 rounded-xl border border-line p-2 hover:bg-ink/5"
                   >
                     {driver ? (
                       <Face

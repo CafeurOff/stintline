@@ -1,17 +1,20 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { TermList } from "@/components/ui/Term";
+import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useSessionDetail, useStints } from "@/features/race/api";
 import { byFinish, driverCode, driverName, type Entry } from "@/features/race/entries";
 import { useSessionId } from "@/features/race/useSessionId";
-import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
+import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
-import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useDegradation } from "../api";
 import { DegradationChart, type SeriesStyle } from "./DegradationChart";
@@ -32,7 +35,7 @@ export function TyresPage() {
 }
 
 function Tyres({ sessionId }: { sessionId: number }) {
-  const { t, f } = useI18n();
+  const { t, f, locale } = useI18n();
   const session = useSessionDetail(sessionId);
   const stints = useStints(sessionId);
   const degradation = useDegradation(sessionId);
@@ -46,27 +49,50 @@ function Tyres({ sessionId }: { sessionId: number }) {
   const entries = [...session.data.entries].sort(byFinish);
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-10">
-      <section aria-labelledby="wear-title">
-        <h1 id="wear-title" className="sr-only">
-          {t("tyres.title")}
-        </h1>
+    <div className="flex flex-col gap-5">
+      <section aria-labelledby="wear-title" className="flex flex-col gap-4">
+        <header className="flex flex-col gap-1">
+          <h1 id="wear-title" className="display text-2xl sm:text-3xl">
+            {t("tyres.pageTitle", {
+              event: eventName(session.data.event.name, locale),
+              year: session.data.event.season,
+            })}
+          </h1>
+          <p className="max-w-[75ch] text-sm text-muted">{t("tyres.intro")}</p>
+          <TermList ids={["degradation", "fuelCorrected", "stint"]} />
+        </header>
         {degradation.isPending ? (
           <Skeleton className="h-16" />
         ) : degradation.isError ? (
           <ErrorState error={degradation.error} onRetry={() => void degradation.refetch()} />
         ) : (
-          <ul className="flex flex-col gap-2 text-lg">
+          <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[...degradation.data.compounds]
               .sort((a, b) => compoundOrder(a.compound) - compoundOrder(b.compound))
               .map((item) => (
-                <li key={item.compound} className="flex flex-wrap items-center gap-x-3">
-                  <CompoundBadge compound={item.compound} />
-                  <span className="font-bold">
-                    {t(`compoundPlural.${compoundInfo(item.compound).key}`)}
+                <li
+                  key={item.compound}
+                  className="glass glow reveal flex flex-col gap-2 rounded-[20px] p-5"
+                  style={
+                    {
+                      "--glow": compoundInfo(item.compound).fill,
+                      "--glow-x": "100%",
+                      "--glow-y": "0%",
+                    } as CSSProperties
+                  }
+                >
+                  <span className="flex items-center gap-2">
+                    <CompoundBadge compound={item.compound} />
+                    <span className="display text-lg">
+                      {t(`compoundPlural.${compoundInfo(item.compound).key}`)}
+                    </span>
                   </span>
-                  <span>{t("tyres.wear", { ms: f.millis(item.slope_s_per_lap) })}</span>
-                  <span className="text-muted">
+                  <span className="display text-2xl">
+                    {t(item.slope_s_per_lap < 0 ? "tyres.gain" : "tyres.wear", {
+                      ms: f.millis(Math.abs(item.slope_s_per_lap)),
+                    })}
+                  </span>
+                  <span className="text-sm text-muted">
                     {t("tyres.fresh", { time: f.lapTime(item.new_tyre_pace_s) })}
                     {item.low_confidence ? ` · ${t("tyres.rough")}` : ""}
                   </span>
@@ -76,8 +102,11 @@ function Tyres({ sessionId }: { sessionId: number }) {
         )}
       </section>
 
-      <section aria-labelledby="strategies-title">
-        <h2 id="strategies-title" className="mb-3 text-xl font-bold">
+      <section
+        aria-labelledby="strategies-title"
+        className="glass reveal rounded-[20px] p-5 sm:p-6"
+      >
+        <h2 id="strategies-title" className="display mb-4 text-lg">
           {t("tyres.strategies")}
         </h2>
         {stints.isPending ? (
@@ -90,8 +119,8 @@ function Tyres({ sessionId }: { sessionId: number }) {
         <p className="mt-2 text-sm text-muted">{t("tyres.used")}</p>
       </section>
 
-      <section aria-labelledby="chart-title">
-        <h2 id="chart-title" className="text-xl font-bold">
+      <section aria-labelledby="chart-title" className="glass reveal rounded-[20px] p-5 sm:p-6">
+        <h2 id="chart-title" className="display text-lg">
           {t("tyres.chart")}
         </h2>
         <p className="mb-3 text-muted">{t("tyres.chartNote")}</p>
@@ -210,6 +239,8 @@ function WearChart({
                     "tyres.col.stint",
                     "tyres.col.compound",
                     "tyres.col.wear",
+                    "tyres.col.range",
+                    "tyres.col.fit",
                     "tyres.col.laps",
                   ] as const
                 ).map((key) => (
@@ -230,6 +261,12 @@ function WearChart({
                     <CompoundBadge compound={s.compound} />
                   </td>
                   <td className="py-1 pr-4">{f.millis(s.slope_s_per_lap)}</td>
+                  <td className="py-1 pr-4 text-muted">
+                    {s.slope_ci.length === 2
+                      ? `${f.millis(s.slope_ci[0] ?? 0)} – ${f.millis(s.slope_ci[1] ?? 0)}`
+                      : "—"}
+                  </td>
+                  <td className="py-1 pr-4 text-muted">{f.number(s.r_squared, 2)}</td>
                   <td className="py-1">{s.n_laps}</td>
                 </tr>
               ))}

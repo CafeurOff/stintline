@@ -9,6 +9,9 @@ x-api: &api
     context: ..
     dockerfile: infra/docker/api.Dockerfile
     target: prod
+    # The web image's index.html, so page heads point to the same asset names (ADR 0025).
+    additional_contexts:
+      web: service:web
   image: stintline-api:prod
   env_file:
     - path: demo.env

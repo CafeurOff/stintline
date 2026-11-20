@@ -107,12 +107,6 @@ export function countryCode(country: string): string | null {
   return code ? code.toLowerCase() : null;
 }
 
-/** ISO 3166 code of a nationality (`British` -> `gb`). */
-export function nationalityCode(nationality: string): string | null {
-  const code = NATIONALITY_CODES[nationality];
-  return code ? code.toLowerCase() : null;
-}
-
 /** Country name in the reader's language (`UK` -> `Royaume-Uni`), else the API text. */
 export function countryName(country: string, locale: Locale): string {
   const code = COUNTRY_CODES[country];

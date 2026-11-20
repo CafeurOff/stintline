@@ -3,41 +3,51 @@ from __future__ import annotations
 from typing import Any
 
 from django.db.models import Max, QuerySet
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import generics
-from rest_framework.exceptions import NotFound
+from rest_framework import generics, status
+from rest_framework.exceptions import APIException, NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from racedata import ProviderError
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
-from stintline.racing import careers, hub, selectors
-from stintline.racing.api.serializers import (
+from stintline.racing import careers, hub, portraits, selectors
+from stintline.racing.api.serializers.calendar import EventSerializer
+from stintline.racing.api.serializers.common import SeasonSerializer
+from stintline.racing.api.serializers.drivers import (
     DriverCareerSerializer,
     DriverListItemSerializer,
     DriverQuerySerializer,
     DriverResultSerializer,
+)
+from stintline.racing.api.serializers.home import HomeSerializer
+from stintline.racing.api.serializers.sessions import (
     EntryStintsSerializer,
-    EventSerializer,
-    HomeSerializer,
-    ProgressionSerializer,
-    RoundQuerySerializer,
-    SeasonSerializer,
     SectorsSerializer,
     SessionDetailSerializer,
+    TeamRadioSerializer,
+    TrackSerializer,
+)
+from stintline.racing.api.serializers.standings import (
+    ProgressionSerializer,
+    RoundQuerySerializer,
     StandingsSerializer,
+)
+from stintline.racing.api.serializers.teams import (
     TeamCareerSerializer,
     TeamListSerializer,
     TeamQuerySerializer,
-    TeamRadioSerializer,
-    TrackSerializer,
 )
 from stintline.racing.geometry import normalise_outline
 from stintline.racing.models import (
     Driver,
+    DriverPortrait,
     Event,
     Season,
     Session,
@@ -187,6 +197,39 @@ class DriverCareerView(APIView):
         driver = get_object_or_404(Driver, ref=ref)
         data = DriverCareerSerializer(careers.driver_career(driver)).data
         return cached_response(request, data, "driver", ref, _data_stamp())
+
+
+class DriverPortraitView(APIView):
+    @extend_schema(
+        operation_id="driver_portrait_retrieve",
+        summary="The driver's Wikipedia portrait, relayed from Wikimedia (ADR 0024, not stored)",
+        responses={
+            (200, "image/*"): OpenApiTypes.BINARY,
+            404: ProblemSerializer,
+            502: ProblemSerializer,
+        },
+        tags=["drivers"],
+    )
+    def get(self, request: Request, ref: str) -> HttpResponse:
+        portrait = get_object_or_404(
+            DriverPortrait.objects.select_related("driver"), driver__ref=ref
+        )
+        try:
+            image = portraits.portrait_image(portrait)
+        except ProviderError as exc:
+            raise PortraitUnavailableError from exc
+        # The URL carries a version of the image (`?v=`): browsers may keep it a week.
+        return HttpResponse(
+            image.content,
+            content_type=image.content_type,
+            headers={"Cache-Control": f"public, max-age={portraits.CACHE_SECONDS}"},
+        )
+
+
+class PortraitUnavailableError(APIException):
+    status_code = status.HTTP_502_BAD_GATEWAY
+    default_detail = "Wikimedia did not return the portrait."
+    default_code = "upstream_unavailable"
 
 
 class DriverResultsView(generics.ListAPIView[SessionEntry]):

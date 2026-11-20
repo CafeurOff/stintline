@@ -12,10 +12,13 @@ from stintline_strategy.telemetry import (
     TelemetryConfig,
     TelemetryError,
     braking_zones,
+    elevation,
     full_throttle_share,
     lap_distance,
     natural_length,
+    plane_scale,
     time_delta,
+    time_gap_to_distance,
     trace,
 )
 
@@ -142,3 +145,56 @@ def test_trace_refuses_unusable_laps(problem: str) -> None:
 
     with pytest.raises(TelemetryError):
         trace(samples)
+
+
+def test_plane_scale_is_metres_per_drawn_unit() -> None:
+    circle = trace(lap(speed_kph=180.0, lap_time_s=60.0))  # 3 km on a 1000-unit radius
+
+    assert plane_scale(circle) == pytest.approx(3000.0 / (2 * np.pi * 1000), rel=0.01)
+
+
+def test_elevation_is_metres_above_the_lowest_point() -> None:
+    base = lap()
+    hill = dataclasses.replace(base, z=np.sin(2 * np.pi * base.t_s / base.lap_time_s) * 100)
+
+    profile = elevation(trace(hill))
+
+    assert profile is not None
+    assert profile.min() == pytest.approx(0.0)
+    assert profile.max() == pytest.approx(200 * 3000.0 / (2 * np.pi * 1000), rel=0.02)
+
+
+def test_elevation_is_none_without_altitude() -> None:
+    assert elevation(trace(lap())) is None
+
+
+def test_gap_in_metres_follows_the_slower_car() -> None:
+    fast = trace(lap(speed_kph=180.0, lap_time_s=60.0), length_m=3000.0)
+    slow = trace(lap(speed_kph=180.0, lap_time_s=66.0), length_m=3000.0)
+
+    gap = time_gap_to_distance(fast, slow)
+
+    # Halfway, the fast car is at 1500 m after 30 s; the slow one is at 30/66 of the lap.
+    half = len(gap) // 2
+    assert gap[0] == pytest.approx(0.0, abs=1.0)
+    assert gap[half] == pytest.approx(1500.0 - 3000.0 * 30 / 66, rel=0.02)
+    assert np.all(np.diff(gap) >= -1e-6)
+
+
+def test_plane_scale_refuses_a_still_car() -> None:
+    still = dataclasses.replace(lap(), x=np.zeros(240), y=np.zeros(240))
+
+    with pytest.raises(TelemetryError):
+        plane_scale(trace(still))
+
+
+def test_positions_carry_on_to_the_line_before_the_first_sample() -> None:
+    base = lap(speed_kph=180.0, lap_time_s=60.0)
+    late = dataclasses.replace(base, pos_t_s=base.pos_t_s[2:-2], x=base.x[2:-2], y=base.y[2:-2])
+
+    first = trace(late)
+
+    # The circle starts at (1000, 0): extrapolated back, not held at the first sample.
+    assert first.x[0] == pytest.approx(1000.0, abs=5.0)
+    assert first.y[0] == pytest.approx(0.0, abs=15.0)
+    assert first.y[0] < late.y[0]

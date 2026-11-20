@@ -191,6 +191,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/drivers/{ref}/portrait": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The driver's Wikipedia portrait, relayed from Wikimedia (ADR 0024, not stored) */
+    get: operations["driver_portrait_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/drivers/{ref}/results": {
     parameters: {
       query?: never;
@@ -424,6 +441,23 @@ export interface paths {
     };
     /** Championship points of every driver and team after each round */
     get: operations["season_progression_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/seasons/{year}/title": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Title maths: who can still be champion, what the leader needs, when it was decided */
+    get: operations["season_title_retrieve"];
     put?: never;
     post?: never;
     delete?: never;
@@ -985,6 +1019,12 @@ export interface components {
       /** Format: double */
       spread_s: number | null;
       clean_laps: number;
+    };
+    CountBlock: {
+      /** @description Grands Prix in this part of the season; null: all the rest */
+      races: number | null;
+      /** @description Results that count among them; null: every one */
+      best: number | null;
     };
     Decision: {
       document_id: number;
@@ -1974,8 +2014,8 @@ export interface components {
     };
     /** @description Freely licensed image with the credit its licence requires (ADR 0009). */
     Portrait: {
-      /** Format: uri */
-      image_url: string;
+      /** @description The thumbnail, relayed from our origin (ADR 0024) */
+      readonly image_url: string;
       artist: string;
       license: string;
       license_url?: string;
@@ -2168,6 +2208,27 @@ export interface components {
     Round: {
       round: number;
       name: string;
+    };
+    RoundRef: {
+      round: number;
+      event_id: number;
+      name: string;
+      /** Format: date */
+      race_date: string;
+      sprint: boolean;
+    };
+    Rules: {
+      /**
+       * Format: double
+       * @description Most points from one Grand Prix (win, fastest lap)
+       */
+      race_max: number;
+      /** Format: double */
+      sprint_max: number;
+      /** @description False when only the best results counted */
+      all_count: boolean;
+      blocks: components["schemas"]["CountBlock"][];
+      double_last_race: boolean;
     };
     Season: {
       /** Format: int64 */
@@ -2607,6 +2668,8 @@ export interface components {
       max_speed_kph: number;
       /** Format: double */
       full_throttle_share: number;
+      /** @description Seconds from the start of the lap at each point */
+      t_s: number[];
       speed_kph: number[];
       throttle_pct: number[];
       brake: boolean[];
@@ -2617,12 +2680,21 @@ export interface components {
       y: number[];
       /** @description Seconds behind the first car at each point */
       delta_s: number[];
+      /** @description Metres behind the first car when it passes each point (negative: ahead) */
+      gap_m: number[];
+      /** @description Metres above the lap's lowest point; null for laps stored without altitude */
+      elevation_m: number[] | null;
       braking_zones: components["schemas"]["BrakingZone"][];
     };
     TelemetryCompare: {
       /** @description Screen box of x and y, like the track drawing */
       width: number;
       height: number;
+      /**
+       * Format: double
+       * @description Metres per screen unit of x and y, to draw altitude at the same scale
+       */
+      metres_per_unit: number;
       /** @description Common lap length the laps are drawn on */
       length_m: number;
       /**
@@ -2649,6 +2721,59 @@ export interface components {
       /** Format: double */
       lap_time_s: number;
     };
+    Title: {
+      season: number;
+      rules: components["schemas"]["Rules"];
+      races_done: number;
+      races_left: number;
+      sprints_left: number;
+      /**
+       * Format: double
+       * @description Most points one driver can still score
+       */
+      points_left: number;
+      /** @description Round after which the title was settled by arithmetic */
+      decided: components["schemas"]["RoundRef"] | null;
+      next_round: components["schemas"]["RoundRef"] | null;
+      drivers: components["schemas"]["TitleDriver"][];
+    };
+    TitleDriver: {
+      driver: components["schemas"]["Driver"];
+      /**
+       * Format: double
+       * @description Points that count (after dropped results)
+       */
+      points: number;
+      /**
+       * Format: double
+       * @description Every point scored, dropped results included
+       */
+      scored: number;
+      /**
+       * Format: double
+       * @description Most points the driver can still finish with
+       */
+      ceiling: number;
+      /**
+       * Format: double
+       * @description Points behind the leader
+       */
+      gap: number;
+      status: components["schemas"]["TitleDriverStatusEnum"];
+      /**
+       * Format: double
+       * @description At the next round the leader is champion if he outscores this driver by more than this (negative: may even lose that much); null when not in play
+       */
+      clinch_margin: number | null;
+    };
+    /**
+     * @description * `champion` - champion
+     *     * `leader` - leader
+     *     * `contender` - contender
+     *     * `out` - out
+     * @enum {string}
+     */
+    TitleDriverStatusEnum: "champion" | "leader" | "contender" | "out";
     /** @description Circuit outline in screen coordinates, samples evenly spaced in time over one lap. */
     Track: {
       width: number;
@@ -3188,6 +3313,43 @@ export interface operations {
       };
     };
   };
+  driver_portrait_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "image/*": string;
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      502: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
   driver_results_list: {
     parameters: {
       query?: {
@@ -3524,6 +3686,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Progression"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  season_title_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        year: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Title"];
         };
       };
       404: {

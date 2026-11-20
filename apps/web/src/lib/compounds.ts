@@ -1,6 +1,6 @@
-export type CompoundKey = "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET" | "UNKNOWN";
+type CompoundKey = "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET" | "UNKNOWN";
 
-export interface CompoundInfo {
+interface CompoundInfo {
   key: CompoundKey;
   /** English label, for non-UI uses. UI text goes through `t("compound.<key>")`. */
   label: string;

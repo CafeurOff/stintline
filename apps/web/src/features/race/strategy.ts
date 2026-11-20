@@ -15,14 +15,14 @@ export interface Plan {
   stops: PlanStop[];
 }
 
-export interface PlanStint {
+interface PlanStint {
   compound: RaceCompound;
   from: number;
   to: number;
 }
 
 /** Fewest laps between two stops the simulator accepts (`WhatIfConfig.min_stint_laps`). */
-export const MIN_STINT_LAPS = 3;
+const MIN_STINT_LAPS = 3;
 /** Most stops the simulator accepts (`MAX_STOPS` in the API). */
 export const MAX_STOPS = 5;
 

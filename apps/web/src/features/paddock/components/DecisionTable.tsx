@@ -2,8 +2,8 @@ import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
 import { Flag } from "@/components/racing/Flag";
-import { DriverChip } from "@/features/insights/components/common";
-import { eventName } from "@/lib/i18n/content";
+import { DriverChip } from "@/features/analysis/components/AnalysisParts";
+import { eventName, fiaSessionLabel } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 
@@ -60,7 +60,7 @@ export function DecisionTable({
                   </Link>
                 </td>
               )}
-              <td className="text-muted">{d.session_label}</td>
+              <td className="text-muted">{fiaSessionLabel(d.session_label, locale)}</td>
               <td className="num">{d.lap ?? "—"}</td>
               <td className="max-w-80 text-muted">{d.fact}</td>
               <td>

@@ -6,12 +6,14 @@ import { ErrorState } from "@/components/ui/States";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 
+import { usePitLoss } from "../api";
 import { driverCode, driverName, type Entry } from "../entries";
 import { neighbours } from "../stops";
 
 type PitExit = Schema<"PitExitResult">;
 
 interface StopPanelProps {
+  sessionId: number;
   entry: Entry;
   canStop: boolean;
   maxLap: number;
@@ -27,6 +29,7 @@ interface StopPanelProps {
 
 export function StopPanel(props: StopPanelProps) {
   const { t, f } = useI18n();
+  const pitLoss = usePitLoss(props.sessionId).data;
   const { entry, result } = props;
 
   if (!props.canStop) {
@@ -77,11 +80,19 @@ export function StopPanel(props: StopPanelProps) {
     Boolean(row),
   );
 
+  const moved = position - result.position_before;
   return (
     <div className="flex flex-col gap-3 border-t border-line pt-4">
       <p className="tabular text-4xl leading-none font-bold">
         {f.ordinal(position)}{" "}
         <span className="text-lg font-normal text-muted">{t("stop.rejoin")}</span>
+      </p>
+      <p className="text-sm text-muted">
+        {t("stop.fromTo", {
+          before: f.ordinal(result.position_before),
+          after: f.ordinal(position),
+        })}
+        {moved > 0 && ` · ${t("stop.placesLost", { n: moved })}`}
       </p>
       <p>{sentence}</p>
       <ol className="flex flex-col gap-1">
@@ -109,6 +120,25 @@ export function StopPanel(props: StopPanelProps) {
             })
           : t("stop.safe", { sigma: f.seconds(result.sigma_s, 0) })}
       </p>
+      {pitLoss && (
+        <div className="flex flex-col gap-2 rounded-xl bg-ink/[0.04] p-3 text-center">
+          <dl className="grid grid-cols-3 gap-2">
+            {(
+              [
+                [t("stop.loss.green"), pitLoss.green_s],
+                [t("stop.loss.vsc"), pitLoss.assumed_vsc_s],
+                [t("stop.loss.sc"), pitLoss.assumed_sc_s],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label} className="flex flex-col">
+                <dt className="order-3 text-[0.7rem] text-muted">{label}</dt>
+                <dd className="num order-2 text-lg font-bold">{f.seconds(value, 1)}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="text-xs text-muted">{t("stop.loss.note", { n: pitLoss.n_green })}</p>
+        </div>
+      )}
       <Button variant="quiet" className="self-start" onClick={props.onClear}>
         {t("common.clear")}
       </Button>

@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     "stintline.paddock",
     "stintline.technical",
     "stintline.forecast",
+    "stintline.championship",
+    "stintline.seo",
 ]
 
 MIDDLEWARE = [
@@ -210,3 +212,12 @@ LOGGING = build_logging_config(
     json_logs=env.bool("LOG_JSON", default=False),
     level=env.str("LOG_LEVEL", default="INFO"),
 )
+
+# Web pages rendered with their head (ADR 0025). The built index.html of the web app, and the
+# French Grand Prix names it shares with the API. SITE_URL forces the canonical origin (else
+# the request's).
+SPA_INDEX_PATH: str = env.str("SPA_INDEX_PATH", default=str(REPO_ROOT / "apps/web/dist/index.html"))
+EVENT_NAMES_FR_PATH: str = env.str(
+    "EVENT_NAMES_FR_PATH", default=str(REPO_ROOT / "apps/web/src/lib/i18n/event-names.fr.json")
+)
+SITE_URL: str = env.str("SITE_URL", default="")

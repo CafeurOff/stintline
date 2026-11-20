@@ -43,6 +43,9 @@ describe("RacePage", () => {
       ),
     ).toBeVisible();
     expect(within(panel()).getByText(/Close with ALO/)).toBeVisible();
+    expect(within(panel()).getByText(/before the stop to 5th after it/)).toBeVisible();
+    expect(await within(panel()).findByText("Green flag")).toBeVisible();
+    expect(within(panel()).getByText(/measured on \d+ green-flag/)).toBeVisible();
     expect(bodies).toEqual([{ car: 4, pit_lap: 30 }]);
   });
 
@@ -61,6 +64,31 @@ describe("RacePage", () => {
     const map = await screen.findByRole("group", { name: /cars on track/ });
 
     await userEvent.click(within(map).getByRole("button", { name: "Oscar Piastri" }));
+
+    expect(within(panel()).getByText("What if Piastri pitted now?")).toBeVisible();
+    expect(router.state.location.search).toContain("car=81");
+  });
+
+  it("switches to the 3D view, which falls back to the map without WebGL", async () => {
+    const { router } = renderRoute(`${race}?lap=30`);
+    const views = await screen.findByRole("group", { name: "View" });
+
+    await userEvent.click(within(views).getByRole("button", { name: "3D" }));
+
+    expect(router.state.location.search).toContain("view=3d");
+    expect(await screen.findByText(/cannot draw 3D/)).toHaveAttribute("role", "status");
+    await userEvent.click(within(views).getByRole("button", { name: "Map" }));
+    expect(await screen.findByRole("group", { name: /cars on track/ })).toBeVisible();
+    expect(router.state.location.search).not.toContain("view=");
+  });
+
+  it("lists the running order with gaps and picks a driver from it", async () => {
+    const { router } = renderRoute(`${race}?lap=30`);
+    const tower = await screen.findByRole("region", { name: "Running order" });
+
+    expect(within(tower).getAllByRole("button", { name: /^\d+\. / })).toHaveLength(20);
+    expect(within(tower).getByText("Leader", { selector: "span" })).toBeVisible();
+    await userEvent.click(within(tower).getByRole("button", { name: /^\d+\. Oscar Piastri$/ }));
 
     expect(within(panel()).getByText("What if Piastri pitted now?")).toBeVisible();
     expect(router.state.location.search).toContain("car=81");
@@ -89,6 +117,8 @@ describe("RacePage", () => {
 
     expect(await within(panel()).findByText("PIA would stay behind")).toBeVisible();
     expect(within(panel()).getByText(/Chance of coming out ahead: <1%/)).toBeVisible();
+    expect(within(panel()).getByText(/Net effect of the undercut for PIA/)).toBeVisible();
+    expect(within(panel()).getByRole("table", { name: /lap by lap/ })).toBeVisible();
   });
 
   it("says when there is nobody to undercut", async () => {

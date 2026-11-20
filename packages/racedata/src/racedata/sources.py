@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -14,6 +14,7 @@ from racedata.config import (
     JOLPICA,
     OPEN_METEO,
     OPENF1,
+    WIKIMEDIA_UPLOAD,
     WIKIPEDIA,
     FeedConfig,
     ProviderConfig,
@@ -32,7 +33,7 @@ from racedata.providers.fia import FiaSource
 from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
 from racedata.providers.openmeteo import OpenMeteoSource
-from racedata.providers.wikipedia import WikipediaSource
+from racedata.providers.wikipedia import IMAGE_HOSTS, WikimediaImageSource, WikipediaSource
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,8 @@ class Sources:
     """FIA event documents and stewards' decisions (ADR 0018). ``None`` in test doubles."""
     weather: OpenMeteoSource | None = None
     """Open-Meteo forecasts at the circuits (ADR 0020). ``None`` in test doubles."""
+    images: WikimediaImageSource | None = None
+    """Portrait thumbnails relayed by the API (ADR 0024). ``None`` offline (fixtures)."""
 
     def close(self) -> None:
         for client in self.clients:
@@ -89,7 +92,16 @@ def build_http_sources(
     )
     fia = HttpClient(FIA.name, FIA.base_url, limits=FIA.limits, timeout_s=FIA_TIMEOUT_S)
     weather = _http_client(OPEN_METEO, None, None)
-    return _sources(openf1, jolpica, wikipedia, feeds, fia, weather)
+    images = {
+        host: HttpClient(WIKIMEDIA_UPLOAD.name, f"https://{host}", limits=WIKIMEDIA_UPLOAD.limits)
+        for host in IMAGE_HOSTS
+    }
+    sources = _sources(openf1, jolpica, wikipedia, feeds, fia, weather)
+    return replace(
+        sources,
+        clients=(*sources.clients, *images.values()),
+        images=WikimediaImageSource(images),
+    )
 
 
 def build_fixture_sources(root: Path = FIXTURES_ROOT) -> Sources:

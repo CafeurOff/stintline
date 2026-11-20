@@ -107,7 +107,7 @@ export function pointAt(
   return [px + ((q[0] ?? px) - px) * k, py + ((q[1] ?? py) - py) * k];
 }
 
-export interface Running {
+interface Running {
   carNumber: number;
   progress: number;
 }

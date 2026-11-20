@@ -12,9 +12,6 @@ vi.mock("./components/PdfViewer", () => ({
   PdfViewer: ({ title }: { title: string }) => <p>PDF of {title}</p>,
 }));
 
-/** Several clicks on a page with charts: slower than one query under coverage. */
-const SLOW_MS = 15_000;
-
 describe("FIA documents page", () => {
   it("shows the weekend's documents, tiles and the first document", async () => {
     renderRoute("/documents?season=2025");
@@ -27,65 +24,51 @@ describe("FIA documents page", () => {
     expect(await screen.findByText(/^PDF of /)).toBeVisible();
   });
 
-  it(
-    "opens a decision with its ruling, lap and text",
-    async () => {
-      const { router } = renderRoute("/documents?season=2025");
+  it("opens a decision with its ruling, lap and text", async () => {
+    const { router } = renderRoute("/documents?season=2025");
 
-      const list = await screen.findByRole("region", { name: "Documents" });
-      await userEvent.click(await within(list).findByRole("button", { name: /Erratic Driving/ }));
+    const list = await screen.findByRole("region", { name: "Documents" });
+    await userEvent.click(await within(list).findByRole("button", { name: /Erratic Driving/ }));
 
-      expect(router.state.location.search).toContain("doc=");
-      const ruling = await screen.findByRole("region", { name: "Stewards' ruling" });
-      expect(within(ruling).getByText("+5 s")).toBeVisible();
-      expect(within(ruling).getByText("1 pts")).toBeVisible();
-      expect(within(ruling).getByRole("link", { name: /Lap \d+/ })).toHaveAttribute(
-        "href",
-        expect.stringContaining("drivers=16") as string,
-      );
+    expect(router.state.location.search).toContain("doc=");
+    const ruling = await screen.findByRole("region", { name: "Stewards' ruling" });
+    expect(within(ruling).getByText("+5 s")).toBeVisible();
+    expect(within(ruling).getByText("1 pts")).toBeVisible();
+    expect(within(ruling).getByRole("link", { name: /Lap \d+/ })).toHaveAttribute(
+      "href",
+      expect.stringContaining("drivers=16") as string,
+    );
 
-      await userEvent.click(screen.getByRole("radio", { name: "Text" }));
-      // The full text of the PDF is shown under the ruling.
-      expect(screen.getAllByText(/moved twice/).some((el) => el.tagName === "PRE")).toBe(true);
-    },
-    SLOW_MS,
-  );
+    await userEvent.click(screen.getByRole("radio", { name: "Text" }));
+    // The full text of the PDF is shown under the ruling.
+    expect(screen.getAllByText(/moved twice/).some((el) => el.tagName === "PRE")).toBe(true);
+  });
 
-  it(
-    "searches the documents and shows where the words were found",
-    async () => {
-      const { router } = renderRoute("/documents?season=2025");
+  it("searches the documents and shows where the words were found", async () => {
+    const { router } = renderRoute("/documents?season=2025");
 
-      await userEvent.type(await screen.findByRole("searchbox"), "moved twice");
-      await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await userEvent.type(await screen.findByRole("searchbox"), "moved twice");
+    await userEvent.click(screen.getByRole("button", { name: "Search" }));
 
-      expect(router.state.location.search).toContain("q=moved+twice");
-      expect(
-        await screen.findByRole("region", { name: "Results for “moved twice”" }),
-      ).toBeVisible();
-      expect(screen.getAllByText(/moved twice/).length).toBeGreaterThan(0);
-    },
-    SLOW_MS,
-  );
+    expect(router.state.location.search).toContain("q=moved+twice");
+    expect(await screen.findByRole("region", { name: "Results for “moved twice”" })).toBeVisible();
+    expect(screen.getAllByText(/moved twice/).length).toBeGreaterThan(0);
+  });
 
-  it(
-    "filters by category and opens decisions from the table",
-    async () => {
-      const { router } = renderRoute("/documents?season=2025");
+  it("filters by category and opens decisions from the table", async () => {
+    const { router } = renderRoute("/documents?season=2025");
 
-      const list = await screen.findByRole("region", { name: "Documents" });
-      await userEvent.click(within(list).getByRole("button", { name: "Infringement" }));
-      expect(router.state.location.search).toContain("cat=infringement");
+    const list = await screen.findByRole("region", { name: "Documents" });
+    await userEvent.click(within(list).getByRole("button", { name: "Infringement" }));
+    expect(router.state.location.search).toContain("cat=infringement");
 
-      const table = await screen.findByRole("table", { name: "Stewards' decisions" });
-      expect(within(table).getAllByRole("row")).toHaveLength(decisions.length + 1);
-      const [read] = within(table).getAllByRole("button", { name: "Read" });
-      if (!read) throw new Error("no decision to open");
-      await userEvent.click(read);
-      expect(router.state.location.search).toMatch(/doc=\d+/);
-    },
-    SLOW_MS,
-  );
+    const table = await screen.findByRole("table", { name: "Stewards' decisions" });
+    expect(within(table).getAllByRole("row")).toHaveLength(decisions.length + 1);
+    const [read] = within(table).getAllByRole("button", { name: "Read" });
+    if (!read) throw new Error("no decision to open");
+    await userEvent.click(read);
+    expect(router.state.location.search).toMatch(/doc=\d+/);
+  });
 
   it("explains an empty season", async () => {
     server.use(http.get("*/api/v1/documents/events", () => HttpResponse.json([])));
@@ -94,31 +77,21 @@ describe("FIA documents page", () => {
     expect(await screen.findByText("No FIA documents for this season yet.")).toBeVisible();
   });
 
-  it(
-    "lists the stewards' decisions on the Grand Prix page and on the lap chart",
-    async () => {
-      const { container } = renderRoute("/events/14");
+  it("lists the stewards' decisions on the Grand Prix page and on the lap chart", async () => {
+    const { container } = renderRoute("/events/14");
 
-      expect(await screen.findByRole("region", { name: "Stewards' decisions" })).toBeVisible();
-      await waitFor(() => {
-        expect(container.querySelectorAll('[data-testid="lap-mark"]').length).toBeGreaterThan(0);
-      });
-    },
-    SLOW_MS,
-  );
+    expect(await screen.findByRole("region", { name: "Stewards' decisions" })).toBeVisible();
+    await waitFor(() => {
+      expect(container.querySelectorAll('[data-testid="lap-mark"]').length).toBeGreaterThan(0);
+    });
+  });
 
-  it(
-    "lists a driver's decisions on the profile",
-    async () => {
-      server.use(http.get("*/api/v1/stewards/decisions", () => HttpResponse.json(decisions)));
-      renderRoute("/drivers/norris");
+  it("lists a driver's decisions on the profile", async () => {
+    server.use(http.get("*/api/v1/stewards/decisions", () => HttpResponse.json(decisions)));
+    renderRoute("/drivers/norris");
 
-      expect(
-        await screen.findByRole("region", { name: /Stewards' decisions 20\d\d/ }),
-      ).toBeVisible();
-    },
-    SLOW_MS,
-  );
+    expect(await screen.findByRole("region", { name: /Stewards' decisions 20\d\d/ })).toBeVisible();
+  });
 });
 
 describe("penalty helpers", () => {

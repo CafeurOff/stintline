@@ -21,6 +21,7 @@ dev = [
     "pytest>=9",
     "pytest-cov>=7",
     "pytest-socket>=0.8",
+    "pytest-xdist>=3.8",
 ]
 
 # ---------------------------------------------------------------- ruff
@@ -50,6 +51,7 @@ allowed-confusables = ["σ", "×", "Φ", "·", "−"]
 "**/models.py" = ["RUF012"]
 "**/admin.py" = ["RUF012"]
 "**/serializers.py" = ["RUF012"]
+"**/serializers/*.py" = ["RUF012"]
 ".claude/hooks/*.py" = ["S603", "S607", "T20"]
 
 [tool.ruff.lint.isort]

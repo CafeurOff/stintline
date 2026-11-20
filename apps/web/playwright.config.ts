@@ -4,7 +4,7 @@ const PORT = 4173;
 
 /**
  * End-to-end journeys. The API is mocked per test with `page.route`, so these run
- * without a backend. Full-stack journeys against docker compose come later.
+ * without a backend.
  */
 export default defineConfig({
   testDir: "./e2e",

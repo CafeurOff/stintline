@@ -44,6 +44,7 @@ def lap_samples(lap: TelemetryLap) -> engine.LapSamples:
         x=arr(pos["x"]),
         y=arr(pos["y"]),
         lap_time_s=lap.lap_time_s,
+        z=arr(pos["z"]) if "z" in pos else None,
     )
 
 
@@ -51,9 +52,10 @@ def _rounded(values: Any, digits: int = 0) -> list[float]:
     return [round(float(v), digits) for v in values]
 
 
-def _to_screen(cars: list[dict[str, Any]]) -> tuple[int, int]:
+def _to_screen(cars: list[dict[str, Any]]) -> tuple[int, int, float]:
     """Every position (laps and braking zones) in the circuit drawing's screen box, the
-    same one as ``/sessions/{id}/track``. Returns the box width and height."""
+    same one as ``/sessions/{id}/track``. Returns the box width and height, and the screen
+    units per plane unit."""
     points: list[list[float]] = []
     for car in cars:
         points += [[x, y] for x, y in zip(car["x"], car["y"], strict=True)]
@@ -66,7 +68,7 @@ def _to_screen(cars: list[dict[str, Any]]) -> tuple[int, int]:
         car["y"] = [p[1] for p in laps]
         for zone in car["braking_zones"]:
             zone["x"], zone["y"] = next(flat)
-    return shape.width, shape.height
+    return shape.width, shape.height, shape.scale
 
 
 def compare(session: Session, cars: list[int]) -> dict[str, Any]:
@@ -86,9 +88,11 @@ def compare(session: Session, cars: list[int]) -> dict[str, Any]:
     traces = [engine.trace(s, length) for s in samples]
     size = min(len(t.distance_m) for t in traces)
     reference = traces[0]
+    plane_m = engine.plane_scale(reference)
     out_cars = []
     for car, lap, item in zip(cars, (by_car[c] for c in cars), traces, strict=True):
         zones = engine.braking_zones(item)
+        height_m = engine.elevation(item)
         out_cars.append(
             {
                 "car_number": car,
@@ -97,6 +101,7 @@ def compare(session: Session, cars: list[int]) -> dict[str, Any]:
                 "lap_time_s": lap.lap_time_s,
                 "max_speed_kph": float(item.speed_kph.max()),
                 "full_throttle_share": engine.full_throttle_share(item),
+                "t_s": _rounded(item.t_s[:size], 3),
                 "speed_kph": _rounded(item.speed_kph[:size]),
                 "throttle_pct": _rounded(item.throttle_pct[:size]),
                 "brake": [bool(b) for b in item.brake[:size]],
@@ -105,6 +110,8 @@ def compare(session: Session, cars: list[int]) -> dict[str, Any]:
                 "x": _rounded(item.x[:size], 1),
                 "y": _rounded(item.y[:size], 1),
                 "delta_s": _rounded(engine.time_delta(reference, item)[:size], 3),
+                "gap_m": _rounded(engine.time_gap_to_distance(reference, item)[:size], 1),
+                "elevation_m": None if height_m is None else _rounded(height_m[:size], 1),
                 "braking_zones": [
                     {
                         "start_m": round(z.start_m),
@@ -118,10 +125,11 @@ def compare(session: Session, cars: list[int]) -> dict[str, Any]:
                 ],
             }
         )
-    width, height = _to_screen(out_cars)
+    width, height, screen_scale = _to_screen(out_cars)
     return {
         "width": width,
         "height": height,
+        "metres_per_unit": round(plane_m / screen_scale, 4),
         "length_m": round(length),
         "step_m": engine.DEFAULT_CONFIG.step_m,
         "points": size,

@@ -16,6 +16,8 @@ class NormalisedOutline:
     width: int
     height: int
     points: list[list[float]]
+    scale: float = 1.0
+    """Screen units per source unit."""
 
 
 def normalise_outline(points: Sequence[Sequence[float]]) -> NormalisedOutline:
@@ -37,7 +39,7 @@ def normalise_outline(points: Sequence[Sequence[float]]) -> NormalisedOutline:
     ]
     width = round((max(xs) - min_x) * scale + 2 * OUTLINE_PADDING)
     height = round((max_y - min(ys)) * scale + 2 * OUTLINE_PADDING)
-    return NormalisedOutline(width=width, height=height, points=out)
+    return NormalisedOutline(width=width, height=height, points=out, scale=scale)
 
 
 CARD_BOX = 100.0

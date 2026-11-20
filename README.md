@@ -1,150 +1,118 @@
 # StintLine
 
-**Every Grand Prix since 1950, and the strategy behind the recent ones, shown on the circuit.**
+[![CI](https://github.com/CafeurOff/stintline/actions/workflows/ci.yml/badge.svg)](https://github.com/CafeurOff/stintline/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)
+![Node 22](https://img.shields.io/badge/node-22-green.svg)
 
-StintLine is a hub for Formula 1 fans built on public timing and results data. Replay a race lap by lap with the real cars on the real track. Ask "what if he had pitted now?", test an undercut, or run the whole race again with another tyre strategy. Then dig into lap charts, gaps, sectors and fastest-lap telemetry. Casual fans get plain answers first. The detailed charts are one click further.
+StintLine is a Formula 1 site built on public timing and results data. It replays recent races on the real circuit, explains the strategy behind them, and covers every Grand Prix since 1950. It is written for casual fans first, with detailed charts one click further. It is unofficial (see [Disclaimer](#disclaimer)).
 
-![Home page: the last Grand Prix with its podium, the next one with a countdown, both championships](docs/screenshots/home.png)
+![Home page: the next Grand Prix with its countdown, circuit figures and weekend schedule](docs/screenshots/home.png)
 
-## What you can do
+## What it does
 
-| | |
-| --- | --- |
-| **Replay a race on the circuit** | The cars move along the real track outline, lap by lap, at ×1, ×10 or ×30. Pick a driver to see their tyres and gaps. |
-| **"What if he pitted now?"** | Places the car where it would rejoin after a stop, with a ghost car and the probability of each position. |
-| **Undercut and overcut** | Lap-by-lap gain of stopping first against a rival, from fitted tyre wear and the circuit's pit loss. |
-| **Replay a whole race with another strategy** | Change one car's stops and compounds. The other drivers keep their real race, and you get the finishing-position chances. |
-| **Race analysis** | Key facts, positions and gaps lap by lap, lap times, tyre strategies, best sectors, top speeds. |
-| **Telemetry** | Compare fastest laps: speed, throttle, brake, gear and the gap along the lap, drawn on the circuit with braking zones. Drag across the charts (or pick a corner) to zoom on any part of the lap and compare the drivers there. |
-| **Every Grand Prix since 1950** | Results, qualifying, grids, driver and team careers, championship tables with the title-fight chart. |
-| **News** | Race reports written from the data (in English and French) and headline links to public sources. |
-| **Live mode (local)** | Follows the official timing feed from your own computer: running order, cars on the circuit, team radio, race control, TV delay. |
+- **Race replay on the circuit** (2023 onwards): cars move along the real track outline next to a timing tower with gaps and tyres, on a map or in 3D on the circuit's relief.
+- **Strategy simulators**: where a car rejoins if it pits now, undercut and overcut against a rival, and a whole race replayed with another tyre strategy.
+- **Race analysis**: positions and gaps lap by lap, lap times, tyre strategies, sectors, and fastest-lap telemetry with a 3D view.
+- **Archive since 1950**: results, qualifying, driver and team careers, standings, and who can still win the title.
+- **Analysis pages**: teammate head-to-heads, race pace, consistency, pit stops and a profile of each circuit.
+- **Paddock**: FIA documents and stewards' decisions, linked to drivers and laps.
+- **News**: race reports written from the data, and headline links to public sources.
+- **Live mode** on your own computer: running order, cars on the circuit, team radio and race control.
 
-The interface is bilingual (English and French), works on phones, and has a light and a dark theme.
+The site is in English and French, works on phones, and has light and dark themes. Every chart can be shared as a link, a PNG or CSV.
 
-![Replaying the 2026 Brazilian Grand Prix with the strategy simulator open](docs/screenshots/circuit-strategy.png)
+![Replaying the 2026 Brazilian Grand Prix: timing tower, the circuit lit in its colour, the strategy simulator](docs/screenshots/circuit-strategy.png)
 
-![Grands Prix of the season drawn around their circuit, with the winner and a replay button](docs/screenshots/grands-prix.png)
+![The same race in 3D: every car on the track's relief, seen from above](docs/screenshots/race-3d.png)
 
-![Telemetry zoomed on one corner: speed, throttle, brake, gear and gap, the circuit framed on that section](docs/screenshots/telemetry.png)
+![Telemetry of two drivers zoomed on turns 1 and 2: speed, throttle, brake, gear and gap](docs/screenshots/telemetry.png)
 
-Screenshots are taken with third-party images blocked, so drivers appear as their coloured initials. The site shows their official portraits.
+Screenshots are taken with official media blocked, so current drivers appear as coloured initials.
 
 ## Quick start
 
 Prerequisites: [uv](https://docs.astral.sh/uv/) ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2.
 
 ```bash
+git clone https://github.com/CafeurOff/stintline.git && cd stintline
 make setup   # Python and JS dependencies, Playwright Chromium, git hooks, .env
 make up      # Postgres, Redis, API, Celery worker and beat, web
+make seed    # three 2025 races from recorded fixtures, no network (in another terminal)
 ```
 
-- Web: http://localhost:5173
-- API: http://localhost:8000/api/v1/health, interactive docs at http://localhost:8000/api/docs/
+Open http://localhost:5173. The API docs are at http://localhost:8000/api/docs/.
 
-On its first start the Celery worker imports the current season, then every race as soon as it finishes. To fill the database:
+To load real data instead of the demo races:
 
 | Data | Command | Time |
 | --- | --- | --- |
-| Demo races from recorded fixtures, no network | `make seed` | seconds |
-| A season with full timing (2023 onwards) | `uv run python apps/api/manage.py ingest --season 2025 --sync` | long: OpenF1's free tier allows 30 requests per minute |
-| Results, qualifying and standings since 1950 | `uv run python apps/api/manage.py ingest_history` | a few hours, can be resumed |
+| A season with full timing (2023 onwards) | `uv run python apps/api/manage.py ingest --season 2025 --sync` | hours: OpenF1's free tier allows 30 requests per minute |
+| Results, qualifying and standings since 1950 | `uv run python apps/api/manage.py ingest_history` | a few hours, resumable |
 
-`make help` lists every target. `CLAUDE.md` is the full reference for commands, conventions and known pitfalls.
+Once running, the Celery worker imports each race after it finishes. `make help` lists every target.
 
-## Live mode at home
-
-The live page of the public site shows the next session with a countdown, the weekend in your time zone and the last replay. To follow a session live (running order, cars on the circuit, team radio, race control, TV delay), run StintLine on your own computer from a home connection:
-
-```bash
-make up      # the stack
-make live    # follows the official timing feed and records it to ./recordings
-```
-
-The official feed is for personal use and does not answer cloud servers, which is why the public site is replay-only (ADR 0002, ADR 0011).
-
-## The strategy model
-
-The engine (`packages/strategy`) is pure Python with numpy and scipy. It has no Django and no I/O, and it is tested on synthetic races with known ground truth.
-
-1. **Clean laps.** It drops lap 1, in and out laps, laps under safety car, virtual safety car or red flag, and outliers.
-2. **Fuel correction.** 0.033 s per kg of fuel burnt, supported by a sensitivity check (lower values give tyres that get faster with age at Monza).
-3. **Tyre degradation.** A pooled slope per compound with a 95 % interval. Stints shorter than the minimum are flagged as low confidence.
-4. **Pit loss per circuit,** estimated from the race's own stops (time lost in the pit lane compared with a racing lap).
-5. **Pit exit and undercut.** It projects gaps after a stop and gives position probabilities from the lap-time noise.
-
-**Backtest on real 2025 races.** Each green-flag stop is predicted with the pit loss estimated from the race's *other* stops, then compared with the position at the end of the out-lap. Parameters were tuned only on Bahrain, Hungary and Italy. Six races were never used for tuning:
-
-| Set | Stops | Mean error (positions) | Within ±1 position | Keep-position baseline |
-| --- | --- | --- | --- | --- |
-| Tuning (3 races) | 76 | 0.88 | 74 % | 6.07 |
-| **Held out (6 races)** | 155 | **0.86** | **79 %** | 4.68 |
-
-These are the "blind" figures: the model assumes rivals stay out. Given the rivals' real stops, the held-out error falls to 0.66 and 90 % of predictions land within one position. Assumptions, methods, degradation tables and limitations are in [`docs/model.md`](docs/model.md), and in the app under **How it works**.
+There is no public instance yet. `make demo-up` runs the production images in replay-only mode ([`docs/deploy.md`](docs/deploy.md)).
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  subgraph Providers["Public data (racedata)"]
-    OF[OpenF1<br/>timing, telemetry, radio]
-    JO[Jolpica<br/>results since 1950]
-    WP[Wikipedia<br/>portraits]
-    RSS[RSS feeds<br/>headlines]
-  end
-  OF & JO & WP & RSS --> CE[Celery ingestion<br/>idempotent upserts]
-  CE --> PG[(Postgres)]
-  PG --> API[Django REST API<br/>/api/v1]
-  SE[Strategy engine<br/>numpy + scipy] --> API
-  API --> WEB[React web app]
-  LT[Live timing feed<br/>local only] --> LV[manage.py live] --> RD[(Redis)] --> WS["WebSocket /ws/live"] --> WEB
+  P["Public data<br/>OpenF1, Jolpica, FIA, Open-Meteo,<br/>Wikipedia, RSS (packages/racedata)"] --> C["Celery ingestion"]
+  C --> DB[(Postgres)]
+  DB --> API["Django REST API /api/v1"]
+  E["Strategy engine<br/>(packages/strategy)"] --> API
+  API --> W["React web app"]
+  L["Live timing feed<br/>(local only)"] --> R[(Redis)] --> W
 ```
 
-| Part | Stack |
+| Directory | Contents |
 | --- | --- |
-| `apps/api` | Django 5.2, Django REST Framework, drf-spectacular, Celery, Channels, Python 3.13 |
-| `apps/web` | React 19, TypeScript (strict), Vite, Tailwind 4, TanStack Query, React Router, visx |
-| `packages/racedata` | Data providers behind typed protocols, rate-limited HTTP client with retry and cache, recorded fixtures |
-| `packages/strategy` | Strategy engine: laps, fuel, degradation, pit loss, pit exit, undercut, what-if, telemetry, backtest |
+| `apps/api` | Django 5.2, Django REST Framework, Celery, Channels (Python 3.13) |
+| `apps/web` | React 19, TypeScript, Vite, Tailwind 4, TanStack Query, visx |
+| `packages/racedata` | Data providers, rate-limited HTTP client, recorded fixtures |
+| `packages/strategy` | Strategy engine: numpy and scipy, no Django, no I/O |
 | `packages/api-types` | TypeScript types generated from the OpenAPI schema |
 
-Only `racedata` talks to the network. Views and the strategy engine never call upstream APIs. Design decisions are recorded as ADRs in [`docs/adr`](docs/adr). See also [`docs/architecture.md`](docs/architecture.md) and [`docs/data-sources.md`](docs/data-sources.md).
+Only `racedata` calls external services. Decisions are recorded as ADRs in [`docs/adr`](docs/adr), and [`docs/architecture.md`](docs/architecture.md) describes the data flow.
 
-## Quality
+## Strategy model
 
-```bash
-make check   # ruff, mypy --strict, ESLint, tsc, pytest, Vitest, OpenAPI and types drift
-```
+The engine removes laps that do not reflect race pace (lap 1, pit laps, safety car, outliers), corrects lap times for fuel, fits tyre degradation per compound, and measures the pit loss of each circuit from the race's own stops. From these it predicts where a car rejoins after a stop, with a probability for each position.
 
-- Coverage gates: strategy engine ≥ 90 %, data providers ≥ 85 %, API ≥ 80 %.
-- No network in tests: upstream responses are recorded fixtures.
-- Playwright covers the main journeys: home → last race → pit-stop simulation, undercut, tyres and model pages in French, theme, driver careers.
-- CI runs on every push. Commits follow Conventional Commits.
+It is backtested on real 2025 races. Each green-flag stop is predicted with the pit loss measured on the other stops of the race. Parameters were tuned on three races only:
 
-## Public demo (replay only)
+| Races | Stops | Mean error (positions) | Within ±1 position |
+| --- | --- | --- | --- |
+| Tuning: Bahrain, Hungary, Italy | 76 | 0.88 | 74 % |
+| Held out: six other races | 155 | 0.86 | 79 % |
 
-The live mode follows the official timing feed. That feed only answers home connections and is for personal use, so a public deployment shows replays of finished races. The live page then points to the last race. A production stack with nginx, uvicorn, Celery and Postgres is ready to deploy:
+Every assumption, its default and its justification are in [`docs/model.md`](docs/model.md) and on the site's **How it works** page.
 
-```bash
-cp infra/demo.env.example infra/demo.env   # set the secrets and the host name
-make demo-up                               # http://localhost:8080
-make demo-load                             # optional: copy your local database into it
-```
+## Data sources and licences
 
-Put a TLS reverse proxy in front of it on a real server. Details are in [`docs/deploy.md`](docs/deploy.md).
+| Source | Used for | Terms |
+| --- | --- | --- |
+| [OpenF1](https://openf1.org) | Timing, stints, pit stops, race control, telemetry, team radio (2023 onwards) | Free community API |
+| [Jolpica](https://github.com/jolpica/jolpica-f1) | Results, qualifying, standings, biographies (1950 onwards) | Free, open source |
+| [fia.com](https://www.fia.com) documents | Stewards' decisions, technical documents | © FIA; PDFs relayed, never stored |
+| [Open-Meteo](https://open-meteo.com) | Weather forecasts | CC BY 4.0, credited where shown |
+| Wikipedia / Wikimedia Commons | Driver portraits | Free licences, author and licence shown |
+| Public RSS feeds | Headlines | Title and link only |
 
-## Data sources and limits
+Details, rate limits and known data gaps are in [`docs/data-sources.md`](docs/data-sources.md). The code is under the [MIT licence](LICENSE); the data stays under its sources' terms.
 
-- [OpenF1](https://openf1.org) for timing, stints, pit stops, race control, weather, positions, team radio and telemetry, from 2023. Free tier: 3 requests/s and 30/min.
-- [Jolpica](https://github.com/jolpica/jolpica-f1) (the Ergast successor) for results, qualifying, standings and biographies since 1950.
-- Wikipedia / Wikimedia Commons for freely licensed driver portraits, always shown with author and licence.
-- Public RSS feeds for headlines. Only the title and a link are kept, never article text or images.
-- Gaps in the data: fastest-lap ranks only from 2004, qualifying mostly from 1994, no pit-stop rows for the first six races of 2023. Pages say so instead of guessing.
+## Limits
+
+- **Live mode is local only.** The official timing feed is for personal use and does not answer cloud servers, so a public deployment only replays finished races.
+- **Timing starts in 2023.** Older seasons have results and standings, but no replay or strategy figures.
+- **Data gaps**: fastest-lap ranks only from 2004, qualifying mostly from 1994, no pit-stop rows for the first six races of 2023. Pages say so instead of guessing.
+- **The model** assumes rivals do not react to a simulated stop, and does not model the field bunching up behind a safety car.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). `make test-fast` runs every unit test in about 20 seconds, `make check` runs every check before a pull request.
 
 ## Disclaimer
 
-StintLine is an unofficial project. It is not associated in any way with Formula 1, the FIA, or any Formula 1 team. F1, FORMULA ONE, FORMULA 1 and related marks are trademarks of Formula One Licensing B.V. All other trademarks belong to their respective owners. No team logos are used. Official driver portraits and car renders, when enabled, are only linked from their original URLs and never stored or redistributed.
-
-## License
-
-[MIT](LICENSE)
+StintLine is an unofficial project, not associated with Formula 1, the FIA or any Formula 1 team. F1, FORMULA ONE, FORMULA 1 and related marks are trademarks of Formula One Licensing B.V. No team logos are used. Official driver portraits and car renders, when enabled, are linked from their original URLs and never stored or redistributed.

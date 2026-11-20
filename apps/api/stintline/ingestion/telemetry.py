@@ -7,7 +7,7 @@ a few at a time (``refresh_recent``), never inside a request.
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from datetime import datetime, timedelta
 from functools import partial
 
@@ -15,6 +15,7 @@ import structlog
 from django.db import transaction
 from django.db.models import QuerySet
 
+from racedata.models import PositionSample
 from racedata.sources import Sources
 from stintline.racing.models import RACE_KINDS, Lap, Session, TelemetryLap
 
@@ -63,6 +64,61 @@ def _seconds_since(start: datetime, at: datetime) -> float:
     return round((at - start).total_seconds(), 3)
 
 
+def _positions(places: Sequence[PositionSample], start: datetime) -> dict[str, list[float]]:
+    """Positions over the lap as parallel lists. ``z`` (altitude, ADR 0021) is kept only
+    when every sample has it, so a stored lap is either complete or flat."""
+    out = {
+        "t": [_seconds_since(start, p.at) for p in places],
+        "x": [round(p.x, 1) for p in places],
+        "y": [round(p.y, 1) for p in places],
+    }
+    altitudes = [p.z for p in places]
+    if places and all(z is not None for z in altitudes):
+        out["z"] = [round(float(z), 1) for z in altitudes if z is not None]
+    return out
+
+
+def missing_altitude() -> QuerySet[Session]:
+    """Sessions with at least one lap stored before altitude was kept (ADR 0021), most
+    recent first."""
+    flat = TelemetryLap.objects.exclude(positions__has_key="z").values("entry__session_id")
+    return Session.objects.filter(pk__in=flat, openf1_session_key__isnull=False).order_by(
+        "-ends_at"
+    )
+
+
+def add_altitude(session: Session, sources: Sources) -> int:
+    """Fetch the positions again (one bounded ``location`` request per lap) for stored laps
+    without altitude. Car data is kept. Returns the number of laps updated."""
+    key = session.openf1_session_key
+    if key is None:
+        return 0
+    stored = (
+        TelemetryLap.objects.filter(entry__session=session)
+        .exclude(positions__has_key="z")
+        .select_related("entry")
+    )
+    updated = 0
+    for item in stored:
+        lap = Lap.objects.filter(entry=item.entry, lap_number=item.lap_number).first()
+        if lap is None or lap.started_at is None:
+            continue
+        start = lap.started_at
+        end = start + timedelta(seconds=item.lap_time_s)
+        places = sources.timing.locations(key, item.entry.car_number, start, end)
+        positions = _positions(places, start)
+        if "z" not in positions:
+            log.warning(
+                "telemetry_altitude_missing", session_id=session.pk, car=item.entry.car_number
+            )
+            continue
+        item.positions = positions
+        item.save(update_fields=["positions"])
+        updated += 1
+    log.info("telemetry_altitude_added", session_id=session.pk, laps=updated)
+    return updated
+
+
 def ingest_telemetry(
     session: Session, sources: Sources, now: datetime, cars: Collection[int] | None = None
 ) -> int:
@@ -106,11 +162,7 @@ def ingest_telemetry(
                         "rpm": [c.rpm for c in car],
                         "drs": [c.drs for c in car],
                     },
-                    "positions": {
-                        "t": [rel(p.at) for p in places],
-                        "x": [round(p.x, 1) for p in places],
-                        "y": [round(p.y, 1) for p in places],
-                    },
+                    "positions": _positions(places, start),
                     "fetched_at": now,
                 },
             )

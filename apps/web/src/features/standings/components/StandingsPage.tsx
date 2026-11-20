@@ -1,27 +1,27 @@
+import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useNavigate, useParams } from "react-router";
-
 import { ChartLine, PieChart, Trophy } from "lucide-react";
 
-import { NO_BACKDROP } from "@/components/dash/backdrop";
-import { Face } from "@/components/dash/Face";
-import { Move } from "@/components/dash/Move";
-import { Panel } from "@/components/dash/Panel";
-import { DriverName } from "@/components/hub/DriverName";
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
-import { TeamName } from "@/components/hub/TeamName";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Panel } from "@/components/layout/Panel";
+import { Bust } from "@/components/racing/Bust";
+import { DriverName } from "@/components/racing/DriverName";
 import { initials } from "@/components/racing/initials";
+import { Move } from "@/components/racing/Move";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
+import { TeamName } from "@/components/racing/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useProgression, useStandings } from "@/features/hub/api";
-import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
+import { TitleFight } from "@/features/championship/TitleFight";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
-import { teamColour, teamTint } from "@/lib/teams";
+import { useProgression, useStandings } from "@/lib/queries";
+import { teamColour } from "@/lib/teams";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { ProgressionChart } from "./ProgressionChart";
@@ -97,15 +97,19 @@ function Standings({ year }: { year: number }) {
                 update({ table: value === "drivers" ? null : value });
               }}
             />
-            {standings.data && standings.data.rounds.length > 1 && (
+            {/* Shown, disabled, while the standings load: the header keeps its height. */}
+            {(standings.isPending || (standings.data && standings.data.rounds.length > 1)) && (
               <Select
                 label={t("standings.after")}
-                value={standings.data.round ?? ""}
+                className="w-full sm:w-auto [&>select]:flex-1"
+                value={standings.data?.round ?? ""}
+                disabled={!standings.data}
                 onChange={(event) => {
                   update({ round: event.target.value });
                 }}
               >
-                {[...standings.data.rounds].reverse().map((round) => (
+                {!standings.data && <option value="">{t("common.loading")}</option>}
+                {[...(standings.data?.rounds ?? [])].reverse().map((round) => (
                   <option key={round} value={round}>
                     {t("standings.afterRound", {
                       round,
@@ -118,12 +122,18 @@ function Standings({ year }: { year: number }) {
             <SeasonSelect
               value={year}
               onChange={(value) => {
-                if (value !== null) void navigate(`/standings/${value}`);
+                if (value !== null)
+                  void navigate(`/standings/${value}`, {
+                    preventScrollReset: true,
+                    state: { keepFocus: true },
+                  });
               }}
             />
           </>
         }
-      />
+      >
+        {t("standings.intro")}
+      </PageHeader>
 
       {notFound ? (
         <EmptyState title={t("standings.empty")} />
@@ -136,6 +146,14 @@ function Standings({ year }: { year: number }) {
           <Leaders
             lines={table === "drivers" ? standings.data.drivers : standings.data.constructors}
           />
+          {table === "drivers" && (
+            <TitleFight
+              year={year}
+              colours={
+                new Map(standings.data.drivers.map((line) => [line.driver?.ref ?? "", line.colour]))
+              }
+            />
+          )}
           <div className="grid gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <Panel
               title={table === "drivers" ? t("standings.drivers") : t("standings.constructors")}
@@ -241,18 +259,29 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
           <li key={driver?.ref ?? line.team?.ref ?? index}>
             <Link
               to={href}
-              className="group relative flex h-36 overflow-hidden rounded-xl border border-line transition-colors hover:border-line-strong"
-              style={{ backgroundColor: teamTint(colour, 26) }}
+              className="group glass glow reveal relative flex h-48 overflow-hidden rounded-[20px]"
+              style={
+                {
+                  "--glow": teamColour(colour),
+                  "--glow-x": "100%",
+                  "--glow-y": "100%",
+                } as CSSProperties
+              }
             >
-              <span className="relative z-10 flex flex-1 flex-col justify-between p-4">
+              {!driver && (
+                <span aria-hidden="true" className="watermark num absolute top-3 right-4 text-8xl">
+                  {index + 1}
+                </span>
+              )}
+              <span className="relative z-10 flex flex-1 flex-col justify-between p-5">
                 <span>
-                  <span className="num text-4xl leading-none font-semibold">{index + 1}</span>
-                  <span className="mt-1 block text-xl leading-tight font-extrabold group-hover:underline">
+                  <span className="num timing text-5xl leading-none">{index + 1}</span>
+                  <span className="display mt-1 block text-xl leading-tight group-hover:underline">
                     {driver ? driver.family_name : line.team?.name}
                   </span>
                 </span>
                 <span className="text-sm">
-                  <span className="num font-semibold">{f.number(line.points ?? 0, 0)}</span>{" "}
+                  <span className="num display text-lg">{f.number(line.points ?? 0, 0)}</span>{" "}
                   <span className="text-muted">
                     {t("standings.pts")}
                     {index > 0 && ` · −${f.number(leader - (line.points ?? 0), 0)}`}
@@ -261,17 +290,17 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
                 </span>
               </span>
               {driver ? (
-                <Face
+                <Bust
                   url={driver.photo_url}
                   label={driver.code ?? initials(driver.given_name, driver.family_name)}
                   colour={colour}
-                  className="h-full w-32 shrink-0"
-                  style={NO_BACKDROP}
+                  className="absolute top-0 right-0 h-full w-[46%] transition-transform duration-500 group-hover:scale-[1.04]"
+                  priority={index === 0}
                 />
               ) : (
                 <span
                   aria-hidden="true"
-                  className="absolute top-0 right-0 h-full w-2"
+                  className="absolute right-0 bottom-0 h-1.5 w-full"
                   style={{ backgroundColor: teamColour(colour) }}
                 />
               )}

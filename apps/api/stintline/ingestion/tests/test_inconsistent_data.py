@@ -29,7 +29,7 @@ from racedata.models import (
 )
 from racedata.models import SessionKind as SourceKind
 from racedata.sources import Sources
-from stintline.ingestion import services
+from stintline.ingestion import schedule, timing
 from stintline.racing.models import (
     Lap,
     PitStop,
@@ -172,7 +172,7 @@ def test_timing_rows_for_unclassified_cars_are_skipped() -> None:
         laps=[lap(10, 1), lap(10, 2, None), lap(99, 1)],
     )
 
-    report = services.ingest_session(session, fake_sources(data))
+    report = timing.ingest_session(session, fake_sources(data))
 
     assert SessionEntry.objects.get(session=session).team_colour == "ff0000"
     assert Lap.objects.count() == 2
@@ -196,7 +196,7 @@ def test_inverted_stint_bounds_are_dropped_not_fatal() -> None:
         ],
     )
 
-    report = services.ingest_session(session, fake_sources(data))
+    report = timing.ingest_session(session, fake_sources(data))
 
     stint = Stint.objects.get()
     assert stint.lap_end is None
@@ -220,7 +220,7 @@ def test_rows_repeating_a_unique_key_keep_the_last_one() -> None:
         laps=[lap(10, 1), lap(10, 1, None)],
     )
 
-    report = services.ingest_session(session, fake_sources(data))
+    report = timing.ingest_session(session, fake_sources(data))
 
     assert Stint.objects.get().lap_end == 12
     assert Lap.objects.get().lap_time_s is None
@@ -258,7 +258,7 @@ def test_duplicate_weather_and_pit_rows_are_collapsed() -> None:
         laps=[lap(10, 1), lap(10, 2)],
     )
 
-    services.ingest_session(session, fake_sources(data))
+    timing.ingest_session(session, fake_sources(data))
 
     stop = PitStop.objects.get()
     assert stop.reported_duration_s is None  # Jolpica row for an unknown driver is ignored
@@ -270,7 +270,7 @@ def test_non_race_or_unlinked_sessions_are_skipped() -> None:
     unlinked = SessionFactory.create(openf1_session_key=None)
 
     for session in (quali, unlinked):
-        report = services.ingest_session(session, fake_sources(FakeData()))
+        report = timing.ingest_session(session, fake_sources(FakeData()))
         assert report.counts == {}
         assert report.skipped
 
@@ -280,9 +280,9 @@ def test_is_ingestable_requires_a_finished_linked_race() -> None:
     running = SessionFactory.create(ends_at=None)
     later = dt.datetime(2030, 1, 1, tzinfo=dt.UTC)
 
-    assert services.is_ingestable(finished, now=later)
-    assert not services.is_ingestable(finished, now=T0)
-    assert not services.is_ingestable(running, now=later)
+    assert timing.is_ingestable(finished, now=later)
+    assert not timing.is_ingestable(finished, now=T0)
+    assert not timing.is_ingestable(running, now=later)
 
 
 def test_calendar_without_timing_match_keeps_sessions_unlinked() -> None:
@@ -303,7 +303,7 @@ def test_calendar_without_timing_match_keeps_sessions_unlinked() -> None:
         ),
     )
 
-    services.ingest_calendar(2026, fake_sources(FakeData(events=[event])))
+    schedule.ingest_calendar(2026, fake_sources(FakeData(events=[event])))
 
     sessions = Session.objects.filter(event__season__year=2026)
     assert sessions.count() == 2
@@ -323,7 +323,7 @@ def test_track_outline_is_stored_from_the_fastest_clean_lap() -> None:
         locations=_samples(300),
     )
 
-    report = services.ingest_session(session, fake_sources(data))
+    report = timing.ingest_session(session, fake_sources(data))
 
     outline = TrackOutline.objects.get(session=session)
     assert (outline.lap_number, outline.lap_time_s) == (3, 89.5)
@@ -335,7 +335,7 @@ def test_track_outline_is_skipped_when_the_trace_is_too_short() -> None:
     session = SessionFactory.create()
     data = FakeData(results=[result("alpha", 10)], laps=[lap(10, 2)], locations=_samples(20))
 
-    report = services.ingest_session(session, fake_sources(data))
+    report = timing.ingest_session(session, fake_sources(data))
 
     assert not TrackOutline.objects.exists()
     assert any("only 20 samples" in s for s in report.skipped)
@@ -345,7 +345,7 @@ def test_track_outline_is_skipped_without_a_clean_lap() -> None:
     session = SessionFactory.create()
     data = FakeData(results=[result("alpha", 10)], laps=[lap(10, 1)])
 
-    report = services.ingest_session(session, fake_sources(data))
+    report = timing.ingest_session(session, fake_sources(data))
 
     assert not TrackOutline.objects.exists()
     assert "track outline: no clean reference lap" in report.skipped
@@ -363,7 +363,7 @@ def test_track_outline_failure_does_not_block_timing_data() -> None:
     source = Unavailable(FakeData(results=[result("alpha", 10)], laps=[lap(10, 2)]))
     sources = Sources(schedule=source, results=source, timing=source, clients=())
 
-    report = services.ingest_session(session, sources)
+    report = timing.ingest_session(session, sources)
 
     assert Lap.objects.count() == 1
     assert not TrackOutline.objects.exists()

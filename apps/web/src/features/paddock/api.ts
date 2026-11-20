@@ -6,9 +6,9 @@ import { unwrap } from "@/lib/errors";
 
 /** Documents arrive during a weekend: a minute is fresh enough. */
 const DOCUMENTS = { staleTime: 60_000 } as const;
-export const PAGE_SIZE = 40;
+const PAGE_SIZE = 40;
 
-export interface DocumentFilters {
+interface DocumentFilters {
   season: number;
   event: number | null;
   category: string | null;

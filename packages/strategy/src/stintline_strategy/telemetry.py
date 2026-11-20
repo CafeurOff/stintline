@@ -59,6 +59,9 @@ class LapSamples:
     x: FloatArray
     y: FloatArray
     lap_time_s: float
+    z: FloatArray | None = None
+    """Altitude at each position, in the plane's units. ``None`` for laps stored before
+    altitude was kept."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +77,7 @@ class Trace:
     drs_open: NDArray[np.bool_]
     x: FloatArray
     y: FloatArray
+    z: FloatArray | None = None
 
     @property
     def length_m(self) -> float:
@@ -148,9 +152,26 @@ def trace(
         brake=nearest(samples.brake.astype(np.float64)) > 0.5,
         gear=nearest(samples.gear),
         drs_open=nearest(samples.drs) >= 10,
-        x=np.interp(t, samples.pos_t_s, samples.x),
-        y=np.interp(t, samples.pos_t_s, samples.y),
+        x=_interp_extended(t, samples.pos_t_s, samples.x),
+        y=_interp_extended(t, samples.pos_t_s, samples.y),
+        z=None if samples.z is None else _interp_extended(t, samples.pos_t_s, samples.z),
     )
+
+
+def _interp_extended(t: FloatArray, xp: FloatArray, fp: FloatArray) -> FloatArray:
+    """Linear interpolation that carries on in a straight line before the first sample and
+    after the last. Positions come at ~3.7 Hz, so the first one can be 0.27 s after the line:
+    holding it would leave the car ~20 m short of the line at 300 km/h."""
+    out = np.interp(t, xp, fp)
+    if len(xp) < 2:
+        return out
+    before = t < xp[0]
+    after = t > xp[-1]
+    start_slope = (fp[1] - fp[0]) / (xp[1] - xp[0])
+    end_slope = (fp[-1] - fp[-2]) / (xp[-1] - xp[-2])
+    out[before] = fp[0] + (t[before] - xp[0]) * start_slope
+    out[after] = fp[-1] + (t[after] - xp[-1]) * end_slope
+    return out
 
 
 def natural_length(samples: LapSamples, config: TelemetryConfig = DEFAULT_CONFIG) -> float:
@@ -204,3 +225,29 @@ def time_delta(reference: Trace, other: Trace) -> FloatArray:
 def full_throttle_share(lap: Trace) -> float:
     """Share of the lap distance at full throttle (≥ 99 %)."""
     return float(np.mean(lap.throttle_pct >= 99))
+
+
+def time_gap_to_distance(reference: Trace, other: Trace) -> FloatArray:
+    """Metres ``other`` is behind ``reference`` at the moment ``reference`` passes each
+    point (negative when ahead): the gap a viewer sees between two cars on track. Both
+    traces must share the same grid."""
+    size = min(len(reference.t_s), len(other.t_s))
+    where = np.interp(reference.t_s[:size], other.t_s[:size], other.distance_m[:size])
+    return reference.distance_m[:size] - where
+
+
+def plane_scale(lap: Trace) -> float:
+    """Metres per plane unit: the lap length divided by the length of its drawn path. The
+    feed's units are close to decimetres, but this keeps any circuit honest."""
+    path = float(np.sum(np.hypot(np.diff(lap.x), np.diff(lap.y))))
+    if path <= 0:
+        raise TelemetryError("the positions do not move")
+    return lap.length_m / path
+
+
+def elevation(lap: Trace) -> FloatArray | None:
+    """Altitude in metres above the lowest point of the lap, or ``None`` without altitude.
+    The plane's units are used for ``z`` too, so ``plane_scale`` turns them into metres."""
+    if lap.z is None:
+        return None
+    return (lap.z - float(lap.z.min())) * plane_scale(lap)

@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
 from stintline.racing.models import Session
-from stintline.strategy_api import services, telemetry
+from stintline.strategy_api import model_card, services, telemetry
 from stintline.strategy_api.api import serializers as s
 from stintline_strategy.telemetry import TelemetryError
 
@@ -192,7 +192,7 @@ class ModelCardView(APIView):
         tags=TAG,
     )
     def get(self, request: Request) -> Response:
-        card = services.model_card()
+        card = model_card.model_card()
         return cached_response(request, card, "model", card["engine_version"])
 
 

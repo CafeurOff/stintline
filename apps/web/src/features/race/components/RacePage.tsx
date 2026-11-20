@@ -1,20 +1,24 @@
 import type { Schema } from "@stintline/api-types";
-import { useMemo, useState } from "react";
+import { type CSSProperties, useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
+import { Flag } from "@/components/racing/Flag";
+import { PillSwitch } from "@/components/layout/Glass";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { TermList } from "@/components/ui/Term";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
+import { useDegradation } from "@/features/tyres/api";
+import { circuitAccent } from "@/lib/accent";
+import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
-import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
-import { useDegradation } from "@/features/tyres/api";
 import { teamColour } from "@/lib/teams";
-import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
 import { byFinish, driverCode, driverName, entriesByCar, type Entry, entryPhoto } from "../entries";
@@ -37,15 +41,18 @@ import {
   useUndercut,
 } from "../simulations";
 import { decodePlan, encodePlan, type RaceCompound, realPlan, samePlan } from "../strategy";
-import { useSessionId } from "../useSessionId";
+import type { UndercutChoice } from "../undercut";
 import { useReplayClock } from "../useReplayClock";
-import { DriverPicker } from "./DriverPicker";
+import type { RaceCar3D } from "../race3d";
+import { towerLines } from "../tower";
+import { useSessionId } from "../useSessionId";
+import { Race3DView } from "./Race3DView";
+import { RaceTower } from "./RaceTower";
 import { ReplayBar } from "./ReplayBar";
-import { StrategyPanel } from "./StrategyPanel";
 import { StopPanel } from "./StopPanel";
+import { StrategyPanel } from "./StrategyPanel";
 import { type Ghost, TrackMap, type CarMarker } from "./TrackMap";
 import { UndercutPanel } from "./UndercutPanel";
-import type { UndercutChoice } from "../undercut";
 
 /** Where the replay opens when no lap is in the URL: a typical first-stop window. */
 const DEFAULT_LAP_SHARE = 0.4;
@@ -203,8 +210,9 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
 
   // ---- ghost: where the selected car would be after the simulated stop(s)
   let ghost: Ghost | null = null;
+  let ghostProgress: number | null = null;
   const labelled = new Set<number>([selected]);
-  if (track && entry) {
+  if (entry) {
     let reference: CarClock | undefined;
     let lag = 0;
     let sigma = 0;
@@ -234,7 +242,8 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     }
     if (reference) {
       const progress = progressAt(reference, time - lag);
-      if (progress !== null) {
+      ghostProgress = progress;
+      if (progress !== null && track) {
         const [x, y] = pointAt(track.points, progress);
         const zone: [number, number][] = [];
         for (let i = 0; i <= ZONE_STEPS; i += 1) {
@@ -274,175 +283,247 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     }
   }
 
+  const cars3d: RaceCar3D[] = order.flatMap((running) => {
+    const e = byCar.get(running.carNumber);
+    return e
+      ? [
+          {
+            carNumber: running.carNumber,
+            code: driverCode(e),
+            colour: teamColour(e.team_colour),
+            fraction: running.progress,
+            selected: running.carNumber === selected,
+          },
+        ]
+      : [];
+  });
+  const view = params.get("view") === "3d" ? "3d" : "map";
+
   const carReplay = replayByCar.get(selected);
   const lapIndex = (lapInProgress ?? 1) - 1;
   const compound = compoundInfo(carReplay?.compounds[lapIndex]);
   const age = carReplay?.tyre_ages[lapIndex];
   const title = t("map.title", { circuit: session.event.circuit.name, lap });
+  const accent = circuitAccent(session.event.circuit.ref);
+  const tower = towerLines(clocks, replayByCar, time);
+  const flag = session.neutralisations.find(
+    (n) => n.lap_start != null && lap >= n.lap_start && lap <= (n.lap_end ?? totalLaps),
+  );
+  const name = eventName(session.event.name, locale);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <section
-        aria-label={eventName(session.event.name, locale)}
-        className="flex min-w-0 flex-col gap-3"
-      >
-        {track ? (
-          <TrackMap track={track} cars={markers} ghost={ghost} title={title} onSelect={selectCar} />
-        ) : (
-          <EmptyState title={eventName(session.event.name, locale)}>{t("map.noTrack")}</EmptyState>
-        )}
-        <ReplayBar
-          lap={lap}
-          totalLaps={totalLaps}
-          finished={finished}
-          playing={clock.playing}
-          speed={clock.speed}
-          onToggle={clock.playing ? clock.pause : clock.play}
-          onLap={setLap}
-          onSpeed={clock.setSpeed}
-        />
-      </section>
-
-      {entry && (
-        <aside
-          aria-live="polite"
-          className="flex flex-col gap-5 self-start rounded-xl border border-line bg-panel p-5"
+    <div className="flex flex-col">
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div className="min-w-0">
+          <p className="mb-1 inline-flex items-center gap-2 text-sm font-semibold text-muted">
+            <Flag country={session.event.circuit.country} className="h-3.5 w-5 rounded-[2px]" />
+            {t("race.eyebrow", { round: session.event.round, circuit: session.event.circuit.name })}
+          </p>
+          <h1 className="display text-2xl leading-tight sm:text-3xl">
+            {t("race.pageTitle", { event: name, year: session.event.season })}
+          </h1>
+          <p className="mt-1 max-w-[80ch] text-sm text-muted">{t("race.pageIntro")}</p>
+        </div>
+        <TermList ids={["undercut", "overcut", "pitLoss", "stint"]} />
+      </header>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-[16rem_minmax(0,1fr)_22rem]">
+        <section
+          aria-label={name}
+          className="glass glow relative flex min-w-0 flex-col gap-3 overflow-hidden rounded-[24px] p-4 sm:p-5 md:col-span-2 xl:order-2 xl:col-span-1"
+          style={{ "--glow": accent, "--glow-x": "50%", "--glow-y": "0%" } as CSSProperties}
         >
-          <SegmentedControl
-            legend={t("panel.mode")}
-            hideLegend
-            options={[
-              { value: "stop", label: t("panel.mode.stop") },
-              { value: "undercut", label: t("panel.mode.undercut") },
-              { value: "strategy", label: t("panel.mode.strategy") },
-            ]}
-            value={mode}
-            onChange={(value) => {
-              update({ mode: value === "stop" ? null : value });
-            }}
-          />
-          <div className="flex items-center gap-3">
-            <DriverAvatar
-              label={entry.car_number}
-              name={driverName(entry)}
-              colour={entry.team_colour}
-              imageUrl={entryPhoto(entry)}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TrackStatus status={flag?.status ?? null} />
+            <PillSwitch
+              label={t("stage.view")}
+              value={view}
+              options={[
+                ["map", t("stage.map")],
+                ["3d", t("stage.3d")],
+              ]}
+              onChange={(next) => {
+                update({ view: next === "3d" ? "3d" : null });
+              }}
             />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-bold">{driverName(entry)}</p>
-              <p className="text-sm text-muted">
-                {selectedProgress === null
-                  ? (entry.status ?? "")
-                  : t("stop.running", {
-                      position: f.ordinal(positionOf(selected)),
-                      compound: t(`compoundLower.${compound.key}`),
-                      age: age ?? "?",
-                    })}
-              </p>
-            </div>
           </div>
-          <DriverPicker
-            order={order.map((r) => r.carNumber)}
-            byCar={byCar}
-            selected={selected}
-            onSelect={selectCar}
+          {view === "3d" ? (
+            <Race3DView
+              sessionId={sessionId}
+              cars={cars3d}
+              ghost={
+                ghostProgress === null || !entry
+                  ? null
+                  : { fraction: ghostProgress, code: driverCode(entry) }
+              }
+              circuit={session.event.circuit.name}
+              onSelect={selectCar}
+            />
+          ) : track ? (
+            <TrackMap
+              track={track}
+              cars={markers}
+              ghost={ghost}
+              title={title}
+              accent={accent}
+              onSelect={selectCar}
+            />
+          ) : (
+            <EmptyState title={name}>{t("map.noTrack")}</EmptyState>
+          )}
+          <ReplayBar
+            lap={lap}
+            totalLaps={totalLaps}
+            finished={finished}
+            playing={clock.playing}
+            speed={clock.speed}
+            neutralisations={session.neutralisations}
+            pitLaps={carReplay?.pit_in_laps ?? []}
+            onToggle={clock.playing ? clock.pause : clock.play}
+            onLap={setLap}
+            onSpeed={clock.setSpeed}
           />
+        </section>
 
-          {mode === "strategy" ? (
-            real && plan ? (
-              <StrategyPanel
-                entry={entry}
-                totalLaps={totalLaps}
-                real={real}
-                plan={plan}
-                compounds={compounds}
-                submitted={strategyActive !== null}
-                result={strategyResult.data}
-                isError={strategyResult.isError}
-                error={strategyResult.error}
-                onChange={(next) => {
-                  update({ plan: samePlan(next, real) ? null : encodePlan(next) });
-                }}
-                onSimulate={() => {
-                  setStrategyRequest({
-                    car: selected,
-                    start_compound: plan.start,
-                    stops: plan.stops.map((stop) => ({ ...stop })),
-                  });
-                }}
-                onWatch={() => {
-                  clock.setTime(0);
-                  clock.setSpeed(WATCH_SPEED);
-                  clock.play();
-                }}
-                onRetry={() => void strategyResult.refetch()}
+        <div className="flex max-h-[32rem] min-h-0 xl:order-1 xl:max-h-[calc(100vh-6rem)]">
+          <RaceTower lines={tower} byCar={byCar} selected={selected} onSelect={selectCar} />
+        </div>
+
+        {entry && (
+          <aside
+            aria-live="polite"
+            className="glass flex flex-col gap-5 self-start rounded-[20px] p-5 xl:order-3"
+          >
+            <SegmentedControl
+              legend={t("panel.mode")}
+              hideLegend
+              options={[
+                { value: "stop", label: t("panel.mode.stop") },
+                { value: "undercut", label: t("panel.mode.undercut") },
+                { value: "strategy", label: t("panel.mode.strategy") },
+              ]}
+              value={mode}
+              onChange={(value) => {
+                update({ mode: value === "stop" ? null : value });
+              }}
+            />
+            <div className="flex items-center gap-3">
+              <DriverAvatar
+                label={entry.car_number}
+                name={driverName(entry)}
+                colour={entry.team_colour}
+                imageUrl={entryPhoto(entry)}
               />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-bold">{driverName(entry)}</p>
+                <p className="text-sm text-muted">
+                  {selectedProgress === null
+                    ? (entry.status ?? "")
+                    : t("stop.running", {
+                        position: f.ordinal(positionOf(selected)),
+                        compound: t(`compoundLower.${compound.key}`),
+                        age: age ?? "?",
+                      })}
+                </p>
+              </div>
+            </div>
+
+            {mode === "strategy" ? (
+              real && plan ? (
+                <StrategyPanel
+                  entry={entry}
+                  totalLaps={totalLaps}
+                  real={real}
+                  plan={plan}
+                  compounds={compounds}
+                  submitted={strategyActive !== null}
+                  result={strategyResult.data}
+                  isError={strategyResult.isError}
+                  error={strategyResult.error}
+                  onChange={(next) => {
+                    update({ plan: samePlan(next, real) ? null : encodePlan(next) });
+                  }}
+                  onSimulate={() => {
+                    setStrategyRequest({
+                      car: selected,
+                      start_compound: plan.start,
+                      stops: plan.stops.map((stop) => ({ ...stop })),
+                    });
+                  }}
+                  onWatch={() => {
+                    clock.setTime(0);
+                    clock.setSpeed(WATCH_SPEED);
+                    clock.play();
+                  }}
+                  onRetry={() => void strategyResult.refetch()}
+                />
+              ) : (
+                <p className="text-muted">{t("whatif.unavailable")}</p>
+              )
+            ) : mode === "stop" ? (
+              <>
+                <h2 className="text-xl leading-tight font-bold">
+                  {t("stop.question", { name: entry.driver.family_name })}
+                </h2>
+                <StopPanel
+                  sessionId={sessionId}
+                  entry={entry}
+                  canStop={canStop}
+                  maxLap={totalLaps - 1}
+                  submitted={stopActive !== null}
+                  result={stopResult.data}
+                  isError={stopResult.isError}
+                  error={stopResult.error}
+                  byCar={byCar}
+                  onSimulate={() => {
+                    if (lapInProgress === null) return;
+                    clock.pause();
+                    setStop({ request: { car: selected, pit_lap: lapInProgress }, time });
+                  }}
+                  onClear={() => {
+                    setStop(null);
+                  }}
+                  onRetry={() => void stopResult.refetch()}
+                />
+              </>
             ) : (
-              <p className="text-muted">{t("whatif.unavailable")}</p>
-            )
-          ) : mode === "stop" ? (
-            <>
-              <h2 className="text-xl leading-tight font-bold">
-                {t("stop.question", { name: entry.driver.family_name })}
-              </h2>
-              <StopPanel
-                entry={entry}
+              <UndercutPanel
+                attacker={entry}
+                targets={targets}
+                choice={effectiveChoice}
                 canStop={canStop}
                 maxLap={totalLaps - 1}
-                submitted={stopActive !== null}
-                result={stopResult.data}
-                isError={stopResult.isError}
-                error={stopResult.error}
-                byCar={byCar}
+                submitted={undercutActive !== null}
+                result={undercutResult.data}
+                isError={undercutResult.isError}
+                error={undercutResult.error}
+                onChange={(next) => {
+                  setChoice(next);
+                  setUndercut(null);
+                }}
                 onSimulate={() => {
-                  if (lapInProgress === null) return;
+                  if (lapInProgress === null || !effectiveChoice) return;
                   clock.pause();
-                  setStop({ request: { car: selected, pit_lap: lapInProgress }, time });
+                  setUndercut({
+                    request: {
+                      attacker: selected,
+                      defender: effectiveChoice.defender,
+                      stop_lap: lapInProgress,
+                      attacker_compound: effectiveChoice.compound,
+                      defender_compound: effectiveChoice.compound,
+                      defender_reaction_laps: Number(effectiveChoice.reaction),
+                    },
+                    time,
+                  });
                 }}
                 onClear={() => {
-                  setStop(null);
+                  setUndercut(null);
                 }}
-                onRetry={() => void stopResult.refetch()}
+                onRetry={() => void undercutResult.refetch()}
               />
-            </>
-          ) : (
-            <UndercutPanel
-              attacker={entry}
-              targets={targets}
-              choice={effectiveChoice}
-              canStop={canStop}
-              maxLap={totalLaps - 1}
-              submitted={undercutActive !== null}
-              result={undercutResult.data}
-              isError={undercutResult.isError}
-              error={undercutResult.error}
-              onChange={(next) => {
-                setChoice(next);
-                setUndercut(null);
-              }}
-              onSimulate={() => {
-                if (lapInProgress === null || !effectiveChoice) return;
-                clock.pause();
-                setUndercut({
-                  request: {
-                    attacker: selected,
-                    defender: effectiveChoice.defender,
-                    stop_lap: lapInProgress,
-                    attacker_compound: effectiveChoice.compound,
-                    defender_compound: effectiveChoice.compound,
-                    defender_reaction_laps: Number(effectiveChoice.reaction),
-                  },
-                  time,
-                });
-              }}
-              onClear={() => {
-                setUndercut(null);
-              }}
-              onRetry={() => void undercutResult.refetch()}
-            />
-          )}
-        </aside>
-      )}
+            )}
+          </aside>
+        )}
+      </div>
     </div>
   );
 }
@@ -464,4 +545,36 @@ function NoTiming({ eventId, name }: { eventId: number; name: string }) {
 
 function emptyClock(carNumber: number): CarClock {
   return { carNumber, lineTimes: [], finished: false };
+}
+
+const STATUS_TONE = {
+  SC: "bg-caution text-tyre-ink",
+  VSC: "bg-caution/70 text-tyre-ink",
+  RED: "bg-loss text-tyre-ink",
+} as const;
+
+/** The track status at the replay lap: green, or the neutralisation under way. */
+function TrackStatus({ status }: { status: "SC" | "VSC" | "RED" | null }) {
+  const { t } = useI18n();
+  const label =
+    status === "SC"
+      ? t("live.track.safety_car")
+      : status === "VSC"
+        ? t("live.track.virtual_safety_car")
+        : status === "RED"
+          ? t("live.track.red")
+          : t("live.track.clear");
+  return (
+    <p
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${
+        status ? STATUS_TONE[status] : "border border-line text-muted"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`size-2 rounded-full ${status ? "bg-tyre-ink" : "bg-gain"}`}
+      />
+      {label}
+    </p>
+  );
 }

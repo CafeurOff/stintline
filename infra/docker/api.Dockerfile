@@ -1,5 +1,8 @@
 # syntax=docker/dockerfile:1.7
 # API, Celery worker and beat share this image. Build context: repository root.
+# The prod target also needs the built web image as the `web` context (ADR 0025): the API
+# renders each page's head into the very index.html nginx serves, with the same asset names.
+#   docker build --build-context web=docker-image://stintline-web:prod ...
 
 FROM python:3.13-slim AS base
 COPY --from=ghcr.io/astral-sh/uv:0.13.3 /uv /uvx /bin/
@@ -40,6 +43,11 @@ WORKDIR /app/apps/api
 ENV DJANGO_SETTINGS_MODULE=config.settings.prod
 RUN DJANGO_SECRET_KEY=build-only DATABASE_URL=sqlite://:memory: python manage.py collectstatic --noinput \
     && chown -R app:app /app/apps/api/staticfiles
+COPY --from=web /usr/share/nginx/html/index.html /app/spa/index.html
+COPY --from=web /usr/share/nginx/html/.vite/manifest.json /app/spa/.vite/manifest.json
+COPY apps/web/src/lib/i18n/event-names.fr.json /app/spa/event-names.fr.json
+ENV SPA_INDEX_PATH=/app/spa/index.html \
+    EVENT_NAMES_FR_PATH=/app/spa/event-names.fr.json
 USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \

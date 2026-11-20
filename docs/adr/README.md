@@ -24,3 +24,9 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0018](0018-fia-documents-and-stewards-decisions.md) | FIA documents and stewards' decisions | Accepted |
 | [0019](0019-technical-documents-with-pdfplumber.md) | Technical pages from the FIA technical documents (pdfplumber) | Accepted |
 | [0020](0020-weather-forecasts-and-live-timing-tower.md) | Weather forecasts from Open-Meteo, and a fuller live timing tower | Accepted |
+| [0021](0021-lap-altitude-and-3d-replay.md) | Lap altitude and a 3D replay of the fastest laps | Accepted |
+| [0022](0022-title-maths-and-points-rules.md) | Title maths from a table of points rules since 1950 | Accepted |
+| [0023](0023-night-race-glass-design.md) | Night-race glass design for the whole site | Accepted |
+| [0024](0024-wikimedia-portraits-relay.md) | Wikipedia portraits relayed from our origin | Accepted |
+| [0025](0025-page-heads-and-language-urls.md) | Page heads rendered by the API, and one URL per language | Accepted |
+| [0026](0026-race-replay-stage-and-3d-view.md) | Race replay stage, timing tower and a 3D view of the race | Accepted |

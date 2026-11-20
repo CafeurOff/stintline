@@ -42,6 +42,7 @@ def test_seed_stores_the_hungarian_podium_fastest_laps(seeded: None) -> None:
     assert norris.samples["t"][0] >= 0
     assert norris.samples["t"][-1] <= norris.lap_time_s
     assert len(norris.positions["x"]) == len(norris.positions["t"])
+    assert len(norris.positions["z"]) == len(norris.positions["t"])
 
 
 def test_ingest_telemetry_skips_laps_already_stored(seeded: None) -> None:
@@ -111,6 +112,96 @@ def test_ingest_telemetry_task_and_command(seeded: None, settings: Any) -> None:
     assert ingest.call_count == 2
     assert delay.call_count == 2 + 3
     assert "3 laps stored" in out.getvalue()
+
+
+def _flatten(lap: TelemetryLap) -> None:
+    lap.positions = {k: v for k, v in lap.positions.items() if k != "z"}
+    lap.save()
+
+
+def test_missing_altitude_lists_races_with_flat_laps(seeded: None) -> None:
+    assert not telemetry.missing_altitude().exists()
+
+    _flatten(TelemetryLap.objects.get(entry__session=hungary(), entry__car_number=4))
+
+    assert list(telemetry.missing_altitude()) == [hungary()]
+
+
+def test_add_altitude_fetches_the_positions_again(seeded: None) -> None:
+    lap = TelemetryLap.objects.get(entry__session=hungary(), entry__car_number=4)
+    speed = lap.samples["speed"]
+    _flatten(lap)
+
+    updated = telemetry.add_altitude(hungary(), build_fixture_sources())
+
+    lap.refresh_from_db()
+    assert updated == 1
+    assert len(lap.positions["z"]) == len(lap.positions["t"])
+    assert lap.samples["speed"] == speed
+    assert not telemetry.missing_altitude().exists()
+
+
+def test_add_altitude_skips_laps_the_feed_returns_flat(seeded: None) -> None:
+    _flatten(TelemetryLap.objects.get(entry__session=hungary(), entry__car_number=4))
+    sources = build_fixture_sources()
+
+    with patch.object(sources.timing, "locations", return_value=[]):
+        assert telemetry.add_altitude(hungary(), sources) == 0
+    session = hungary()
+    session.openf1_session_key = None
+    assert telemetry.add_altitude(session, sources) == 0
+
+
+def test_refresh_recent_queues_altitude_backfills(seeded: None) -> None:
+    _flatten(TelemetryLap.objects.get(entry__session=hungary(), entry__car_number=4))
+    with (
+        patch.object(tasks.ingest_session, "delay"),
+        patch.object(tasks.ingest_season_results, "delay"),
+        patch.object(tasks.ingest_telemetry, "delay"),
+        patch.object(tasks.add_telemetry_altitude, "delay") as altitude_delay,
+        patch.object(tasks, "_sync_calendar_if_stale"),
+    ):
+        tasks.refresh_recent(NOW.isoformat())
+
+    altitude_delay.assert_called_once_with(hungary().pk)
+
+
+def test_altitude_task_and_command(seeded: None, settings: Any) -> None:
+    settings.RACEDATA = {**settings.RACEDATA, "MODE": "fixtures"}
+    _flatten(TelemetryLap.objects.get(entry__session=hungary(), entry__car_number=4))
+    out = StringIO()
+
+    with patch.object(tasks.add_telemetry_altitude, "delay") as delay:
+        call_command("ingest_telemetry", "--altitude", stdout=out)
+    assert tasks.add_telemetry_altitude.delay(hungary().pk).get() == 1
+    call_command("ingest_telemetry", "--altitude", "--sync", stdout=out)
+
+    delay.assert_called_once_with(hungary().pk)
+    assert "0 laps given altitude" in out.getvalue()
+
+
+def test_telemetry_compare_gives_elevation_and_gap_in_metres(seeded: None) -> None:
+    body = get(f"sessions/{hungary().pk}/telemetry/compare", cars="4,81")
+
+    norris, piastri = body["cars"]
+    assert 25 < max(norris["elevation_m"]) < 45  # the Hungaroring climbs about 35 m
+    assert min(norris["elevation_m"]) == pytest.approx(0, abs=1)
+    assert norris["gap_m"][-1] == 0
+    assert norris["t_s"][0] == 0
+    assert norris["t_s"][-1] == pytest.approx(norris["lap_time_s"], abs=0.5)
+    assert len(piastri["gap_m"]) == body["points"]
+    # Piastri was half a second faster: about 25 m ahead at the line, 180 km/h average.
+    assert -60 < piastri["gap_m"][-2] < -5
+    assert 0.5 < body["metres_per_unit"] < 5
+
+
+def test_telemetry_compare_without_altitude_has_null_elevation(seeded: None) -> None:
+    _flatten(TelemetryLap.objects.get(entry__session=hungary(), entry__car_number=4))
+
+    body = get(f"sessions/{hungary().pk}/telemetry/compare", cars="4,81")
+
+    assert body["cars"][0]["elevation_m"] is None
+    assert body["cars"][1]["elevation_m"] is not None
 
 
 def test_telemetry_list_is_fastest_first(seeded: None) -> None:

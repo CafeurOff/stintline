@@ -44,9 +44,11 @@ def documents(
     if connection.vendor == "postgresql":
         vector = SearchVector("title", weight="A") + SearchVector("text", weight="B")
         query = SearchQuery(search, search_type="websearch")
+        # Filter on the match itself: ts_rank gives 1e-20, not 0, to a row that does not
+        # match, so ``rank > 0`` would keep every document.
         return (
-            rows.annotate(rank=SearchRank(vector, query))
-            .filter(rank__gt=0)
+            rows.annotate(document=vector, rank=SearchRank(vector, query))
+            .filter(document=query)
             .order_by("-rank", "-published_at")
         )
     words = _WORD.findall(search) or [search]

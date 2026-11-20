@@ -1,15 +1,15 @@
 import { useNavigate, useParams } from "react-router";
+import type { Schema } from "@stintline/api-types";
 
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
+import { KeyFigures } from "@/components/layout/KeyFigures";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useSeasonEvents } from "@/features/hub/api";
-import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { useI18n } from "@/lib/i18n/context";
+import { useSeasonEvents } from "@/lib/queries";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 import { useNow } from "@/lib/useNow";
-import type { Schema } from "@stintline/api-types";
-import { KeyFigures } from "@/components/hub/KeyFigures";
 
 import { GrandPrixCard } from "./GrandPrixCard";
 
@@ -35,7 +35,11 @@ export function CalendarPage() {
           <SeasonSelect
             value={year}
             onChange={(value) => {
-              if (value !== null) void navigate(`/calendar/${String(value)}`);
+              if (value !== null)
+                void navigate(`/calendar/${String(value)}`, {
+                  preventScrollReset: true,
+                  state: { keepFocus: true },
+                });
             }}
           />
         }

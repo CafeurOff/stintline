@@ -7,12 +7,7 @@ every slider move in the simulator only runs the cheap simulation itself.
 
 from __future__ import annotations
 
-import dataclasses
-import json
-import re
 from dataclasses import dataclass
-from functools import cache
-from pathlib import Path
 from typing import Any
 
 import structlog
@@ -23,34 +18,35 @@ from stintline.strategy_api.adapters import race_from_session
 from stintline_strategy import __version__ as engine_version
 from stintline_strategy.degradation import (
     CompoundDegradation,
-    DegradationConfig,
     DegradationFit,
     compound_degradation,
     stint_degradation,
 )
 from stintline_strategy.domain import Compound, Lap, Neutralisation, Race
 from stintline_strategy.fuel import FuelModel
-from stintline_strategy.laps import CleaningConfig, CleanLap, clean_laps
+from stintline_strategy.laps import CleanLap, clean_laps
 from stintline_strategy.pace import PaceModel, build_pace_model
-from stintline_strategy.pit_exit import PitExitConfig, PitExitPrediction, predict_pit_exit
-from stintline_strategy.pit_loss import PitLossConfig, PitLossEstimate, estimate_pit_loss
+from stintline_strategy.pit_exit import PitExitPrediction, predict_pit_exit
+from stintline_strategy.pit_loss import PitLossEstimate, estimate_pit_loss
 from stintline_strategy.undercut import CarState, ExchangeResult, undercut
 from stintline_strategy.whatif import (
     Strategy,
-    WhatIfConfig,
     WhatIfError,
     WhatIfResult,
     replay_strategy,
 )
-from stintline_strategy.window import WindowConfig
 
 log = structlog.get_logger(__name__)
 
+
 CONTEXT_CACHE_TIMEOUT_S = 24 * 3600
+
+
 MODEL_REVISION = "1"
 """Bump when engine behaviour changes without a package version change."""
+
+
 LOW_CONFIDENCE_MIN_STINTS = 3
-DATA_DIR = Path(__file__).resolve().parent / "data"
 
 
 class StrategyInputError(ValueError):
@@ -103,9 +99,6 @@ def _build_context(session: Session) -> RaceContext:
         pit_loss=pit_loss,
         fuel=fuel,
     )
-
-
-# ------------------------------------------------------------------------- queries
 
 
 def _require_cars(context: RaceContext, cars: list[int]) -> None:
@@ -388,58 +381,3 @@ def simulate_strategy(
         raise StrategyInputError(str(exc)) from exc
     points = {e.finish_position: e.points for e in entries if e.finish_position is not None}
     return StrategyOutcome(result=result, points_by_position=points)
-
-
-# ------------------------------------------------------------------------- model card
-
-# Python 3.13 dedents docstrings: attribute names sit at 0-4 spaces, continuations deeper.
-_ATTRIBUTE = re.compile(r"^\s{0,4}(\w+):\s+(.*)$")
-
-
-def _attribute_docs(cls: type) -> dict[str, str]:
-    """Parse the ``Attributes:`` section of a config dataclass docstring."""
-    docs: dict[str, str] = {}
-    current: str | None = None
-    for line in (cls.__doc__ or "").splitlines():
-        match = _ATTRIBUTE.match(line)
-        if match:
-            current = match.group(1)
-            docs[current] = match.group(2).strip()
-        elif current and line.strip() and not line.strip().endswith(":"):
-            docs[current] += " " + line.strip()
-        elif not line.strip():
-            current = None
-    return docs
-
-
-CONFIG_CLASSES: tuple[tuple[str, type], ...] = (
-    ("Lap cleaning", CleaningConfig),
-    ("Fuel", FuelModel),
-    ("Degradation", DegradationConfig),
-    ("Pit loss", PitLossConfig),
-    ("Pit exit", PitExitConfig),
-    ("Pit window", WindowConfig),
-    ("What-if", WhatIfConfig),
-)
-
-
-@cache
-def model_card() -> dict[str, Any]:
-    assumptions = []
-    for group, cls in CONFIG_CLASSES:
-        docs = _attribute_docs(cls)
-        instance = cls()
-        for f in dataclasses.fields(instance):
-            assumptions.append(
-                {
-                    "group": group,
-                    "name": f.name,
-                    "value": str(getattr(instance, f.name)),
-                    "description": docs.get(f.name, ""),
-                }
-            )
-    backtest = {
-        name: json.loads((DATA_DIR / f"backtest-2025-{name}.json").read_text(encoding="utf-8"))
-        for name in ("reference", "held-out")
-    }
-    return {"engine_version": engine_version, "assumptions": assumptions, "backtest": backtest}

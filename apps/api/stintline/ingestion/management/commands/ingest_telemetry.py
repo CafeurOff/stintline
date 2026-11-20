@@ -1,7 +1,9 @@
-"""``manage.py ingest_telemetry [--session ID | --season YEAR | --missing N] [--sync]``
+"""``manage.py ingest_telemetry [--session ID | --season YEAR] [--altitude] [--sync]``
 
 Fastest-lap telemetry of every car (ADR 0013). Queues Celery tasks unless ``--sync``.
 Without options, queues every timed race and sprint still missing it, most recent first.
+``--altitude`` instead fetches the positions again for laps stored without altitude
+(ADR 0021); without a session or season it takes every such race.
 """
 
 from __future__ import annotations
@@ -23,6 +25,9 @@ class Command(BaseCommand):
         parser.add_argument("--session", type=int, help="one stored session id")
         parser.add_argument("--season", type=int, help="every timed race and sprint of a season")
         parser.add_argument("--sync", action="store_true", help="run here instead of queuing")
+        parser.add_argument(
+            "--altitude", action="store_true", help="add altitude to laps stored without it"
+        )
 
     def handle(
         self,
@@ -30,6 +35,7 @@ class Command(BaseCommand):
         session: int | None = None,
         season: int | None = None,
         sync: bool = False,
+        altitude: bool = False,
         **options: Any,
     ) -> None:
         if session is not None:
@@ -40,18 +46,25 @@ class Command(BaseCommand):
                 kind__in=RACE_KINDS,
                 ingested_at__isnull=False,
             ).order_by("-ends_at")
+        elif altitude:
+            sessions = telemetry.missing_altitude()
         else:
             sessions = telemetry.missing_telemetry()
         ids = list(sessions.values_list("pk", flat=True))
+        task = tasks.add_telemetry_altitude if altitude else tasks.ingest_telemetry
         if not sync:
             for pk in ids:
-                tasks.ingest_telemetry.delay(pk)
+                task.delay(pk)
             self.stdout.write(self.style.SUCCESS(f"{len(ids)} sessions queued"))
             return
         total = 0
         with open_sources() as sources:
             for item in Session.objects.filter(pk__in=ids).order_by("-ends_at"):
-                laps = telemetry.ingest_telemetry(item, sources, timezone.now())
+                if altitude:
+                    laps = telemetry.add_altitude(item, sources)
+                else:
+                    laps = telemetry.ingest_telemetry(item, sources, timezone.now())
                 total += laps
                 self.stdout.write(f"{item}: {laps} laps")
-        self.stdout.write(self.style.SUCCESS(f"{total} laps stored"))
+        verb = "given altitude" if altitude else "stored"
+        self.stdout.write(self.style.SUCCESS(f"{total} laps {verb}"))

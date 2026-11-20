@@ -7,7 +7,7 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandParser
 from django.utils import timezone
 
-from stintline.ingestion import history, portraits, services, telemetry
+from stintline.ingestion import history, portraits, schedule, telemetry, timing
 from stintline.ingestion.sources import MODE_FIXTURES, open_sources
 from stintline.paddock import services as paddock
 from stintline.racing.models import Driver, Session, SessionKind
@@ -40,14 +40,14 @@ class Command(BaseCommand):
     def handle(self, *args: Any, backtest: bool = False, **options: Any) -> None:
         rounds = DEMO_ROUNDS + (BACKTEST_ROUNDS if backtest else ())
         with open_sources(MODE_FIXTURES) as sources:
-            services.ingest_calendar(DEMO_SEASON, sources, kinds=frozenset({SessionKind.RACE}))
+            schedule.ingest_calendar(DEMO_SEASON, sources, kinds=frozenset({SessionKind.RACE}))
             races = Session.objects.filter(
                 event__season__year=DEMO_SEASON,
                 event__round__in=rounds,
                 kind=SessionKind.RACE,
             ).select_related("event__season")
             for session in races:
-                report = services.ingest_session(session, sources)
+                report = timing.ingest_session(session, sources)
                 self.stdout.write(f"{session.event.name}: {report.counts}")
             round_, cars = TELEMETRY_DEMO
             hungary = races.get(event__round=round_)

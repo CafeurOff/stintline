@@ -3,18 +3,26 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
+import { loadMessages } from "@/lib/i18n/messages";
+
 import { server } from "./server";
 
 // Pages are lazy-loaded: the first import of a page in a busy parallel run can take
 // longer than the default 1 s that find* queries wait.
 configure({ asyncUtilTimeout: 5000 });
 
-beforeAll(() => {
+beforeAll(async () => {
+  await Promise.all([loadMessages("en"), loadMessages("fr")]);
   server.listen({ onUnhandledRequest: "error" });
 });
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  // Test files share a worker (`isolate: false`): leave nothing behind for the next one.
+  localStorage.clear();
+  sessionStorage.clear();
+  delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.rail;
 });
 afterAll(() => {
   server.close();

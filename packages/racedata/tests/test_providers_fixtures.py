@@ -120,6 +120,20 @@ def test_reference_lap_trace_is_parsed_in_time_order(sources: Sources) -> None:
     assert samples[-1].at < end
 
 
+def test_locations_keep_the_altitude(sources: Sources) -> None:
+    lap = reference_lap(sources.timing.laps(HUNGARY), sources.timing.pit(HUNGARY))
+    assert lap is not None
+    assert lap.started_at is not None
+    assert lap.lap_time_s is not None
+    end = lap.started_at + timedelta(seconds=lap.lap_time_s)
+
+    samples = sources.timing.locations(HUNGARY, lap.driver_number, lap.started_at, end)
+
+    altitudes = [s.z for s in samples if s.z is not None]
+    assert len(altitudes) == len(samples)
+    assert max(altitudes) - min(altitudes) > 50  # the Hungaroring climbs about 35 m
+
+
 def test_season_results_qualifying_and_standings_from_jolpica(sources: Sources) -> None:
     history = sources.history
     assert history is not None

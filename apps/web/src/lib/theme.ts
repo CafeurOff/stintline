@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 
-export type Theme = "dark" | "light";
+type Theme = "dark" | "light";
 
 export const THEME_STORAGE_KEY = "stintline-theme";
 const listeners = new Set<() => void>();
@@ -14,7 +14,7 @@ export function readStoredTheme(): Theme {
   }
 }
 
-export function applyTheme(theme: Theme) {
+function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
 }
 
