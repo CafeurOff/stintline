@@ -46,7 +46,7 @@ describe("i18n", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "switch" }));
 
-    expect(screen.getByText("Et si Norris s'arrêtait maintenant ?")).toBeVisible();
+    expect(await screen.findByText("Et si Norris s'arrêtait maintenant ?")).toBeVisible();
     expect(document.documentElement.lang).toBe("fr");
     expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("fr");
   });

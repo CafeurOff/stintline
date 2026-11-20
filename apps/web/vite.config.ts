@@ -3,14 +3,67 @@ import { fileURLToPath, URL } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+/**
+ * Preloads the Latin Archivo file, the only font of the design (ADR 0023), so titles do not
+ * wait for the stylesheet to be parsed before the font request starts. Production build only:
+ * the file name carries a content hash.
+ */
+function preloadArchivo(): Plugin {
+  return {
+    name: "stintline-preload-archivo",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(_html, context) {
+        const file = Object.keys(context.bundle ?? {}).find((name) =>
+          /archivo-latin-standard-normal-[\w-]+\.woff2$/.test(name),
+        );
+        if (!file) return [];
+        return [
+          {
+            tag: "link",
+            attrs: {
+              rel: "preload",
+              href: `/${file}`,
+              as: "font",
+              type: "font/woff2",
+              crossorigin: "",
+            },
+            injectTo: "head",
+          },
+        ];
+      },
+    },
+  };
+}
 
 const apiTarget = process.env.VITE_API_PROXY_TARGET ?? "http://localhost:8000";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), preloadArchivo()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
+  },
+  build: {
+    // Flags stay separate files: inlined, the 400 flag-icons SVGs would add 218 kB to the
+    // stylesheet every page waits for, while a page shows a handful of them.
+    assetsInlineLimit: (file) => (file.includes("flag-icons") ? false : undefined),
+    // The only chunk over 500 kB is three.js behind the 3D lap view, loaded on demand (ADR 0021).
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // React, the router and TanStack Query change far less often than our code: in their
+        // own chunk, a returning visitor keeps them cached across deploys.
+        manualChunks(id) {
+          if (/node_modules\/(react|react-dom|scheduler|react-router|@tanstack)\//.test(id)) {
+            return "framework";
+          }
+          return undefined;
+        },
+      },
+    },
   },
   server: {
     host: true,
