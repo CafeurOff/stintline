@@ -1,61 +1,17 @@
 import type { Schema } from "@stintline/api-types";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
-import {
-  BufferAttribute,
-  BufferGeometry,
-  CanvasTexture,
-  type Group,
-  type PerspectiveCamera,
-  SRGBColorSpace,
-  Vector3,
-} from "three";
+import { useRef } from "react";
+import { type Group, type PerspectiveCamera, Vector3 } from "three";
 
 import { Car3D } from "./Car3D";
+import { type CameraMode, moveCamera } from "./cameraRig";
+import { CircuitWorld, Label } from "./CircuitWorld";
 import type { CarStyle } from "./colours";
 import type { ReplayClock } from "./playback";
-import {
-  carPose,
-  GROUND_LEVEL,
-  heading,
-  type Pose,
-  sideBySide,
-  startLine,
-  TRACK_WIDTH_M,
-  trackEmbankments,
-  trackRibbon,
-  tracksidePost,
-} from "./track3d";
+import { carPose, type Pose, sideBySide } from "./track3d";
 
 type Compare = Schema<"TelemetryCompare">;
-export type CameraMode = "chase" | "top" | "trackside";
-
-/** Chase camera: this far behind the car and above it, looking this far ahead (metres). */
-const CHASE_BACK_M = 14;
-const CHASE_UP_M = 4.5;
-const CHASE_AHEAD_M = 18;
-/** Top camera: room kept around the circuit, and how far it leans back (radians from
- * straight down) so the relief still reads. */
-const TOP_MARGIN = 1.15;
-const TOP_TILT = 0.3;
-/** Share of the gap to the target position the camera closes each frame at 60 fps. */
-const CAMERA_EASE = 0.15;
-/** Edge lines sit this high above the track (scene units). */
-const EDGE_LIFT = 0.08;
-/** Fog from and to these distances (shares of the circuit's longest side): the edge of
- * the ground fades into the background, and the top view stays clear. */
-const FOG_NEAR = 1.4;
-const FOG_FAR = 3.5;
-const GRASS = "#2c3a2e";
-/** Ground size, in circuit lengths. */
-const GROUND = 8;
-/** Trackside posts: one every this many metres, set back and raised (metres). */
-const TRACKSIDE_EVERY_M = 180;
-const TRACKSIDE_SET_BACK_M = 30;
-const TRACKSIDE_HEIGHT_M = 6;
-/** Vertical field of view in degrees: a long lens by the track, a wider one behind. */
-const TRACKSIDE_FOV = 24;
-const CHASE_FOV = 50;
+export type { CameraMode } from "./cameraRig";
 
 export interface Lap3DSceneProps {
   data: Compare;
@@ -91,64 +47,8 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
   const markers = useRef<(Group | null)[]>([]);
   const target = useRef(new Vector3());
   const { camera: view } = useThree();
-  const ribbon = useMemo(() => {
-    const { positions, indices } = trackRibbon(data);
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(positions, 3));
-    geometry.setIndex(new BufferAttribute(indices, 1));
-    // The track is drawn almost flat: normals straight up keep it evenly lit, even where
-    // the ribbon folds over itself in a hairpin (computed normals flip there and go black).
-    const normals = new Float32Array(positions.length);
-    for (let i = 1; i < normals.length; i += 3) normals[i] = 1;
-    geometry.setAttribute("normal", new BufferAttribute(normals, 3));
-    return geometry;
-  }, [data]);
-  // White lines along both edges of the track: they give the sense of speed and shape.
-  const edges = useMemo(() => {
-    const vertices = ribbon.getAttribute("position").array;
-    const count = vertices.length / 6 - 1;
-    const lines = new Float32Array(count * 12);
-    for (let i = 0; i < count; i++) {
-      const next = i + 1;
-      for (const side of [0, 3]) {
-        lines.set(vertices.slice(i * 6 + side, i * 6 + side + 3), i * 12 + side * 2);
-        lines.set(vertices.slice(next * 6 + side, next * 6 + side + 3), i * 12 + side * 2 + 3);
-      }
-    }
-    // Just above the asphalt, so the lines never flicker into it.
-    for (let i = 1; i < lines.length; i += 3) lines[i] = (lines[i] ?? 0) + EDGE_LIFT;
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(lines, 3));
-    return geometry;
-  }, [ribbon]);
-  const hills = useMemo(() => {
-    const { positions, indices } = trackEmbankments(
-      ribbon.getAttribute("position").array as Float32Array,
-    );
-    const geometry = new BufferGeometry();
-    geometry.setAttribute("position", new BufferAttribute(positions, 3));
-    geometry.setIndex(new BufferAttribute(indices, 1));
-    geometry.computeVertexNormals();
-    // Slopes face the sky: one side is wound the other way, so its normals point down.
-    const normals = geometry.getAttribute("normal");
-    for (let i = 0; i < normals.count; i++) {
-      if (normals.getY(i) < 0) {
-        normals.setXYZ(i, -normals.getX(i), -normals.getY(i), -normals.getZ(i));
-      }
-    }
-    return geometry;
-  }, [ribbon]);
-  useEffect(
-    () => () => {
-      ribbon.dispose();
-      edges.dispose();
-      hills.dispose();
-    },
-    [ribbon, edges, hills],
-  );
   const span = Math.max(data.width, data.height);
   const unit = 1 / data.metres_per_unit;
-  const start = startLine(data);
 
   useFrame((_, delta) => {
     const time = clock.tick(delta);
@@ -165,78 +65,14 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
       markers.current[index]?.position.set(pose.x, pose.y, pose.z);
     });
     const followed = poses[follow] ?? poses[0];
-    if (!followed) return;
-    const ease = 1 - Math.pow(1 - CAMERA_EASE, delta * 60);
-    const perspective = view as PerspectiveCamera;
-    if (camera === "top") {
-      // Far enough for the whole circuit to fit the panel, whatever its shape.
-      const half = Math.tan((perspective.fov * Math.PI) / 360);
-      const fit = Math.max(data.height / 2, data.width / 2 / perspective.aspect) / half;
-      const distance = fit * TOP_MARGIN;
-      perspective.position.lerp(
-        new Vector3(0, distance * Math.cos(TOP_TILT), distance * Math.sin(TOP_TILT)),
-        ease,
-      );
-      target.current.lerp(new Vector3(0, 0, 0), ease);
-    } else if (camera === "chase") {
-      const ahead = heading(followed);
-      perspective.position.lerp(
-        new Vector3(
-          followed.x - ahead.x * CHASE_BACK_M * unit,
-          followed.y + CHASE_UP_M * unit,
-          followed.z - ahead.z * CHASE_BACK_M * unit,
-        ),
-        ease,
-      );
-      target.current.set(
-        followed.x + ahead.x * CHASE_AHEAD_M * unit,
-        followed.y,
-        followed.z + ahead.z * CHASE_AHEAD_M * unit,
-      );
-    } else {
-      const post = tracksidePost(
-        data,
-        followed.index,
-        TRACKSIDE_EVERY_M,
-        TRACKSIDE_SET_BACK_M,
-        TRACKSIDE_HEIGHT_M,
-      );
-      perspective.position.set(post.x, post.y, post.z);
-      target.current.set(followed.x, followed.y, followed.z);
+    if (followed) {
+      moveCamera(view as PerspectiveCamera, target.current, data, camera, followed, delta);
     }
-    const fov = camera === "trackside" ? TRACKSIDE_FOV : CHASE_FOV;
-    if (Math.abs(perspective.getEffectiveFOV() - fov) > 0.01) {
-      // A method call, not a field write: it also updates the projection.
-      perspective.setFocalLength(
-        (0.5 * perspective.getFilmHeight()) / Math.tan((fov * Math.PI) / 360),
-      );
-    }
-    perspective.lookAt(target.current);
   });
 
   return (
     <>
-      <fog attach="fog" args={[background, span * FOG_NEAR, span * FOG_FAR]} />
-      <mesh geometry={hills}>
-        <meshStandardMaterial color={GRASS} roughness={1} side={2} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_LEVEL, 0]}>
-        <planeGeometry args={[span * GROUND, span * GROUND]} />
-        <meshStandardMaterial color={GRASS} roughness={1} />
-      </mesh>
-      <mesh geometry={ribbon}>
-        <meshStandardMaterial color="#3d4048" roughness={0.9} side={2} />
-      </mesh>
-      <lineSegments geometry={edges}>
-        <lineBasicMaterial color="#e8e8e8" />
-      </lineSegments>
-      <mesh
-        position={[start.at.x, start.at.y + EDGE_LIFT, start.at.z]}
-        rotation={[0, start.yaw, 0]}
-      >
-        <boxGeometry args={[1.2 * unit, 0.05, TRACK_WIDTH_M * unit]} />
-        <meshStandardMaterial color="#f4f4f4" />
-      </mesh>
+      <CircuitWorld data={data} background={background} />
       {data.cars.map((car, index) => (
         <group key={car.car_number}>
           <group
@@ -269,40 +105,5 @@ function World({ data, styles, clock, camera, follow, background }: Lap3DScenePr
         </group>
       ))}
     </>
-  );
-}
-
-/** Driver code above a car in the top view, always facing the camera. */
-function Label({ text, colour, height }: { text: string; colour: string; height: number }) {
-  const texture = useMemo(() => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 128;
-    canvas.height = 64;
-    const context = canvas.getContext("2d");
-    if (context) {
-      context.fillStyle = colour;
-      context.beginPath();
-      context.roundRect(4, 4, 120, 56, 12);
-      context.fill();
-      context.fillStyle = "#0b0d12";
-      context.font = "bold 36px sans-serif";
-      context.textAlign = "center";
-      context.textBaseline = "middle";
-      context.fillText(text, 64, 34);
-    }
-    const out = new CanvasTexture(canvas);
-    out.colorSpace = SRGBColorSpace;
-    return out;
-  }, [text, colour]);
-  useEffect(
-    () => () => {
-      texture.dispose();
-    },
-    [texture],
-  );
-  return (
-    <sprite position={[0, height * 1.1, 0]} scale={[height * 2, height, 1]}>
-      <spriteMaterial map={texture} depthTest={false} />
-    </sprite>
   );
 }
