@@ -1,5 +1,5 @@
 import { Select } from "@/components/ui/Select";
-import { useSeasons } from "@/features/session-picker/api";
+import { useSeasons } from "@/features/race-picker/api";
 import { useI18n } from "@/lib/i18n/context";
 
 interface SeasonSelectProps {

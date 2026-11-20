@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiStatus } from "@/features/health/ApiStatus";
 import { useLiveStatus } from "@/features/live/api";
 import { useSessionDetail } from "@/features/race/api";
-import { RacePicker } from "@/features/session-picker/RacePicker";
+import { RacePicker } from "@/features/race-picker/RacePicker";
 import { eventName } from "@/lib/i18n/content";
 import type { MessageKey } from "@/lib/i18n/en";
 import { useI18n } from "@/lib/i18n/context";

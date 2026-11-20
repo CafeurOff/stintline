@@ -9,7 +9,7 @@ import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
 import { useForecasts } from "@/features/forecast/api";
 import { ForecastBadge } from "@/features/forecast/components/ForecastBadge";
-import { timedSessions } from "@/features/session-picker/useRaces";
+import { timedSessions } from "@/features/race-picker/useRaces";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";

@@ -1,4 +1,4 @@
-import { useSeasons } from "@/features/session-picker/api";
+import { useSeasons } from "@/features/race-picker/api";
 
 import { useHome } from "./api";
 
