@@ -118,6 +118,10 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     restoreMocks: true,
+    // Each test file builds a jsdom and imports the app: reusing the worker's module graph
+    // across files halves the CPU time. More than half the cores only adds contention.
+    isolate: false,
+    maxWorkers: "50%",
     // Page tests render the real route tree with many queries; under coverage and a full
     // parallel run they can take longer than the 5 s default.
     testTimeout: 15_000,
