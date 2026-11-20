@@ -25,8 +25,8 @@ import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
 
 import { useCircuits } from "../api";
+import { AnalysisTabs, DriverChip } from "./AnalysisParts";
 import type { Profile } from "./CircuitsPage";
-import { AnalysisTabs, DriverChip } from "./common";
 
 interface Ranked {
   key: string;

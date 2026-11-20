@@ -17,7 +17,7 @@ import { teamColour } from "@/lib/teams";
 import { useConsistency } from "../api";
 import { median, quantile } from "../duel";
 import { FIRST_TIMED_SEASON, driverLabel, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip } from "./common";
+import { AnalysisTabs, DriverChip } from "./AnalysisParts";
 
 type Line = Schema<"Consistency">;
 type Race = Line["races"][number];

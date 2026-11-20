@@ -16,8 +16,8 @@ import { teamColour } from "@/lib/teams";
 import { useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useCircuits } from "../api";
+import { AnalysisTabs } from "./AnalysisParts";
 import { CircuitDetail } from "./CircuitPage";
-import { AnalysisTabs } from "./common";
 
 export type Profile = Schema<"CircuitProfile">;
 

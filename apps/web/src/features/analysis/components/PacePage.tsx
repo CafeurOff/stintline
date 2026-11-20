@@ -34,7 +34,7 @@ import { LapScatter } from "../charts/LapScatter";
 import { PaceBoxes } from "../charts/PaceBoxes";
 import { rollingMedian } from "../duel";
 import { FIRST_TIMED_SEASON, driverLabel, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip } from "./common";
+import { AnalysisTabs, DriverChip } from "./AnalysisParts";
 
 type Pace = Schema<"SessionPace">;
 type PaceCar = Pace["cars"][number];

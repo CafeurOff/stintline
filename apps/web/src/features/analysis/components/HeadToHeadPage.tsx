@@ -6,7 +6,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useSeasonParam } from "../season";
-import { AnalysisTabs } from "./common";
+import { AnalysisTabs } from "./AnalysisParts";
 import { Drivers } from "./DriverDuel";
 import { Teammates } from "./TeammateDuels";
 

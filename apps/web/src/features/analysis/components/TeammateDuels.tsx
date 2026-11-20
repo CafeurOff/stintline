@@ -16,7 +16,7 @@ import { GapStrip } from "../charts/GapStrip";
 import { SplitBar } from "../charts/SplitBar";
 import { duelColours, share } from "../duel";
 import { FIRST_TIMED_SEASON, driverLabel } from "../season";
-import { DriverChip } from "./common";
+import { DriverChip } from "./AnalysisParts";
 
 type Duel = Schema<"Teammates">;
 export type Side = Schema<"SideTotals">;

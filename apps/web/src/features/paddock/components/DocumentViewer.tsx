@@ -8,7 +8,7 @@ import { Flag } from "@/components/racing/Flag";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
-import { DriverChip } from "@/features/analysis/components/common";
+import { DriverChip } from "@/features/analysis/components/AnalysisParts";
 import { eventName, fiaSessionLabel } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 

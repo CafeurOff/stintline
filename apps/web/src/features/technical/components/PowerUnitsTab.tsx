@@ -4,7 +4,7 @@ import { Link } from "react-router";
 
 import { Panel, Tile } from "@/components/layout/Panel";
 import { Flag } from "@/components/racing/Flag";
-import { DriverChip } from "@/features/analysis/components/common";
+import { DriverChip } from "@/features/analysis/components/AnalysisParts";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import type { MessageKey } from "@/lib/i18n/en";

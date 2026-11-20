@@ -25,7 +25,7 @@ import { teamColour } from "@/lib/teams";
 import { usePitStops } from "../api";
 import { LossBars } from "../charts/LossBars";
 import { FIRST_TIMED_SEASON, useSeasonParam } from "../season";
-import { AnalysisTabs, DriverChip } from "./common";
+import { AnalysisTabs, DriverChip } from "./AnalysisParts";
 
 type Stops = Schema<"PitStops">;
 
