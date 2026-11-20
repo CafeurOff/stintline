@@ -1,14 +1,16 @@
 import type { Schema } from "@stintline/api-types";
-import { useMemo, useState } from "react";
+import { type CSSProperties, useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
+import { Flag } from "@/components/racing/Flag";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { TermList } from "@/components/ui/Term";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useDegradation } from "@/features/tyres/api";
+import { circuitAccent } from "@/lib/accent";
 import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
@@ -40,8 +42,9 @@ import {
 import { decodePlan, encodePlan, type RaceCompound, realPlan, samePlan } from "../strategy";
 import type { UndercutChoice } from "../undercut";
 import { useReplayClock } from "../useReplayClock";
+import { towerLines } from "../tower";
 import { useSessionId } from "../useSessionId";
-import { DriverPicker } from "./DriverPicker";
+import { RaceTower } from "./RaceTower";
 import { ReplayBar } from "./ReplayBar";
 import { StopPanel } from "./StopPanel";
 import { StrategyPanel } from "./StrategyPanel";
@@ -280,36 +283,49 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
   const compound = compoundInfo(carReplay?.compounds[lapIndex]);
   const age = carReplay?.tyre_ages[lapIndex];
   const title = t("map.title", { circuit: session.event.circuit.name, lap });
+  const accent = circuitAccent(session.event.circuit.ref);
+  const tower = towerLines(clocks, replayByCar, time);
+  const flag = session.neutralisations.find(
+    (n) => n.lap_start != null && lap >= n.lap_start && lap <= (n.lap_end ?? totalLaps),
+  );
+  const name = eventName(session.event.name, locale);
 
   return (
-    <div className="flex flex-col gap-4">
-      <header className="flex flex-col gap-1">
-        <h1 className="display text-2xl sm:text-3xl">
-          {t("race.pageTitle", {
-            event: eventName(session.event.name, locale),
-            year: session.event.season,
-          })}
-        </h1>
-        <p className="max-w-[70ch] text-sm text-muted">{t("race.pageIntro")}</p>
+    <div className="flex flex-col">
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div className="min-w-0">
+          <p className="mb-1 inline-flex items-center gap-2 text-sm font-semibold text-muted">
+            <Flag country={session.event.circuit.country} className="h-3.5 w-5 rounded-[2px]" />
+            {t("race.eyebrow", { round: session.event.round, circuit: session.event.circuit.name })}
+          </p>
+          <h1 className="display text-2xl leading-tight sm:text-3xl">
+            {t("race.pageTitle", { event: name, year: session.event.season })}
+          </h1>
+          <p className="mt-1 max-w-[80ch] text-sm text-muted">{t("race.pageIntro")}</p>
+        </div>
         <TermList ids={["undercut", "overcut", "pitLoss", "stint"]} />
       </header>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-[16rem_minmax(0,1fr)_22rem]">
         <section
-          aria-label={eventName(session.event.name, locale)}
-          className="flex min-w-0 flex-col gap-3"
+          aria-label={name}
+          className="glass glow relative flex min-w-0 flex-col gap-3 overflow-hidden rounded-[24px] p-4 sm:p-5 md:col-span-2 xl:order-2 xl:col-span-1"
+          style={{ "--glow": accent, "--glow-x": "50%", "--glow-y": "0%" } as CSSProperties}
         >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <TrackStatus status={flag?.status ?? null} />
+            <p className="text-sm text-muted">{session.event.circuit.name}</p>
+          </div>
           {track ? (
             <TrackMap
               track={track}
               cars={markers}
               ghost={ghost}
               title={title}
+              accent={accent}
               onSelect={selectCar}
             />
           ) : (
-            <EmptyState title={eventName(session.event.name, locale)}>
-              {t("map.noTrack")}
-            </EmptyState>
+            <EmptyState title={name}>{t("map.noTrack")}</EmptyState>
           )}
           <ReplayBar
             lap={lap}
@@ -317,16 +333,22 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
             finished={finished}
             playing={clock.playing}
             speed={clock.speed}
+            neutralisations={session.neutralisations}
+            pitLaps={carReplay?.pit_in_laps ?? []}
             onToggle={clock.playing ? clock.pause : clock.play}
             onLap={setLap}
             onSpeed={clock.setSpeed}
           />
         </section>
 
+        <div className="flex max-h-[32rem] min-h-0 xl:order-1 xl:max-h-[calc(100vh-6rem)]">
+          <RaceTower lines={tower} byCar={byCar} selected={selected} onSelect={selectCar} />
+        </div>
+
         {entry && (
           <aside
             aria-live="polite"
-            className="glass flex flex-col gap-5 self-start rounded-[20px] p-5"
+            className="glass flex flex-col gap-5 self-start rounded-[20px] p-5 xl:order-3"
           >
             <SegmentedControl
               legend={t("panel.mode")}
@@ -361,12 +383,6 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
                 </p>
               </div>
             </div>
-            <DriverPicker
-              order={order.map((r) => r.carNumber)}
-              byCar={byCar}
-              selected={selected}
-              onSelect={selectCar}
-            />
 
             {mode === "strategy" ? (
               real && plan ? (
@@ -486,4 +502,36 @@ function NoTiming({ eventId, name }: { eventId: number; name: string }) {
 
 function emptyClock(carNumber: number): CarClock {
   return { carNumber, lineTimes: [], finished: false };
+}
+
+const STATUS_TONE = {
+  SC: "bg-caution text-tyre-ink",
+  VSC: "bg-caution/70 text-tyre-ink",
+  RED: "bg-loss text-tyre-ink",
+} as const;
+
+/** The track status at the replay lap: green, or the neutralisation under way. */
+function TrackStatus({ status }: { status: "SC" | "VSC" | "RED" | null }) {
+  const { t } = useI18n();
+  const label =
+    status === "SC"
+      ? t("live.track.safety_car")
+      : status === "VSC"
+        ? t("live.track.virtual_safety_car")
+        : status === "RED"
+          ? t("live.track.red")
+          : t("live.track.clear");
+  return (
+    <p
+      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${
+        status ? STATUS_TONE[status] : "border border-line text-muted"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`size-2 rounded-full ${status ? "bg-tyre-ink" : "bg-gain"}`}
+      />
+      {label}
+    </p>
+  );
 }

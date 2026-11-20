@@ -69,6 +69,18 @@ describe("RacePage", () => {
     expect(router.state.location.search).toContain("car=81");
   });
 
+  it("lists the running order with gaps and picks a driver from it", async () => {
+    const { router } = renderRoute(`${race}?lap=30`);
+    const tower = await screen.findByRole("region", { name: "Running order" });
+
+    expect(within(tower).getAllByRole("button", { name: /^\d+\. / })).toHaveLength(20);
+    expect(within(tower).getByText("Leader", { selector: "span" })).toBeVisible();
+    await userEvent.click(within(tower).getByRole("button", { name: /^\d+\. Oscar Piastri$/ }));
+
+    expect(within(panel()).getByText("What if Piastri pitted now?")).toBeVisible();
+    expect(router.state.location.search).toContain("car=81");
+  });
+
   it("moves the replay with the lap slider", async () => {
     renderRoute(`${race}?lap=30`);
     const slider = await screen.findByRole("slider", { name: "Lap" });

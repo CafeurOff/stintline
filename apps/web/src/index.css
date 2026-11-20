@@ -267,3 +267,22 @@ body {
     transform: none;
   }
 }
+
+/* The followed car on the race map breathes, so it stays easy to find among twenty. */
+.car-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: halo 1.6s ease-in-out infinite;
+}
+
+@keyframes halo {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.15);
+  }
+}
