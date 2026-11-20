@@ -22,4 +22,6 @@ Read the root `CLAUDE.md` first. This file only adds backend-specific rules.
 ## Tests
 - `pytest-django` + factory_boy (`tests/factories.py`). Tests run on in-memory SQLite locally and on Postgres in CI (`DATABASE_URL`).
 - Provider calls use fixture-backed sources (`RACEDATA_MODE=fixtures` in test settings, `racedata.sources.build_fixture_sources`) or in-memory fakes implementing the racedata protocols. `pytest-socket` blocks sockets except loopback (for Postgres).
+- `seeded` (demo races) and `analysed` (plus their analysis figures) are imported once per test process and each test runs in a rolled-back savepoint (`conftest.py`): use them instead of calling `seed_demo` in a test, unless the test is about the command itself. Tests using them run after the empty-database ones.
+- Run the suite on four workers (`-n 4`, `make test-api`): each worker seeds once, so more workers cost more than they save.
 - Coverage gate: ≥ 80 %.

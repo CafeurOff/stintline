@@ -40,5 +40,6 @@ Read the root `CLAUDE.md` first. This file only adds frontend-specific rules.
 - Vitest + Testing Library: test behaviour through roles and labels, not implementation. MSW handlers built from the generated types, with no network.
 - Playwright locators: use `exact: true` for short names (`fr` also matches "Franco"), and wait for the new page before clicking a link that may exist on the previous one.
 - Playwright: home → last race → pit-stop simulation, map selection → undercut, French tyres and model pages, theme persistence, home → drivers → a driver's career. The API is mocked with `page.route`; official media and Wikimedia requests are aborted.
+- Test files share their worker's modules (`isolate: false` in `vite.config.ts`): a module-level cache must be reset by the tests that depend on it (`resetWebGLCheck`), and `src/test/setup.ts` clears storage and the `<html>` data attributes after each test.
 - jsdom has no `<dialog>` methods or layout: `src/test/setup.ts` polyfills `showModal`/`close` and `scrollIntoView`.
 - Commands: `pnpm --filter web test`, `pnpm --filter web e2e`, `pnpm --filter web typecheck`, `pnpm --filter web lint`.
