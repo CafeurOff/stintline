@@ -4,7 +4,8 @@ import { degradation } from "../src/test/fixtures/degradation";
 import { events } from "../src/test/fixtures/events";
 import { homeResponse } from "../src/test/fixtures/home";
 import { strategyResponse, type StrategyRequest } from "../src/test/fixtures/strategy";
-import { driver, driverResults, drivers } from "../src/test/fixtures/hub";
+import { driver, driverResults, drivers, sectors } from "../src/test/fixtures/hub";
+import { lapsResponse } from "../src/test/fixtures/laps";
 import { model } from "../src/test/fixtures/model";
 import { pitExit } from "../src/test/fixtures/pitExit";
 import { pitLoss } from "../src/test/fixtures/pitLoss";
@@ -52,6 +53,20 @@ export async function mockApi(page: Page) {
   for (const [pattern, body] of routes) {
     await page.route(pattern, (route) => route.fulfill(json(body)));
   }
+  // The Grand Prix page of the recorded race and its lap charts.
+  const event = events.results.find((e) => e.sessions.some((s) => s.id === SESSION_ID));
+  if (event) {
+    await page.route(`**/api/v1/events/${String(event.id)}`, (route) => route.fulfill(json(event)));
+  }
+  await page.route(`**/api/v1/sessions/${SESSION_ID}/sectors*`, (route) =>
+    route.fulfill(json(sectors)),
+  );
+  await page.route(`**/api/v1/sessions/${SESSION_ID}/laps*`, (route) => {
+    const cars = (new URL(route.request().url()).searchParams.get("cars") ?? "")
+      .split(",")
+      .map(Number);
+    return route.fulfill(json(lapsResponse.filter((lap) => cars.includes(lap.car_number))));
+  });
   await page.route(`**/api/v1/sessions/${SESSION_ID}/simulate/pit-exit`, (route) =>
     route.fulfill(json(pitExit)),
   );

@@ -38,6 +38,7 @@ import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
 import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
+import { lapsResponse } from "./fixtures/laps";
 import { replay } from "./fixtures/replay";
 import { session } from "./fixtures/session";
 import { stints } from "./fixtures/stints";
@@ -63,29 +64,6 @@ export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   results: [{ year: 2025, events_count: events.count }],
 };
 
-/** Lap rows derived from the recorded replay (lap 1 excluded, as the engine does). */
-export const lapsResponse: Schema<"Lap">[] = replay.cars.flatMap((car) =>
-  car.line_times_s.flatMap((time, index) => {
-    const before = index === 0 ? 0 : car.line_times_s[index - 1];
-    if (time == null || before == null) return [];
-    return [
-      {
-        car_number: car.car_number,
-        lap: index + 1,
-        time_s: time - before,
-        corrected_time_s: null,
-        compound: car.compounds[index] ?? "UNKNOWN",
-        tyre_age: car.tyre_ages[index] ?? null,
-        stint: null,
-        is_pit_in: false,
-        is_pit_out: false,
-        race_time_s: time,
-        excluded: index === 0 ? "first_lap" : null,
-      },
-    ];
-  }),
-);
-
 export const offlineLive: Schema<"LiveStatus"> = {
   state: "offline",
   snapshot: null,
@@ -103,6 +81,8 @@ export function problem(status: number, code: string, title: string, detail = ti
     { status },
   );
 }
+
+export { lapsResponse };
 
 export const handlers = [
   http.get("*/api/v1/health", () => HttpResponse.json(healthyResponse)),
