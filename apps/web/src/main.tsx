@@ -4,7 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./app/App";
-import { initialLocale } from "./lib/i18n/locale";
+import { pathLocale } from "./lib/i18n/locale";
 import { loadMessages } from "./lib/i18n/messages";
 
 const container = document.getElementById("root");
@@ -14,7 +14,7 @@ if (!container) {
 
 // The dictionary request starts as soon as this module runs, in parallel with nothing else
 // to wait for: the first render needs it anyway.
-void loadMessages(initialLocale()).then(() => {
+void loadMessages(pathLocale(window.location.pathname)).then(() => {
   createRoot(container).render(
     <StrictMode>
       <App />
