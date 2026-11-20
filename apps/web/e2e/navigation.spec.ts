@@ -65,8 +65,10 @@ test("share a chart: copy its link, save it as a picture and its data as CSV", a
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/events/14?chart=positions");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  // The race analysis loads its own chunks after the page: slower on CI runners.
   const save = page.getByRole("button", { name: "Save the chart as a picture" }).first();
-  await expect(save).toBeVisible();
+  await expect(save).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "Copy the link to this view" }).first().click();
   await expect(page.getByRole("status").filter({ hasText: "Link copied" })).toBeVisible();
