@@ -22,3 +22,6 @@ urlpatterns = [
 
 if settings.ADMIN_ENABLED:
     urlpatterns.append(path("admin/", admin.site.urls))
+
+# Last: web pages catch every other path (ADR 0025).
+urlpatterns.append(path("", include("stintline.seo.urls")))

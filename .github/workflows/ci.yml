@@ -114,8 +114,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: docker build -f infra/docker/api.Dockerfile --target prod -t stintline-api:ci .
       - run: docker build -f infra/docker/web.Dockerfile --target prod -t stintline-web:ci .
+      - run: >-
+          docker build -f infra/docker/api.Dockerfile --target prod
+          --build-context web=docker-image://stintline-web:ci -t stintline-api:ci .
 
   secrets:
     name: Secrets scan
