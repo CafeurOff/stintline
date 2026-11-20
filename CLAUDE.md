@@ -99,8 +99,8 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Run the full stack | `make up` → web http://localhost:5173, API http://localhost:8000/api/v1/health, docs http://localhost:8000/api/docs/ |
 | API dev server | `make deps` (Postgres + Redis in Docker), then `make dev-api` (migrate + uvicorn on :8000) |
 | Web dev server | `make dev-web` (`pnpm --filter web dev`) |
-| All checks | `make check` (lint + typecheck + tests + schema/types drift) or `/check` |
-| Tests | `make test` · `uv run pytest packages/strategy` · `uv run pytest packages/racedata` · `uv run pytest apps/api` · `pnpm --filter web test` · `pnpm --filter web e2e` |
+| All checks | `make check` (lint + typecheck + tests + schema/types drift, in parallel, about a minute) or `/check` |
+| Tests | `make test-fast` (everything, no coverage, ~20 s) · `make test` (with coverage gates) · `uv run pytest packages/strategy` · `uv run pytest packages/racedata` · `uv run pytest apps/api -n 4` · `pnpm --filter web test` · `pnpm --filter web e2e` |
 | Lint / format | `uv run ruff check .` · `uv run ruff format .` · `pnpm -r lint` · `pnpm -r format` |
 | Type check | `uv run mypy` · `pnpm -r typecheck` |
 | Migrations | `make makemigrations` · `make migrate` |
