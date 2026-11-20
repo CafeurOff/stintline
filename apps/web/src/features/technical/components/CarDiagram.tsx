@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { useI18n } from "@/lib/i18n/context";
 import { readable } from "@/lib/colour";
+import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 
 const ZONES = [
