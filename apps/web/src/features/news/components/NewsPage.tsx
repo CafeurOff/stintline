@@ -1,5 +1,5 @@
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SectionTitle } from "@/components/hub/SectionTitle";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionTitle } from "@/components/layout/SectionTitle";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";

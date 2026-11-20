@@ -2,8 +2,8 @@ import type { Schema } from "@stintline/api-types";
 import type { ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/Skeleton";
-import { LapChart, type LapSeries } from "@/features/analysis/components/LapChart";
-import { gapsByLap, type PerLap, positionsByLap } from "@/features/analysis/laps";
+import { LapChart, type LapSeries } from "@/features/race-analysis/components/LapChart";
+import { gapsByLap, type PerLap, positionsByLap } from "@/features/race-analysis/laps";
 import { useReplay, useStints } from "@/features/race/api";
 import { driverCode } from "@/features/race/entries";
 import { buildClock } from "@/features/race/replay";
@@ -21,15 +21,7 @@ const TOP_TYRES = 10;
 const MAX_GAP_S = 90;
 
 /** A chart in the article: a title, the chart, and one line saying how to read it. */
-export function Figure({
-  title,
-  note,
-  children,
-}: {
-  title: string;
-  note?: string;
-  children: ReactNode;
-}) {
+function Figure({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
     <figure className="glass flex flex-col gap-3 rounded-[20px] p-4 sm:p-5">
       <h3 className="text-lg font-bold">{title}</h3>

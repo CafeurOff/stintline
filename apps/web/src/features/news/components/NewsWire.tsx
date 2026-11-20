@@ -3,14 +3,14 @@ import { ExternalLink, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { Face } from "@/components/dash/Face";
-import { Panel } from "@/components/dash/Panel";
+import { Panel } from "@/components/layout/Panel";
+import { Face } from "@/components/racing/Face";
 import { initials } from "@/components/racing/initials";
-import { useStandings } from "@/features/hub/api";
-import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
 import { HeadlineThumb } from "@/features/news/components/HeadlineThumb";
 import { useI18n } from "@/lib/i18n/context";
+import { useStandings } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 
 import { useAgo } from "../useAgo";
 

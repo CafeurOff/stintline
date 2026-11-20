@@ -35,11 +35,15 @@ test("a new page opens at the top and going back returns to where the reader was
 test("changing a filter keeps the reader where they are", async ({ page }) => {
   await page.goto("/standings");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await page.mouse.wheel(0, 300);
+  const constructors = page.getByText("Constructors", { exact: true }).first();
+  // Scroll a little, keeping the switch on screen: a click on a control out of view would
+  // scroll it back into view, whatever the page does.
+  await page.mouse.wheel(0, 150);
   await expect.poll(() => scrollY(page)).toBeGreaterThan(20);
+  await expect(constructors).toBeInViewport();
   const before = await scrollY(page);
 
-  await page.getByText("Constructors", { exact: true }).first().click();
+  await constructors.click();
 
   await expect(page).toHaveURL(/table=constructors/);
   expect(await scrollY(page)).toBe(before);

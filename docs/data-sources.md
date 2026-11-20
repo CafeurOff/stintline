@@ -8,8 +8,8 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 
 | Source | Used for | Freshness | Limits | Auth | Terms |
 | --- | --- | --- | --- | --- | --- |
-| OpenF1 REST (free) | Historical laps, stints, pit, race control, weather, intervals, drivers, sessions, and car data plus positions over each driver's fastest lap (2023+) | After the session (~30 min, to be measured) | 3 req/s, 30 req/min | None | Unofficial community API, free. Data originates from FOM timing |
-| Jolpica | Calendar, sessions schedule, results, pit stops, circuits (1950+) | After the session | ~4 req/s burst, ~500 req/hour (to confirm against jolpica-f1 docs). Pages of max 100 rows | None | Open-source Ergast successor, free |
+| OpenF1 REST (free) | Historical laps, stints, pit, race control, weather, intervals, drivers, sessions, and car data plus positions over each driver's fastest lap (2023+) | After the session | 3 req/s, 30 req/min | None | Unofficial community API, free. Data originates from FOM timing |
+| Jolpica | Calendar, sessions schedule, results, pit stops, circuits (1950+) | After the session | ~4 req/s burst, ~500 req/hour. Pages of max 100 rows | None | Open-source Ergast successor, free |
 | Official live timing (SignalR Core) | Live mode only, run locally | Real time (sub-second deltas) | Unknown, single connection | None for the topics we use | formula1.com terms: personal, non-commercial use. Cloud IPs reportedly blocked |
 | FastF1 | **Not used** | — | Needs F1 TV account since Oct 2026 | F1 TV | — |
 | News feeds (RSS 2.0) | Headlines on the news page (title, link, date only, ADR 0012) | Every 30 min | One request per feed per run | None | Links to the publisher's article; nothing republished |
@@ -32,7 +32,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
   | `intervals` | `gap_to_leader`, `interval`, `date` (race only) |
 
 - `team_radio` gives one URL per message; StintLine stores the reference only. An empty result set is HTTP 404 `{"detail":"No results found."}`, read as an empty list.
-- `car_data` is not ingested. `location` is fetched for one reference lap per race only (the fastest clean lap, about 320 samples) to draw the circuit (ADR 0007).
+- `car_data` and `location` are only ever fetched over one lap: the reference lap that draws the circuit (fastest clean lap, about 320 samples, ADR 0007) and each driver's fastest clean lap for telemetry (below).
 - Free tier: no live data. Sponsor tier (live, MQTT or WebSocket) is not used (ADR 0002).
 - Pitfalls: `lap_duration` is null on some laps (lap 1, pit-out, deleted). `compound` can be `UNKNOWN`. Requests that are too large return errors, so query per session and per driver.
 
@@ -48,7 +48,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 - Session times are `date` + `time` in UTC (`Z`), and can be missing for old seasons.
 - Pagination: `limit` (max 100) and `offset`. Read `MRData.total`.
 
-### Season-wide endpoints (Phase 6)
+### Season-wide endpoints
 - `{season}/results`, `{season}/sprint` and `{season}/qualifying` return every round of a season in pages of 100 rows; a round can span two pages (merged on `round`).
 - `{season}/driverstandings` and `{season}/constructorstandings` give the table after the last round; `{season}/{round}/…` after a given round. The constructors' championship starts in 1958 (empty before).
 - `drivers`, `constructors` and `circuits` give biographies (884, 214 and 78 rows in Nov 2026).
@@ -80,7 +80,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
 ## Open-Meteo (weather forecasts, ADR 0020)
 - `GET https://api.open-meteo.com/v1/forecast?latitude=&longitude=&hourly=temperature_2m,precipitation_probability,precipitation,wind_speed_10m,weather_code&timezone=GMT&wind_speed_unit=ms&start_date=&end_date=`: one call per weekend. `hourly.time` is ISO without offset, UTC because of `timezone=GMT`. Missing hours are `null`. Range: 16 days.
 - `precipitation_probability` is the chance of at least 0.1 mm in the preceding hour; `weather_code` is a WMO code (0 clear, 1–3 cloud, 45/48 fog, 51–57 drizzle, 61–67 and 80–82 rain, 71–77 and 85–86 snow, 95–99 thunderstorm).
-- Fixture: `fixtures/openmeteo/forecast/…json` (Yas Marina, 4–6 December 2026) built by hand from the documented format because the development session had no network; replace it with `uv run python -m racedata.tools.record_fixture openmeteo forecast latitude=24.47 longitude=54.60 …`.
+- Fixture: `fixtures/openmeteo/forecast/…json` (Yas Marina, 4–6 December 2026) built by hand from the documented format; replace it with a recording: `uv run python -m racedata.tools.record_fixture openmeteo forecast latitude=24.47 longitude=54.60 …`.
 
 ## Official live timing feed (local live mode)
 - Hub: `wss://livetiming.formula1.com/signalrcore` (SignalR Core, JSON protocol). An `OPTIONS` on `/signalrcore/negotiate` provides the `AWSALBCORS` cookie, then the client invokes `Subscribe([topics])`. The reply is a full snapshot, then incremental `feed` messages `[topic, payload, timestamp]` that merge into the snapshot.

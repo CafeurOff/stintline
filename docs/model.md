@@ -60,7 +60,7 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 | `MIN_CLEAN_LAPS` | 5 | `analysis/build.py` | Clean laps a car needs before its median race pace is stored. |
 | `MIN_STATIONARY_S` | 1.6 s | `analysis/build.py` | Faster stationary times are timing glitches (the record is about 1.8 s). |
 | `MIN_RACES` | 3 | `analysis/season.py` | Races with a consistency figure a driver needs to be ranked over a season. |
-| `PACE_WINDOW_RACES` | 3 | `technical/selectors.py` | Races before an upgrade, and from it on, whose median gap to the field is compared (validated with the maintainer). |
+| `PACE_WINDOW_RACES` | 3 | `technical/selectors.py` | Races before an upgrade, and from it on, whose median gap to the field is compared. |
 | `MIN_WINDOW_RACES` | 2 | `technical/selectors.py` | Fewer races on a side give no comparison. |
 | `PENALTY_POINTS_WINDOW` | 365 days | `technical/selectors.py` | Penalty points stay on the licence for twelve months (ISC). |
 | `BAN_THRESHOLD_POINTS` | 12 | `technical/selectors.py` | Twelve points in twelve months bring a race ban. |

@@ -10,7 +10,7 @@ export interface Domain {
 /** Narrowest view the buttons zoom to, as a share of the full range. */
 const MIN_SHARE = 0.02;
 /** One click on "+" or "−" scales the view by this factor. */
-export const ZOOM_STEP = 1.6;
+const ZOOM_STEP = 1.6;
 
 function clampRange([a, b]: Range, [lo, hi]: Range): Range {
   const width = Math.min(b - a, hi - lo);

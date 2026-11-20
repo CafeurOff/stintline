@@ -3,7 +3,6 @@ import { createBrowserRouter, type RouteObject } from "react-router";
 
 import { HomePage } from "@/features/home/components/HomePage";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-
 import { FRENCH_PREFIX, pathLocale } from "@/lib/i18n/locale";
 
 import { Layout } from "./Layout";
@@ -33,20 +32,20 @@ const StandingsPage = page(
 const RacePage = page(() => import("@/features/race/components/RacePage"), "RacePage");
 const TyresPage = page(() => import("@/features/tyres/components/TyresPage"), "TyresPage");
 const HeadToHeadPage = page(
-  () => import("@/features/insights/components/HeadToHeadPage"),
+  () => import("@/features/analysis/components/HeadToHeadPage"),
   "HeadToHeadPage",
 );
-const PacePage = page(() => import("@/features/insights/components/PacePage"), "PacePage");
+const PacePage = page(() => import("@/features/analysis/components/PacePage"), "PacePage");
 const ConsistencyPage = page(
-  () => import("@/features/insights/components/ConsistencyPage"),
+  () => import("@/features/analysis/components/ConsistencyPage"),
   "ConsistencyPage",
 );
 const PitStopsPage = page(
-  () => import("@/features/insights/components/PitStopsPage"),
+  () => import("@/features/analysis/components/PitStopsPage"),
   "PitStopsPage",
 );
 const CircuitsPage = page(
-  () => import("@/features/insights/components/CircuitsPage"),
+  () => import("@/features/analysis/components/CircuitsPage"),
   "CircuitsPage",
 );
 const DocumentsPage = page(
@@ -58,7 +57,7 @@ const TechnicalPage = page(
   "TechnicalPage",
 );
 const AboutPage = page(() => import("@/features/about/components/AboutPage"), "AboutPage");
-const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
+const ModelPage = page(() => import("@/features/model/components/ModelPage"), "ModelPage");
 
 export const routes: RouteObject[] = [
   {

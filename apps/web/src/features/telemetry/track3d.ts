@@ -23,7 +23,7 @@ export const GROUND_LEVEL = -0.6;
  * single 10 m step two samples can nearly coincide (the start of a lap) and the heading or
  * slope goes wild; 20 m each way still follows the tightest hairpin.
  */
-export const HEADING_SPAN_M = 20;
+const HEADING_SPAN_M = 20;
 /**
  * Steepest nose-up or nose-down drawn (radians, about 17°). Relief is exaggerated, so the
  * steepest real slopes (Eau Rouge, ~18 %) would otherwise tip the car unnaturally.
@@ -36,7 +36,7 @@ export const TRACK_WIDTH_M = 14;
  * Scene axes: x to the right as on the 2D map, y up (altitude), z towards the viewer
  * (the map's y, which grows downwards). One scene unit is one screen unit of the map.
  */
-export interface Point3 {
+interface Point3 {
   x: number;
   y: number;
   z: number;

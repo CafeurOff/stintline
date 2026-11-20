@@ -1,6 +1,6 @@
-import { advance, gapsAt, indexAtTime, playWindow, ReplayClock, valueAt } from "./playback";
-
 import { telemetryCompare } from "@/test/fixtures/telemetry";
+
+import { advance, gapsAt, indexAtTime, playWindow, ReplayClock, valueAt } from "./playback";
 
 describe("playback", () => {
   it("finds the fractional point a car has reached", () => {

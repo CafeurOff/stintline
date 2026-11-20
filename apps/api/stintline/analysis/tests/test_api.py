@@ -1,8 +1,6 @@
 import datetime as dt
-from io import StringIO
 
 import pytest
-from django.core.management import call_command
 from rest_framework.test import APIClient
 
 from stintline.analysis import duels
@@ -17,11 +15,6 @@ from stintline.racing.tests.factories import (
 )
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def analysed(seeded: None) -> None:
-    call_command("build_analysis", "--all", stdout=StringIO())
 
 
 def race_id(round_: int) -> int:

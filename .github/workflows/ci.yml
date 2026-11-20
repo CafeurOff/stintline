@@ -17,8 +17,51 @@ env:
   PYTHON_VERSION: "3.13"
 
 jobs:
-  python:
-    name: Python · lint, types, tests
+  python-lint:
+    name: Python · lint, types, contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: uv sync --all-packages
+      - name: Ruff
+        run: |
+          uv run ruff check . --output-format=github
+          uv run ruff format --check .
+      - name: mypy (strict)
+        run: uv run mypy
+      - name: Migrations are up to date
+        run: uv run python apps/api/manage.py makemigrations --check --dry-run --settings config.settings.test
+      - name: OpenAPI schema is up to date
+        run: |
+          uv run python apps/api/manage.py spectacular --settings config.settings.test \
+            --validate --fail-on-warn --file /tmp/openapi.yaml
+          diff -u apps/api/openapi.yaml /tmp/openapi.yaml
+
+  python-packages:
+    name: Python · engine and provider tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: uv sync --all-packages
+      - name: Strategy engine tests (coverage >= 90 %)
+        run: uv run pytest packages/strategy --cov-report=xml:coverage-strategy.xml
+      - name: Provider library tests (coverage >= 85 %)
+        run: uv run pytest packages/racedata --cov-report=xml:coverage-racedata.xml
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-coverage-packages
+          path: coverage-*.xml
+
+  python-api:
+    name: Python · API tests on Postgres
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -38,31 +81,15 @@ jobs:
           enable-cache: true
           python-version: ${{ env.PYTHON_VERSION }}
       - run: uv sync --all-packages
-      - name: Ruff
-        run: |
-          uv run ruff check . --output-format=github
-          uv run ruff format --check .
-      - name: mypy (strict)
-        run: uv run mypy
-      - name: Strategy engine tests (coverage >= 90 %)
-        run: uv run pytest packages/strategy --cov-report=xml:coverage-strategy.xml
-      - name: Provider library tests (coverage >= 85 %)
-        run: uv run pytest packages/racedata --cov-report=xml:coverage-racedata.xml
-      - name: API tests on Postgres (coverage >= 80 %)
+      # One test database per worker (test_stintline_gw0, gw1...), each seeded once.
+      - name: API tests (coverage >= 80 %)
         env:
           DATABASE_URL: postgres://stintline:stintline-ci@127.0.0.1:5432/stintline
-        run: uv run pytest apps/api --cov-report=xml:coverage-api.xml
-      - name: Migrations are up to date
-        run: uv run python apps/api/manage.py makemigrations --check --dry-run --settings config.settings.test
-      - name: OpenAPI schema is up to date
-        run: |
-          uv run python apps/api/manage.py spectacular --settings config.settings.test \
-            --validate --fail-on-warn --file /tmp/openapi.yaml
-          diff -u apps/api/openapi.yaml /tmp/openapi.yaml
+        run: uv run pytest apps/api -n 4 --cov-report=xml:coverage-api.xml
       - uses: actions/upload-artifact@v7
         with:
-          name: python-coverage
-          path: coverage-*.xml
+          name: python-coverage-api
+          path: coverage-api.xml
 
   web:
     name: Web · lint, types, tests, build

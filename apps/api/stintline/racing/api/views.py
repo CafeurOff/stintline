@@ -18,25 +18,31 @@ from racedata import ProviderError
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
 from stintline.racing import careers, hub, portraits, selectors
-from stintline.racing.api.serializers import (
+from stintline.racing.api.serializers.calendar import EventSerializer
+from stintline.racing.api.serializers.common import SeasonSerializer
+from stintline.racing.api.serializers.drivers import (
     DriverCareerSerializer,
     DriverListItemSerializer,
     DriverQuerySerializer,
     DriverResultSerializer,
+)
+from stintline.racing.api.serializers.home import HomeSerializer
+from stintline.racing.api.serializers.sessions import (
     EntryStintsSerializer,
-    EventSerializer,
-    HomeSerializer,
-    ProgressionSerializer,
-    RoundQuerySerializer,
-    SeasonSerializer,
     SectorsSerializer,
     SessionDetailSerializer,
+    TeamRadioSerializer,
+    TrackSerializer,
+)
+from stintline.racing.api.serializers.standings import (
+    ProgressionSerializer,
+    RoundQuerySerializer,
     StandingsSerializer,
+)
+from stintline.racing.api.serializers.teams import (
     TeamCareerSerializer,
     TeamListSerializer,
     TeamQuerySerializer,
-    TeamRadioSerializer,
-    TrackSerializer,
 )
 from stintline.racing.geometry import normalise_outline
 from stintline.racing.models import (

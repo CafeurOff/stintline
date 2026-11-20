@@ -2,18 +2,18 @@ import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { CarImage } from "@/components/racing/CarImage";
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useTeams } from "@/features/hub/api";
-import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
+import { readable } from "@/lib/colour";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
-import { readable } from "@/lib/colour";
+import { useTeams } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 

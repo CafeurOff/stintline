@@ -74,8 +74,7 @@ def test_seed_demo_is_idempotent() -> None:
     assert row_counts() == first
 
 
-def test_entries_join_timing_and_classification_on_car_number() -> None:
-    seed()
+def test_entries_join_timing_and_classification_on_car_number(seeded: None) -> None:
 
     norris = SessionEntry.objects.get(
         session__event__round=14, session__kind=SessionKind.RACE, driver__ref="norris"
@@ -87,8 +86,7 @@ def test_entries_join_timing_and_classification_on_car_number() -> None:
     assert norris.laps.count() == 70
 
 
-def test_pit_in_laps_and_pit_stop_enrichment() -> None:
-    seed()
+def test_pit_in_laps_and_pit_stop_enrichment(seeded: None) -> None:
 
     stop = (
         PitStop.objects.select_related("entry__driver")
@@ -105,16 +103,14 @@ def test_pit_in_laps_and_pit_stop_enrichment() -> None:
     assert Lap.objects.filter(is_pit_in_lap=True).count() == PitStop.objects.count()
 
 
-def test_bahrain_safety_car_is_stored_as_track_status() -> None:
-    seed()
+def test_bahrain_safety_car_is_stored_as_track_status(seeded: None) -> None:
 
     statuses = TrackStatus.objects.filter(session__event__round=4)
     assert [(s.status, s.lap_start, s.lap_end) for s in statuses] == [("SC", 32, 35)]
     assert not TrackStatus.objects.filter(session__event__round=14).exists()
 
 
-def test_stints_cover_compounds_and_new_tyres() -> None:
-    seed()
+def test_stints_cover_compounds_and_new_tyres(seeded: None) -> None:
 
     stints = Stint.objects.filter(entry__session__event__round=14)
     assert set(stints.values_list("compound", flat=True)) <= {"SOFT", "MEDIUM", "HARD"}

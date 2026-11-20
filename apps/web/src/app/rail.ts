@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 
 /** Desktop sidebar: full (icons and names) or a rail of icons. Phones keep their menu. */
-export type RailState = "full" | "collapsed";
+type RailState = "full" | "collapsed";
 
 export const RAIL_STORAGE_KEY = "stintline-rail";
 const listeners = new Set<() => void>();
@@ -17,7 +17,7 @@ export function readStoredRail(): RailState {
 
 /** `<html data-rail>` drives the layout in CSS, so the first paint is already right (the
  * inline script in index.html applies the stored choice). */
-export function applyRail(state: RailState) {
+function applyRail(state: RailState) {
   if (state === "collapsed") document.documentElement.dataset.rail = "collapsed";
   else delete document.documentElement.dataset.rail;
 }

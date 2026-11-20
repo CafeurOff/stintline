@@ -1,8 +1,8 @@
 import { Database, FileText, Heart, Lock } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel } from "@/components/dash/Panel";
-import { PageHeader } from "@/components/hub/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Panel } from "@/components/layout/Panel";
 import { useI18n } from "@/lib/i18n/context";
 import type { MessageKey } from "@/lib/i18n/en";
 

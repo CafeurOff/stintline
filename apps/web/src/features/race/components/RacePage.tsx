@@ -6,16 +6,16 @@ import { DriverAvatar } from "@/components/racing/DriverAvatar";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { TermList } from "@/components/ui/Term";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
+import { useDegradation } from "@/features/tyres/api";
+import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
-import { TermList } from "@/components/ui/Term";
 import { useI18n } from "@/lib/i18n/context";
-import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
-import { useDegradation } from "@/features/tyres/api";
 import { teamColour } from "@/lib/teams";
-import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
 import { byFinish, driverCode, driverName, entriesByCar, type Entry, entryPhoto } from "../entries";
@@ -38,15 +38,15 @@ import {
   useUndercut,
 } from "../simulations";
 import { decodePlan, encodePlan, type RaceCompound, realPlan, samePlan } from "../strategy";
-import { useSessionId } from "../useSessionId";
+import type { UndercutChoice } from "../undercut";
 import { useReplayClock } from "../useReplayClock";
+import { useSessionId } from "../useSessionId";
 import { DriverPicker } from "./DriverPicker";
 import { ReplayBar } from "./ReplayBar";
-import { StrategyPanel } from "./StrategyPanel";
 import { StopPanel } from "./StopPanel";
+import { StrategyPanel } from "./StrategyPanel";
 import { type Ghost, TrackMap, type CarMarker } from "./TrackMap";
 import { UndercutPanel } from "./UndercutPanel";
-import type { UndercutChoice } from "../undercut";
 
 /** Where the replay opens when no lap is in the URL: a typical first-stop window. */
 const DEFAULT_LAP_SHARE = 0.4;

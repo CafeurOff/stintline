@@ -221,7 +221,7 @@ def test_page_chunks_are_preloaded_from_the_build_manifest(settings: Any, tmp_pa
                 "index.html": {"file": "assets/index-abc.js", "isEntry": True},
                 "_framework-1.js": {"file": "assets/framework-1.js"},
                 "_chart-2.js": {"file": "assets/chart-2.js", "imports": ["_framework-1.js"]},
-                "src/features/insights/components/PacePage.tsx": {
+                "src/features/analysis/components/PacePage.tsx": {
                     "file": "assets/PacePage-3.js",
                     "imports": ["index.html", "_framework-1.js", "_chart-2.js"],
                 },

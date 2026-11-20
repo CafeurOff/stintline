@@ -1,7 +1,7 @@
 import { act, render, renderHook, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
-import { SectionTitle } from "@/components/hub/SectionTitle";
+import { SectionTitle } from "@/components/layout/SectionTitle";
 import { categoryKey } from "@/features/paddock/categories";
 
 import { circuitAccent } from "./accent";

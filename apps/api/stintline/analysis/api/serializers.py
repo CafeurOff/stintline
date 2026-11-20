@@ -4,7 +4,11 @@ from typing import Any
 
 from rest_framework import serializers
 
-from stintline.racing.api.serializers import CircuitSerializer, DriverSerializer, TeamSerializer
+from stintline.racing.api.serializers.common import (
+    CircuitSerializer,
+    DriverSerializer,
+    TeamSerializer,
+)
 
 # ------------------------------------------------------------------------------ queries
 

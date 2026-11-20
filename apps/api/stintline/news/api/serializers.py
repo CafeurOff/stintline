@@ -8,11 +8,8 @@ from rest_framework import serializers
 
 from stintline.news.models import Headline
 from stintline.news.services import SOURCE_NAMES
-from stintline.racing.api.serializers import (
-    DriverSerializer,
-    EventSummarySerializer,
-    TeamSerializer,
-)
+from stintline.racing.api.serializers.calendar import EventSummarySerializer
+from stintline.racing.api.serializers.common import DriverSerializer, TeamSerializer
 from stintline.racing.models import SessionEntry
 
 

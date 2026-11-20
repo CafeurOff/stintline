@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-export const SITE_NAME = "StintLine";
+const SITE_NAME = "StintLine";
 
 /** Sets the browser tab title to "<title> · StintLine" while the page is shown.
  * Pass nothing (or an empty value while data loads) to show the site name alone. */

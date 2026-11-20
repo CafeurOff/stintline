@@ -12,11 +12,6 @@ from stintline_strategy.domain import Compound, Neutralisation
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def seeded() -> None:
-    call_command("seed_demo", stdout=StringIO())
-
-
 def race_session(round_: int) -> Session:
     return Session.objects.select_related("event").get(event__round=round_, kind=SessionKind.RACE)
 

@@ -1,30 +1,30 @@
 import type { Schema } from "@stintline/api-types";
 import type { CSSProperties } from "react";
 import { Link, useParams } from "react-router";
-
-import { ShowAll } from "@/components/hub/Collapsible";
 import { History } from "lucide-react";
 
-import { Bust } from "@/components/dash/Bust";
-import { Panel } from "@/components/dash/Panel";
-import { Trails } from "@/components/glass/Trails";
-import { KeyFigures } from "@/components/hub/KeyFigures";
-import { SeasonBars } from "@/components/hub/SeasonBars";
-import { useCollapsed } from "@/components/hub/useCollapsed";
-import { TeamName } from "@/components/hub/TeamName";
+import { ShowAll } from "@/components/layout/Collapsible";
+import { KeyFigures } from "@/components/layout/KeyFigures";
+import { Panel } from "@/components/layout/Panel";
+import { Trails } from "@/components/layout/Trails";
+import { useCollapsed } from "@/components/layout/useCollapsed";
+import { Bust } from "@/components/racing/Bust";
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { initials } from "@/components/racing/initials";
+import { SeasonBars } from "@/components/racing/SeasonBars";
+import { TeamName } from "@/components/racing/TeamName";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-import { DriverSeason } from "./DriverSeason";
-import { useDriver } from "@/features/hub/api";
+import { readable } from "@/lib/colour";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";
-import { readable } from "@/lib/colour";
+import { useDriver } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+
+import { DriverSeason } from "./DriverSeason";
 
 type Career = Schema<"DriverCareer">;
 

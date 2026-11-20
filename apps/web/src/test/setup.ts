@@ -18,6 +18,11 @@ beforeAll(async () => {
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  // Test files share a worker (`isolate: false`): leave nothing behind for the next one.
+  localStorage.clear();
+  sessionStorage.clear();
+  delete document.documentElement.dataset.theme;
+  delete document.documentElement.dataset.rail;
 });
 afterAll(() => {
   server.close();

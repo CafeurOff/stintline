@@ -61,7 +61,6 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Offers a file to the reader. */
 export function saveBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

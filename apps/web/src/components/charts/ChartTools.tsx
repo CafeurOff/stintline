@@ -12,7 +12,7 @@ const BUTTON =
 /** How long "Link copied" stays, in milliseconds. */
 const NOTICE_MS = 2500;
 
-export type CsvRows = readonly (readonly (string | number | null | undefined)[])[];
+type CsvRows = readonly (readonly (string | number | null | undefined)[])[];
 
 /**
  * The hint and the buttons above a chart: zoom (keyboard users zoom with + and −), copy the

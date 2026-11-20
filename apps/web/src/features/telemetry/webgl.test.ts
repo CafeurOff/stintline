@@ -1,6 +1,10 @@
 import { hasWebGL, resetWebGLCheck } from "./webgl";
 
 describe("hasWebGL", () => {
+  beforeEach(() => {
+    resetWebGLCheck();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
     resetWebGLCheck();

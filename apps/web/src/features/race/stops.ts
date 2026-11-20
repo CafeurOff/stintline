@@ -4,7 +4,7 @@ import type { Entry } from "./entries";
 
 type PitExit = Schema<"PitExitResult">;
 
-export interface StopNeighbours {
+interface StopNeighbours {
   ahead: { entry: Entry; gap: number } | null;
   behind: { entry: Entry; gap: number } | null;
   close: Entry[];

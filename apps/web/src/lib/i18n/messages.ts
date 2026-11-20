@@ -1,7 +1,7 @@
 import type { MessageKey } from "./en";
 import type { Locale } from "./locale";
 
-export type Messages = Record<MessageKey, string>;
+type Messages = Record<MessageKey, string>;
 
 /**
  * Each dictionary is its own chunk (about 18 kB gzipped): a visitor downloads only the

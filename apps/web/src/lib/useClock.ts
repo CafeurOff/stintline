@@ -14,7 +14,7 @@ export function useClock(everyMs = 1000): number {
   return now;
 }
 
-export interface TimeLeft {
+interface TimeLeft {
   days: number;
   hours: number;
   minutes: number;
