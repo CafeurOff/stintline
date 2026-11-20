@@ -339,3 +339,15 @@ export const liveSnapshot = {
   pit_loss_sigma_s: 2.1067745999999885,
   updated_at: 0,
 } satisfies Schema<"LiveSnapshot">;
+
+/** The live status between sessions: no snapshot, the next session ahead. */
+export const offlineLive: Schema<"LiveStatus"> = {
+  state: "offline",
+  snapshot: null,
+  next_session: {
+    event_id: 14,
+    event_name: "Hungarian Grand Prix",
+    kind: "FP1",
+    starts_at: "2026-11-06T15:30:00Z",
+  },
+};

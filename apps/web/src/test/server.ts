@@ -25,6 +25,7 @@ import {
   teams,
 } from "./fixtures/hub";
 import { lapsResponse } from "./fixtures/laps";
+import { offlineLive } from "./fixtures/live";
 import { model } from "./fixtures/model";
 import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
 import {
@@ -62,17 +63,6 @@ export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   next: null,
   previous: null,
   results: [{ year: 2025, events_count: events.count }],
-};
-
-const offlineLive: Schema<"LiveStatus"> = {
-  state: "offline",
-  snapshot: null,
-  next_session: {
-    event_id: 14,
-    event_name: "Hungarian Grand Prix",
-    kind: "FP1",
-    starts_at: "2026-11-06T15:30:00Z",
-  },
 };
 
 export function problem(status: number, code: string, title: string, detail = title) {
