@@ -4,9 +4,9 @@ import { Link, useParams } from "react-router";
 
 import { ListOrdered, Play, Scale } from "lucide-react";
 
-import { pillGlass, pillPrimary } from "@/components/glass/Glass";
-import { TrackMap } from "@/components/glass/TrackMap";
-import { Trails } from "@/components/glass/Trails";
+import { pillGlass, pillPrimary } from "@/components/layout/Glass";
+import { TrackMap } from "@/components/layout/TrackMap";
+import { Trails } from "@/components/layout/Trails";
 import { Bust } from "@/components/racing/Bust";
 import { Panel } from "@/components/layout/Panel";
 import { ShowAll } from "@/components/hub/Collapsible";

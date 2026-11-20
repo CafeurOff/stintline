@@ -12,7 +12,7 @@ import { eventName } from "@/lib/i18n/content";
 import { ResultPosition } from "@/components/racing/ResultStatus";
 import { useOutText } from "@/lib/useOutText";
 import { useI18n } from "@/lib/i18n/context";
-import { Trails } from "@/components/glass/Trails";
+import { Trails } from "@/components/layout/Trails";
 import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 

@@ -4,9 +4,9 @@ import { Link } from "react-router";
 
 import type { CSSProperties } from "react";
 
-import { pillPrimary } from "@/components/glass/Glass";
-import { TrackMap as GlowTrack } from "@/components/glass/TrackMap";
-import { Trails } from "@/components/glass/Trails";
+import { pillPrimary } from "@/components/layout/Glass";
+import { TrackMap as GlowTrack } from "@/components/layout/TrackMap";
+import { Trails } from "@/components/layout/Trails";
 import { Countdown } from "@/components/hub/Countdown";
 import { SectionTitle } from "@/components/hub/SectionTitle";
 import { CircuitMark } from "@/components/racing/CircuitMark";

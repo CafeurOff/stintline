@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { CSSProperties } from "react";
 
-import { Trails } from "@/components/glass/Trails";
+import { Trails } from "@/components/layout/Trails";
 import { TermList } from "@/components/ui/Term";
 import type { TermId } from "@/lib/i18n/glossary";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";

@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router";
 
-import { pillGlass, pillPrimary } from "@/components/glass/Glass";
-import { Trails } from "@/components/glass/Trails";
+import { pillGlass, pillPrimary } from "@/components/layout/Glass";
+import { Trails } from "@/components/layout/Trails";
 import { useI18n } from "@/lib/i18n/context";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 

@@ -23,9 +23,9 @@ import {
   PillSwitch,
   pillGlass,
   pillPrimary,
-} from "@/components/glass/Glass";
-import { TrackMap } from "@/components/glass/TrackMap";
-import { Trails } from "@/components/glass/Trails";
+} from "@/components/layout/Glass";
+import { TrackMap } from "@/components/layout/TrackMap";
+import { Trails } from "@/components/layout/Trails";
 import { CarImage } from "@/components/racing/CarImage";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";

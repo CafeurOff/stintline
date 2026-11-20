@@ -7,7 +7,7 @@ import { History } from "lucide-react";
 
 import { Bust } from "@/components/racing/Bust";
 import { Panel } from "@/components/layout/Panel";
-import { Trails } from "@/components/glass/Trails";
+import { Trails } from "@/components/layout/Trails";
 import { KeyFigures } from "@/components/hub/KeyFigures";
 import { SeasonBars } from "@/components/hub/SeasonBars";
 import { useCollapsed } from "@/components/hub/useCollapsed";
