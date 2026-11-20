@@ -69,6 +69,31 @@ describe("RacePage", () => {
     expect(router.state.location.search).toContain("car=81");
   });
 
+  it("switches to the 3D view, which falls back to the map without WebGL", async () => {
+    const { router } = renderRoute(`${race}?lap=30`);
+    const views = await screen.findByRole("group", { name: "View" });
+
+    await userEvent.click(within(views).getByRole("button", { name: "3D" }));
+
+    expect(router.state.location.search).toContain("view=3d");
+    expect(await screen.findByText(/cannot draw 3D/)).toHaveAttribute("role", "status");
+    await userEvent.click(within(views).getByRole("button", { name: "Map" }));
+    expect(await screen.findByRole("group", { name: /cars on track/ })).toBeVisible();
+    expect(router.state.location.search).not.toContain("view=");
+  });
+
+  it("lists the running order with gaps and picks a driver from it", async () => {
+    const { router } = renderRoute(`${race}?lap=30`);
+    const tower = await screen.findByRole("region", { name: "Running order" });
+
+    expect(within(tower).getAllByRole("button", { name: /^\d+\. / })).toHaveLength(20);
+    expect(within(tower).getByText("Leader", { selector: "span" })).toBeVisible();
+    await userEvent.click(within(tower).getByRole("button", { name: /^\d+\. Oscar Piastri$/ }));
+
+    expect(within(panel()).getByText("What if Piastri pitted now?")).toBeVisible();
+    expect(router.state.location.search).toContain("car=81");
+  });
+
   it("moves the replay with the lap slider", async () => {
     renderRoute(`${race}?lap=30`);
     const slider = await screen.findByRole("slider", { name: "Lap" });
