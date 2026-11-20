@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from stintline.paddock.models import DocumentCategory, FiaDocument, StewardsDecision
 from stintline.paddock.selectors import snippet
-from stintline.racing.api.serializers import DriverSerializer, TeamSerializer
+from stintline.racing.api.serializers.common import DriverSerializer, TeamSerializer
 from stintline.racing.models import Event
 
 

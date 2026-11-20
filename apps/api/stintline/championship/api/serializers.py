@@ -5,7 +5,7 @@ from typing import Any
 from rest_framework import serializers
 
 from stintline.championship.maths import Status
-from stintline.racing.api.serializers import DriverSerializer
+from stintline.racing.api.serializers.common import DriverSerializer
 
 
 class CountBlockSerializer(serializers.Serializer[Any]):

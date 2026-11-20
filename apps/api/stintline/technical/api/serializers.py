@@ -4,7 +4,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from stintline.racing.api.serializers import DriverSerializer, TeamSerializer
+from stintline.racing.api.serializers.common import DriverSerializer, TeamSerializer
 
 
 class SeasonQuerySerializer(serializers.Serializer[Any]):

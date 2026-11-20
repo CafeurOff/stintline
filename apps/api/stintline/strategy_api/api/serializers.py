@@ -6,7 +6,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from stintline.racing.api.serializers import DriverSerializer, TeamSerializer
+from stintline.racing.api.serializers.common import DriverSerializer, TeamSerializer
 from stintline.racing.models import SessionEntry, TelemetryLap
 from stintline.strategy_api.telemetry import MAX_TELEMETRY_CARS
 
