@@ -18,6 +18,8 @@ test("the explanation page loads with the server status and disclaimer", async (
 
 test("keyboard users can skip to the main content", async ({ page }) => {
   await page.goto("/model");
+  // The app renders once the reader's dictionary has loaded.
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Skip to content" })).toBeFocused();

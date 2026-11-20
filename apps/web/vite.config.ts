@@ -88,6 +88,8 @@ export default defineConfig({
     assetsInlineLimit: (file) => (file.includes("flag-icons") ? false : undefined),
     // The only chunk over 500 kB is three.js behind the 3D lap view, loaded on demand (ADR 0021).
     chunkSizeWarningLimit: 1000,
+    // Read by the API, which adds a modulepreload of each page's chunk to its head (ADR 0025).
+    manifest: true,
     rollupOptions: {
       output: {
         // React, the router and TanStack Query change far less often than our code: in their

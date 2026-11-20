@@ -13,9 +13,13 @@ import { loadedMessages, loadMessages } from "./messages";
 export function I18nProvider({
   children,
   locale: forced,
+  onSwitch,
 }: {
   children: ReactNode;
   locale?: Locale;
+  /** Opens the page in another language (the app loads its other URL); without it the
+   * language switches in place. */
+  onSwitch?: (locale: Locale) => void;
 }) {
   const [locale, setLocaleState] = useState<Locale>(() => forced ?? initialLocale());
 
@@ -23,12 +27,19 @@ export function I18nProvider({
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const setLocale = useCallback((next: Locale) => {
-    storeLocale(next);
-    void loadMessages(next).then(() => {
-      setLocaleState(next);
-    });
-  }, []);
+  const setLocale = useCallback(
+    (next: Locale) => {
+      storeLocale(next);
+      if (onSwitch) {
+        onSwitch(next);
+        return;
+      }
+      void loadMessages(next).then(() => {
+        setLocaleState(next);
+      });
+    },
+    [onSwitch],
+  );
 
   const value = useMemo<I18nValue>(
     () => ({

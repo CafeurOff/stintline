@@ -7,7 +7,7 @@ import { useI18n } from "./context";
 import { en } from "./en";
 import { fr } from "./fr";
 import { I18nProvider } from "./I18nProvider";
-import { initialLocale, LOCALE_STORAGE_KEY } from "./locale";
+import { initialLocale, LOCALE_STORAGE_KEY, localePath, pathLocale } from "./locale";
 
 function Probe() {
   const { t, locale, setLocale } = useI18n();
@@ -49,6 +49,33 @@ describe("i18n", () => {
     expect(await screen.findByText("Et si Norris s'arrêtait maintenant ?")).toBeVisible();
     expect(document.documentElement.lang).toBe("fr");
     expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("fr");
+  });
+
+  it("reads the language from the address and builds the other one", () => {
+    expect(pathLocale("/fr")).toBe("fr");
+    expect(pathLocale("/fr/drivers/norris")).toBe("fr");
+    expect(pathLocale("/francais")).toBe("en");
+    expect(pathLocale("/drivers")).toBe("en");
+    expect(localePath("/drivers/norris", "fr")).toBe("/fr/drivers/norris");
+    expect(localePath("/", "fr")).toBe("/fr/");
+    expect(localePath("/fr/drivers/norris", "en")).toBe("/drivers/norris");
+    expect(localePath("/fr", "en")).toBe("/");
+    expect(localePath("/fr/standings", "fr")).toBe("/fr/standings");
+  });
+
+  it("hands the switch to the app when it opens pages by address", async () => {
+    const opened: string[] = [];
+    render(
+      <I18nProvider locale="en" onSwitch={(next) => opened.push(next)}>
+        <Probe />
+      </I18nProvider>,
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "switch" }));
+
+    expect(opened).toEqual(["fr"]);
+    expect(localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("fr");
+    expect(screen.getByText("What if Norris pitted now?")).toBeVisible();
   });
 
   it("starts from the stored choice, then the browser language", () => {
