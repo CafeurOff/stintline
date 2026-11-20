@@ -35,7 +35,9 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
                          TrackStatus, TrackOutline, Standing, TeamRadio, TelemetryLap; read queries in
                          selectors.py, careers.py (driver records) and hub.py (home, teams,
                          championship progression)
-  stintline/ingestion/   services (idempotent upserts), Celery tasks, `ingest` and `seed_demo` commands
+  stintline/ingestion/   idempotent upserts: calendar (`schedule.py`), session timing (`timing.py`),
+                         history (`history.py`), telemetry, portraits, shared writers
+                         (`services.py`); Celery tasks, `ingest` and `seed_demo` commands
   stintline/strategy_api/ ORM to engine adapter (`adapters.py`), strategy endpoints and model card, `backtest` command
   stintline/news/        headlines from news feeds (model, refresh task, `refresh_news` command),
                          race reports built from stored data (`reports.py`, race story in

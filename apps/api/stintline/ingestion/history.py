@@ -19,12 +19,8 @@ from racedata.models import (
 from racedata.models import SessionKind as SourceKind
 from racedata.providers.base import HistorySource
 from racedata.sources import Sources
-from stintline.ingestion.services import (
-    IngestReport,
-    _upsert_event,
-    result_fields,
-    upsert_driver_and_team,
-)
+from stintline.ingestion.schedule import _upsert_event
+from stintline.ingestion.services import IngestReport, result_fields, upsert_driver_and_team
 from stintline.racing.models import (
     Circuit,
     Driver,

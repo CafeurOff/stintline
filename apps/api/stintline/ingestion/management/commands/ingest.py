@@ -6,7 +6,7 @@ from typing import Any
 
 from django.core.management.base import BaseCommand, CommandParser
 
-from stintline.ingestion import history, services, tasks
+from stintline.ingestion import history, schedule, tasks, timing
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import Session
 
@@ -33,13 +33,13 @@ class Command(BaseCommand):
             self.stdout.write(f"Queued ingestion task {result.id}")
             return
         with open_sources() as sources:
-            events = services.ingest_calendar(season, sources)
+            events = schedule.ingest_calendar(season, sources)
             if round_:
                 events = [e for e in events if e.round == round_]
             sessions = Session.objects.filter(event__in=events).select_related("event__season")
             for session in sessions:
-                if services.is_ingestable(session):
-                    report = services.ingest_session(session, sources)
+                if timing.is_ingestable(session):
+                    report = timing.ingest_session(session, sources)
                     self.stdout.write(f"{session}: {report.counts}")
             results = history.ingest_season_results(season, sources)
             self.stdout.write(f"{season} results and standings: {results.counts}")
