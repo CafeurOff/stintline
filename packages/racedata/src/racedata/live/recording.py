@@ -1,6 +1,6 @@
 """Record the live feed to JSON lines, and replay a recording as if it were live.
 
-Same format as the 2026 probe: ``{"kind": "snapshot", "received_at": t, "data": {...}}``
+Format: ``{"kind": "snapshot", "received_at": t, "data": {...}}``
 and ``{"kind": "feed", "received_at": t, "args": [topic, payload, timestamp]}``.
 Recordings are personal (formula1.com terms): never commit or publish a full one.
 """

@@ -2,8 +2,7 @@
 """Claude Code PostToolUse hook: format the edited file, then remind which tests to run.
 
 Contract: reads the hook payload (JSON) on stdin and never blocks the edit. It always
-exits 0. Formatting is skipped silently when the toolchain is not installed yet
-(e.g. before Phase 2 scaffolding).
+exits 0. Formatting is skipped silently when the toolchain is not installed.
 """
 
 from __future__ import annotations

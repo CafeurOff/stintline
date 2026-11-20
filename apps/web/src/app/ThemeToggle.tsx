@@ -1,7 +1,6 @@
 import { useI18n } from "@/lib/i18n/context";
 import { useTheme } from "@/lib/theme";
 
-/** Dark (default) and light themes. */
 export function ThemeToggle() {
   const { t } = useI18n();
   const { theme, setTheme } = useTheme();

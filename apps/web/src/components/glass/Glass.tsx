@@ -4,7 +4,7 @@ import { ChevronRight } from "lucide-react";
 import { Link } from "react-router";
 
 /**
- * Glass skin blocks (pilot on the home page): a frosted card with an optional coloured glow,
+ * Glass skin blocks (ADR 0023): a frosted card with an optional coloured glow,
  * pill buttons and the white-on-black segmented control.
  */
 

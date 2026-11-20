@@ -298,7 +298,6 @@ function EventHero({
   );
 }
 
-/** Stewards' decisions of the weekend (ADR 0018); nothing when there are none. */
 /** Races first, then qualifying and practice: what changed the result comes first. */
 const DECISION_ORDER = ["R", "SPRINT", "Q", "SQ", "FP3", "FP2", "FP1"];
 /** Decisions shown before "show all": a weekend can have forty. */
@@ -309,6 +308,7 @@ function decisionRank(kind: string | null | undefined): number {
   return index === -1 ? DECISION_ORDER.length : index;
 }
 
+/** Stewards' decisions of the weekend (ADR 0018); nothing when there are none. */
 function StewardsPanel({ eventId, season }: { eventId: number; season: number }) {
   const { t } = useI18n();
   const decisions = useDecisions({ event: eventId });

@@ -78,9 +78,9 @@ function glowStyle(colour: string, x = "100%", y = "100%"): CSSProperties {
 }
 
 /**
- * Home page in the glass skin (pilot): the next Grand Prix in a hero with its countdown and
- * our circuit figures, the last race around its winner, key figures as widgets, both
- * championships, the facts, the news and the season's races.
+ * Home page: the next Grand Prix in a hero with its countdown and our circuit figures, the
+ * last race around its winner, key figures as widgets, both championships, the facts, the
+ * news and the season's races.
  */
 export function HomePage() {
   const { t } = useI18n();
