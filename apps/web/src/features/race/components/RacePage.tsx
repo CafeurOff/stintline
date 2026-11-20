@@ -4,6 +4,7 @@ import { Link } from "react-router";
 
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
 import { Flag } from "@/components/racing/Flag";
+import { PillSwitch } from "@/components/layout/Glass";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
@@ -42,8 +43,10 @@ import {
 import { decodePlan, encodePlan, type RaceCompound, realPlan, samePlan } from "../strategy";
 import type { UndercutChoice } from "../undercut";
 import { useReplayClock } from "../useReplayClock";
+import type { RaceCar3D } from "../race3d";
 import { towerLines } from "../tower";
 import { useSessionId } from "../useSessionId";
+import { Race3DView } from "./Race3DView";
 import { RaceTower } from "./RaceTower";
 import { ReplayBar } from "./ReplayBar";
 import { StopPanel } from "./StopPanel";
@@ -207,8 +210,9 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
 
   // ---- ghost: where the selected car would be after the simulated stop(s)
   let ghost: Ghost | null = null;
+  let ghostProgress: number | null = null;
   const labelled = new Set<number>([selected]);
-  if (track && entry) {
+  if (entry) {
     let reference: CarClock | undefined;
     let lag = 0;
     let sigma = 0;
@@ -238,7 +242,8 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     }
     if (reference) {
       const progress = progressAt(reference, time - lag);
-      if (progress !== null) {
+      ghostProgress = progress;
+      if (progress !== null && track) {
         const [x, y] = pointAt(track.points, progress);
         const zone: [number, number][] = [];
         for (let i = 0; i <= ZONE_STEPS; i += 1) {
@@ -278,6 +283,22 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     }
   }
 
+  const cars3d: RaceCar3D[] = order.flatMap((running) => {
+    const e = byCar.get(running.carNumber);
+    return e
+      ? [
+          {
+            carNumber: running.carNumber,
+            code: driverCode(e),
+            colour: teamColour(e.team_colour),
+            fraction: running.progress,
+            selected: running.carNumber === selected,
+          },
+        ]
+      : [];
+  });
+  const view = params.get("view") === "3d" ? "3d" : "map";
+
   const carReplay = replayByCar.get(selected);
   const lapIndex = (lapInProgress ?? 1) - 1;
   const compound = compoundInfo(carReplay?.compounds[lapIndex]);
@@ -313,9 +334,31 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <TrackStatus status={flag?.status ?? null} />
-            <p className="text-sm text-muted">{session.event.circuit.name}</p>
+            <PillSwitch
+              label={t("stage.view")}
+              value={view}
+              options={[
+                ["map", t("stage.map")],
+                ["3d", t("stage.3d")],
+              ]}
+              onChange={(next) => {
+                update({ view: next === "3d" ? "3d" : null });
+              }}
+            />
           </div>
-          {track ? (
+          {view === "3d" ? (
+            <Race3DView
+              sessionId={sessionId}
+              cars={cars3d}
+              ghost={
+                ghostProgress === null || !entry
+                  ? null
+                  : { fraction: ghostProgress, code: driverCode(entry) }
+              }
+              circuit={session.event.circuit.name}
+              onSelect={selectCar}
+            />
+          ) : track ? (
             <TrackMap
               track={track}
               cars={markers}

@@ -139,6 +139,7 @@ export default defineConfig({
         "src/features/telemetry/Lap3DScene.tsx",
         "src/features/telemetry/Car3D.tsx",
         "src/features/telemetry/CircuitWorld.tsx",
+        "src/features/race/components/Race3DScene.tsx",
       ],
       thresholds: { lines: 80, functions: 80, branches: 80, statements: 80 },
     },
