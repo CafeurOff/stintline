@@ -87,7 +87,13 @@ export function ProgressionChart({
 
   return (
     <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
-      <ChartTools zoom={zoom} />
+      <ChartTools
+        zoom={zoom}
+        csv={() => [
+          [t("standings.round"), ...lines.map((l) => l.label)],
+          ...rounds.map((round, i) => [round, ...lines.map((l) => l.points[i] ?? null)]),
+        ]}
+      />
       {hover && at.length > 0 && (
         <ChartTooltip
           left={MARGIN.left + x(hover.i)}

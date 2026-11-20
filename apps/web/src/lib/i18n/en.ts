@@ -340,6 +340,13 @@ export const en = {
   "race.pageTitle": "{event} {year}: replay and strategy",
   "race.pageIntro":
     "Watch the race lap by lap on the circuit. Pick a driver, then test a pit stop now, an undercut on the car ahead or a whole other tyre strategy.",
+  "chart.copyLink": "Copy the link to this view",
+  "chart.linkCopied": "Link copied",
+  "chart.linkFailed": "Copy the address from the browser bar",
+  "chart.savePng": "Save the chart as a picture",
+  "chart.saveCsv": "Download the data (CSV)",
+  "chart.saveFailed": "The picture could not be made",
+  "chart.credit": "Data: OpenF1, Jolpica · analysis: StintLine ({host}) · unofficial",
   "chart.hint": "Drag a box over the chart to zoom into it · double-click to see everything",
   "chart.zoomed": "Zoomed in · drag again to go closer, double-click or reset to see everything",
   "chart.zoomIn": "Zoom in",

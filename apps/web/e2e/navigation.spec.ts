@@ -58,3 +58,27 @@ test("reduce the sidebar to icons and find it reduced after a reload", async ({ 
   await page.keyboard.press("[");
   await expect(page.locator("html")).not.toHaveAttribute("data-rail", "collapsed");
 });
+
+test("share a chart: copy its link, save it as a picture and its data as CSV", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/events/14?chart=positions");
+  const save = page.getByRole("button", { name: "Save the chart as a picture" }).first();
+  await expect(save).toBeVisible();
+
+  await page.getByRole("button", { name: "Copy the link to this view" }).first().click();
+  await expect(page.getByRole("status").filter({ hasText: "Link copied" })).toBeVisible();
+  expect(await page.evaluate<string>("navigator.clipboard.readText()")).toContain(
+    "chart=positions",
+  );
+
+  const picture = page.waitForEvent("download");
+  await save.click();
+  expect((await picture).suggestedFilename()).toMatch(/\.png$/);
+
+  const data = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download the data (CSV)" }).first().click();
+  expect((await data).suggestedFilename()).toMatch(/\.csv$/);
+});

@@ -68,7 +68,15 @@ export function SeasonBars({
 
   return (
     <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
-      {all.length > 6 && <ChartTools zoom={zoom} />}
+      {all.length > 6 && (
+        <ChartTools
+          zoom={zoom}
+          csv={() => [
+            [t("col.season"), t("chart.points"), t("chart.place")],
+            ...all.map((s) => [s.year, s.points, s.position]),
+          ]}
+        />
+      )}
       {hovered && (
         <ChartTooltip
           left={MARGIN.left + (x(hovered.year) ?? 0) + x.bandwidth() / 2}

@@ -344,6 +344,13 @@ export const fr: Record<MessageKey, string> = {
   "race.pageTitle": "{event} {year} : rejeu et stratégie",
   "race.pageIntro":
     "Revivez la course tour par tour sur le circuit. Choisissez un pilote, puis testez un arrêt maintenant, un undercut sur la voiture de devant ou une tout autre stratégie de pneus.",
+  "chart.copyLink": "Copier le lien de cette vue",
+  "chart.linkCopied": "Lien copié",
+  "chart.linkFailed": "Copiez l'adresse dans la barre du navigateur",
+  "chart.savePng": "Enregistrer le graphique en image",
+  "chart.saveCsv": "Télécharger les données (CSV)",
+  "chart.saveFailed": "L'image n'a pas pu être créée",
+  "chart.credit": "Données : OpenF1, Jolpica · analyse : StintLine ({host}) · non officiel",
   "chart.hint": "Tracez un cadre sur le graphique pour zoomer · double-clic pour tout revoir",
   "chart.zoomed":
     "Zoom actif · tracez un autre cadre pour approcher, double-clic ou réinitialiser pour tout revoir",
