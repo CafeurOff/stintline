@@ -1,7 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 import { Calculator } from "lucide-react";
 
-import { Panel } from "@/components/dash/Panel";
+import { Panel } from "@/components/layout/Panel";
 import { DriverName } from "@/components/hub/DriverName";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { eventName } from "@/lib/i18n/content";

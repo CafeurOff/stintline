@@ -1,6 +1,6 @@
 import { CloudSun } from "lucide-react";
 
-import { Panel } from "@/components/dash/Panel";
+import { Panel } from "@/components/layout/Panel";
 import { useI18n } from "@/lib/i18n/context";
 import { sessionLabel } from "@/lib/sessions";
 

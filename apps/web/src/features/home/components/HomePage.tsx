@@ -12,10 +12,10 @@ import {
 import { type CSSProperties, type ReactNode, useState } from "react";
 import { Link } from "react-router";
 
-import { NO_BACKDROP } from "@/components/dash/backdrop";
-import { Bust } from "@/components/dash/Bust";
-import { Face } from "@/components/dash/Face";
-import { Move } from "@/components/dash/Move";
+import { NO_BACKDROP } from "@/components/racing/backdrop";
+import { Bust } from "@/components/racing/Bust";
+import { Face } from "@/components/racing/Face";
+import { Move } from "@/components/racing/Move";
 import {
   GlassCard,
   IconBubble,

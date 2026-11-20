@@ -4,8 +4,8 @@ import { Link, useParams } from "react-router";
 
 import { ShowAll } from "@/components/hub/Collapsible";
 import { DriverName } from "@/components/hub/DriverName";
-import { Bust } from "@/components/dash/Bust";
-import { Panel } from "@/components/dash/Panel";
+import { Bust } from "@/components/racing/Bust";
+import { Panel } from "@/components/layout/Panel";
 import { Trails } from "@/components/glass/Trails";
 import { KeyFigures } from "@/components/hub/KeyFigures";
 import { SeasonBars } from "@/components/hub/SeasonBars";

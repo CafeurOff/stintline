@@ -3,7 +3,7 @@ import { ArrowRight, History, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
 
-import { Panel } from "@/components/dash/Panel";
+import { Panel } from "@/components/layout/Panel";
 import { Term } from "@/components/ui/Term";
 import { useCircuits } from "@/features/analysis/api";
 import { useSessionDetail } from "@/features/race/api";

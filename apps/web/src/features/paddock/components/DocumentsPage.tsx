@@ -12,7 +12,7 @@ import {
 import { lazy, Suspense, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/dash/Panel";
+import { Panel, Tile } from "@/components/layout/Panel";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
 import { Flag } from "@/components/racing/Flag";

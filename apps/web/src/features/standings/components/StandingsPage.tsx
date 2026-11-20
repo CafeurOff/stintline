@@ -4,9 +4,9 @@ import { Link, useNavigate, useParams } from "react-router";
 
 import { ChartLine, PieChart, Trophy } from "lucide-react";
 
-import { Bust } from "@/components/dash/Bust";
-import { Move } from "@/components/dash/Move";
-import { Panel } from "@/components/dash/Panel";
+import { Bust } from "@/components/racing/Bust";
+import { Move } from "@/components/racing/Move";
+import { Panel } from "@/components/layout/Panel";
 import { DriverName } from "@/components/hub/DriverName";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";

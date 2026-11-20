@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/dash/Panel";
-import { RoundBars } from "@/components/dash/RoundBars";
+import { Panel, Tile } from "@/components/layout/Panel";
+import { RoundBars } from "@/components/racing/RoundBars";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
 import { Flag } from "@/components/racing/Flag";

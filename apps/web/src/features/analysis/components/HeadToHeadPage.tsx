@@ -2,8 +2,8 @@ import type { Schema } from "@stintline/api-types";
 import { ArrowRight, Flame, Gauge, Scale, Swords, Table2, Timer } from "lucide-react";
 import { Link } from "react-router";
 
-import { Face } from "@/components/dash/Face";
-import { Panel, Tile } from "@/components/dash/Panel";
+import { Face } from "@/components/racing/Face";
+import { Panel, Tile } from "@/components/layout/Panel";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
 import { Flag } from "@/components/racing/Flag";

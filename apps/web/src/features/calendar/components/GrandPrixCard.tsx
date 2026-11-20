@@ -3,7 +3,7 @@ import type { Schema } from "@stintline/api-types";
 import { Play } from "lucide-react";
 import { Link } from "react-router";
 
-import { Face } from "@/components/dash/Face";
+import { Face } from "@/components/racing/Face";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";

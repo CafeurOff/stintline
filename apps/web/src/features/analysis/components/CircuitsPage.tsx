@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router";
 
-import { Panel, Tile } from "@/components/dash/Panel";
+import { Panel, Tile } from "@/components/layout/Panel";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { CompoundBadge } from "@/components/racing/CompoundBadge";

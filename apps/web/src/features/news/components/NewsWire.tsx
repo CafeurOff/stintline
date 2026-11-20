@@ -3,8 +3,8 @@ import { ExternalLink, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { Face } from "@/components/dash/Face";
-import { Panel } from "@/components/dash/Panel";
+import { Face } from "@/components/racing/Face";
+import { Panel } from "@/components/layout/Panel";
 import { initials } from "@/components/racing/initials";
 import { useStandings } from "@/lib/queries";
 import { useCurrentSeason } from "@/lib/useCurrentSeason";

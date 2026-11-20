@@ -1,7 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 import { Link, NavLink } from "react-router";
 
-import { Face } from "@/components/dash/Face";
+import { Face } from "@/components/racing/Face";
 import { useI18n } from "@/lib/i18n/context";
 
 import { driverLabel } from "../season";

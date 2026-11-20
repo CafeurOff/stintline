@@ -12,8 +12,8 @@ import {
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { Face } from "@/components/dash/Face";
-import { Panel, Tile } from "@/components/dash/Panel";
+import { Face } from "@/components/racing/Face";
+import { Panel, Tile } from "@/components/layout/Panel";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
 import { eventName } from "@/lib/i18n/content";

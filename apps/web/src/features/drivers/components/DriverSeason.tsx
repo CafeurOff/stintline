@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/dash/Panel";
-import { type RoundBar, RoundBars } from "@/components/dash/RoundBars";
+import { Panel, Tile } from "@/components/layout/Panel";
+import { type RoundBar, RoundBars } from "@/components/racing/RoundBars";
 import { TeamName } from "@/components/hub/TeamName";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";

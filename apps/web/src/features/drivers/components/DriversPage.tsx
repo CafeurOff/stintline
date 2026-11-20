@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import { PageHeader } from "@/components/hub/PageHeader";
 import { SeasonSelect } from "@/components/hub/SeasonSelect";
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
-import { Bust } from "@/components/dash/Bust";
+import { Bust } from "@/components/racing/Bust";
 import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
