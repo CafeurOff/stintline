@@ -12,12 +12,15 @@ export function Face({
   colour,
   className,
   style,
+  priority = false,
 }: {
   url: string | null | undefined;
   label: string;
   colour: string | null | undefined;
   className: string;
   style?: CSSProperties;
+  /** The page's main picture (LCP): fetched first instead of lazily. */
+  priority?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const fill = teamColour(colour);
@@ -26,7 +29,8 @@ export function Face({
       <img
         src={url}
         alt=""
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         referrerPolicy="no-referrer"
         onError={() => {
           setFailed(true);

@@ -36,6 +36,20 @@ describe("Face", () => {
 
     expect(screen.getByText("NOR")).toBeInTheDocument();
   });
+
+  it("fetches the main picture first and the others lazily", () => {
+    const { container } = renderWithProviders(
+      <>
+        <Face url="https://example.test/a.webp" label="NOR" colour={null} className="" priority />
+        <Face url="https://example.test/b.webp" label="PIA" colour={null} className="" />
+      </>,
+    );
+    const [main, other] = container.querySelectorAll("img");
+
+    expect(main).toHaveAttribute("loading", "eager");
+    expect(main).toHaveAttribute("fetchpriority", "high");
+    expect(other).toHaveAttribute("loading", "lazy");
+  });
 });
 
 describe("Panel and Tile", () => {

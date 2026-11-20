@@ -277,13 +277,13 @@ function CircuitFigures({ circuitRef }: { circuitRef: string }) {
     <dl className="relative z-10 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
       {stats.map(([label, value, unit]) => (
         <div key={label} className="flex flex-col gap-0.5">
+          <dt className="order-3 flex items-center gap-1.5 text-xs font-medium text-muted">
+            {label}
+          </dt>
           <dd className="order-2 flex items-baseline gap-1">
             <span className="num display text-2xl">{value}</span>
             {unit && <span className="text-xs font-semibold text-muted">{unit}</span>}
           </dd>
-          <dt className="order-3 flex items-center gap-1.5 text-xs font-medium text-muted">
-            {label}
-          </dt>
         </div>
       ))}
     </dl>
@@ -392,6 +392,7 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
             colour={winner.team_colour}
             className="absolute right-[3%] bottom-0 z-[2] h-[94%] w-auto max-w-[44%] !object-contain object-bottom text-5xl"
             style={NO_BACKDROP}
+            priority
           />
         </div>
       )}
@@ -424,10 +425,10 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
           <dl className="flex gap-7">
             {figures.map(([value, label]) => (
               <div key={label} className="flex flex-col">
+                <dt className="order-3 text-xs font-semibold text-muted">{label}</dt>
                 <dd className="num display order-2 text-3xl" style={{ color: readable(colour) }}>
                   {value}
                 </dd>
-                <dt className="order-3 text-xs font-semibold text-muted">{label}</dt>
               </div>
             ))}
           </dl>
@@ -536,10 +537,10 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
         <dl className="flex gap-6">
           {figures.map(([value, label]) => (
             <div key={label} className="flex flex-col">
+              <dt className="order-3 text-xs font-semibold text-muted uppercase">{label}</dt>
               <dd className="num display order-2 text-3xl" style={{ color: readable(colour) }}>
                 {value}
               </dd>
-              <dt className="order-3 text-xs font-semibold text-muted uppercase">{label}</dt>
             </div>
           ))}
         </dl>
