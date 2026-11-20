@@ -182,30 +182,34 @@ function DriverHeader({ career }: { career: Career }) {
               <TeamName team={team} colour={colour} />
             </p>
           )}
-          <dl className="mt-4 flex flex-wrap gap-2 text-sm">
-            {driver.nationality && (
-              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
-                <dt className="text-muted">{t("driver.nationality")}</dt>
-                <dd className="font-semibold">{nationalityCountry(driver.nationality, locale)}</dd>
-              </div>
-            )}
-            {driver.date_of_birth && (
-              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
-                <dt className="text-muted">{t("driver.born")}</dt>
-                <dd className="font-semibold">
-                  {f.date(driver.date_of_birth)}
-                  {career.totals.last_season !== null &&
-                    career.totals.last_season >= new Date().getUTCFullYear() - 1 &&
-                    ` (${t("driver.age", { n: age(driver.date_of_birth) })})`}
-                </dd>
-              </div>
-            )}
-            {number != null && (
-              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
-                <dt className="text-muted">{t("driver.number")}</dt>
-                <dd className="font-semibold tabular-nums">{number}</dd>
-              </div>
-            )}
+          <div className="mt-4 flex flex-wrap gap-2 text-sm">
+            <dl className="contents">
+              {driver.nationality && (
+                <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
+                  <dt className="text-muted">{t("driver.nationality")}</dt>
+                  <dd className="font-semibold">
+                    {nationalityCountry(driver.nationality, locale)}
+                  </dd>
+                </div>
+              )}
+              {driver.date_of_birth && (
+                <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
+                  <dt className="text-muted">{t("driver.born")}</dt>
+                  <dd className="font-semibold">
+                    {f.date(driver.date_of_birth)}
+                    {career.totals.last_season !== null &&
+                      career.totals.last_season >= new Date().getUTCFullYear() - 1 &&
+                      ` (${t("driver.age", { n: age(driver.date_of_birth) })})`}
+                  </dd>
+                </div>
+              )}
+              {number != null && (
+                <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
+                  <dt className="text-muted">{t("driver.number")}</dt>
+                  <dd className="font-semibold tabular-nums">{number}</dd>
+                </div>
+              )}
+            </dl>
             {driver.wikipedia_url && (
               <div className="flex items-center px-1">
                 <a
@@ -218,7 +222,7 @@ function DriverHeader({ career }: { career: Career }) {
                 </a>
               </div>
             )}
-          </dl>
+          </div>
         </div>
       </div>
     </header>

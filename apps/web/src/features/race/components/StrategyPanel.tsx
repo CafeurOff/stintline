@@ -197,12 +197,12 @@ function Outcome({
       </p>
       <dl className="grid grid-cols-2 gap-2 rounded-xl bg-ink/[0.04] p-3">
         <div className="flex flex-col">
-          <dd className="num order-2 font-bold">{f.lapTime(result.real_time_s)}</dd>
           <dt className="order-3 text-[0.7rem] text-muted">{t("whatif.realTime")}</dt>
+          <dd className="num order-2 font-bold">{f.lapTime(result.real_time_s)}</dd>
         </div>
         <div className="flex flex-col">
-          <dd className="num order-2 font-bold">{f.lapTime(result.final_time_s)}</dd>
           <dt className="order-3 text-[0.7rem] text-muted">{t("whatif.yourTime")}</dt>
+          <dd className="num order-2 font-bold">{f.lapTime(result.final_time_s)}</dd>
         </div>
         {widest !== null && (
           <p className="col-span-2 text-xs text-muted">

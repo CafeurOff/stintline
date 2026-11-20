@@ -121,23 +121,23 @@ export function StopPanel(props: StopPanelProps) {
           : t("stop.safe", { sigma: f.seconds(result.sigma_s, 0) })}
       </p>
       {pitLoss && (
-        <dl className="grid grid-cols-3 gap-2 rounded-xl bg-ink/[0.04] p-3 text-center">
-          {(
-            [
-              [t("stop.loss.green"), pitLoss.green_s],
-              [t("stop.loss.vsc"), pitLoss.assumed_vsc_s],
-              [t("stop.loss.sc"), pitLoss.assumed_sc_s],
-            ] as const
-          ).map(([label, value]) => (
-            <div key={label} className="flex flex-col">
-              <dd className="num order-2 text-lg font-bold">{f.seconds(value, 1)}</dd>
-              <dt className="order-3 text-[0.7rem] text-muted">{label}</dt>
-            </div>
-          ))}
-          <p className="col-span-3 text-xs text-muted">
-            {t("stop.loss.note", { n: pitLoss.n_green })}
-          </p>
-        </dl>
+        <div className="flex flex-col gap-2 rounded-xl bg-ink/[0.04] p-3 text-center">
+          <dl className="grid grid-cols-3 gap-2">
+            {(
+              [
+                [t("stop.loss.green"), pitLoss.green_s],
+                [t("stop.loss.vsc"), pitLoss.assumed_vsc_s],
+                [t("stop.loss.sc"), pitLoss.assumed_sc_s],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label} className="flex flex-col">
+                <dt className="order-3 text-[0.7rem] text-muted">{label}</dt>
+                <dd className="num order-2 text-lg font-bold">{f.seconds(value, 1)}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="text-xs text-muted">{t("stop.loss.note", { n: pitLoss.n_green })}</p>
+        </div>
       )}
       <Button variant="quiet" className="self-start" onClick={props.onClear}>
         {t("common.clear")}
