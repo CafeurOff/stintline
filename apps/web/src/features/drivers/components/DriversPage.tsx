@@ -2,8 +2,8 @@ import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link } from "react-router";
 
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
 import { Bust } from "@/components/racing/Bust";
 import { initials } from "@/components/racing/initials";

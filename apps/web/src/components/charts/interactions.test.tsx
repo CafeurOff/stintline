@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
 import type { Schema } from "@stintline/api-types";
 
-import { SeasonBars } from "@/components/hub/SeasonBars";
+import { SeasonBars } from "@/components/racing/SeasonBars";
 import { LapChart } from "@/features/race-analysis/components/LapChart";
 import { LapScatter } from "@/features/analysis/charts/LapScatter";
 import { PaceBoxes } from "@/features/analysis/charts/PaceBoxes";

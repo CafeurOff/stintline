@@ -1,7 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SectionTitle } from "@/components/hub/SectionTitle";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SectionTitle } from "@/components/layout/SectionTitle";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { assumptionGroup, assumptionText } from "@/lib/i18n/content";

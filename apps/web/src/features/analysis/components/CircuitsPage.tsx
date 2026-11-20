@@ -15,7 +15,7 @@ import {
 import { Link, useParams } from "react-router";
 
 import { Panel, Tile } from "@/components/layout/Panel";
-import { PageHeader } from "@/components/hub/PageHeader";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { Flag } from "@/components/racing/Flag";

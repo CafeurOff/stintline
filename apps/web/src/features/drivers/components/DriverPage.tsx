@@ -2,16 +2,16 @@ import type { Schema } from "@stintline/api-types";
 import type { CSSProperties } from "react";
 import { Link, useParams } from "react-router";
 
-import { ShowAll } from "@/components/hub/Collapsible";
+import { ShowAll } from "@/components/layout/Collapsible";
 import { History } from "lucide-react";
 
 import { Bust } from "@/components/racing/Bust";
 import { Panel } from "@/components/layout/Panel";
 import { Trails } from "@/components/layout/Trails";
-import { KeyFigures } from "@/components/hub/KeyFigures";
-import { SeasonBars } from "@/components/hub/SeasonBars";
-import { useCollapsed } from "@/components/hub/useCollapsed";
-import { TeamName } from "@/components/hub/TeamName";
+import { KeyFigures } from "@/components/layout/KeyFigures";
+import { SeasonBars } from "@/components/racing/SeasonBars";
+import { useCollapsed } from "@/components/layout/useCollapsed";
+import { TeamName } from "@/components/racing/TeamName";
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";

@@ -4,8 +4,8 @@ import { Link } from "react-router";
 
 import { Panel, Tile } from "@/components/layout/Panel";
 import { RoundBars } from "@/components/racing/RoundBars";
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { Flag } from "@/components/racing/Flag";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";

@@ -2,7 +2,7 @@ import type { Schema } from "@stintline/api-types";
 import { Calculator } from "lucide-react";
 
 import { Panel } from "@/components/layout/Panel";
-import { DriverName } from "@/components/hub/DriverName";
+import { DriverName } from "@/components/racing/DriverName";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";

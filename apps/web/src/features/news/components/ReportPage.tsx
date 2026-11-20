@@ -2,8 +2,8 @@ import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
-import { DriverName } from "@/components/hub/DriverName";
-import { KeyFigures, type Figure as KeyFigure } from "@/components/hub/KeyFigures";
+import { DriverName } from "@/components/racing/DriverName";
+import { KeyFigures, type Figure as KeyFigure } from "@/components/layout/KeyFigures";
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";

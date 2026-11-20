@@ -4,8 +4,8 @@ import { Link } from "react-router";
 
 import { Face } from "@/components/racing/Face";
 import { Panel, Tile } from "@/components/layout/Panel";
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { Flag } from "@/components/racing/Flag";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";

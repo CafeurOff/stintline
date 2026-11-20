@@ -11,9 +11,9 @@ import {
 import { Link } from "react-router";
 
 import { Panel, Tile } from "@/components/layout/Panel";
-import { PageHeader } from "@/components/hub/PageHeader";
-import { SeasonSelect } from "@/components/hub/SeasonSelect";
-import { TeamName } from "@/components/hub/TeamName";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
+import { TeamName } from "@/components/racing/TeamName";
 import { Flag } from "@/components/racing/Flag";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";

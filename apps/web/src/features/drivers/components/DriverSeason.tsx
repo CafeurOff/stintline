@@ -14,7 +14,7 @@ import { Link } from "react-router";
 
 import { Panel, Tile } from "@/components/layout/Panel";
 import { type RoundBar, RoundBars } from "@/components/racing/RoundBars";
-import { TeamName } from "@/components/hub/TeamName";
+import { TeamName } from "@/components/racing/TeamName";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
