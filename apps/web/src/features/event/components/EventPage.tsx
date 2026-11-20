@@ -29,6 +29,7 @@ import {
   RaceControlTile,
 } from "@/features/hub/RaceFacts";
 import { useReport } from "@/features/news/api";
+import { GoFurther, RacePreview, ResultFacts } from "./EventExtras";
 import { teamColour } from "@/lib/teams";
 import { circuitAccent } from "@/lib/accent";
 import { readable } from "@/lib/colour";
@@ -78,6 +79,8 @@ function EventLoader({ eventId }: { eventId: number }) {
   const shown = sessions.find((s) => s.kind === wanted) ?? sessions[0];
   const replays = sessions.filter((s) => s.has_data && (s.kind === "R" || s.kind === "SPRINT"));
   const race = sessions.find((s) => s.kind === "R");
+  /** Before the race: a preview of the circuit takes the wide column. */
+  const upcoming = data.winner === null && data.race_date >= new Date().toISOString().slice(0, 10);
 
   return (
     <div className="flex flex-col gap-4">
@@ -92,7 +95,7 @@ function EventLoader({ eventId }: { eventId: number }) {
             id="event-results"
             title={t("event.results")}
             icon={<ListOrdered />}
-            className="xl:col-span-2"
+            className={upcoming ? "xl:order-2" : "xl:col-span-2"}
             action={
               sessions.length > 1 && (
                 <SegmentedControl
@@ -114,7 +117,23 @@ function EventLoader({ eventId }: { eventId: number }) {
           </Panel>
         )}
         {race?.has_data && <RaceFactsColumn sessionId={race.id} />}
+        {race && !race.has_data && !upcoming && <ResultFacts sessionId={race.id} />}
+        {upcoming && (
+          <div className={shown ? "xl:order-1 xl:col-span-2" : "xl:col-span-3"}>
+            <RacePreview circuitRef={data.circuit.ref} />
+          </div>
+        )}
       </div>
+      {!upcoming && (
+        <GoFurther
+          season={data.season}
+          round={data.round}
+          eventId={data.id}
+          circuitRef={data.circuit.ref}
+          raceId={race?.id ?? null}
+          timed={race?.has_data === true}
+        />
+      )}
       <StewardsPanel eventId={data.id} season={data.season} />
       {shown && shown.has_data && shown.kind !== "Q" && (
         <div className="glass rounded-[20px] p-5">

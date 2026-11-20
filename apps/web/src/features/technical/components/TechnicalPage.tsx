@@ -52,6 +52,7 @@ export function TechnicalPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["powerUnit", "penaltyPoints"]}
         title={t("tech.title")}
         actions={
           <>

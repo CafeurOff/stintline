@@ -178,6 +178,9 @@ export function ProgressionChart({
             stroke="var(--color-line-strong)"
             tickStroke="var(--color-line-strong)"
             tickLabelProps={{ fill: "var(--color-muted)", fontSize: 11 }}
+            label={t("chart.points")}
+            labelOffset={30}
+            labelProps={{ fill: "var(--color-muted)", fontSize: 12, textAnchor: "middle" }}
           />
           <AxisBottom
             top={innerHeight}

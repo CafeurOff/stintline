@@ -35,6 +35,7 @@ export function PitStopsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["pitLoss", "stationary", "undercut", "safetyCar"]}
         title={year ? t("stops.titleOf", { year }) : t("stops.title")}
         actions={<SeasonSelect value={year} onChange={setYear} />}
       >

@@ -128,7 +128,9 @@ function Standings({ year }: { year: number }) {
             />
           </>
         }
-      />
+      >
+        {t("standings.intro")}
+      </PageHeader>
 
       {notFound ? (
         <EmptyState title={t("standings.empty")} />

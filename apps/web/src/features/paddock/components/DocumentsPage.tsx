@@ -51,6 +51,7 @@ export function DocumentsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["penaltyPoints"]}
         title={t("docs.title")}
         actions={
           <>

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { assumptionGroup, assumptionText } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { GLOSSARY, glossaryEntry, type TermId } from "@/lib/i18n/glossary";
 
 import { useModelCard } from "../api";
 import { readBacktest } from "../backtest";
@@ -41,6 +42,10 @@ export function ModelPage() {
             </li>
           ))}
         </ol>
+      </section>
+      <section aria-labelledby="glossary-title" className="flex flex-col gap-4">
+        <SectionTitle id="glossary-title">{t("glossary.title")}</SectionTitle>
+        <Glossary />
       </section>
       {model.isPending ? (
         <Skeleton className="h-48" />
@@ -131,5 +136,23 @@ function TestSummary({ backtest }: { backtest: Record<string, unknown> }) {
         })}
       </p>
     </>
+  );
+}
+
+/** Every word the site explains on hover, in one place. */
+function Glossary() {
+  const { locale } = useI18n();
+  return (
+    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {(Object.keys(GLOSSARY) as TermId[]).map((id) => {
+        const entry = glossaryEntry(id, locale);
+        return (
+          <div key={id} id={`term-${id}`} className="glass rounded-[20px] p-5">
+            <dt className="display text-base">{entry.term}</dt>
+            <dd className="mt-1 text-sm text-muted">{entry.definition}</dd>
+          </div>
+        );
+      })}
+    </dl>
   );
 }

@@ -42,6 +42,7 @@ export function HeadToHeadPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["cleanLap", "fuelCorrected", "median"]}
         title={t("h2h.title")}
         actions={
           <>

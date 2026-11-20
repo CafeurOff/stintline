@@ -3,6 +3,7 @@ import type { Schema } from "@stintline/api-types";
 
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TermList } from "@/components/ui/Term";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useSessionDetail, useStints } from "@/features/race/api";
 import { byFinish, driverCode, driverName, type Entry } from "@/features/race/entries";
@@ -58,6 +59,7 @@ function Tyres({ sessionId }: { sessionId: number }) {
             })}
           </h1>
           <p className="max-w-[75ch] text-sm text-muted">{t("tyres.intro")}</p>
+          <TermList ids={["degradation", "fuelCorrected", "stint"]} />
         </header>
         {degradation.isPending ? (
           <Skeleton className="h-16" />

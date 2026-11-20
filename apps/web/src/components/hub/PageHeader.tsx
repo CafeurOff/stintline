@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import type { CSSProperties } from "react";
 
 import { Trails } from "@/components/glass/Trails";
+import { TermList } from "@/components/ui/Term";
+import type { TermId } from "@/lib/i18n/glossary";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 interface PageHeaderProps {
@@ -13,6 +15,8 @@ interface PageHeaderProps {
   colour?: string;
   /** Picture or drawing on the right of the band (portrait, car, circuit). */
   aside?: ReactNode;
+  /** Racing or statistics words used on the page, explained on hover or tap. */
+  terms?: readonly TermId[];
 }
 
 /**
@@ -26,6 +30,7 @@ export function PageHeader({
   actions,
   colour = "var(--color-mark)",
   aside,
+  terms = [],
 }: PageHeaderProps) {
   useDocumentTitle(title);
   return (
@@ -39,6 +44,7 @@ export function PageHeader({
           {eyebrow && <p className="mb-2 text-sm font-semibold text-muted">{eyebrow}</p>}
           <h1 className="display text-3xl leading-[0.95] sm:text-5xl">{title}</h1>
           {children && <div className="mt-3 max-w-3xl text-muted">{children}</div>}
+          <TermList ids={terms} />
         </div>
         {aside}
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

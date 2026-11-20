@@ -9,6 +9,7 @@ import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
+import { TermList } from "@/components/ui/Term";
 import { useI18n } from "@/lib/i18n/context";
 import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { useDegradation } from "@/features/tyres/api";
@@ -290,6 +291,7 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
           })}
         </h1>
         <p className="max-w-[70ch] text-sm text-muted">{t("race.pageIntro")}</p>
+        <TermList ids={["undercut", "overcut", "pitLoss", "stint"]} />
       </header>
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section

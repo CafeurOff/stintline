@@ -123,8 +123,8 @@ describe("interactive charts", () => {
     );
 
     // Sweep the surface until the pointer lands near a lap.
-    for (let px = 0; px < 700 && !screen.queryByText(/^Car /); px += 6) {
-      for (let py = 0; py < 330 && !screen.queryByText(/^Car /); py += 6) hover({ x: px, y: py });
+    for (let px = 0; px < 700 && !screen.queryByText(/^Car /); px += 20) {
+      for (let py = 0; py < 330 && !screen.queryByText(/^Car /); py += 20) hover({ x: px, y: py });
     }
     expect(screen.getByText(/^Car /)).toBeInTheDocument();
 
@@ -235,8 +235,8 @@ describe("interactive charts", () => {
       />,
     );
 
-    for (let px = 0; px < 700 && !screen.queryByText(/tip$/); px += 5) {
-      for (let py = 0; py < 300 && !screen.queryByText(/tip$/); py += 5) hover({ x: px, y: py });
+    for (let px = 0; px < 700 && !screen.queryByText(/tip$/); px += 16) {
+      for (let py = 0; py < 300 && !screen.queryByText(/tip$/); py += 16) hover({ x: px, y: py });
     }
     expect(screen.getAllByText(/tip$|NOR/).length).toBeGreaterThan(0);
     fireEvent.pointerLeave(layer());

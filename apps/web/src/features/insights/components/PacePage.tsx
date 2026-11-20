@@ -87,6 +87,7 @@ export function PacePage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["fuelCorrected", "cleanLap", "boxPlot", "stdDev", "cutoff", "safetyCar"]}
         title={race ? t("pace.titleOf", { race: race.label }) : t("pace.title")}
         actions={
           <>
