@@ -33,8 +33,9 @@ test("pick a driver on the map and simulate an undercut", async ({ page }) => {
     .getByRole("group", { name: /cars on track/ })
     .getByRole("button", { name: "Oscar Piastri" })
     .click();
-  await page.getByText("Undercut", { exact: true }).click();
+  // "Undercut" is also a glossary term on the page: pick the mode switch in the panel.
   const panel = page.getByRole("complementary");
+  await panel.getByText("Undercut", { exact: true }).click();
   await expect(panel.getByText("Can Oscar Piastri undercut Charles Leclerc?")).toBeVisible();
 
   await panel.getByRole("button", { name: "Simulate the undercut" }).click();

@@ -53,6 +53,8 @@ describe("What-if strategy mode", () => {
     expect(within(result).getByText("Piastri would finish 1st instead of 2nd.")).toBeVisible();
     expect(within(result).getByText(/2\.5\ss quicker over the whole race/)).toBeVisible();
     expect(within(result).getByText(/25 points instead of 18/)).toBeVisible();
+    expect(within(result).getByText("Real race time")).toBeVisible();
+    expect(within(result).getByText("With your strategy")).toBeVisible();
     expect(within(result).getByText(/longer than any run on that compound/)).toBeVisible();
     expect(bodies[0]?.start_compound).toBe("HARD");
     expect(bodies[0]?.car).toBe(81);

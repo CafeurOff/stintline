@@ -9,11 +9,15 @@ import { TrackMap } from "@/components/glass/TrackMap";
 import { Trails } from "@/components/glass/Trails";
 import { Bust } from "@/components/dash/Bust";
 import { Panel } from "@/components/dash/Panel";
+import { ShowAll } from "@/components/hub/Collapsible";
 import { DriverName } from "@/components/hub/DriverName";
+import { useCollapsed } from "@/components/hub/useCollapsed";
 import { Flag } from "@/components/racing/Flag";
+import { GridSlot, ResultPosition } from "@/components/racing/ResultStatus";
+import { useOutText } from "@/lib/useOutText";
 import { TeamName } from "@/components/hub/TeamName";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, SkeletonTiles } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useEvent } from "@/features/hub/api";
@@ -25,6 +29,7 @@ import {
   RaceControlTile,
 } from "@/features/hub/RaceFacts";
 import { useReport } from "@/features/news/api";
+import { GoFurther, RacePreview, ResultFacts } from "./EventExtras";
 import { teamColour } from "@/lib/teams";
 import { circuitAccent } from "@/lib/accent";
 import { readable } from "@/lib/colour";
@@ -74,6 +79,8 @@ function EventLoader({ eventId }: { eventId: number }) {
   const shown = sessions.find((s) => s.kind === wanted) ?? sessions[0];
   const replays = sessions.filter((s) => s.has_data && (s.kind === "R" || s.kind === "SPRINT"));
   const race = sessions.find((s) => s.kind === "R");
+  /** Before the race: a preview of the circuit takes the wide column. */
+  const upcoming = data.winner === null && data.race_date >= new Date().toISOString().slice(0, 10);
 
   return (
     <div className="flex flex-col gap-4">
@@ -88,7 +95,7 @@ function EventLoader({ eventId }: { eventId: number }) {
             id="event-results"
             title={t("event.results")}
             icon={<ListOrdered />}
-            className="xl:col-span-2"
+            className={upcoming ? "xl:order-2" : "xl:col-span-2"}
             action={
               sessions.length > 1 && (
                 <SegmentedControl
@@ -110,7 +117,23 @@ function EventLoader({ eventId }: { eventId: number }) {
           </Panel>
         )}
         {race?.has_data && <RaceFactsColumn sessionId={race.id} />}
+        {race && !race.has_data && !upcoming && <ResultFacts sessionId={race.id} />}
+        {upcoming && (
+          <div className={shown ? "xl:order-1 xl:col-span-2" : "xl:col-span-3"}>
+            <RacePreview circuitRef={data.circuit.ref} />
+          </div>
+        )}
       </div>
+      {!upcoming && (
+        <GoFurther
+          season={data.season}
+          round={data.round}
+          eventId={data.id}
+          circuitRef={data.circuit.ref}
+          raceId={race?.id ?? null}
+          timed={race?.has_data === true}
+        />
+      )}
       <StewardsPanel eventId={data.id} season={data.season} />
       {shown && shown.has_data && shown.kind !== "Q" && (
         <div className="glass rounded-[20px] p-5">
@@ -125,12 +148,15 @@ function EventLoader({ eventId }: { eventId: number }) {
   );
 }
 
+const FIGURES_GRID = "grid gap-4 sm:grid-cols-2 xl:grid-cols-4";
+
 /** The race in tiles: fastest stop, biggest climber, fastest lap, race control. */
 function RaceFigures({ sessionId }: { sessionId: number }) {
-  const report = useReport(sessionId).data;
+  const { data: report, isPending } = useReport(sessionId);
+  if (isPending) return <SkeletonTiles className={FIGURES_GRID} tile="h-[170px]" />;
   if (!report) return null;
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={FIGURES_GRID}>
       {report.pit_stops?.fastest && <FastestStopTile report={report} />}
       {report.biggest_gain && <ClimberTile entry={report.biggest_gain} />}
       {report.fastest_lap && <FastestLapTile entry={report.fastest_lap} />}
@@ -235,8 +261,13 @@ function EventHero({
                     >
                       {index + 1}
                     </span>
-                    <span className="relative -mt-6 flex flex-col px-4 pb-4 leading-tight">
-                      <span className="display truncate text-base">{entry.driver.family_name}</span>
+                    <span className="relative -mt-6 flex flex-col px-2.5 pb-4 leading-tight sm:px-4">
+                      <span className="display truncate text-base">
+                        <span className="sm:hidden" title={entry.driver.family_name}>
+                          {entry.driver.code ?? entry.driver.family_name}
+                        </span>
+                        <span className="hidden sm:inline">{entry.driver.family_name}</span>
+                      </span>
                       <span
                         className="truncate text-xs font-bold"
                         style={{ color: readable(colour) }}
@@ -249,6 +280,9 @@ function EventHero({
               );
             })}
           </ol>
+        ) : event.winner !== null && podium.isPending ? (
+          // The podium's height, held while the race loads so the page below stays put.
+          <Skeleton className="h-[17rem]" />
         ) : (
           <span />
         )}
@@ -265,10 +299,24 @@ function EventHero({
 }
 
 /** Stewards' decisions of the weekend (ADR 0018); nothing when there are none. */
+/** Races first, then qualifying and practice: what changed the result comes first. */
+const DECISION_ORDER = ["R", "SPRINT", "Q", "SQ", "FP3", "FP2", "FP1"];
+/** Decisions shown before "show all": a weekend can have forty. */
+const DECISIONS_SHOWN = 8;
+
+function decisionRank(kind: string | null | undefined): number {
+  const index = DECISION_ORDER.indexOf(kind ?? "");
+  return index === -1 ? DECISION_ORDER.length : index;
+}
+
 function StewardsPanel({ eventId, season }: { eventId: number; season: number }) {
   const { t } = useI18n();
   const decisions = useDecisions({ event: eventId });
-  if (!decisions.data || decisions.data.length === 0) return null;
+  const sorted = [...(decisions.data ?? [])].sort(
+    (a, b) => decisionRank(a.session_kind) - decisionRank(b.session_kind),
+  );
+  const collapsed = useCollapsed(sorted, DECISIONS_SHOWN);
+  if (sorted.length === 0) return null;
   return (
     <Panel
       title={t("docs.decisions")}
@@ -282,7 +330,18 @@ function StewardsPanel({ eventId, season }: { eventId: number; season: number })
         </Link>
       }
     >
-      <DecisionTable decisions={decisions.data} />
+      <DecisionTable decisions={collapsed.shown} />
+      {collapsed.hidden > 0 || collapsed.open ? (
+        <div className="flex px-5 pt-1 pb-5">
+          <ShowAll
+            hidden={collapsed.hidden}
+            open={collapsed.open}
+            onToggle={() => {
+              collapsed.setOpen(!collapsed.open);
+            }}
+          />
+        </div>
+      ) : null}
     </Panel>
   );
 }
@@ -334,17 +393,20 @@ function SessionResults({ sessionId, kind }: { sessionId: number; kind: Kind }) 
 
 function RaceTable({ entries }: { entries: Entry[] }) {
   const { t, f } = useI18n();
+  const outText = useOutText();
   const winner = entries[0];
   const gap = (entry: Entry): string => {
     if (!winner) return "";
     if (entry === winner) return f.lapTime(entry.race_time_s);
+    const out = outText(entry.classification, entry.status);
+    if (out !== null) return out;
     // Lapped cars also have a time (for fewer laps): the gap is in laps, not seconds.
     const down = (winner.laps_completed ?? 0) - (entry.laps_completed ?? 0);
     if (entry.finish_position != null && down > 0) {
       return t(down === 1 ? "event.lapDown" : "event.lapsDown", { n: down });
     }
     if (entry.race_time_s != null && winner.race_time_s != null) {
-      return `+${f.number(entry.race_time_s - winner.race_time_s, 3)}`;
+      return `+${f.seconds(entry.race_time_s - winner.race_time_s, 3)}`;
     }
     return entry.status ?? "";
   };
@@ -365,7 +427,12 @@ function RaceTable({ entries }: { entries: Entry[] }) {
         <tbody>
           {entries.map((entry) => (
             <tr key={entry.car_number}>
-              <td className="num font-bold">{entry.classification ?? entry.finish_position}</td>
+              <td className="num font-bold">
+                <ResultPosition
+                  classification={entry.classification}
+                  position={entry.finish_position}
+                />
+              </td>
               <td>
                 <DriverName
                   driver={entry.driver}
@@ -386,7 +453,7 @@ function RaceTable({ entries }: { entries: Entry[] }) {
                 <TeamName team={entry.team} colour={entry.team_colour} />
               </td>
               <td className="num hidden text-muted md:table-cell">
-                {entry.grid_position === 0 ? "—" : (entry.grid_position ?? "—")}
+                <GridSlot grid={entry.grid_position} />
               </td>
               <td className="num hidden text-muted md:table-cell">{entry.laps_completed}</td>
               <td className="num whitespace-nowrap">{gap(entry)}</td>

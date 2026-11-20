@@ -7,22 +7,24 @@ Two MediaWiki API calls per batch of 50 articles:
 2. ``prop=imageinfo`` with ``extmetadata`` gives the author and licence of those files,
    which must be shown next to the image.
 
-Only URLs and credits are kept. Images are never downloaded or re-hosted.
+Only URLs and credits are stored. The API relays the thumbnails from its own origin with a
+week-long cache (ADR 0024, :class:`WikimediaImageSource`); they are never stored on disk.
 """
 
 from __future__ import annotations
 
 import html
 import re
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from pathlib import PurePosixPath
 from typing import Any
-from urllib.parse import unquote, urlparse
+from urllib.parse import unquote, urlparse, urlsplit
 
 import structlog
 
-from racedata.errors import InvalidPayloadError
+from racedata.errors import InvalidPayloadError, ProviderError
 from racedata.http import HttpClient
-from racedata.models import WikiPortrait
+from racedata.models import WikiImage, WikiPortrait
 
 PROVIDER = "wikipedia"
 BATCH_SIZE = 50
@@ -54,6 +56,44 @@ def plain_text(markup: str) -> str:
     """Credit text from the HTML that Commons stores in ``extmetadata``."""
     text = _SPACES.sub(" ", html.unescape(_TAG.sub(" ", markup))).strip()
     return text[:MAX_CREDIT_CHARS]
+
+
+IMAGE_HOSTS = ("upload.wikimedia.org", "thumb.wikimedia.org")
+"""Wikimedia serves thumbnails from both; recent imports store ``thumb.wikimedia.org``."""
+IMAGE_TYPES = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+}
+"""Thumbnail formats Wikimedia serves (SVG files are rendered to PNG thumbnails)."""
+
+
+class WikimediaImageSource:
+    """Portrait thumbnails on Wikimedia's image hosts, for the API's relay (ADR 0024).
+
+    ``clients`` maps each host of :data:`IMAGE_HOSTS` to its HTTP client."""
+
+    def __init__(self, clients: Mapping[str, HttpClient]) -> None:
+        self._clients = dict(clients)
+
+    def thumbnail(self, url: str) -> WikiImage:
+        """Raises:
+        ProviderError: the URL is not a Wikimedia image (the relay is not an open proxy).
+        """
+        parts = urlsplit(url)
+        content_type = IMAGE_TYPES.get(PurePosixPath(parts.path).suffix.lower())
+        client = self._clients.get(parts.netloc)
+        if (
+            parts.scheme != "https"
+            or client is None
+            or not parts.path.startswith("/wikipedia/")
+            or content_type is None
+        ):
+            raise ProviderError("wikimedia", "not a Wikimedia image URL")
+        content = client.get_bytes(parts.path, accept="image/*")
+        return WikiImage(content=content, content_type=content_type)
 
 
 class WikipediaSource:

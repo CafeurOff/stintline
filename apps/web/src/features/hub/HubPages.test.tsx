@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
@@ -180,8 +180,8 @@ describe("Hub pages", () => {
 
     const row = (await screen.findByRole("link", { name: "Las Vegas Grand Prix" })).closest("tr");
 
-    expect(row).not.toBeNull();
-    expect(row).toHaveTextContent("DDisqualified");
+    if (!row) throw new Error("no row for the Las Vegas Grand Prix");
+    expect(within(row).getByTitle("Disqualified")).toHaveTextContent("DSQ");
     expect(row).not.toHaveTextContent("19");
   });
 
@@ -229,7 +229,11 @@ describe("Hub pages", () => {
   it("shows the standings after an earlier round", async () => {
     const { router } = renderRoute("/standings/2025");
 
+    // Disabled while the standings load (it holds the header's height).
     const select = await screen.findByRole("combobox", { name: "After" });
+    await waitFor(() => {
+      expect(select).toBeEnabled();
+    });
     await userEvent.selectOptions(select, "12");
 
     expect(router.state.location.search).toBe("?round=12");

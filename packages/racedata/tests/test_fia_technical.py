@@ -5,6 +5,7 @@ from racedata.fixtures import FIXTURES_ROOT
 from racedata.models import UpgradeReason
 from racedata.providers.fia_technical import (
     _header_columns,
+    _rows,
     element_code,
     parse_car_presentation,
     parse_new_pu,
@@ -161,3 +162,19 @@ def test_element_code(name: str, code: str | None) -> None:
 def test_unreadable_pdf() -> None:
     with pytest.raises(InvalidPayloadError):
         parse_pu_usage(b"not a pdf")
+
+
+def test_loose_cells_do_not_join_a_finished_description() -> None:
+    table: list[list[str | None]] = [
+        ["8", "Diffuser", "Performance", "Changes to the main diffuser and fences."],
+        [None, None, None, "Performance - Local Load"],
+        [None, None, None, "Revised front view and planview."],
+        ["9", "Floor", "Performance", "The floor edge was revised to"],
+        [None, None, None, "improve the load."],
+        [None, None, None, "improve the load."],
+    ]
+
+    rows = _rows([table])
+
+    assert rows[0][-1] == "Changes to the main diffuser and fences."
+    assert rows[1][-1] == "The floor edge was revised to improve the load."

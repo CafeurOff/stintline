@@ -33,6 +33,7 @@ export function ConsistencyPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["stdDev", "fuelCorrected", "degradation"]}
         title={year ? t("cons.titleOf", { year }) : t("cons.title")}
         actions={<SeasonSelect value={year} onChange={setYear} />}
       >

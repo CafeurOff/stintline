@@ -172,6 +172,12 @@ function Outcome({
           real: f.ordinal(result.real_position),
         });
   const gain = Math.abs(result.gain_s);
+  // The lap where the plan was furthest from the real race (deltas < 0: ahead).
+  const widest = result.deltas_s.reduce<{ lap: number; delta: number } | null>(
+    (best, delta, index) =>
+      best === null || Math.abs(delta) > Math.abs(best.delta) ? { lap: index + 1, delta } : best,
+    null,
+  );
   return (
     <section
       aria-label={t("whatif.result")}
@@ -189,6 +195,24 @@ function Outcome({
             real: f.number(result.real_points, 0),
           })}
       </p>
+      <dl className="grid grid-cols-2 gap-2 rounded-xl bg-ink/[0.04] p-3">
+        <div className="flex flex-col">
+          <dt className="order-3 text-[0.7rem] text-muted">{t("whatif.realTime")}</dt>
+          <dd className="num order-2 font-bold">{f.lapTime(result.real_time_s)}</dd>
+        </div>
+        <div className="flex flex-col">
+          <dt className="order-3 text-[0.7rem] text-muted">{t("whatif.yourTime")}</dt>
+          <dd className="num order-2 font-bold">{f.lapTime(result.final_time_s)}</dd>
+        </div>
+        {widest !== null && (
+          <p className="col-span-2 text-xs text-muted">
+            {t(widest.delta < 0 ? "whatif.widestAhead" : "whatif.widestBehind", {
+              gap: f.seconds(Math.abs(widest.delta), 1),
+              lap: widest.lap,
+            })}
+          </p>
+        )}
+      </dl>
       <ul aria-label={t("whatif.chances")} className="flex flex-col gap-1">
         {result.chances.map((chance) => (
           <li

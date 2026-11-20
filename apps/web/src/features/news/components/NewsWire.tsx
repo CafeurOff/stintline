@@ -1,5 +1,5 @@
 import type { Schema } from "@stintline/api-types";
-import { ExternalLink, Newspaper, Users } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router";
 
@@ -8,6 +8,7 @@ import { Panel } from "@/components/dash/Panel";
 import { initials } from "@/components/racing/initials";
 import { useStandings } from "@/features/hub/api";
 import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
+import { HeadlineThumb } from "@/features/news/components/HeadlineThumb";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 
@@ -15,33 +16,6 @@ import { useAgo } from "../useAgo";
 
 type Headline = Schema<"Headline">;
 type Line = Schema<"StandingLine">;
-
-/** The publisher's picture (ADR 0015), else a plain tile with an icon. */
-function Thumb({ headline, className }: { headline: Headline; className: string }) {
-  const [failed, setFailed] = useState(false);
-  if (headline.image_url && !failed) {
-    return (
-      <img
-        src={headline.image_url}
-        alt=""
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          setFailed(true);
-        }}
-        className={`object-cover ${className}`}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={`grid place-items-center bg-raised text-muted ${className}`}
-    >
-      <Newspaper className="size-6" />
-    </span>
-  );
-}
 
 /** Whole-word, case-insensitive match of a name in a headline. */
 function names(title: string, name: string): boolean {
@@ -97,7 +71,7 @@ export function NewsWire({ headlines }: { headlines: readonly Headline[] }) {
                     active ? "bg-raised" : "hover:bg-raised/60"
                   }`}
                 >
-                  <Thumb headline={h} className="h-16 w-24 shrink-0 rounded-md" />
+                  <HeadlineThumb headline={h} className="h-16 w-24 shrink-0 rounded-md" />
                   <span className="flex min-w-0 flex-col gap-1">
                     <span className="line-clamp-2 leading-snug font-semibold">{h.title}</span>
                     <span className="text-xs text-muted">
@@ -121,7 +95,7 @@ function Reader({ headline }: { headline: Headline }) {
   return (
     <article className="flex flex-col gap-4 self-start lg:sticky lg:top-20">
       <div className="glass overflow-hidden rounded-[20px]">
-        <Thumb headline={headline} className="aspect-[16/9] w-full" />
+        <HeadlineThumb headline={headline} className="aspect-[16/9] w-full" eager />
         <div className="flex flex-col gap-3 p-5">
           <p className="text-xs font-bold text-mark-text uppercase">
             {headline.source_name} · {ago(headline.published_at)}

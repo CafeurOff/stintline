@@ -148,7 +148,16 @@ export function LapChart({
 
   return (
     <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
-      <ChartTools zoom={zoom} />
+      <ChartTools
+        zoom={zoom}
+        csv={() => [
+          [xLabel, ...series.map((s) => s.label)],
+          ...Array.from({ length: totalLaps }, (_, i) => [
+            i + 1,
+            ...series.map((s) => s.values[i] ?? null),
+          ]),
+        ]}
+      />
       {hover && rows.length > 0 && (
         <ChartTooltip
           left={MARGIN.left + x(hover.lap)}

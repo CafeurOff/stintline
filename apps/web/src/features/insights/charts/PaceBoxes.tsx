@@ -63,7 +63,20 @@ export function PaceBoxes({
   const clamp = (v: number) => x(Math.max(lo, Math.min(hi, v)));
   return (
     <div ref={ref} className="relative w-full min-w-0">
-      <ChartTools zoom={zoom} />
+      <ChartTools
+        zoom={zoom}
+        csv={() => [
+          [
+            t("tyres.col.driver"),
+            t("chart.median"),
+            "Q1",
+            "Q3",
+            t("chart.fastestKept"),
+            t("chart.slowestKept"),
+          ],
+          ...boxes.map((b) => [b.label, b.median, b.q1, b.q3, b.low, b.high]),
+        ]}
+      />
       {hovered && hoverRow !== null && (
         <ChartTooltip
           left={MARGIN.left + clamp(hovered.median)}

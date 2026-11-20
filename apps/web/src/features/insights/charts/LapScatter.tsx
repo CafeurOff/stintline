@@ -5,6 +5,7 @@ import { scaleLinear } from "@visx/scale";
 import { useId, useState } from "react";
 
 import { ChartTools } from "@/components/charts/ChartTools";
+import { useI18n } from "@/lib/i18n/context";
 import { ChartTooltip } from "@/components/charts/ChartTooltip";
 import { ClipArea } from "@/components/charts/ClipArea";
 import { type Range, useZoom } from "@/components/charts/zoom";
@@ -43,6 +44,7 @@ export function LapScatter({
   xLabel: string;
   height?: number;
 }) {
+  const { t } = useI18n();
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const titleId = useId();
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 120);
@@ -69,7 +71,13 @@ export function LapScatter({
     : undefined;
   return (
     <div ref={ref} className="relative w-full min-w-0">
-      <ChartTools zoom={zoom} />
+      <ChartTools
+        zoom={zoom}
+        csv={() => [
+          [t("tyres.col.driver"), xLabel, label, t("tyres.col.compound")],
+          ...series.flatMap((s) => s.points.map((p) => [s.label, p.lap, p.value, p.compound])),
+        ]}
+      />
       {near && (
         <ChartTooltip
           left={MARGIN.left + x(near.p.lap)}

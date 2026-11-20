@@ -25,6 +25,7 @@ from stintline.racing.models import (
 )
 from stintline.racing.outlines import circuit_outlines
 from stintline.racing.photos import PhotoBook
+from stintline.racing.portraits import relay_url
 
 
 class SeasonSerializer(serializers.ModelSerializer[Season]):
@@ -74,9 +75,16 @@ def portrait_of(driver: Driver) -> DriverPortrait | None:
 class PortraitSerializer(serializers.ModelSerializer[DriverPortrait]):
     """Freely licensed image with the credit its licence requires (ADR 0009)."""
 
+    image_url = serializers.SerializerMethodField(
+        help_text="The thumbnail, relayed from our origin (ADR 0024)"
+    )
+
     class Meta:
         model = DriverPortrait
         fields = ["image_url", "artist", "license", "license_url", "file_page_url"]
+
+    def get_image_url(self, portrait: DriverPortrait) -> str:
+        return relay_url(portrait)
 
 
 class DriverSerializer(serializers.ModelSerializer[Driver]):
@@ -97,7 +105,7 @@ class DriverSerializer(serializers.ModelSerializer[Driver]):
 
     def get_portrait_url(self, driver: Driver) -> str | None:
         portrait = portrait_of(driver)
-        return portrait.image_url if portrait else None
+        return relay_url(portrait) if portrait else None
 
     def get_photo_url(self, driver: Driver) -> str | None:
         return self._photos.photo_of(driver, self.get_portrait_url(driver))
@@ -298,7 +306,7 @@ class DriverBioSerializer(serializers.ModelSerializer[Driver]):
 
     def get_photo_url(self, driver: Driver) -> str | None:
         portrait = portrait_of(driver)
-        return self._photos.photo_of(driver, portrait.image_url if portrait else None)
+        return self._photos.photo_of(driver, relay_url(portrait) if portrait else None)
 
 
 class LatestTeamSerializer(serializers.Serializer[Any]):

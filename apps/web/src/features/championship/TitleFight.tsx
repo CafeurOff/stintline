@@ -98,7 +98,8 @@ export function TitleFight({
   const { t, f } = useI18n();
   const title = useTitle(year);
   if (title.isError) return null;
-  if (!title.data) return <Skeleton className="h-48" />;
+  // About the panel's height with its usual rows, so the table below does not jump.
+  if (!title.data) return <Skeleton className="h-[26.5rem] sm:h-80" />;
   const data = title.data;
   const summary = titleSummary(data);
   const shown = data.drivers.filter((row) => row.status !== "out").slice(0, ROWS);

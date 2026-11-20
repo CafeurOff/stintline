@@ -87,7 +87,12 @@ export function PacePage() {
   return (
     <div className="flex flex-col">
       <PageHeader
-        title={race ? t("pace.titleOf", { race: race.label }) : t("pace.title")}
+        terms={["fuelCorrected", "cleanLap", "boxPlot", "stdDev", "cutoff", "safetyCar"]}
+        // The race goes on the line above the title, held empty while the races load, so the
+        // band keeps its height (layout shift).
+        eyebrow={race?.label ?? ""}
+        title={t("pace.title")}
+        tabTitle={race ? t("pace.titleOf", { race: race.label }) : t("pace.title")}
         actions={
           <>
             <SeasonSelect
@@ -97,14 +102,18 @@ export function PacePage() {
                 setYear(value);
               }}
             />
-            {races.length > 0 && (
+            {/* Shown, disabled, while the races load: the header keeps its height. */}
+            {(races.length > 0 || events.isPending) && (
               <Select
                 label={t("pace.race")}
+                className="w-full sm:w-auto [&>select]:flex-1"
                 value={sessionId ?? ""}
+                disabled={races.length === 0}
                 onChange={(event) => {
                   update({ session: event.target.value, drivers: null });
                 }}
               >
+                {races.length === 0 && <option value="">{t("common.loading")}</option>}
                 {races.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.label}

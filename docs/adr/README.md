@@ -27,3 +27,5 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0021](0021-lap-altitude-and-3d-replay.md) | Lap altitude and a 3D replay of the fastest laps | Accepted |
 | [0022](0022-title-maths-and-points-rules.md) | Title maths from a table of points rules since 1950 | Accepted |
 | [0023](0023-night-race-glass-design.md) | Night-race glass design for the whole site | Accepted |
+| [0024](0024-wikimedia-portraits-relay.md) | Wikipedia portraits relayed from our origin | Accepted |
+| [0025](0025-page-heads-and-language-urls.md) | Page heads rendered by the API, and one URL per language | Accepted |

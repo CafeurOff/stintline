@@ -1,6 +1,6 @@
 # 0009. Driver portraits from Wikipedia when no official portrait applies
 
-- Status: Accepted (maintainer decision, 2026-11-03)
+- Status: Accepted (maintainer decision, 2026-11-03); amended by [0024](0024-wikimedia-portraits-relay.md): thumbnails are now relayed from our origin
 - Complements ADR 0006 (official media references)
 
 ## Context

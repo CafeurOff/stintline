@@ -22,7 +22,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { DriverChip } from "@/features/insights/components/common";
 import { useSeasonParam } from "@/features/insights/season";
-import { eventName } from "@/lib/i18n/content";
+import { eventName, fiaSessionLabel } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
@@ -43,12 +43,15 @@ export function DocumentsPage() {
   const [params, update] = useSearchParamsState();
   const events = useDocumentEvents(year);
   const askedEvent = intParam(params, "event");
-  const eventId = askedEvent ?? events.data?.[0]?.event.id ?? null;
+  // Without a choice, open on the latest Grand Prix with rulings: the next one starts empty.
+  const eventId =
+    askedEvent ?? (events.data?.find((e) => e.decisions > 0) ?? events.data?.[0])?.event.id ?? null;
   const search = params.get("q") ?? "";
 
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["penaltyPoints"]}
         title={t("docs.title")}
         actions={
           <>
@@ -327,7 +330,7 @@ function DocumentRow({
   showEvent: boolean;
   onChoose: () => void;
 }) {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
   const when = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
     weekday: "short",
     hour: "2-digit",
@@ -358,7 +361,6 @@ function DocumentRow({
             )}
             <span className="num">{when}</span>
             {doc.decision && <PenaltyTags ruling={doc.decision} />}
-            {!doc.has_text && <span>{t("docs.textPending")}</span>}
           </span>
           {doc.snippet && <span className="text-xs text-muted italic">{doc.snippet}</span>}
         </span>
@@ -446,7 +448,7 @@ function Ruling({
   reason: string | null | undefined;
   infringement: string | null | undefined;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <section
       aria-label={t("docs.ruling")}
@@ -454,7 +456,11 @@ function Ruling({
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         {decision.driver ? (
-          <DriverChip driver={decision.driver} colour={null} sub={decision.session_label} />
+          <DriverChip
+            driver={decision.driver}
+            colour={null}
+            sub={fiaSessionLabel(decision.session_label, locale)}
+          />
         ) : (
           <span className="font-semibold">{decision.driver_name}</span>
         )}

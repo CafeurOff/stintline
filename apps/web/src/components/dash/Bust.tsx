@@ -16,6 +16,7 @@ export function Bust({
   className,
   width = 640,
   fade = true,
+  priority = false,
 }: {
   url: string | null | undefined;
   label: string;
@@ -25,6 +26,8 @@ export function Bust({
   /** Requested picture width in pixels. */
   width?: number;
   fade?: boolean;
+  /** The page's main picture (LCP): fetched first instead of lazily. */
+  priority?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
   const mask: CSSProperties | undefined = fade
@@ -38,7 +41,8 @@ export function Bust({
       <img
         src={sharper(url, width)}
         alt=""
-        loading="lazy"
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : "auto"}
         referrerPolicy="no-referrer"
         onError={() => {
           setFailed(true);

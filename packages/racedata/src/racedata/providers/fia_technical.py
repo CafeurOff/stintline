@@ -95,9 +95,22 @@ def _team_of(lines: list[str]) -> str | None:
     return None
 
 
+_SENTENCE_END = (".", "!", "?")
+
+
+def _continues(description: str, fragment: str) -> bool:
+    """A fragment carries on a description only while its sentence is unfinished, or when it
+    starts in lower case. Teams also put loose cells in the description column (reason
+    labels such as "Performance - Local Load", repeated text from another table)."""
+    if fragment in description:
+        return False
+    return not description.rstrip().endswith(_SENTENCE_END) or fragment[:1].islower()
+
+
 def _rows(tables: Iterable[list[list[str | None]]]) -> list[list[str]]:
     """Upgrade rows: a number starts an item; a row that only fills the description column
-    of the same table continues it. Fragments from other tables are ignored."""
+    of the same table continues it while its sentence is unfinished. Fragments from other
+    tables are ignored."""
     items: list[list[str]] = []
     for table in tables:
         description_column: int | None = None
@@ -109,7 +122,11 @@ def _rows(tables: Iterable[list[list[str | None]]]) -> list[list[str]]:
             if cells[0].isdigit() and len(cells) >= 3:
                 items.append(cells)
                 description_column = filled[-1]
-            elif description_column is not None and filled == [description_column]:
+            elif (
+                description_column is not None
+                and filled == [description_column]
+                and _continues(items[-1][-1], cells[0])
+            ):
                 items[-1][-1] = f"{items[-1][-1]} {cells[0]}"
     return items
 

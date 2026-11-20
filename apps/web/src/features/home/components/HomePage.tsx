@@ -2,7 +2,6 @@ import type { Schema } from "@stintline/api-types";
 import {
   ChevronRight,
   Flag as FlagIcon,
-  Newspaper,
   Play,
   Route,
   Siren,
@@ -14,6 +13,7 @@ import { type CSSProperties, type ReactNode, useState } from "react";
 import { Link } from "react-router";
 
 import { NO_BACKDROP } from "@/components/dash/backdrop";
+import { Bust } from "@/components/dash/Bust";
 import { Face } from "@/components/dash/Face";
 import { Move } from "@/components/dash/Move";
 import {
@@ -30,7 +30,7 @@ import { CarImage } from "@/components/racing/CarImage";
 import { CircuitMark } from "@/components/racing/CircuitMark";
 import { Flag } from "@/components/racing/Flag";
 import { initials } from "@/components/racing/initials";
-import { Skeleton } from "@/components/ui/Skeleton";
+import { Skeleton, SkeletonTiles } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { weekendDates } from "@/features/calendar/dates";
 import { useTitle } from "@/features/championship/api";
@@ -47,16 +47,16 @@ import { useSessionDetail } from "@/features/race/api";
 import { circuitAccent } from "@/lib/accent";
 import { readable } from "@/lib/colour";
 import { eventName } from "@/lib/i18n/content";
+import { HeadlineThumb } from "@/features/news/components/HeadlineThumb";
 import { useI18n } from "@/lib/i18n/context";
 import { countryName } from "@/lib/i18n/geo";
-import { sessionLabel } from "@/lib/sessions";
+import { sessionLabel, sessionShort } from "@/lib/sessions";
 import { teamColour } from "@/lib/teams";
 import { timeLeft, useClock } from "@/lib/useClock";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 type Entry = Schema<"Entry">;
 type Line = Schema<"StandingLine">;
-type Headline = Schema<"Headline">;
 type Event = Schema<"Event">;
 type Report = Schema<"RaceReport">;
 
@@ -102,7 +102,8 @@ export function HomePage() {
 function Dashboard({ home }: { home: Schema<"Home"> }) {
   const { t } = useI18n();
   const { last_race: last, next_event: next, season } = home;
-  const report = useReport(last?.session_id ?? 0, last !== null).data ?? null;
+  const reportQuery = useReport(last?.session_id ?? 0, last !== null);
+  const report = reportQuery.data ?? null;
   const events = useSeasonEvents(season).data?.results ?? [];
 
   return (
@@ -116,6 +117,7 @@ function Dashboard({ home }: { home: Schema<"Home"> }) {
       </div>
 
       {report && <Widgets report={report} />}
+      {last && reportQuery.isPending && <SkeletonTiles className={WIDGETS_GRID} tile="h-44" />}
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {season !== null && <StandingsCards season={season} />}
@@ -250,7 +252,10 @@ function NextRaceHero({ event }: { event: Event }) {
 /** Our figures for the circuit (track DNA, ADR 0017), in the style of a stat sheet. */
 function CircuitFigures({ circuitRef }: { circuitRef: string }) {
   const { t, f } = useI18n();
-  const profile = useCircuits().data?.find((c) => c.circuit.ref === circuitRef);
+  const circuits = useCircuits();
+  // Two rows of figures: held while they load so the weekend strip below stays put.
+  if (circuits.isPending) return <Skeleton className="relative z-10 h-[7.5rem]" />;
+  const profile = circuits.data?.find((c) => c.circuit.ref === circuitRef);
   if (!profile) return null;
   const stats: [string, string, string | null][] = [];
   if (profile.lap_length_m != null) {
@@ -277,13 +282,13 @@ function CircuitFigures({ circuitRef }: { circuitRef: string }) {
     <dl className="relative z-10 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
       {stats.map(([label, value, unit]) => (
         <div key={label} className="flex flex-col gap-0.5">
+          <dt className="order-3 flex items-center gap-1.5 text-xs font-medium text-muted">
+            {label}
+          </dt>
           <dd className="order-2 flex items-baseline gap-1">
             <span className="num display text-2xl">{value}</span>
             {unit && <span className="text-xs font-semibold text-muted">{unit}</span>}
           </dd>
-          <dt className="order-3 flex items-center gap-1.5 text-xs font-medium text-muted">
-            {label}
-          </dt>
         </div>
       ))}
     </dl>
@@ -313,7 +318,7 @@ function WeekendStrip({ event, nextId }: { event: Event; nextId: number | null }
           return (
             <li
               key={s.id}
-              className={`flex min-w-44 flex-1 items-center gap-3 border-r border-line px-6 py-4 last:border-r-0 ${
+              className={`flex min-w-36 flex-1 items-center gap-3 border-r border-line px-4 py-4 last:border-r-0 sm:min-w-44 sm:px-6 ${
                 isNext ? "bg-ink/[0.06]" : ""
               }`}
             >
@@ -324,7 +329,12 @@ function WeekendStrip({ event, nextId }: { event: Event; nextId: number | null }
                 </span>
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold">{sessionLabel(s.kind, t)}</span>
+                <span className="block truncate text-sm font-bold">
+                  <span className="sm:hidden" title={sessionLabel(s.kind, t)}>
+                    {sessionShort(s.kind, t)}
+                  </span>
+                  <span className="hidden sm:inline">{sessionLabel(s.kind, t)}</span>
+                </span>
                 <span className="num block text-xs text-muted">{time.format(start)}</span>
               </span>
               {forecast && (
@@ -354,7 +364,7 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
     detail?.entries.find((e) => e.car_number === winner?.car_number) ?? winner;
   const margin = report?.podium[1]?.gap_s;
   const figures: [string, string][] = [];
-  if (margin != null) figures.push([`+${f.number(margin, 3)}`, t("home.marginLabel")]);
+  if (margin != null) figures.push([`+${f.seconds(margin, 3)}`, t("home.marginLabel")]);
   if (report?.winner_wins != null) figures.push([two(report.winner_wins), t("home.seasonWins")]);
   if (report?.winner_strategy) figures.push([two(report.winner_strategy.stops), t("home.pits")]);
 
@@ -387,13 +397,14 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
             colour={winner.team_colour}
             className="absolute right-[3%] bottom-0 z-[2] h-[94%] w-auto max-w-[44%] !object-contain object-bottom text-5xl"
             style={NO_BACKDROP}
+            priority
           />
         </div>
       )}
 
       <div className="relative z-10 flex flex-1 flex-col gap-5 p-6 sm:max-w-[44%] sm:p-9">
         <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted">
-          <span className="rounded-md bg-mark px-2 py-0.5 text-xs font-bold text-white uppercase">
+          <span className="rounded-md bg-action px-2 py-0.5 text-xs font-bold text-white uppercase">
             {t("home.lastRace")}
           </span>
           {t("picker.round", { round: race.event.round })} · {f.date(race.event.race_date)}
@@ -419,10 +430,10 @@ function LastRaceCard({ race, report }: { race: Schema<"LastRace">; report: Repo
           <dl className="flex gap-7">
             {figures.map(([value, label]) => (
               <div key={label} className="flex flex-col">
+                <dt className="order-3 text-xs font-semibold text-muted">{label}</dt>
                 <dd className="num display order-2 text-3xl" style={{ color: readable(colour) }}>
                   {value}
                 </dd>
-                <dt className="order-3 text-xs font-semibold text-muted">{label}</dt>
               </div>
             ))}
           </dl>
@@ -505,11 +516,18 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
       >
         {codeOf(first.driver)}
       </span>
+      {/* Phones: a bust in the top corner, so the figures and the sentence stay clear. */}
+      <Bust
+        url={first.driver.photo_url}
+        label={codeOf(first.driver)}
+        colour={first.colour}
+        className="absolute top-12 right-0 h-52 w-[58%] sm:hidden"
+      />
       <Face
         url={first.driver.photo_url}
         label={codeOf(first.driver)}
         colour={first.colour}
-        className="absolute right-0 bottom-0 h-[82%] w-auto max-w-[80%] !object-contain object-bottom text-4xl"
+        className="absolute right-0 bottom-0 hidden h-[82%] w-auto max-w-[80%] !object-contain object-bottom text-4xl sm:block"
         style={NO_BACKDROP}
       />
       <div className="relative z-10 flex flex-col gap-4 bg-gradient-to-t from-bg/80 via-bg/30 to-transparent p-6 pt-24">
@@ -524,10 +542,10 @@ function LeaderCard({ lines, season }: { lines: readonly Line[]; season: number 
         <dl className="flex gap-6">
           {figures.map(([value, label]) => (
             <div key={label} className="flex flex-col">
+              <dt className="order-3 text-xs font-semibold text-muted uppercase">{label}</dt>
               <dd className="num display order-2 text-3xl" style={{ color: readable(colour) }}>
                 {value}
               </dd>
-              <dt className="order-3 text-xs font-semibold text-muted uppercase">{label}</dt>
             </div>
           ))}
         </dl>
@@ -610,6 +628,8 @@ function Widget({
   );
 }
 
+const WIDGETS_GRID = "grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4";
+
 function Widgets({ report }: { report: Report }) {
   const { t, f } = useI18n();
   const stop = report.pit_stops?.fastest;
@@ -622,7 +642,7 @@ function Widgets({ report }: { report: Report }) {
     ["RED", n?.red_flags ?? 0],
   ] as const;
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <div className={WIDGETS_GRID}>
       {stop && (
         <Widget label={t("dash.fastestStop")} icon={<Wrench />} solid>
           <p className="num display text-6xl leading-none">
@@ -874,33 +894,6 @@ function FactsCard({ report }: { report: Report }) {
 
 /* --------------------------------------------------------------------- news */
 
-function NewsThumb({ headline, className }: { headline: Headline; className: string }) {
-  const [failed, setFailed] = useState(false);
-  if (headline.image_url && !failed) {
-    return (
-      <img
-        src={headline.image_url}
-        alt=""
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        onError={() => {
-          setFailed(true);
-        }}
-        className={`object-cover ${className}`}
-      />
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={`glow grid place-items-center text-muted ${className}`}
-      style={{ "--glow": "#2f6bff", "--glow-x": "50%" } as CSSProperties}
-    >
-      <Newspaper className="size-7" />
-    </span>
-  );
-}
-
 function NewsCard() {
   const { t, locale } = useI18n();
   const ago = useAgo();
@@ -922,7 +915,7 @@ function NewsCard() {
             rel="noopener noreferrer"
             className="group relative flex min-h-80 flex-col justify-end self-stretch overflow-hidden rounded-2xl"
           >
-            <NewsThumb headline={lead} className="absolute inset-0 size-full" />
+            <HeadlineThumb headline={lead} className="absolute inset-0 size-full" eager />
             <span
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"
@@ -947,7 +940,7 @@ function NewsCard() {
                 rel="noopener noreferrer"
                 className="group flex items-center gap-4 py-3"
               >
-                <NewsThumb headline={h} className="h-16 w-24 shrink-0 rounded-xl" />
+                <HeadlineThumb headline={h} className="h-16 w-24 shrink-0 rounded-xl" />
                 <span className="flex min-w-0 flex-1 flex-col gap-1">
                   <span className="line-clamp-2 leading-snug font-bold group-hover:underline">
                     {h.title}

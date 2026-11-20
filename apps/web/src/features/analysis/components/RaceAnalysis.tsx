@@ -10,6 +10,7 @@ import { driverCode, driverName } from "@/features/race/entries";
 import { buildClock } from "@/features/race/replay";
 import { TelemetrySection } from "@/features/telemetry/TelemetryView";
 import { StrategyStrips } from "@/features/tyres/components/StrategyStrips";
+import { TermList } from "@/components/ui/Term";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
@@ -68,6 +69,7 @@ export function RaceAnalysis({
           {t("analysis.title")}
         </h2>
         <p className="text-muted">{t("analysis.intro")}</p>
+        <TermList ids={["cleanLap", "stint", "safetyCar", "fullThrottle"]} />
       </div>
       <RaceFacts sessionId={sessionId} entries={entries} neutralisations={neutralisations} />
       <SegmentedControl
@@ -90,7 +92,7 @@ export function RaceAnalysis({
                   key={entry.car_number}
                   type="button"
                   aria-pressed={on}
-                  aria-label={driverName(entry)}
+                  aria-label={`${driverCode(entry)} ${driverName(entry)}`}
                   onClick={() => {
                     toggle(entry.car_number);
                   }}

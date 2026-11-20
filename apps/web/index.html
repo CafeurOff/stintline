@@ -12,14 +12,24 @@
     <title>StintLine</title>
     <script>
       // Apply the stored theme before first paint (dark is the default). Mirrors src/lib/theme.ts.
-      // Language mirrors src/lib/i18n/locale.ts (stored choice, else browser language).
+      // The sidebar state mirrors src/app/rail.ts.
+      // Language: French pages live under /fr (src/lib/i18n/locale.ts). A reader whose stored
+      // choice, else browser, is French and who lands on an English address goes to its /fr
+      // twin before anything loads; crawlers have neither and stay on the English page.
+      var french = /^\/fr(?=\/|$)/.test(location.pathname);
+      document.documentElement.lang = french ? "fr" : "en";
       try {
         if (localStorage.getItem("stintline-theme") === "light") {
           document.documentElement.dataset.theme = "light";
         }
-        var lang = localStorage.getItem("stintline-locale");
-        document.documentElement.lang =
-          lang === "fr" || lang === "en" ? lang : /^fr/i.test(navigator.language) ? "fr" : "en";
+        if (localStorage.getItem("stintline-rail") === "collapsed") {
+          document.documentElement.dataset.rail = "collapsed";
+        }
+        var stored = localStorage.getItem("stintline-locale");
+        var prefers = stored ? stored === "fr" : /^fr/i.test(navigator.language);
+        if (!french && prefers) {
+          location.replace("/fr" + location.pathname + location.search + location.hash);
+        }
       } catch {
         // Storage unavailable: keep the defaults.
       }

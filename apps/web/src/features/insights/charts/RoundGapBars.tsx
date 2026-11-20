@@ -5,6 +5,7 @@ import { scaleBand, scaleLinear } from "@visx/scale";
 import { useId, useState } from "react";
 
 import { ChartTools } from "@/components/charts/ChartTools";
+import { useI18n } from "@/lib/i18n/context";
 import { ChartTooltip } from "@/components/charts/ChartTooltip";
 import { type Range, useZoom } from "@/components/charts/zoom";
 import { ZoomLayer } from "@/components/charts/ZoomLayer";
@@ -40,6 +41,7 @@ export function RoundGapBars({
   format: (value: number) => string;
   height?: number;
 }) {
+  const { t } = useI18n();
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const titleId = useId();
   const innerWidth = Math.max(width - MARGIN.left - MARGIN.right, 120);
@@ -58,7 +60,13 @@ export function RoundGapBars({
   const hovered = hover === null ? undefined : rounds[hover];
   return (
     <div ref={ref} className="relative w-full min-w-0">
-      <ChartTools zoom={zoom} />
+      <ChartTools
+        zoom={zoom}
+        csv={() => [
+          [t("col.round"), t("col.grandPrix"), label],
+          ...rounds.map((r) => [r.short, r.label, r.value]),
+        ]}
+      />
       {hovered?.value != null && (
         <ChartTooltip
           left={MARGIN.left + (x(hovered.key) ?? 0) + x.bandwidth() / 2}

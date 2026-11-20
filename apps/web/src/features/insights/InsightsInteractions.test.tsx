@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
@@ -15,7 +15,9 @@ describe("Analysis page controls", () => {
     async () => {
       const { router } = renderRoute("/analysis/pace");
 
-      expect(await screen.findByRole("heading", { name: /^Race pace: / })).toBeVisible();
+      await waitFor(() => {
+        expect(document.title).toMatch(/^Race pace: /);
+      });
       const pit = screen.getByRole("group", { name: "Pit laps" });
       await userEvent.click(within(pit).getByRole("radio", { name: "Show" }));
       const sc = screen.getByRole("group", { name: "Safety-car laps" });

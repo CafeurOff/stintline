@@ -76,7 +76,27 @@ export function DegradationChart({ label, stints, styleFor }: DegradationChartPr
   const nearStyle = near ? styleFor(near.stint.car_number) : null;
   return (
     <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
-      <ChartTools zoom={zoom} />
+      <ChartTools
+        zoom={zoom}
+        csv={() => [
+          [
+            t("tyres.col.driver"),
+            t("tyres.col.stint"),
+            t("tyres.col.compound"),
+            t("tyres.age"),
+            label,
+          ],
+          ...stints.flatMap((s) =>
+            s.points.map((p) => [
+              styleFor(s.car_number).label,
+              s.stint,
+              s.compound,
+              p.tyre_age,
+              p.corrected_time_s,
+            ]),
+          ),
+        ]}
+      />
       {near && nearStyle && (
         <ChartTooltip
           left={MARGIN.left + x(near.point.tyre_age)}

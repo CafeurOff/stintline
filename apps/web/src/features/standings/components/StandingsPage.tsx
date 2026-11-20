@@ -98,15 +98,19 @@ function Standings({ year }: { year: number }) {
                 update({ table: value === "drivers" ? null : value });
               }}
             />
-            {standings.data && standings.data.rounds.length > 1 && (
+            {/* Shown, disabled, while the standings load: the header keeps its height. */}
+            {(standings.isPending || (standings.data && standings.data.rounds.length > 1)) && (
               <Select
                 label={t("standings.after")}
-                value={standings.data.round ?? ""}
+                className="w-full sm:w-auto [&>select]:flex-1"
+                value={standings.data?.round ?? ""}
+                disabled={!standings.data}
                 onChange={(event) => {
                   update({ round: event.target.value });
                 }}
               >
-                {[...standings.data.rounds].reverse().map((round) => (
+                {!standings.data && <option value="">{t("common.loading")}</option>}
+                {[...(standings.data?.rounds ?? [])].reverse().map((round) => (
                   <option key={round} value={round}>
                     {t("standings.afterRound", {
                       round,
@@ -119,12 +123,18 @@ function Standings({ year }: { year: number }) {
             <SeasonSelect
               value={year}
               onChange={(value) => {
-                if (value !== null) void navigate(`/standings/${value}`);
+                if (value !== null)
+                  void navigate(`/standings/${value}`, {
+                    preventScrollReset: true,
+                    state: { keepFocus: true },
+                  });
               }}
             />
           </>
         }
-      />
+      >
+        {t("standings.intro")}
+      </PageHeader>
 
       {notFound ? (
         <EmptyState title={t("standings.empty")} />
@@ -286,6 +296,7 @@ function Leaders({ lines }: { lines: readonly Schema<"StandingLine">[] }) {
                   label={driver.code ?? initials(driver.given_name, driver.family_name)}
                   colour={colour}
                   className="absolute top-0 right-0 h-full w-[46%] transition-transform duration-500 group-hover:scale-[1.04]"
+                  priority={index === 0}
                 />
               ) : (
                 <span

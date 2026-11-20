@@ -3,12 +3,14 @@ import type { Schema } from "@stintline/api-types";
 
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { TermList } from "@/components/ui/Term";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { useSessionDetail, useStints } from "@/features/race/api";
 import { byFinish, driverCode, driverName, type Entry } from "@/features/race/entries";
 import { useSessionId } from "@/features/race/useSessionId";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
+import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
@@ -33,7 +35,7 @@ export function TyresPage() {
 }
 
 function Tyres({ sessionId }: { sessionId: number }) {
-  const { t, f } = useI18n();
+  const { t, f, locale } = useI18n();
   const session = useSessionDetail(sessionId);
   const stints = useStints(sessionId);
   const degradation = useDegradation(sessionId);
@@ -47,11 +49,18 @@ function Tyres({ sessionId }: { sessionId: number }) {
   const entries = [...session.data.entries].sort(byFinish);
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-5">
-      <section aria-labelledby="wear-title">
-        <h1 id="wear-title" className="sr-only">
-          {t("tyres.title")}
-        </h1>
+    <div className="flex flex-col gap-5">
+      <section aria-labelledby="wear-title" className="flex flex-col gap-4">
+        <header className="flex flex-col gap-1">
+          <h1 id="wear-title" className="display text-2xl sm:text-3xl">
+            {t("tyres.pageTitle", {
+              event: eventName(session.data.event.name, locale),
+              year: session.data.event.season,
+            })}
+          </h1>
+          <p className="max-w-[75ch] text-sm text-muted">{t("tyres.intro")}</p>
+          <TermList ids={["degradation", "fuelCorrected", "stint"]} />
+        </header>
         {degradation.isPending ? (
           <Skeleton className="h-16" />
         ) : degradation.isError ? (
@@ -79,7 +88,9 @@ function Tyres({ sessionId }: { sessionId: number }) {
                     </span>
                   </span>
                   <span className="display text-2xl">
-                    {t("tyres.wear", { ms: f.millis(item.slope_s_per_lap) })}
+                    {t(item.slope_s_per_lap < 0 ? "tyres.gain" : "tyres.wear", {
+                      ms: f.millis(Math.abs(item.slope_s_per_lap)),
+                    })}
                   </span>
                   <span className="text-sm text-muted">
                     {t("tyres.fresh", { time: f.lapTime(item.new_tyre_pace_s) })}
@@ -228,6 +239,8 @@ function WearChart({
                     "tyres.col.stint",
                     "tyres.col.compound",
                     "tyres.col.wear",
+                    "tyres.col.range",
+                    "tyres.col.fit",
                     "tyres.col.laps",
                   ] as const
                 ).map((key) => (
@@ -248,6 +261,12 @@ function WearChart({
                     <CompoundBadge compound={s.compound} />
                   </td>
                   <td className="py-1 pr-4">{f.millis(s.slope_s_per_lap)}</td>
+                  <td className="py-1 pr-4 text-muted">
+                    {s.slope_ci.length === 2
+                      ? `${f.millis(s.slope_ci[0] ?? 0)} – ${f.millis(s.slope_ci[1] ?? 0)}`
+                      : "—"}
+                  </td>
+                  <td className="py-1 pr-4 text-muted">{f.number(s.r_squared, 2)}</td>
                   <td className="py-1">{s.n_laps}</td>
                 </tr>
               ))}

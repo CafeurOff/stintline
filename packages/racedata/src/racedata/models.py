@@ -323,6 +323,14 @@ class WikiPortrait(_DTO):
     license_url: str
 
 
+class WikiImage(_DTO):
+    """A portrait thumbnail fetched from upload.wikimedia.org for the API's cached relay
+    (ADR 0024): the browser gets it from our origin, without Wikimedia's cookies."""
+
+    content: bytes
+    content_type: str
+
+
 class Headline(_DTO):
     """One item of a news feed: a title and a link to the publisher's article.
 

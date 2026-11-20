@@ -4,6 +4,8 @@ import { createBrowserRouter, type RouteObject } from "react-router";
 import { HomePage } from "@/features/home/components/HomePage";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 
+import { FRENCH_PREFIX, pathLocale } from "@/lib/i18n/locale";
+
 import { Layout } from "./Layout";
 
 /** Loads a page module on first visit, so the home page does not ship every chart.
@@ -55,6 +57,7 @@ const TechnicalPage = page(
   () => import("@/features/technical/components/TechnicalPage"),
   "TechnicalPage",
 );
+const AboutPage = page(() => import("@/features/about/components/AboutPage"), "AboutPage");
 const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
 
 export const routes: RouteObject[] = [
@@ -85,11 +88,14 @@ export const routes: RouteObject[] = [
       { path: "documents", element: <DocumentsPage /> },
       { path: "technical", element: <TechnicalPage /> },
       { path: "model", element: <ModelPage /> },
+      { path: "about", element: <AboutPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
 ];
 
+/** French pages are the same routes under `/fr` (`lib/i18n/locale.ts`). */
 export function createAppRouter() {
-  return createBrowserRouter(routes);
+  const french = pathLocale(window.location.pathname) === "fr";
+  return createBrowserRouter(routes, french ? { basename: FRENCH_PREFIX } : undefined);
 }

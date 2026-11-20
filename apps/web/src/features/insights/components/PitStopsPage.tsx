@@ -35,6 +35,7 @@ export function PitStopsPage() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["pitLoss", "stationary", "undercut", "safetyCar"]}
         title={year ? t("stops.titleOf", { year }) : t("stops.title")}
         actions={<SeasonSelect value={year} onChange={setYear} />}
       >
@@ -156,10 +157,11 @@ function PitStopsView({ data }: { data: Stops }) {
                       <td>
                         <Link
                           to={`/events/${String(stop.event_id)}`}
-                          className="flex items-center gap-2 hover:underline"
+                          title={eventName(stop.name, locale)}
+                          className="flex max-w-[13rem] min-w-0 items-center gap-2 hover:underline"
                         >
                           <Flag country={stop.country} />
-                          <span className="truncate">{eventName(stop.name, locale)}</span>
+                          <span className="min-w-0 truncate">{eventName(stop.name, locale)}</span>
                         </Link>
                       </td>
                       <td className="num text-muted">{stop.lap}</td>
@@ -215,7 +217,14 @@ function PitStopsView({ data }: { data: Stops }) {
                         )}
                       </td>
                       <td className="num text-muted">{f.seconds(team.best_stationary_s, 2)}</td>
-                      <td className="num text-muted">{f.seconds(team.median_lane_s, 1)}</td>
+                      <td className="num text-muted">
+                        {f.seconds(team.median_lane_s, 1)}
+                        {team.best_lane_s != null && (
+                          <span className="block text-[0.7rem]">
+                            {t("stops.bestLane", { time: f.seconds(team.best_lane_s, 1) })}
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -69,6 +69,7 @@ function CircuitList() {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["pitLoss", "degradation", "fullThrottle", "safetyCar"]}
         title={t("dna.title")}
         actions={
           <Select
@@ -346,6 +347,7 @@ function CircuitDetail({ circuitRef }: { circuitRef: string }) {
   return (
     <div className="flex flex-col">
       <PageHeader
+        terms={["pitLoss", "degradation", "fullThrottle", "safetyCar"]}
         eyebrow={
           <Link to="/circuits" className="hover:underline">
             {t("dna.title")}

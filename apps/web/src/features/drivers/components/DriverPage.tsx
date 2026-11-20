@@ -53,6 +53,7 @@ export function DriverPage() {
         <DriverSeason
           driverRef={data.driver.ref}
           seasons={data.seasons.map((s) => s.year)}
+          defaultSeason={openingSeason(data)}
           colour={data.latest_team?.colour}
         />
       )}
@@ -127,6 +128,7 @@ function DriverHeader({ career }: { career: Career }) {
           colour={colour}
           width={800}
           className="absolute top-0 right-0 hidden h-full w-[34%] sm:block"
+          priority
         />
       )}
       <div className="relative flex min-h-80 flex-col gap-6 p-6 sm:max-w-[60%] sm:flex-row sm:items-end sm:p-9">
@@ -166,11 +168,14 @@ function DriverHeader({ career }: { career: Career }) {
           </figure>
         )}
         {official && (
+          // Same width as the desktop portrait: one download for both.
           <Bust
             url={official}
             label={code}
             colour={colour}
+            width={800}
             className="h-72 w-full rounded-2xl sm:hidden"
+            priority
           />
         )}
         <div className="min-w-0 pb-1">
@@ -181,30 +186,34 @@ function DriverHeader({ career }: { career: Career }) {
               <TeamName team={team} colour={colour} />
             </p>
           )}
-          <dl className="mt-4 flex flex-wrap gap-2 text-sm">
-            {driver.nationality && (
-              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
-                <dt className="text-muted">{t("driver.nationality")}</dt>
-                <dd className="font-semibold">{nationalityCountry(driver.nationality, locale)}</dd>
-              </div>
-            )}
-            {driver.date_of_birth && (
-              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
-                <dt className="text-muted">{t("driver.born")}</dt>
-                <dd className="font-semibold">
-                  {f.date(driver.date_of_birth)}
-                  {career.totals.last_season !== null &&
-                    career.totals.last_season >= new Date().getUTCFullYear() - 1 &&
-                    ` (${t("driver.age", { n: age(driver.date_of_birth) })})`}
-                </dd>
-              </div>
-            )}
-            {number != null && (
-              <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
-                <dt className="text-muted">{t("driver.number")}</dt>
-                <dd className="font-semibold tabular-nums">{number}</dd>
-              </div>
-            )}
+          <div className="mt-4 flex flex-wrap gap-2 text-sm">
+            <dl className="contents">
+              {driver.nationality && (
+                <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
+                  <dt className="text-muted">{t("driver.nationality")}</dt>
+                  <dd className="font-semibold">
+                    {nationalityCountry(driver.nationality, locale)}
+                  </dd>
+                </div>
+              )}
+              {driver.date_of_birth && (
+                <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
+                  <dt className="text-muted">{t("driver.born")}</dt>
+                  <dd className="font-semibold">
+                    {f.date(driver.date_of_birth)}
+                    {career.totals.last_season !== null &&
+                      career.totals.last_season >= new Date().getUTCFullYear() - 1 &&
+                      ` (${t("driver.age", { n: age(driver.date_of_birth) })})`}
+                  </dd>
+                </div>
+              )}
+              {number != null && (
+                <div className="glass flex gap-1.5 rounded-lg px-3 py-1.5">
+                  <dt className="text-muted">{t("driver.number")}</dt>
+                  <dd className="font-semibold tabular-nums">{number}</dd>
+                </div>
+              )}
+            </dl>
             {driver.wikipedia_url && (
               <div className="flex items-center px-1">
                 <a
@@ -217,7 +226,7 @@ function DriverHeader({ career }: { career: Career }) {
                 </a>
               </div>
             )}
-          </dl>
+          </div>
         </div>
       </div>
     </header>
@@ -304,4 +313,23 @@ function SeasonsTable({ career }: { career: Career }) {
       />
     </Panel>
   );
+}
+
+/** Seasons since the last one that still count as a current career. */
+const ACTIVE_YEARS = 1;
+
+/**
+ * The season a profile opens on: the latest for a driver still racing, else the driver's
+ * best one (highest championship place, then most points), so a legend does not open on a
+ * three-race final season.
+ */
+function openingSeason(career: Schema<"DriverCareer">): number | null {
+  const last = career.totals.last_season;
+  if (last === null) return null;
+  if (last >= new Date().getUTCFullYear() - ACTIVE_YEARS) return last;
+  const best = [...career.seasons].sort(
+    (a, b) =>
+      (a.championship_position ?? 99) - (b.championship_position ?? 99) || b.points - a.points,
+  )[0];
+  return best?.year ?? last;
 }
