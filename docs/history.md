@@ -36,6 +36,7 @@ No v1 file was carried over. The rewrite kept only the source mapping (which Jol
 | 19 | Title maths: who can still win, and when each title was settled | 0022 |
 | — | Night-race glass design, Wikimedia portrait relay, page heads and language addresses | 0023–0025 |
 | — | Open-source preparation: comments, folder layout, faster tests, public docs | — |
+| — | Race replay redesign: glass stage, timing tower, 3D view of the race | 0026 |
 
 ## Ideas not built yet
 

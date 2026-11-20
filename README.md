@@ -11,7 +11,7 @@ StintLine is a Formula 1 site built on public timing and results data. It replay
 
 ## What it does
 
-- **Race replay on the circuit** (2023 onwards): cars move along the real track outline, lap by lap.
+- **Race replay on the circuit** (2023 onwards): cars move along the real track outline next to a timing tower with gaps and tyres, on a map or in 3D on the circuit's relief.
 - **Strategy simulators**: where a car rejoins if it pits now, undercut and overcut against a rival, and a whole race replayed with another tyre strategy.
 - **Race analysis**: positions and gaps lap by lap, lap times, tyre strategies, sectors, and fastest-lap telemetry with a 3D view.
 - **Archive since 1950**: results, qualifying, driver and team careers, standings, and who can still win the title.
@@ -22,7 +22,9 @@ StintLine is a Formula 1 site built on public timing and results data. It replay
 
 The site is in English and French, works on phones, and has light and dark themes. Every chart can be shared as a link, a PNG or CSV.
 
-![Replaying the 2026 Brazilian Grand Prix with the strategy simulator open](docs/screenshots/circuit-strategy.png)
+![Replaying the 2026 Brazilian Grand Prix: timing tower, the circuit lit in its colour, the strategy simulator](docs/screenshots/circuit-strategy.png)
+
+![The same race in 3D: every car on the track's relief, seen from above](docs/screenshots/race-3d.png)
 
 ![Telemetry of two drivers zoomed on turns 1 and 2: speed, throttle, brake, gear and gap](docs/screenshots/telemetry.png)
 
