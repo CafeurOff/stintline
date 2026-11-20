@@ -70,7 +70,8 @@ deps: ## Start only Postgres and Redis in Docker
 
 # ---------------------------------------------------------------- quality
 .PHONY: check lint format typecheck
-check: lint typecheck test types-check ## Lint + type checks + tests + generated types check
+check: ## Lint + type checks + tests + generated types check, in parallel
+	@$(MAKE) --no-print-directory -j --output-sync=target lint typecheck test types-check
 
 lint: ## Lint Python and TypeScript
 	uv run ruff check .
@@ -88,8 +89,12 @@ typecheck: ## mypy strict + tsc
 	pnpm -r typecheck
 
 # ---------------------------------------------------------------- tests
-.PHONY: test test-strategy test-racedata test-api test-web e2e
-test: test-strategy test-racedata test-api test-web ## Run all unit and integration tests
+# The API suite imports the demo races once per worker (apps/api/conftest.py): beyond four
+# workers that import costs more than it saves.
+PYTEST_WORKERS ?= 4
+
+.PHONY: test test-strategy test-racedata test-api test-web test-fast e2e
+test: test-strategy test-racedata test-api test-web ## Run all unit and integration tests with coverage gates
 
 test-strategy: ## Strategy engine tests (coverage gate 90 %)
 	uv run pytest packages/strategy
@@ -98,10 +103,24 @@ test-racedata: ## Provider library tests (coverage gate 85 %)
 	uv run pytest packages/racedata
 
 test-api: ## API tests (coverage gate 80 %)
-	uv run pytest apps/api
+	uv run pytest apps/api -n $(PYTEST_WORKERS)
 
-test-web: ## Frontend unit tests
+test-web: ## Frontend unit tests (coverage gate 80 %)
 	pnpm --filter web test
+
+test-fast: ## Every unit test without coverage, in parallel: the quick loop while working
+	@$(MAKE) --no-print-directory -j --output-sync=target \
+		fast-strategy fast-racedata fast-api fast-web
+
+.PHONY: fast-strategy fast-racedata fast-api fast-web
+fast-strategy:
+	uv run pytest packages/strategy -q --no-cov
+fast-racedata:
+	uv run pytest packages/racedata -q --no-cov
+fast-api:
+	uv run pytest apps/api -q --no-cov -n $(PYTEST_WORKERS)
+fast-web:
+	pnpm --filter web exec vitest run
 
 e2e: ## Playwright end-to-end journeys
 	pnpm --filter web e2e
