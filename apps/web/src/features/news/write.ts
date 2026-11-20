@@ -17,7 +17,7 @@ export interface Section {
   sentences: string[];
 }
 
-export interface WrittenReport {
+interface WrittenReport {
   title: string;
   lede: string;
   sections: Section[];

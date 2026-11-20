@@ -12,7 +12,7 @@ import { ZoomLayer } from "@/components/charts/ZoomLayer";
 
 import { useElementWidth } from "@/lib/useElementWidth";
 
-export interface RoundGap {
+interface RoundGap {
   key: string;
   short: string;
   label: string;

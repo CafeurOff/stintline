@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
 import { initials } from "@/components/racing/initials";
 
-export interface DriverLike {
+interface DriverLike {
   ref: string;
   code?: string;
   given_name: string;

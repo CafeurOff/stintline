@@ -2,7 +2,7 @@ import { useId } from "react";
 
 import { useElementWidth } from "@/lib/useElementWidth";
 
-export interface StripDot {
+interface StripDot {
   key: string;
   value: number;
   label: string;

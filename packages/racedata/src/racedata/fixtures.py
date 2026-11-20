@@ -9,11 +9,9 @@ unknown request raises :class:`MissingFixtureError` instead.
 from __future__ import annotations
 
 import hashlib
-import json
 import re
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 import httpx
 
@@ -50,10 +48,6 @@ def fixture_path(
         digest = hashlib.sha256(slug.encode()).hexdigest()[:16]
         slug = f"{slug[: MAX_SLUG_CHARS - 18]}__{digest}"
     return root / provider / clean_path / f"{slug}{suffix}"
-
-
-def load_fixture(file: Path) -> Any:
-    return json.loads(file.read_text(encoding="utf-8"))
 
 
 class FixtureTransport(httpx.BaseTransport):

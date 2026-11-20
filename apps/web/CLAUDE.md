@@ -9,7 +9,7 @@ Read the root `CLAUDE.md` first. This file only adds frontend-specific rules.
 - `src/components/ui/`: accessible primitives (Button, Select, Slider, SegmentedControl, Dialog on the native `<dialog>`, Skeleton, ErrorState, EmptyState).
 - `src/components/racing/`: `CompoundBadge`, `DriverAvatar` (official or Wikipedia photo, else number, code or initials in the team colour).
 - `src/components/hub/`: `PageHeader`, `KeyFigures` (a row of label/value pairs), `DriverName` and `TeamName` (linked, with photo or colour bar), `SeasonSelect`, `SeasonBars` (points per season), `ShowAll` + `useCollapsed` for long tables.
-- `src/components/racing/` also has `DriverPhoto` (rectangular card photo), `CarImage` (official render, hidden when absent) and `CircuitOutline`.
+- `src/components/racing/` also has `DriverPhoto` (rectangular card photo) and `CarImage` (official render, hidden when absent).
 - `src/lib/`: API client and `unwrap`, `i18n/` (dictionaries, provider, translated content), locale-aware `createFormatters`, compounds, team colours, theme, URL-state and sizing hooks.
 - `src/test/`: MSW server and handlers, typed fixtures recorded from the demo API (`fixtures/*.ts`, Hungary 2025, trimmed). Playwright reuses them through `e2e/mockApi.ts`.
 

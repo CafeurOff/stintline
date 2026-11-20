@@ -10,7 +10,7 @@ type Report = Schema<"RaceReport">;
 
 export type Tag = "driver" | "team" | "race";
 
-export interface Fact {
+interface Fact {
   key: string;
   tag: Tag;
   title: string;

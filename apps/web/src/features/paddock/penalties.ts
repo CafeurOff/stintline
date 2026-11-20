@@ -20,7 +20,7 @@ type Ruling = Pick<
 
 export type Tone = "penalty" | "warning" | "neutral";
 
-export interface PenaltyTag {
+interface PenaltyTag {
   key: MessageKey;
   params?: Record<string, string | number>;
   tone: Tone;

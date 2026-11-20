@@ -21,15 +21,7 @@ const TOP_TYRES = 10;
 const MAX_GAP_S = 90;
 
 /** A chart in the article: a title, the chart, and one line saying how to read it. */
-export function Figure({
-  title,
-  note,
-  children,
-}: {
-  title: string;
-  note?: string;
-  children: ReactNode;
-}) {
+function Figure({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
     <figure className="glass flex flex-col gap-3 rounded-[20px] p-4 sm:p-5">
       <h3 className="text-lg font-bold">{title}</h3>

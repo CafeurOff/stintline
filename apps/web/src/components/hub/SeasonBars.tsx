@@ -14,7 +14,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { useElementWidth } from "@/lib/useElementWidth";
 
-export interface SeasonBar {
+interface SeasonBar {
   year: number;
   points: number;
   position: number | null;

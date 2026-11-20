@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 
-export type ApiHealth = Schema<"Health">;
+type ApiHealth = Schema<"Health">;
 
 const HEALTH_REFRESH_MS = 30_000;
 

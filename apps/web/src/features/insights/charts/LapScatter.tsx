@@ -14,7 +14,7 @@ import { ZoomLayer } from "@/components/charts/ZoomLayer";
 import { compoundInfo } from "@/lib/compounds";
 import { useElementWidth } from "@/lib/useElementWidth";
 
-export interface ScatterSeries {
+interface ScatterSeries {
   key: number;
   label: string;
   points: readonly { lap: number; value: number; compound: string; tip: string }[];

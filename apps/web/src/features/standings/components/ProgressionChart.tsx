@@ -17,7 +17,7 @@ import { useElementWidth } from "@/lib/useElementWidth";
 
 import { spreadLabels } from "../labels";
 
-export interface ProgressionLine {
+interface ProgressionLine {
   key: string;
   label: string;
   colour: string | null | undefined;

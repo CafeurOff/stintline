@@ -8,7 +8,7 @@
  * cover falls towards the rear wing.
  */
 
-export interface Station {
+interface Station {
   /** Position along the car (m, forward positive). */
   x: number;
   /** Half the width of the section (m). */
@@ -25,7 +25,7 @@ export interface Mesh {
 /** Points around each section: enough for a smooth outline, few enough to stay low-poly. */
 export const SECTION_POINTS = 16;
 /** 2 is an ellipse; higher is boxier. Bodywork reads as moulded carbon around 2.5. */
-export const SECTION_ROUNDNESS = 2.5;
+const SECTION_ROUNDNESS = 2.5;
 
 function superellipse(angle: number, exponent: number): [number, number] {
   const c = Math.cos(angle);
@@ -115,7 +115,7 @@ export const FLOOR: readonly Station[] = [
   { x: -2.0, halfWidth: 0.55, bottom: 0.06, top: 0.1 },
 ];
 
-export interface Wheel {
+interface Wheel {
   x: number;
   /** Distance of the wheel centre from the car's axis. */
   z: number;
@@ -131,7 +131,7 @@ export const WHEELS: readonly Wheel[] = [
   { x: -1.6, z: -0.76, radius: 0.37, width: 0.42 },
 ];
 
-export interface Plate {
+interface Plate {
   size: [number, number, number];
   at: [number, number, number];
   /** Angle of attack around the z axis (radians, leading edge up when positive). */
@@ -159,7 +159,7 @@ export const PLATES: readonly Plate[] = [
   { size: [0.1, 0.06, 0.16], at: [0.78, 0.68, -0.48], paint: "team" },
 ];
 
-export interface Arm {
+interface Arm {
   from: [number, number, number];
   to: [number, number, number];
 }

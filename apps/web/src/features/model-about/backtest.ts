@@ -3,7 +3,7 @@
  * engine's report files). These guards narrow it to the shape the page renders and ignore
  * anything else, so a report format change degrades to "not available" instead of a crash.
  */
-export interface BacktestMetrics {
+interface BacktestMetrics {
   n: number;
   mae: number;
   exact_rate: number;
@@ -12,12 +12,12 @@ export interface BacktestMetrics {
   baseline_mae: number;
 }
 
-export interface BacktestMode {
+interface BacktestMode {
   overall: BacktestMetrics;
   perRace: [string, BacktestMetrics][];
 }
 
-export interface BacktestRaceSet {
+interface BacktestRaceSet {
   blind: BacktestMode | null;
   scenario: BacktestMode | null;
 }

@@ -46,7 +46,7 @@ import { title } from "./fixtures/title";
 import { track } from "./fixtures/track";
 import { undercut } from "./fixtures/undercut";
 
-export const healthyResponse: Schema<"Health"> = {
+const healthyResponse: Schema<"Health"> = {
   status: "ok",
   version: "0.1.0",
   database: "ok",
@@ -64,7 +64,7 @@ export const seasonsResponse: Schema<"PaginatedSeasonList"> = {
   results: [{ year: 2025, events_count: events.count }],
 };
 
-export const offlineLive: Schema<"LiveStatus"> = {
+const offlineLive: Schema<"LiveStatus"> = {
   state: "offline",
   snapshot: null,
   next_session: {
@@ -82,9 +82,7 @@ export function problem(status: number, code: string, title: string, detail = ti
   );
 }
 
-export { lapsResponse };
-
-export const handlers = [
+const handlers = [
   http.get("*/api/v1/health", () => HttpResponse.json(healthyResponse)),
   http.get("*/api/v1/seasons", () => HttpResponse.json(seasonsResponse)),
   http.get("*/api/v1/seasons/:year/events", () => HttpResponse.json(events)),

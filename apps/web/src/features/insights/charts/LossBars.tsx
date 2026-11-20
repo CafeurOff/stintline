@@ -8,7 +8,7 @@ import { ChartTooltip } from "@/components/charts/ChartTooltip";
 
 import { useElementWidth } from "@/lib/useElementWidth";
 
-export interface LossRow {
+interface LossRow {
   key: string;
   label: string;
   value: number;

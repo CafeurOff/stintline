@@ -2,8 +2,8 @@ import type { MessageKey } from "@/lib/i18n/en";
 import type { Locale } from "@/lib/i18n/locale";
 
 /** Classification codes of a car that did not finish classified (Jolpica `positionText`). */
-export const OUT_CODES = ["R", "W", "D", "E", "N", "F"] as const;
-export type OutCode = (typeof OUT_CODES)[number];
+const OUT_CODES = ["R", "W", "D", "E", "N", "F"] as const;
+type OutCode = (typeof OUT_CODES)[number];
 
 export function outCode(classification: string | null | undefined): OutCode | null {
   return OUT_CODES.find((code) => code === classification) ?? null;

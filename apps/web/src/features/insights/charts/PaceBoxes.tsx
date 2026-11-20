@@ -14,7 +14,7 @@ import { useI18n } from "@/lib/i18n/context";
 import { teamColour, teamTint } from "@/lib/teams";
 import { useElementWidth } from "@/lib/useElementWidth";
 
-export interface PaceBox {
+interface PaceBox {
   key: number;
   label: string;
   colour: string | null | undefined;

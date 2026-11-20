@@ -8,7 +8,7 @@ const HEADLINES = { staleTime: 5 * 60_000, refetchInterval: 15 * 60_000 } as con
 /** Reports change only when a race is imported. */
 const REPORTS = { staleTime: 5 * 60_000 } as const;
 
-export type HeadlineLanguage = "en" | "fr";
+type HeadlineLanguage = "en" | "fr";
 
 export function useHeadlines(lang: HeadlineLanguage | null, limit = 30) {
   return useQuery({
