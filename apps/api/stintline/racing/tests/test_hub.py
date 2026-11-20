@@ -55,7 +55,9 @@ def test_season_events_carry_the_race_winner(seeded: None) -> None:
 
     abu_dhabi = events[-1]
     assert abu_dhabi["winner"]["driver"]["code"] == "VER"
-    assert abu_dhabi["winner"]["driver"]["portrait_url"].startswith("https://")
+    assert abu_dhabi["winner"]["driver"]["portrait_url"].startswith(
+        "/api/v1/drivers/max_verstappen/portrait?v="
+    )
     assert abu_dhabi["circuit"]["latitude"] is not None
 
 

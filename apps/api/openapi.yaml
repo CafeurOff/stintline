@@ -425,6 +425,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/drivers/{ref}/portrait:
+    get:
+      operationId: driver_portrait_retrieve
+      summary: The driver's Wikipedia portrait, relayed from Wikimedia (ADR 0024,
+        not stored)
+      parameters:
+      - in: path
+        name: ref
+        schema:
+          type: string
+        required: true
+      tags:
+      - drivers
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '502':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/drivers/{ref}/results:
     get:
       operationId: driver_results_list
@@ -4512,8 +4547,8 @@ components:
       properties:
         image_url:
           type: string
-          format: uri
-          maxLength: 500
+          readOnly: true
+          description: The thumbnail, relayed from our origin (ADR 0024)
         artist:
           type: string
           maxLength: 200

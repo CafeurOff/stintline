@@ -3,14 +3,21 @@
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 import pytest
 
-from racedata import InvalidPayloadError
+from racedata import InvalidPayloadError, ProviderError
 from racedata.http import HttpClient
-from racedata.providers.wikipedia import WikipediaSource, article_title, plain_text
-from racedata.sources import Sources
+from racedata.providers.wikipedia import (
+    WikimediaImageSource,
+    WikipediaSource,
+    article_title,
+    plain_text,
+)
+from racedata.sources import Sources, build_http_sources
+from racedata.testing import sequence_transport
 
 HISTORY = ["Juan Manuel Fangio", "Nino Farina", "Johnnie Parsons", "Stintline nonexistent driver"]
 
@@ -97,3 +104,58 @@ def test_file_without_licence_is_dropped() -> None:
 
 def test_page_without_a_thumbnail_needs_no_second_call() -> None:
     assert _source({"query": {"pages": [{"title": "A"}]}}).portraits(["A"]) == {}
+
+
+THUMB = (
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Lando_Norris.jpg/"
+    "500px-Lando_Norris.jpg"
+)
+
+
+def test_thumbnail_fetches_the_image_with_its_type() -> None:
+    transport, calls = sequence_transport(httpx.Response(200, content=b"\xff\xd8jpeg"))
+    images = WikimediaImageSource(
+        {
+            host: HttpClient("wikimedia", f"https://{host}", transport=transport)
+            for host in ("upload.wikimedia.org", "thumb.wikimedia.org")
+        }
+    )
+
+    image = images.thumbnail(THUMB)
+
+    assert image.content == b"\xff\xd8jpeg"
+    assert image.content_type == "image/jpeg"
+    assert calls[0].url.host == "thumb.wikimedia.org"
+    assert calls[0].url.path == urlsplit(THUMB).path
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.org/wikipedia/commons/a.jpg",
+        "http://upload.wikimedia.org/wikipedia/commons/a.jpg",
+        "https://upload.wikimedia.org/other/a.jpg",
+        "https://evil.wikimedia.org/wikipedia/commons/a.jpg",
+        "https://upload.wikimedia.org/wikipedia/commons/a.pdf",
+    ],
+)
+def test_thumbnail_refuses_anything_but_a_wikimedia_image(url: str) -> None:
+    transport, calls = sequence_transport()
+    images = WikimediaImageSource(
+        {
+            host: HttpClient("wikimedia", f"https://{host}", transport=transport)
+            for host in ("upload.wikimedia.org", "thumb.wikimedia.org")
+        }
+    )
+
+    with pytest.raises(ProviderError):
+        images.thumbnail(url)
+    assert calls == []
+
+
+def test_http_sources_include_the_image_relay_and_close_its_client() -> None:
+    sources = build_http_sources()
+
+    assert sources.images is not None
+    assert len(sources.clients) == len(set(map(id, sources.clients)))
+    sources.close()

@@ -37,6 +37,14 @@ WIKIPEDIA = ProviderConfig(
     limits=(RateLimit(max_calls=1, period_s=1.0),),
 )
 
+WIKIMEDIA_UPLOAD = ProviderConfig(
+    name="wikimedia",
+    base_url="https://upload.wikimedia.org",
+    # Thumbnails come from Wikimedia's CDN. The API relays each one at most once a week
+    # (ADR 0024); a few per second covers a cold page of portraits.
+    limits=(RateLimit(max_calls=5, period_s=1.0),),
+)
+
 FIA = ProviderConfig(
     name="fia",
     base_url="https://www.fia.com",
@@ -58,7 +66,9 @@ OPEN_METEO = ProviderConfig(
     limits=(RateLimit(max_calls=1, period_s=1.0), RateLimit(max_calls=500, period_s=3600.0)),
 )
 
-PROVIDERS = {cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA, FIA, OPEN_METEO)}
+PROVIDERS = {
+    cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA, WIKIMEDIA_UPLOAD, FIA, OPEN_METEO)
+}
 
 
 @dataclass(frozen=True, slots=True)

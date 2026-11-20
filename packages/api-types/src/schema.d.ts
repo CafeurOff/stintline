@@ -191,6 +191,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/drivers/{ref}/portrait": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** The driver's Wikipedia portrait, relayed from Wikimedia (ADR 0024, not stored) */
+    get: operations["driver_portrait_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/drivers/{ref}/results": {
     parameters: {
       query?: never;
@@ -1997,8 +2014,8 @@ export interface components {
     };
     /** @description Freely licensed image with the credit its licence requires (ADR 0009). */
     Portrait: {
-      /** Format: uri */
-      image_url: string;
+      /** @description The thumbnail, relayed from our origin (ADR 0024) */
+      readonly image_url: string;
       artist: string;
       license: string;
       license_url?: string;
@@ -3287,6 +3304,43 @@ export interface operations {
         };
       };
       404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  driver_portrait_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "image/*": string;
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      502: {
         headers: {
           [name: string]: unknown;
         };
