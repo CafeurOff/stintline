@@ -35,7 +35,11 @@ export function CalendarPage() {
           <SeasonSelect
             value={year}
             onChange={(value) => {
-              if (value !== null) void navigate(`/calendar/${String(value)}`);
+              if (value !== null)
+                void navigate(`/calendar/${String(value)}`, {
+                  preventScrollReset: true,
+                  state: { keepFocus: true },
+                });
             }}
           />
         }

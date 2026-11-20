@@ -281,168 +281,187 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
   const title = t("map.title", { circuit: session.event.circuit.name, lap });
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <section
-        aria-label={eventName(session.event.name, locale)}
-        className="flex min-w-0 flex-col gap-3"
-      >
-        {track ? (
-          <TrackMap track={track} cars={markers} ghost={ghost} title={title} onSelect={selectCar} />
-        ) : (
-          <EmptyState title={eventName(session.event.name, locale)}>{t("map.noTrack")}</EmptyState>
-        )}
-        <ReplayBar
-          lap={lap}
-          totalLaps={totalLaps}
-          finished={finished}
-          playing={clock.playing}
-          speed={clock.speed}
-          onToggle={clock.playing ? clock.pause : clock.play}
-          onLap={setLap}
-          onSpeed={clock.setSpeed}
-        />
-      </section>
-
-      {entry && (
-        <aside
-          aria-live="polite"
-          className="glass flex flex-col gap-5 self-start rounded-[20px] p-5"
+    <div className="flex flex-col gap-4">
+      <header className="flex flex-col gap-1">
+        <h1 className="display text-2xl sm:text-3xl">
+          {t("race.pageTitle", {
+            event: eventName(session.event.name, locale),
+            year: session.event.season,
+          })}
+        </h1>
+        <p className="max-w-[70ch] text-sm text-muted">{t("race.pageIntro")}</p>
+      </header>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <section
+          aria-label={eventName(session.event.name, locale)}
+          className="flex min-w-0 flex-col gap-3"
         >
-          <SegmentedControl
-            legend={t("panel.mode")}
-            hideLegend
-            options={[
-              { value: "stop", label: t("panel.mode.stop") },
-              { value: "undercut", label: t("panel.mode.undercut") },
-              { value: "strategy", label: t("panel.mode.strategy") },
-            ]}
-            value={mode}
-            onChange={(value) => {
-              update({ mode: value === "stop" ? null : value });
-            }}
-          />
-          <div className="flex items-center gap-3">
-            <DriverAvatar
-              label={entry.car_number}
-              name={driverName(entry)}
-              colour={entry.team_colour}
-              imageUrl={entryPhoto(entry)}
+          {track ? (
+            <TrackMap
+              track={track}
+              cars={markers}
+              ghost={ghost}
+              title={title}
+              onSelect={selectCar}
             />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-lg font-bold">{driverName(entry)}</p>
-              <p className="text-sm text-muted">
-                {selectedProgress === null
-                  ? (entry.status ?? "")
-                  : t("stop.running", {
-                      position: f.ordinal(positionOf(selected)),
-                      compound: t(`compoundLower.${compound.key}`),
-                      age: age ?? "?",
-                    })}
-              </p>
-            </div>
-          </div>
-          <DriverPicker
-            order={order.map((r) => r.carNumber)}
-            byCar={byCar}
-            selected={selected}
-            onSelect={selectCar}
+          ) : (
+            <EmptyState title={eventName(session.event.name, locale)}>
+              {t("map.noTrack")}
+            </EmptyState>
+          )}
+          <ReplayBar
+            lap={lap}
+            totalLaps={totalLaps}
+            finished={finished}
+            playing={clock.playing}
+            speed={clock.speed}
+            onToggle={clock.playing ? clock.pause : clock.play}
+            onLap={setLap}
+            onSpeed={clock.setSpeed}
           />
+        </section>
 
-          {mode === "strategy" ? (
-            real && plan ? (
-              <StrategyPanel
-                entry={entry}
-                totalLaps={totalLaps}
-                real={real}
-                plan={plan}
-                compounds={compounds}
-                submitted={strategyActive !== null}
-                result={strategyResult.data}
-                isError={strategyResult.isError}
-                error={strategyResult.error}
-                onChange={(next) => {
-                  update({ plan: samePlan(next, real) ? null : encodePlan(next) });
-                }}
-                onSimulate={() => {
-                  setStrategyRequest({
-                    car: selected,
-                    start_compound: plan.start,
-                    stops: plan.stops.map((stop) => ({ ...stop })),
-                  });
-                }}
-                onWatch={() => {
-                  clock.setTime(0);
-                  clock.setSpeed(WATCH_SPEED);
-                  clock.play();
-                }}
-                onRetry={() => void strategyResult.refetch()}
+        {entry && (
+          <aside
+            aria-live="polite"
+            className="glass flex flex-col gap-5 self-start rounded-[20px] p-5"
+          >
+            <SegmentedControl
+              legend={t("panel.mode")}
+              hideLegend
+              options={[
+                { value: "stop", label: t("panel.mode.stop") },
+                { value: "undercut", label: t("panel.mode.undercut") },
+                { value: "strategy", label: t("panel.mode.strategy") },
+              ]}
+              value={mode}
+              onChange={(value) => {
+                update({ mode: value === "stop" ? null : value });
+              }}
+            />
+            <div className="flex items-center gap-3">
+              <DriverAvatar
+                label={entry.car_number}
+                name={driverName(entry)}
+                colour={entry.team_colour}
+                imageUrl={entryPhoto(entry)}
               />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-bold">{driverName(entry)}</p>
+                <p className="text-sm text-muted">
+                  {selectedProgress === null
+                    ? (entry.status ?? "")
+                    : t("stop.running", {
+                        position: f.ordinal(positionOf(selected)),
+                        compound: t(`compoundLower.${compound.key}`),
+                        age: age ?? "?",
+                      })}
+                </p>
+              </div>
+            </div>
+            <DriverPicker
+              order={order.map((r) => r.carNumber)}
+              byCar={byCar}
+              selected={selected}
+              onSelect={selectCar}
+            />
+
+            {mode === "strategy" ? (
+              real && plan ? (
+                <StrategyPanel
+                  entry={entry}
+                  totalLaps={totalLaps}
+                  real={real}
+                  plan={plan}
+                  compounds={compounds}
+                  submitted={strategyActive !== null}
+                  result={strategyResult.data}
+                  isError={strategyResult.isError}
+                  error={strategyResult.error}
+                  onChange={(next) => {
+                    update({ plan: samePlan(next, real) ? null : encodePlan(next) });
+                  }}
+                  onSimulate={() => {
+                    setStrategyRequest({
+                      car: selected,
+                      start_compound: plan.start,
+                      stops: plan.stops.map((stop) => ({ ...stop })),
+                    });
+                  }}
+                  onWatch={() => {
+                    clock.setTime(0);
+                    clock.setSpeed(WATCH_SPEED);
+                    clock.play();
+                  }}
+                  onRetry={() => void strategyResult.refetch()}
+                />
+              ) : (
+                <p className="text-muted">{t("whatif.unavailable")}</p>
+              )
+            ) : mode === "stop" ? (
+              <>
+                <h2 className="text-xl leading-tight font-bold">
+                  {t("stop.question", { name: entry.driver.family_name })}
+                </h2>
+                <StopPanel
+                  entry={entry}
+                  canStop={canStop}
+                  maxLap={totalLaps - 1}
+                  submitted={stopActive !== null}
+                  result={stopResult.data}
+                  isError={stopResult.isError}
+                  error={stopResult.error}
+                  byCar={byCar}
+                  onSimulate={() => {
+                    if (lapInProgress === null) return;
+                    clock.pause();
+                    setStop({ request: { car: selected, pit_lap: lapInProgress }, time });
+                  }}
+                  onClear={() => {
+                    setStop(null);
+                  }}
+                  onRetry={() => void stopResult.refetch()}
+                />
+              </>
             ) : (
-              <p className="text-muted">{t("whatif.unavailable")}</p>
-            )
-          ) : mode === "stop" ? (
-            <>
-              <h2 className="text-xl leading-tight font-bold">
-                {t("stop.question", { name: entry.driver.family_name })}
-              </h2>
-              <StopPanel
-                entry={entry}
+              <UndercutPanel
+                attacker={entry}
+                targets={targets}
+                choice={effectiveChoice}
                 canStop={canStop}
                 maxLap={totalLaps - 1}
-                submitted={stopActive !== null}
-                result={stopResult.data}
-                isError={stopResult.isError}
-                error={stopResult.error}
-                byCar={byCar}
+                submitted={undercutActive !== null}
+                result={undercutResult.data}
+                isError={undercutResult.isError}
+                error={undercutResult.error}
+                onChange={(next) => {
+                  setChoice(next);
+                  setUndercut(null);
+                }}
                 onSimulate={() => {
-                  if (lapInProgress === null) return;
+                  if (lapInProgress === null || !effectiveChoice) return;
                   clock.pause();
-                  setStop({ request: { car: selected, pit_lap: lapInProgress }, time });
+                  setUndercut({
+                    request: {
+                      attacker: selected,
+                      defender: effectiveChoice.defender,
+                      stop_lap: lapInProgress,
+                      attacker_compound: effectiveChoice.compound,
+                      defender_compound: effectiveChoice.compound,
+                      defender_reaction_laps: Number(effectiveChoice.reaction),
+                    },
+                    time,
+                  });
                 }}
                 onClear={() => {
-                  setStop(null);
+                  setUndercut(null);
                 }}
-                onRetry={() => void stopResult.refetch()}
+                onRetry={() => void undercutResult.refetch()}
               />
-            </>
-          ) : (
-            <UndercutPanel
-              attacker={entry}
-              targets={targets}
-              choice={effectiveChoice}
-              canStop={canStop}
-              maxLap={totalLaps - 1}
-              submitted={undercutActive !== null}
-              result={undercutResult.data}
-              isError={undercutResult.isError}
-              error={undercutResult.error}
-              onChange={(next) => {
-                setChoice(next);
-                setUndercut(null);
-              }}
-              onSimulate={() => {
-                if (lapInProgress === null || !effectiveChoice) return;
-                clock.pause();
-                setUndercut({
-                  request: {
-                    attacker: selected,
-                    defender: effectiveChoice.defender,
-                    stop_lap: lapInProgress,
-                    attacker_compound: effectiveChoice.compound,
-                    defender_compound: effectiveChoice.compound,
-                    defender_reaction_laps: Number(effectiveChoice.reaction),
-                  },
-                  time,
-                });
-              }}
-              onClear={() => {
-                setUndercut(null);
-              }}
-              onRetry={() => void undercutResult.refetch()}
-            />
-          )}
-        </aside>
-      )}
+            )}
+          </aside>
+        )}
+      </div>
     </div>
   );
 }

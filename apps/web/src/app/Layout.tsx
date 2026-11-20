@@ -1,4 +1,4 @@
-import { type ReactNode, Suspense, useState } from "react";
+import { type ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import {
   BookOpen,
   CalendarDays,
@@ -18,7 +18,7 @@ import {
   UsersRound,
   Wrench,
 } from "lucide-react";
-import { Link, NavLink, Outlet, useLocation, useMatch } from "react-router";
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatch } from "react-router";
 
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ApiStatus } from "@/features/health/ApiStatus";
@@ -108,7 +108,7 @@ export function Layout() {
           {sessionId !== null && <RaceBar sessionId={sessionId} onTyres={tyres !== null} />}
         </ContextBar>
         <div className="mx-auto flex w-full max-w-[1840px] flex-1 flex-col px-4 pt-6 sm:px-8">
-          <main id="main" tabIndex={-1} className="flex-1 pb-16">
+          <main id="main" tabIndex={-1} className="flex-1 pb-16 outline-none">
             <Suspense fallback={<Skeleton className="h-[60vh]" />}>
               <Outlet />
             </Suspense>
@@ -116,7 +116,44 @@ export function Layout() {
         </div>
         <SiteFooter />
       </div>
+      <ScrollRestoration />
+      <RouteAnnouncer />
     </div>
+  );
+}
+
+/** Time for a lazy page to load and set its title before it is announced. */
+const ANNOUNCE_DELAY_MS = 600;
+
+/**
+ * A new page (not a new filter) moves the focus to the content and announces the page
+ * title, as a full page load would for screen readers.
+ */
+function RouteAnnouncer() {
+  const location = useLocation();
+  const { pathname } = location;
+  const state: unknown = location.state;
+  const keepFocus =
+    typeof state === "object" && state !== null && "keepFocus" in state && state.keepFocus === true;
+  const first = useRef(true);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    if (!keepFocus) document.getElementById("main")?.focus({ preventScroll: true });
+    const timer = window.setTimeout(() => {
+      setMessage(document.title);
+    }, ANNOUNCE_DELAY_MS);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [pathname, keepFocus]);
+  return (
+    <p aria-live="polite" aria-atomic="true" className="sr-only">
+      {message}
+    </p>
   );
 }
 

@@ -281,6 +281,9 @@ export const fr: Record<MessageKey, string> = {
   "home.pos": "Pos",
   "home.marginLabel": "D'avance sur P2",
   "home.seasonWins": "Victoires cette saison",
+  "race.pageTitle": "{event} {year} : rejeu et stratégie",
+  "race.pageIntro":
+    "Revivez la course tour par tour sur le circuit. Choisissez un pilote, puis testez un arrêt maintenant, un undercut sur la voiture de devant ou une tout autre stratégie de pneus.",
   "chart.hint": "Tracez un cadre sur le graphique pour zoomer · double-clic pour tout revoir",
   "chart.zoomed":
     "Zoom actif · tracez un autre cadre pour approcher, double-clic ou réinitialiser pour tout revoir",

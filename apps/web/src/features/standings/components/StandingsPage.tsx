@@ -119,7 +119,11 @@ function Standings({ year }: { year: number }) {
             <SeasonSelect
               value={year}
               onChange={(value) => {
-                if (value !== null) void navigate(`/standings/${value}`);
+                if (value !== null)
+                  void navigate(`/standings/${value}`, {
+                    preventScrollReset: true,
+                    state: { keepFocus: true },
+                  });
               }}
             />
           </>

@@ -278,6 +278,9 @@ export const en = {
   "home.pos": "Pos",
   "home.marginLabel": "Ahead of P2",
   "home.seasonWins": "Season wins",
+  "race.pageTitle": "{event} {year}: replay and strategy",
+  "race.pageIntro":
+    "Watch the race lap by lap on the circuit. Pick a driver, then test a pit stop now, an undercut on the car ahead or a whole other tyre strategy.",
   "chart.hint": "Drag a box over the chart to zoom into it · double-click to see everything",
   "chart.zoomed": "Zoomed in · drag again to go closer, double-click or reset to see everything",
   "chart.zoomIn": "Zoom in",
