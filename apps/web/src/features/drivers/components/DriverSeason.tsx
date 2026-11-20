@@ -18,7 +18,7 @@ import { TeamName } from "@/components/hub/TeamName";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useDriverResults } from "@/features/hub/api";
+import { useDriverResults } from "@/lib/queries";
 import { useDecisions } from "@/features/paddock/api";
 import { DecisionTable } from "@/features/paddock/components/DecisionTable";
 import { eventName } from "@/lib/i18n/content";

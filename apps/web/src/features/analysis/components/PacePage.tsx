@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { LapChart } from "@/features/race-analysis/components/LapChart";
 import { positionsByLap } from "@/features/race-analysis/laps";
-import { useSeasonEvents } from "@/features/hub/api";
+import { useSeasonEvents } from "@/lib/queries";
 import { useReplay, useSessionDetail } from "@/features/race/api";
 import { buildClock } from "@/features/race/replay";
 import { eventName } from "@/lib/i18n/content";

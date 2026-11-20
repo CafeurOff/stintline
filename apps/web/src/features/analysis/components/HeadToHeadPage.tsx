@@ -11,7 +11,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useDrivers } from "@/features/hub/api";
+import { useDrivers } from "@/lib/queries";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";

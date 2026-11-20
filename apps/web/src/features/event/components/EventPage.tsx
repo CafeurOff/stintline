@@ -20,14 +20,14 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton, SkeletonTiles } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-import { useEvent } from "@/features/hub/api";
+import { useEvent } from "@/lib/queries";
 import {
   ClimberTile,
   FactsPanel,
   FastestLapTile,
   FastestStopTile,
   RaceControlTile,
-} from "@/features/hub/RaceFacts";
+} from "@/features/race-facts/RaceFacts";
 import { useReport } from "@/features/news/api";
 import { GoFurther, RacePreview, ResultFacts } from "./EventExtras";
 import { teamColour } from "@/lib/teams";

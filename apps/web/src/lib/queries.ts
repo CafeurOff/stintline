@@ -1,3 +1,5 @@
+/** Result queries shared by the hub pages: home, calendar, events, drivers, teams, standings. */
+
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";

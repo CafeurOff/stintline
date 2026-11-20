@@ -22,7 +22,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { DriverChip } from "@/features/analysis/components/common";
-import { useTeams } from "@/features/hub/api";
+import { useTeams } from "@/lib/queries";
 import { useSeasonParam } from "@/features/analysis/season";
 import { PenaltyTags } from "@/features/paddock/components/PenaltyTags";
 import { ApiError } from "@/lib/errors";

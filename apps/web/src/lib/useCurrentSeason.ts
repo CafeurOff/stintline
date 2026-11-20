@@ -1,6 +1,6 @@
 import { useSeasons } from "@/features/race-picker/api";
 
-import { useHome } from "./api";
+import { useHome } from "./queries";
 
 /** The season of the latest race, else the most recent stored season. */
 export function useCurrentSeason(): { season: number | null; isPending: boolean } {

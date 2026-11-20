@@ -13,7 +13,7 @@ import { CircuitMark } from "@/components/racing/CircuitMark";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
-import { useEvent, useHome } from "@/features/hub/api";
+import { useEvent, useHome } from "@/lib/queries";
 import { useTrack } from "@/features/race/api";
 import { type CarMarker, type Ghost, TrackMap } from "@/features/race/components/TrackMap";
 import { pointAt } from "@/features/race/replay";

@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { DriverSeason } from "./DriverSeason";
-import { useDriver } from "@/features/hub/api";
+import { useDriver } from "@/lib/queries";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";

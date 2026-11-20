@@ -15,7 +15,7 @@ import { initials } from "@/components/racing/initials";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-import { useTeam } from "@/features/hub/api";
+import { useTeam } from "@/lib/queries";
 import { ApiError } from "@/lib/errors";
 import { useI18n } from "@/lib/i18n/context";
 import { nationalityCountry } from "@/lib/i18n/geo";

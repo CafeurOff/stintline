@@ -1,7 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 
 import { initials } from "@/components/racing/initials";
-import { useCurrentSeason } from "@/features/hub/useCurrentSeason";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 type Driver = Schema<"Driver">;
