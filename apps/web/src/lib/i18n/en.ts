@@ -1305,6 +1305,51 @@ export const en = {
   "tech.session.qualifying": "Qualifying",
   "tech.session.practice": "Practice",
   "tech.session.other": "Other",
+  "nav.about": "About and credits",
+  "about.title": "About and credits",
+  "about.intro":
+    "StintLine is a fan project: race strategy and Formula 1 history built from public timing and results data. Here is where everything comes from, and what we keep about you (nothing).",
+  "about.dataTitle": "Data and pictures",
+  "about.data.openf1":
+    "Timing since 2023: laps, stints, pit stops, positions, car data and team radio.",
+  "about.data.jolpica": "Results, qualifying, standings, calendars and biographies since 1950.",
+  "about.data.fia":
+    "Event documents and stewards' decisions. PDFs are relayed when you open them, never stored.",
+  "about.data.weather": "Weather forecasts for the coming sessions.",
+  "about.data.wikipedia":
+    "Freely licensed driver portraits, each credited to its author on the driver's page.",
+  "about.data.media":
+    "Official driver portraits and car renders, linked from their original addresses.",
+  "about.data.news":
+    "Headlines and links from public news feeds. Articles stay on their publishers' sites.",
+  "about.terms.ccby": "CC BY 4.0",
+  "about.terms.wikipedia": "Licences vary per picture (CC BY, CC BY-SA, public domain).",
+  "about.terms.media": "© Formula One World Championship Limited. Never downloaded or stored.",
+  "about.terms.news": "© their publishers.",
+  "about.privacyTitle": "Your privacy",
+  "about.privacy.cookies": "No cookies, no advertising and no tracker.",
+  "about.privacy.storage":
+    "Your browser remembers your theme, language and sidebar choice. They never leave it.",
+  "about.privacy.visits":
+    "Visits are counted from the server's access log, without any profile of who you are.",
+  "about.unofficialTitle": "Unofficial",
+  "about.unofficial":
+    "StintLine is not associated with Formula 1, the FIA or any team. F1, FORMULA 1 and related marks belong to Formula One Licensing B.V.",
+  "about.model":
+    "Our own figures (tyre wear, pit loss, undercuts) come from a model tested on real races:",
+  "about.softwareTitle": "Built with",
+  "about.soft.font": "The typeface of every title and figure.",
+  "about.soft.flags": "Country flags.",
+  "about.soft.icons": "Icons.",
+  "about.soft.charts": "Charts.",
+  "about.soft.3d": "The 3D lap.",
+  "about.soft.pdf": "The FIA document viewer.",
+  "about.soft.stack": "The web app and the API.",
+  "about.terms.ofl": "SIL Open Font License 1.1",
+  "about.terms.mit": "MIT licence",
+  "about.terms.isc": "ISC licence",
+  "about.terms.apache": "Apache 2.0 licence",
+  "about.source": "Source code on GitHub",
 } as const;
 
 export type MessageKey = keyof typeof en;

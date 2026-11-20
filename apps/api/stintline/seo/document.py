@@ -71,6 +71,7 @@ PAGE_MODULES: tuple[tuple[re.Pattern[str], str], ...] = tuple(
         (r"documents", "paddock/components/DocumentsPage"),
         (r"technical", "technical/components/TechnicalPage"),
         (r"model", "model-about/components/ModelPage"),
+        (r"about", "about/components/AboutPage"),
     )
 )
 """The home and not-found pages are in the main chunk."""

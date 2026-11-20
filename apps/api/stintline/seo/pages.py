@@ -153,6 +153,12 @@ STATIC: dict[str, PageMeta] = {
         "Car upgrades, power-unit elements and incidents read from FIA documents.",
         "Évolutions des voitures, éléments moteur et incidents lus dans les documents FIA.",
     ),
+    "about": _static(
+        "About and credits",
+        "À propos et crédits",
+        "Where StintLine's data and pictures come from, their licences, and our privacy rules.",
+        "D'où viennent les données et images de StintLine, leurs licences, et la confidentialité.",
+    ),
     "model": _static(
         "How it works",
         "Comment ça marche",

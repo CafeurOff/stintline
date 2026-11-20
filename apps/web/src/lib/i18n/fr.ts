@@ -1327,4 +1327,50 @@ export const fr: Record<MessageKey, string> = {
   "tech.session.qualifying": "Qualifications",
   "tech.session.practice": "Essais libres",
   "tech.session.other": "Autre",
+  "nav.about": "À propos et crédits",
+  "about.title": "À propos et crédits",
+  "about.intro":
+    "StintLine est un projet de fan : la stratégie de course et l'histoire de la Formule 1 à partir des chronos et résultats publics. Voici d'où vient chaque chose, et ce que nous gardons sur vous (rien).",
+  "about.dataTitle": "Données et images",
+  "about.data.openf1":
+    "Les chronos depuis 2023 : tours, relais, arrêts, positions, télémétrie et radios.",
+  "about.data.jolpica":
+    "Résultats, qualifications, classements, calendriers et biographies depuis 1950.",
+  "about.data.fia":
+    "Documents des Grands Prix et décisions des commissaires. Les PDF sont relayés quand vous les ouvrez, jamais conservés.",
+  "about.data.weather": "Prévisions météo des prochaines séances.",
+  "about.data.wikipedia":
+    "Portraits de pilotes sous licence libre, chacun crédité à son auteur sur la fiche du pilote.",
+  "about.data.media":
+    "Portraits officiels des pilotes et images des voitures, liés depuis leur adresse d'origine.",
+  "about.data.news":
+    "Titres et liens des flux d'actualité publics. Les articles restent sur le site de leur éditeur.",
+  "about.terms.ccby": "CC BY 4.0",
+  "about.terms.wikipedia": "Licence propre à chaque image (CC BY, CC BY-SA, domaine public).",
+  "about.terms.media": "© Formula One World Championship Limited. Jamais téléchargés ni conservés.",
+  "about.terms.news": "© leurs éditeurs.",
+  "about.privacyTitle": "Vos données",
+  "about.privacy.cookies": "Aucun cookie, aucune publicité, aucun traceur.",
+  "about.privacy.storage":
+    "Votre navigateur retient votre thème, votre langue et l'état de la barre latérale. Ces choix ne le quittent pas.",
+  "about.privacy.visits":
+    "Les visites sont comptées à partir du journal du serveur, sans profil de qui vous êtes.",
+  "about.unofficialTitle": "Non officiel",
+  "about.unofficial":
+    "StintLine n'a aucun lien avec la Formule 1, la FIA ou une écurie. F1, FORMULA 1 et les marques associées appartiennent à Formula One Licensing B.V.",
+  "about.model":
+    "Nos propres chiffres (usure, perte au stand, undercuts) viennent d'un modèle testé sur de vraies courses :",
+  "about.softwareTitle": "Fait avec",
+  "about.soft.font": "La police de tous les titres et chiffres.",
+  "about.soft.flags": "Les drapeaux.",
+  "about.soft.icons": "Les icônes.",
+  "about.soft.charts": "Les graphiques.",
+  "about.soft.3d": "Le tour en 3D.",
+  "about.soft.pdf": "La visionneuse des documents FIA.",
+  "about.soft.stack": "L'application web et l'API.",
+  "about.terms.ofl": "SIL Open Font License 1.1",
+  "about.terms.mit": "Licence MIT",
+  "about.terms.isc": "Licence ISC",
+  "about.terms.apache": "Licence Apache 2.0",
+  "about.source": "Code source sur GitHub",
 };

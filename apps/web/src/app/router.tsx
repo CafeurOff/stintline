@@ -57,6 +57,7 @@ const TechnicalPage = page(
   () => import("@/features/technical/components/TechnicalPage"),
   "TechnicalPage",
 );
+const AboutPage = page(() => import("@/features/about/components/AboutPage"), "AboutPage");
 const ModelPage = page(() => import("@/features/model-about/components/ModelPage"), "ModelPage");
 
 export const routes: RouteObject[] = [
@@ -87,6 +88,7 @@ export const routes: RouteObject[] = [
       { path: "documents", element: <DocumentsPage /> },
       { path: "technical", element: <TechnicalPage /> },
       { path: "model", element: <ModelPage /> },
+      { path: "about", element: <AboutPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

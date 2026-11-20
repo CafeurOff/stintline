@@ -8,7 +8,7 @@ import {
   FileText,
   Gauge,
   House,
-  type LucideIcon,
+  Info,
   Newspaper,
   PanelLeftClose,
   PanelLeftOpen,
@@ -16,6 +16,7 @@ import {
   Route,
   Swords,
   Trophy,
+  type LucideIcon,
   UserRound,
   UsersRound,
   Wrench,
@@ -75,7 +76,13 @@ const GROUPS: readonly { key: MessageKey; links: readonly Section[] }[] = [
       ["/technical", "nav.technical", Cog],
     ],
   },
-  { key: "nav.group.about", links: [["/model", "nav.model", BookOpen]] },
+  {
+    key: "nav.group.about",
+    links: [
+      ["/model", "nav.model", BookOpen],
+      ["/about", "nav.about", Info],
+    ],
+  },
 ];
 
 const railLink = ({ isActive }: { isActive: boolean }) =>
@@ -450,7 +457,12 @@ function SiteFooter() {
   return (
     <footer className="border-t border-line">
       <div className="mx-auto flex w-full max-w-[1840px] flex-col gap-2 px-4 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between sm:px-8">
-        <p>{t("app.disclaimer")}</p>
+        <p>
+          {t("app.disclaimer")}{" "}
+          <Link to="/about" className="font-semibold underline underline-offset-2 hover:text-ink">
+            {t("nav.about")}
+          </Link>
+        </p>
         <ApiStatus />
       </div>
     </footer>
