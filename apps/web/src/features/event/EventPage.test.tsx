@@ -54,14 +54,4 @@ describe("Grand Prix page", () => {
         .map((h) => h.textContent),
     ).toContain("Q3");
   });
-
-  it("shows a non-finish as its classification, not its order", async () => {
-    renderRoute("/drivers/norris");
-
-    const row = (await screen.findByRole("link", { name: "Las Vegas Grand Prix" })).closest("tr");
-
-    if (!row) throw new Error("no row for the Las Vegas Grand Prix");
-    expect(within(row).getByTitle("Disqualified")).toHaveTextContent("DSQ");
-    expect(row).not.toHaveTextContent("19");
-  });
 });

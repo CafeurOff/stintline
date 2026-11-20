@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
@@ -85,5 +85,15 @@ describe("Driver pages", () => {
     await userEvent.selectOptions(select, "Every season");
 
     expect(router.state.location.search).toBe("?season=all");
+  });
+
+  it("shows a non-finish as its classification, not its order", async () => {
+    renderRoute("/drivers/norris");
+
+    const row = (await screen.findByRole("link", { name: "Las Vegas Grand Prix" })).closest("tr");
+
+    if (!row) throw new Error("no row for the Las Vegas Grand Prix");
+    expect(within(row).getByTitle("Disqualified")).toHaveTextContent("DSQ");
+    expect(row).not.toHaveTextContent("19");
   });
 });
