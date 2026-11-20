@@ -44,3 +44,17 @@ test("changing a filter keeps the reader where they are", async ({ page }) => {
   await expect(page).toHaveURL(/table=constructors/);
   expect(await scrollY(page)).toBe(before);
 });
+
+test("reduce the sidebar to icons and find it reduced after a reload", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Reduce the menu" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-rail", "collapsed");
+
+  await page.locator('#site-rail a[href="/standings"]').hover();
+  await expect(page.getByText("Standings", { exact: true }).last()).toBeVisible();
+
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-rail", "collapsed");
+  await page.keyboard.press("[");
+  await expect(page.locator("html")).not.toHaveAttribute("data-rail", "collapsed");
+});

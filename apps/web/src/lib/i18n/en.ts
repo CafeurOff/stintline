@@ -20,6 +20,8 @@ export const en = {
   "countdown.hours": "Hrs",
   "countdown.minutes": "Min",
   "countdown.seconds": "Sec",
+  "nav.collapse": "Reduce the menu",
+  "nav.expand": "Expand the menu",
   "nav.label": "Main",
   "nav.race": "Race",
   "nav.tyres": "Tyres",

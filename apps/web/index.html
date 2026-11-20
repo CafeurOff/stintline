@@ -12,10 +12,14 @@
     <title>StintLine</title>
     <script>
       // Apply the stored theme before first paint (dark is the default). Mirrors src/lib/theme.ts.
+      // The sidebar state mirrors src/app/rail.ts.
       // Language mirrors src/lib/i18n/locale.ts (stored choice, else browser language).
       try {
         if (localStorage.getItem("stintline-theme") === "light") {
           document.documentElement.dataset.theme = "light";
+        }
+        if (localStorage.getItem("stintline-rail") === "collapsed") {
+          document.documentElement.dataset.rail = "collapsed";
         }
         var lang = localStorage.getItem("stintline-locale");
         document.documentElement.lang =

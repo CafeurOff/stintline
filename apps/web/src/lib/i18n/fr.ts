@@ -19,6 +19,8 @@ export const fr: Record<MessageKey, string> = {
   "countdown.hours": "H",
   "countdown.minutes": "Min",
   "countdown.seconds": "Sec",
+  "nav.collapse": "Réduire le menu",
+  "nav.expand": "Déplier le menu",
   "nav.label": "Navigation principale",
   "nav.race": "Course",
   "nav.tyres": "Pneus",

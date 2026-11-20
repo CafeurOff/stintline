@@ -1,4 +1,7 @@
 @import "tailwindcss";
+
+/* Desktop sidebar reduced to a rail of icons (<html data-rail="collapsed">, see app/rail.ts). */
+@custom-variant rail-collapsed (&:where([data-rail="collapsed"], [data-rail="collapsed"] *));
 @import "@fontsource-variable/archivo/standard.css";
 @import "@fontsource-variable/archivo/standard-italic.css";
 @import "@fontsource/ibm-plex-mono/400.css";
