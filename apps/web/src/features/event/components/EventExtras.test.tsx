@@ -1,5 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
+import { MemoryRouter } from "react-router";
 
 import { circuits } from "@/test/fixtures/analysis";
 import { events } from "@/test/fixtures/events";
@@ -8,7 +9,6 @@ import { renderRoute, renderWithProviders } from "@/test/render";
 import { server, SESSION_ID } from "@/test/server";
 
 import { GoFurther, RacePreview, ResultFacts } from "./EventExtras";
-import { MemoryRouter } from "react-router";
 
 describe("Grand Prix extras", () => {
   it("previews a race to come with the circuit figures and the last editions", async () => {

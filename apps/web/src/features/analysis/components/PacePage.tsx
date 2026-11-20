@@ -11,21 +11,21 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/layout/Panel";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SeasonSelect } from "@/components/racing/SeasonSelect";
+import { Panel, Tile } from "@/components/layout/Panel";
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { LapChart } from "@/features/race-analysis/components/LapChart";
 import { positionsByLap } from "@/features/race-analysis/laps";
-import { useSeasonEvents } from "@/lib/queries";
 import { useReplay, useSessionDetail } from "@/features/race/api";
 import { buildClock } from "@/features/race/replay";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { useSeasonEvents } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
 import { intListParam, intParam, useSearchParamsState } from "@/lib/useSearchParam";
 

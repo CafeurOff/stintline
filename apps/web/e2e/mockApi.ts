@@ -3,7 +3,6 @@ import type { Page } from "@playwright/test";
 import { degradation } from "../src/test/fixtures/degradation";
 import { events } from "../src/test/fixtures/events";
 import { homeResponse } from "../src/test/fixtures/home";
-import { strategyResponse, type StrategyRequest } from "../src/test/fixtures/strategy";
 import { driver, driverResults, drivers, sectors } from "../src/test/fixtures/hub";
 import { lapsResponse } from "../src/test/fixtures/laps";
 import { model } from "../src/test/fixtures/model";
@@ -12,6 +11,7 @@ import { pitLoss } from "../src/test/fixtures/pitLoss";
 import { replay } from "../src/test/fixtures/replay";
 import { session } from "../src/test/fixtures/session";
 import { stints } from "../src/test/fixtures/stints";
+import { strategyResponse, type StrategyRequest } from "../src/test/fixtures/strategy";
 import { track } from "../src/test/fixtures/track";
 import { undercut } from "../src/test/fixtures/undercut";
 

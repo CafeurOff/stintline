@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/layout/Panel";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Panel, Tile } from "@/components/layout/Panel";
+import { Flag } from "@/components/racing/Flag";
 import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { TeamName } from "@/components/racing/TeamName";
-import { Flag } from "@/components/racing/Flag";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { ApiError } from "@/lib/errors";

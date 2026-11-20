@@ -11,18 +11,9 @@ import {
   teammates,
 } from "./fixtures/analysis";
 import { degradation } from "./fixtures/degradation";
-import { incidents, powerUnits, upgrades } from "./fixtures/technical";
-import {
-  decisions,
-  documentDetail,
-  documentEvents,
-  documentList,
-  documentSearch,
-} from "./fixtures/paddock";
 import { events } from "./fixtures/events";
 import { forecasts } from "./fixtures/forecast";
 import { homeResponse } from "./fixtures/home";
-import { strategyResponse } from "./fixtures/strategy";
 import {
   driver,
   driverResults,
@@ -33,15 +24,24 @@ import {
   team,
   teams,
 } from "./fixtures/hub";
+import { lapsResponse } from "./fixtures/laps";
 import { model } from "./fixtures/model";
 import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
-import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
+import {
+  decisions,
+  documentDetail,
+  documentEvents,
+  documentList,
+  documentSearch,
+} from "./fixtures/paddock";
 import { pitExit } from "./fixtures/pitExit";
 import { pitLoss } from "./fixtures/pitLoss";
-import { lapsResponse } from "./fixtures/laps";
 import { replay } from "./fixtures/replay";
 import { session } from "./fixtures/session";
 import { stints } from "./fixtures/stints";
+import { strategyResponse } from "./fixtures/strategy";
+import { incidents, powerUnits, upgrades } from "./fixtures/technical";
+import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
 import { title } from "./fixtures/title";
 import { track } from "./fixtures/track";
 import { undercut } from "./fixtures/undercut";

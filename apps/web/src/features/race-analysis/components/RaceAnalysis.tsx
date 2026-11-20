@@ -1,16 +1,15 @@
 import type { Schema } from "@stintline/api-types";
-
 import { Link } from "react-router";
 
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { TermList } from "@/components/ui/Term";
 import { useReplay, useStints } from "@/features/race/api";
 import { driverCode, driverName } from "@/features/race/entries";
 import { buildClock } from "@/features/race/replay";
 import { TelemetrySection } from "@/features/telemetry/TelemetryView";
 import { StrategyStrips } from "@/features/tyres/components/StrategyStrips";
-import { TermList } from "@/components/ui/Term";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";

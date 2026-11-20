@@ -3,18 +3,18 @@ import type { Schema } from "@stintline/api-types";
 
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { TermList } from "@/components/ui/Term";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { TermList } from "@/components/ui/Term";
+import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { useSessionDetail, useStints } from "@/features/race/api";
 import { byFinish, driverCode, driverName, type Entry } from "@/features/race/entries";
 import { useSessionId } from "@/features/race/useSessionId";
-import { NotFoundPage } from "@/features/home/NotFoundPage";
 import { compoundInfo, RACE_COMPOUNDS } from "@/lib/compounds";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
-import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { intListParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useDegradation } from "../api";
 import { DegradationChart, type SeriesStyle } from "./DegradationChart";

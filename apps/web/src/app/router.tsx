@@ -3,7 +3,6 @@ import { createBrowserRouter, type RouteObject } from "react-router";
 
 import { HomePage } from "@/features/home/components/HomePage";
 import { NotFoundPage } from "@/features/home/NotFoundPage";
-
 import { FRENCH_PREFIX, pathLocale } from "@/lib/i18n/locale";
 
 import { Layout } from "./Layout";

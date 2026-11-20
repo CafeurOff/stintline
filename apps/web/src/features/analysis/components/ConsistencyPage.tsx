@@ -2,11 +2,11 @@ import type { Schema } from "@stintline/api-types";
 import { Crosshair, Grid3x3, ListOrdered, Shuffle, Sparkles, TrendingDown } from "lucide-react";
 import { Link } from "react-router";
 
-import { Panel, Tile } from "@/components/layout/Panel";
-import { RoundBars } from "@/components/racing/RoundBars";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { SeasonSelect } from "@/components/racing/SeasonSelect";
+import { Panel, Tile } from "@/components/layout/Panel";
 import { Flag } from "@/components/racing/Flag";
+import { RoundBars } from "@/components/racing/RoundBars";
+import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { ApiError } from "@/lib/errors";

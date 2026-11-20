@@ -2,8 +2,8 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
-import { renderRoute } from "@/test/render";
 import { headToHead, pitStops, teammates } from "@/test/fixtures/analysis";
+import { renderRoute } from "@/test/render";
 import { problem, server } from "@/test/server";
 
 /** Several clicks on a page with charts: slower than one query under coverage. */

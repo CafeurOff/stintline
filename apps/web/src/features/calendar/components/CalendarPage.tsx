@@ -1,15 +1,15 @@
 import { useNavigate, useParams } from "react-router";
+import type { Schema } from "@stintline/api-types";
 
+import { KeyFigures } from "@/components/layout/KeyFigures";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { useI18n } from "@/lib/i18n/context";
 import { useSeasonEvents } from "@/lib/queries";
 import { useCurrentSeason } from "@/lib/useCurrentSeason";
-import { useI18n } from "@/lib/i18n/context";
 import { useNow } from "@/lib/useNow";
-import type { Schema } from "@stintline/api-types";
-import { KeyFigures } from "@/components/layout/KeyFigures";
 
 import { GrandPrixCard } from "./GrandPrixCard";
 

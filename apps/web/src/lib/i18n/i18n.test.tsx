@@ -1,4 +1,3 @@
-import { interpolate } from "./interpolate";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
@@ -7,6 +6,7 @@ import { useI18n } from "./context";
 import { en } from "./en";
 import { fr } from "./fr";
 import { I18nProvider } from "./I18nProvider";
+import { interpolate } from "./interpolate";
 import { initialLocale, LOCALE_STORAGE_KEY, localePath, pathLocale } from "./locale";
 
 function Probe() {

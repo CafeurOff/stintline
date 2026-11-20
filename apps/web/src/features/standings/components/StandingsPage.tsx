@@ -1,28 +1,27 @@
 import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useNavigate, useParams } from "react-router";
-
 import { ChartLine, PieChart, Trophy } from "lucide-react";
 
-import { Bust } from "@/components/racing/Bust";
-import { Move } from "@/components/racing/Move";
-import { Panel } from "@/components/layout/Panel";
-import { DriverName } from "@/components/racing/DriverName";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Panel } from "@/components/layout/Panel";
+import { Bust } from "@/components/racing/Bust";
+import { DriverName } from "@/components/racing/DriverName";
+import { initials } from "@/components/racing/initials";
+import { Move } from "@/components/racing/Move";
 import { SeasonSelect } from "@/components/racing/SeasonSelect";
 import { TeamName } from "@/components/racing/TeamName";
-import { initials } from "@/components/racing/initials";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Select } from "@/components/ui/Select";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { TitleFight } from "@/features/championship/TitleFight";
-import { useProgression, useStandings } from "@/lib/queries";
-import { useCurrentSeason } from "@/lib/useCurrentSeason";
 import { ApiError } from "@/lib/errors";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { useProgression, useStandings } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
+import { useCurrentSeason } from "@/lib/useCurrentSeason";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { ProgressionChart } from "./ProgressionChart";

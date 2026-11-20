@@ -2,8 +2,8 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
-import { renderRoute, renderWithProviders } from "@/test/render";
 import { powerUnits, upgrades } from "@/test/fixtures/technical";
+import { renderRoute, renderWithProviders } from "@/test/render";
 import { problem, server } from "@/test/server";
 
 import { CarDiagram } from "./components/CarDiagram";

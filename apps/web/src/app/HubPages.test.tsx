@@ -2,9 +2,9 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
-import { renderRoute } from "@/test/render";
 import { driver } from "@/test/fixtures/hub";
 import { session } from "@/test/fixtures/session";
+import { renderRoute } from "@/test/render";
 import { problem, seasonsResponse, server, SESSION_ID } from "@/test/server";
 
 describe("Hub pages", () => {

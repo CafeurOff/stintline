@@ -5,7 +5,6 @@ import { scaleLinear } from "@visx/scale";
 import { useId, useState } from "react";
 
 import { ChartTooltip } from "@/components/charts/ChartTooltip";
-
 import { useElementWidth } from "@/lib/useElementWidth";
 
 interface LossRow {

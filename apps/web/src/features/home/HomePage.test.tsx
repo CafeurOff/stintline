@@ -2,8 +2,8 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
-import { renderRoute } from "@/test/render";
 import { hungaryReport } from "@/test/fixtures/news";
+import { renderRoute } from "@/test/render";
 import { homeResponse, server } from "@/test/server";
 
 describe("Home page", () => {

@@ -1,7 +1,7 @@
 import type { Schema } from "@stintline/api-types";
 
-import { Move } from "@/components/racing/Move";
 import { CompoundBadge } from "@/components/racing/CompoundBadge";
+import { Move } from "@/components/racing/Move";
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 

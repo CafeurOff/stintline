@@ -2,19 +2,19 @@ import type { CSSProperties } from "react";
 import type { Schema } from "@stintline/api-types";
 import { Link, useParams } from "react-router";
 
-import { DriverName } from "@/components/racing/DriverName";
 import { KeyFigures, type Figure as KeyFigure } from "@/components/layout/KeyFigures";
+import { Trails } from "@/components/layout/Trails";
+import { DriverName } from "@/components/racing/DriverName";
 import { DriverPhoto } from "@/components/racing/DriverPhoto";
+import { ResultPosition } from "@/components/racing/ResultStatus";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { useSessionDetail } from "@/features/race/api";
 import { eventName } from "@/lib/i18n/content";
-import { ResultPosition } from "@/components/racing/ResultStatus";
-import { useOutText } from "@/lib/useOutText";
 import { useI18n } from "@/lib/i18n/context";
-import { Trails } from "@/components/layout/Trails";
 import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
+import { useOutText } from "@/lib/useOutText";
 
 import { useReport, useReports } from "../api";
 import { type Report, type Section, writeReport } from "../write";

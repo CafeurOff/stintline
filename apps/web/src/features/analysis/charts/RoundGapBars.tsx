@@ -5,11 +5,10 @@ import { scaleBand, scaleLinear } from "@visx/scale";
 import { useId, useState } from "react";
 
 import { ChartTools } from "@/components/charts/ChartTools";
-import { useI18n } from "@/lib/i18n/context";
 import { ChartTooltip } from "@/components/charts/ChartTooltip";
 import { type Range, useZoom } from "@/components/charts/zoom";
 import { ZoomLayer } from "@/components/charts/ZoomLayer";
-
+import { useI18n } from "@/lib/i18n/context";
 import { useElementWidth } from "@/lib/useElementWidth";
 
 interface RoundGap {

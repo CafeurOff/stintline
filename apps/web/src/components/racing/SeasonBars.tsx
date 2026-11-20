@@ -9,7 +9,6 @@ import { ChartTools } from "@/components/charts/ChartTools";
 import { ChartTooltip } from "@/components/charts/ChartTooltip";
 import { type Range, useZoom } from "@/components/charts/zoom";
 import { ZoomLayer } from "@/components/charts/ZoomLayer";
-
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
 import { useElementWidth } from "@/lib/useElementWidth";
