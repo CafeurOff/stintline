@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import type { CSSProperties } from "react";
 
 import { pillPrimary } from "@/components/layout/Glass";
-import { TrackMap as GlowTrack } from "@/components/layout/TrackMap";
+import { AmbientTrack } from "@/components/layout/AmbientTrack";
 import { Trails } from "@/components/layout/Trails";
 import { Countdown } from "@/components/hub/Countdown";
 import { SectionTitle } from "@/components/hub/SectionTitle";
@@ -142,7 +142,7 @@ function Offline({ next }: { next: Schema<"LiveStatus">["next_session"] }) {
       >
         <Trails colour={accent} />
         {event?.circuit.outline && (
-          <GlowTrack
+          <AmbientTrack
             path={event.circuit.outline}
             colour={accent}
             className="pointer-events-none absolute top-1/2 right-6 hidden aspect-square w-[34%] max-w-md -translate-y-1/2 lg:block"

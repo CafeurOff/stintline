@@ -8,7 +8,7 @@ const LAP_SECONDS = 7;
  * lit in the circuit colour, and a car of light lapping it. Decorative. The lap stops under
  * reduced motion (global rule in index.css).
  */
-export function TrackMap({
+export function AmbientTrack({
   path,
   colour,
   className = "",

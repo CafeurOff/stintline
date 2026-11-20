@@ -24,7 +24,7 @@ import {
   pillGlass,
   pillPrimary,
 } from "@/components/layout/Glass";
-import { TrackMap } from "@/components/layout/TrackMap";
+import { AmbientTrack } from "@/components/layout/AmbientTrack";
 import { Trails } from "@/components/layout/Trails";
 import { CarImage } from "@/components/racing/CarImage";
 import { CircuitMark } from "@/components/racing/CircuitMark";
@@ -235,7 +235,7 @@ function NextRaceHero({ event }: { event: Event }) {
 
         <div className="relative flex flex-col justify-between gap-4">
           {event.circuit.outline && (
-            <TrackMap
+            <AmbientTrack
               path={event.circuit.outline}
               colour={accent}
               className="mx-auto aspect-square w-full max-w-[460px] lg:-mt-4"

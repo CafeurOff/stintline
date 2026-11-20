@@ -16,7 +16,7 @@ by team and circuit colours, light trails, and real figures everywhere.
 | `.glass` | Frosted surface: every card, panel, tile, secondary button. |
 | `.glow` + `--glow` | Lights a card from a corner (`--glow-x`, `--glow-y`) in a team or circuit colour. |
 | `Trails` (`components/layout`) | Light trails across a hero band, in the context colour. |
-| `TrackMap` (`components/layout`) | Tilted circuit with a car of light lapping it. |
+| `AmbientTrack` (`components/layout`) | Tilted circuit with a car of light lapping it. |
 | `.watermark` | Hollow number, position or code behind a subject (size with `cqw` in an `@container`). |
 | `PageHeader` | Lit title band: eyebrow, `.display` title, intro, filters; `colour` and `aside` props. |
 | `GlassCard`, `PillSwitch`, `MoreLink`, `IconBubble` | Cards with a title, two-to-four way switches, "see all" links, icon holders. |

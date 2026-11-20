@@ -5,7 +5,7 @@ import { Link, useParams } from "react-router";
 import { ListOrdered, Play, Scale } from "lucide-react";
 
 import { pillGlass, pillPrimary } from "@/components/layout/Glass";
-import { TrackMap } from "@/components/layout/TrackMap";
+import { AmbientTrack } from "@/components/layout/AmbientTrack";
 import { Trails } from "@/components/layout/Trails";
 import { Bust } from "@/components/racing/Bust";
 import { Panel } from "@/components/layout/Panel";
@@ -287,7 +287,7 @@ function EventHero({
           <span />
         )}
         {event.circuit.outline && (
-          <TrackMap
+          <AmbientTrack
             path={event.circuit.outline}
             colour={accent}
             className="hidden aspect-square w-full self-center xl:block"
