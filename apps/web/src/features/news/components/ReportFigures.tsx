@@ -2,8 +2,8 @@ import type { Schema } from "@stintline/api-types";
 import type { ReactNode } from "react";
 
 import { Skeleton } from "@/components/ui/Skeleton";
-import { LapChart, type LapSeries } from "@/features/analysis/components/LapChart";
-import { gapsByLap, type PerLap, positionsByLap } from "@/features/analysis/laps";
+import { LapChart, type LapSeries } from "@/features/race-analysis/components/LapChart";
+import { gapsByLap, type PerLap, positionsByLap } from "@/features/race-analysis/laps";
 import { useReplay, useStints } from "@/features/race/api";
 import { driverCode } from "@/features/race/entries";
 import { buildClock } from "@/features/race/replay";

@@ -2,7 +2,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import type { Schema } from "@stintline/api-types";
 
 import { SeasonBars } from "@/components/hub/SeasonBars";
-import { LapChart } from "@/features/analysis/components/LapChart";
+import { LapChart } from "@/features/race-analysis/components/LapChart";
 import { LapScatter } from "@/features/insights/charts/LapScatter";
 import { PaceBoxes } from "@/features/insights/charts/PaceBoxes";
 import { RoundGapBars } from "@/features/insights/charts/RoundGapBars";
