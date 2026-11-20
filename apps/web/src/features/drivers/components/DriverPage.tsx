@@ -128,6 +128,7 @@ function DriverHeader({ career }: { career: Career }) {
           colour={colour}
           width={800}
           className="absolute top-0 right-0 hidden h-full w-[34%] sm:block"
+          priority
         />
       )}
       <div className="relative flex min-h-80 flex-col gap-6 p-6 sm:max-w-[60%] sm:flex-row sm:items-end sm:p-9">
@@ -167,11 +168,14 @@ function DriverHeader({ career }: { career: Career }) {
           </figure>
         )}
         {official && (
+          // Same width as the desktop portrait: one download for both.
           <Bust
             url={official}
             label={code}
             colour={colour}
+            width={800}
             className="h-72 w-full rounded-2xl sm:hidden"
+            priority
           />
         )}
         <div className="min-w-0 pb-1">

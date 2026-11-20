@@ -391,19 +391,22 @@ function Performance({ results, colour }: { results: readonly Result[]; colour: 
     <Panel title={t("driver.performance")} icon={<Trophy />}>
       <dl className="flex flex-col gap-3 p-4">
         {rows.map(([label, count, fill]) => (
-          <div key={label} className="flex flex-col gap-1">
-            <div className="flex justify-between text-sm">
-              <dt>{label}</dt>
-              <dd className="num font-semibold">
+          <div key={label} className="grid grid-cols-[1fr_auto] gap-x-2 gap-y-1 text-sm">
+            <dt>{label}</dt>
+            <dd className="contents">
+              <span className="num font-semibold">
                 {count} / {races.length}
-              </dd>
-            </div>
-            <span aria-hidden="true" className="h-2 rounded-full bg-raised">
-              <span
-                className="block h-full rounded-full"
-                style={{ width: `${String((count / races.length) * 100)}%`, backgroundColor: fill }}
-              />
-            </span>
+              </span>
+              <span aria-hidden="true" className="col-span-2 h-2 rounded-full bg-raised">
+                <span
+                  className="block h-full rounded-full"
+                  style={{
+                    width: `${String((count / races.length) * 100)}%`,
+                    backgroundColor: fill,
+                  }}
+                />
+              </span>
+            </dd>
           </div>
         ))}
       </dl>

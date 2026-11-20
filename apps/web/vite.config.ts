@@ -39,10 +39,46 @@ function preloadArchivo(): Plugin {
   };
 }
 
+/**
+ * Starts the reader's dictionary download with the page instead of after the main script runs
+ * (`lib/i18n/messages.ts`): a tiny script, placed after the one in index.html that sets
+ * `<html lang>`, adds a modulepreload for that language's chunk.
+ */
+function preloadDictionary(): Plugin {
+  return {
+    name: "stintline-preload-dictionary",
+    apply: "build",
+    transformIndexHtml: {
+      order: "post",
+      handler(_html, context) {
+        const files: Record<string, string> = {};
+        for (const chunk of Object.values(context.bundle ?? {})) {
+          const locale =
+            chunk.type === "chunk"
+              ? /\/lib\/i18n\/(en|fr)\.ts$/.exec(chunk.facadeModuleId ?? "")
+              : null;
+          if (locale?.[1]) files[locale[1]] = `/${chunk.fileName}`;
+        }
+        if (Object.keys(files).length === 0) return [];
+        return [
+          {
+            tag: "script",
+            children:
+              `(function(){var href=${JSON.stringify(files)}[document.documentElement.lang];` +
+              `if(!href)return;var link=document.createElement("link");link.rel="modulepreload";` +
+              `link.href=href;document.head.appendChild(link);})();`,
+            injectTo: "head",
+          },
+        ];
+      },
+    },
+  };
+}
+
 const apiTarget = process.env.VITE_API_PROXY_TARGET ?? "http://localhost:8000";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), preloadArchivo()],
+  plugins: [react(), tailwindcss(), preloadArchivo(), preloadDictionary()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
