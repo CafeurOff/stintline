@@ -4,7 +4,7 @@
 
 StintLine is a hub for Formula 1 fans built on public timing and results data. Replay a race lap by lap with the real cars on the real track. Ask "what if he had pitted now?", test an undercut, or run the whole race again with another tyre strategy. Then dig into lap charts, gaps, sectors and fastest-lap telemetry. Casual fans get plain answers first. The detailed charts are one click further.
 
-![Home page: the last Grand Prix with its podium, the next one with a countdown, both championships](docs/screenshots/home.png)
+![Home page: the next Grand Prix with its countdown, circuit figures and weekend schedule](docs/screenshots/home.png)
 
 ## What you can do
 
@@ -18,17 +18,20 @@ StintLine is a hub for Formula 1 fans built on public timing and results data. R
 | **Telemetry** | Compare fastest laps: speed, throttle, brake, gear and the gap along the lap, drawn on the circuit with braking zones. Drag across the charts (or pick a corner) to zoom on any part of the lap and compare the drivers there. |
 | **Every Grand Prix since 1950** | Results, qualifying, grids, driver and team careers, championship tables with the title-fight chart. |
 | **News** | Race reports written from the data (in English and French) and headline links to public sources. |
+| **Share what you find** | Every chart copies its link (filters, drivers and zoom included), saves as a picture or downloads its data as CSV. Racing words are explained on hover or tap. |
 | **Live mode (local)** | Follows the official timing feed from your own computer: running order, cars on the circuit, team radio, race control, TV delay. |
 
-The interface is bilingual (English and French), works on phones, and has a light and a dark theme.
+The interface is bilingual, with its own address per language (`/fr/...` for French), works on phones, and has a light and a dark theme. Each page is served with its own title, description, link preview and structured data, and a sitemap lists them all (ADR 0025). No cookies and no tracker; the About page credits every data source and picture.
+
+Measured with Lighthouse (mobile, production build behind nginx): accessibility, best practices and SEO 100 on every audited page, layout shift ≈ 0; performance 75–89, limited by the time a mid-range phone takes to run the app's JavaScript.
 
 ![Replaying the 2026 Brazilian Grand Prix with the strategy simulator open](docs/screenshots/circuit-strategy.png)
 
-![Grands Prix of the season drawn around their circuit, with the winner and a replay button](docs/screenshots/grands-prix.png)
+![The 2026 season: Grands Prix drawn around their circuit, with the winner and a replay button](docs/screenshots/grands-prix.png)
 
-![Telemetry zoomed on one corner: speed, throttle, brake, gear and gap, the circuit framed on that section](docs/screenshots/telemetry.png)
+![Telemetry of Norris and Antonelli zoomed on turns 1 and 2: speed, throttle, brake, gear and gap, the section drawn on the circuit](docs/screenshots/telemetry.png)
 
-Screenshots are taken with third-party images blocked, so drivers appear as their coloured initials. The site shows their official portraits.
+Screenshots are taken with official media blocked, so current drivers appear as their coloured initials. The site shows their official portraits.
 
 ## Quick start
 
