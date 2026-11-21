@@ -46,9 +46,19 @@ function segmentWindow(
   return { from: segments[index]?.start_s ?? 0, to: next ? next.start_s : Infinity };
 }
 
-/** A lap that counts for the classification: timed, finished by `t`, not deleted. */
+/**
+ * A lap that counts for the classification: a timed flying lap finished by `t`, not deleted.
+ * Out laps (timed from the previous crossing, garage included) and in laps never count.
+ */
 function counts(lap: TimelineLap, t: number): boolean {
-  return lap.time_s !== null && lap.end_s !== null && lap.end_s <= t && !lap.deleted;
+  return (
+    lap.time_s !== null &&
+    lap.end_s !== null &&
+    lap.end_s <= t &&
+    !lap.deleted &&
+    !lap.pit_out &&
+    !lap.pit_in
+  );
 }
 
 function bestLap(

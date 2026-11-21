@@ -75,7 +75,7 @@ export function DriverLaps({
             <tbody>
               {[...run].reverse().map((lap) => {
                 const isBest = best !== null && lap.lap === best.lap;
-                const running = lap.end_s === null || lap.end_s > time;
+                const running = lap.end_s !== null && lap.end_s > time;
                 const note = lap.deleted
                   ? t("sreplay.deleted")
                   : lap.pit_out

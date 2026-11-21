@@ -93,6 +93,25 @@ describe("standingsAt", () => {
     expect(lines[0]?.laps).toBe(2);
   });
 
+  it("never ranks out laps or in laps", () => {
+    const data = timeline({
+      cars: [
+        {
+          car_number: 4,
+          laps: [lap(1, 0, 60, { pit_out: true }), lap(2, 60, 70, { pit_in: true })],
+        },
+        { car_number: 16, laps: [lap(1, 0, 90)] },
+      ],
+    });
+
+    const lines = standingsAt(data, 500);
+
+    expect(lines.map((l) => [l.carNumber, l.best?.time_s ?? null])).toEqual([
+      [16, 90],
+      [4, null],
+    ]);
+  });
+
   it("resets times at each segment and keeps the knocked-out cars at the bottom", () => {
     const data = timeline({
       segments: [
