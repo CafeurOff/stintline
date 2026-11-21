@@ -32,7 +32,7 @@ export function DriverForm({ driverRef }: { driverRef: string }) {
       </Panel>
     );
   }
-  if (!form.data) return <Skeleton className="h-[30rem] lg:h-60" />;
+  if (!form.data) return <Skeleton className="h-[39rem] lg:h-[17.5rem]" />;
   const races = form.data.races;
   if (races.length === 0) return null;
   const seasons = new Set(races.map((r) => r.season));
@@ -82,9 +82,9 @@ function FormCell({
         : null;
   const name = eventName(race.event_name, locale);
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto_7.5rem] items-center gap-x-3 gap-y-2 border-b border-line px-5 py-3 lg:grid-cols-1 lg:items-stretch lg:rounded-xl lg:border lg:px-4">
+    <li className="grid grid-cols-[minmax(0,1fr)_auto_7.5rem] items-center gap-x-3 gap-y-2 border-b border-line px-5 py-3 lg:flex lg:flex-col lg:items-stretch lg:rounded-xl lg:border lg:px-4">
       <div className="min-w-0">
-        <p className="flex min-w-0 items-center gap-1.5 text-xs">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs lg:flex-nowrap">
           <Flag country={race.country} />
           <span className="num shrink-0 text-muted">
             {showSeason && `${String(race.season)} · `}
@@ -93,34 +93,36 @@ function FormCell({
           <Link
             to={`/events/${String(race.event_id)}`}
             title={name}
-            className="truncate font-semibold hover:underline"
+            className="font-semibold hover:underline max-lg:basis-full lg:truncate"
           >
             {name}
           </Link>
         </p>
-        {cause && <p className="mt-1 truncate text-xs text-muted">{cause}</p>}
       </div>
-      <div className="flex flex-col items-end gap-0.5 lg:flex-row lg:items-baseline lg:gap-2">
-        <span
-          className={`display num text-2xl leading-none ${finish === 1 ? "text-t-yellow" : ""}`}
-        >
-          {finish === null ? (
-            <ResultPosition classification={race.classification} position={null} />
-          ) : (
-            `P${String(finish)}`
-          )}
-        </span>
-        <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted">
-          {race.grid_position === 0
-            ? t("form.fromPitLane")
-            : race.grid_position !== null && t("form.from", { grid: race.grid_position })}
-          {gained !== null && <Move value={gained} />}
-        </span>
+      <div className="flex min-w-0 flex-col items-end gap-0.5 lg:items-start">
+        <div className="flex flex-col items-end gap-0.5 lg:flex-row lg:items-baseline lg:gap-2">
+          <span
+            className={`display num text-2xl leading-none ${finish === 1 ? "text-t-yellow" : ""}`}
+          >
+            {finish === null ? (
+              <ResultPosition classification={race.classification} position={null} />
+            ) : (
+              `P${String(finish)}`
+            )}
+          </span>
+          <span className="flex items-center gap-1.5 text-xs whitespace-nowrap text-muted">
+            {race.grid_position === 0
+              ? t("form.fromPitLane")
+              : race.grid_position !== null && t("form.from", { grid: race.grid_position })}
+            {gained !== null && <Move value={gained} />}
+          </span>
+        </div>
+        {cause && <p className="max-w-full truncate text-xs text-muted">{cause}</p>}
       </div>
       {race.has_data && race.teammate ? (
         <PaceGap race={race} teammate={race.teammate.family_name} minLaps={minLaps} />
       ) : (
-        <span aria-hidden="true" className="hidden lg:block lg:h-10" />
+        <span aria-hidden="true" className="hidden lg:mt-auto lg:block lg:h-10" />
       )}
     </li>
   );
@@ -140,7 +142,7 @@ function PaceGap({
   const share = gap === null ? 0 : Math.min(1, Math.abs(gap) / GAP_SCALE_S) * 50;
   const quicker = gap !== null && gap < 0;
   return (
-    <div className="flex flex-col gap-1 lg:border-t lg:border-line lg:pt-3">
+    <div className="flex flex-col gap-1 lg:mt-auto lg:border-t lg:border-line lg:pt-3">
       <div className="flex flex-wrap items-baseline justify-end gap-x-2 text-xs lg:justify-between">
         <span className="text-muted">{t("form.vs", { name: teammate })}</span>
         {gap === null ? (

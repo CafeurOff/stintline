@@ -147,3 +147,19 @@ def test_driver_form_from_seeded_season(seeded: None) -> None:
     assert [(r["season"], r["round"]) for r in races] == [(2025, n) for n in range(20, 25)]
     assert races[-1]["event_name"] == "Abu Dhabi Grand Prix"
     assert all(r["teammate"]["ref"] == "piastri" for r in races)
+
+
+def test_driver_form_pace_gaps_from_analysed_races(analysed: None) -> None:
+    SessionEntry.objects.filter(
+        session__event__season__year=2025, session__event__round__gt=16
+    ).delete()
+
+    races = _form("norris")["races"]
+
+    assert [(r["round"], r["pace_gap_s"]) for r in races] == [
+        (12, None),
+        (13, None),
+        (14, 0.099),
+        (15, None),
+        (16, -0.125),
+    ]
