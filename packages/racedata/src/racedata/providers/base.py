@@ -23,6 +23,7 @@ from racedata.models import (
     RaceControlRecord,
     ResultRecord,
     SessionKind,
+    SessionResultRecord,
     StandingRecord,
     StintRecord,
     TeamRadioRecord,
@@ -62,6 +63,8 @@ class TimingSource(Protocol):
     ) -> list[PositionSample]: ...
 
     def team_radio(self, session_key: int) -> list[TeamRadioRecord]: ...
+
+    def session_result(self, session_key: int) -> list[SessionResultRecord]: ...
 
     def car_data(
         self, session_key: int, driver_number: int, start: datetime, end: datetime

@@ -15,7 +15,7 @@ from prometheus_client.core import GaugeMetricFamily
 from prometheus_client.registry import Collector
 
 from stintline.news.models import Headline
-from stintline.racing.models import RACE_KINDS, Season, Session, TelemetryLap
+from stintline.racing.models import INGESTED_KINDS, RACE_KINDS, Season, Session, TelemetryLap
 
 IMPORT_GRACE = timedelta(hours=6)
 """A race or sprint is overdue once it ended this long ago without being imported:
@@ -49,7 +49,14 @@ class StintlineCollector(Collector):
             ends_at__lt=now - IMPORT_GRACE,
             ends_at__gte=now - IMPORT_LOOKBACK,
         ).count()
-        telemetry_races = TelemetryLap.objects.values("entry__session_id").distinct().count()
+        with_telemetry = TelemetryLap.objects.values("entry__session_id").distinct()
+        telemetry_races = with_telemetry.filter(entry__session__kind__in=RACE_KINDS).count()
+        backlog = Session.objects.filter(
+            kind__in=INGESTED_KINDS,
+            openf1_session_key__isnull=False,
+            ingested_at__isnull=True,
+            ends_at__lt=now,
+        ).count()
         last_headline = Headline.objects.aggregate(last=Max("fetched_at"))["last"]
 
         yield _gauge("stintline_seasons", "Seasons stored.", Season.objects.count())
@@ -61,6 +68,16 @@ class StintlineCollector(Collector):
             "stintline_races_with_telemetry",
             "Races and sprints with telemetry (replays and 3D view).",
             telemetry_races,
+        )
+        yield _gauge(
+            "stintline_sessions_with_telemetry",
+            "Sessions of any kind with telemetry (ADR 0028).",
+            with_telemetry.count(),
+        )
+        yield _gauge(
+            "stintline_sessions_backlog",
+            "Finished sessions linked to OpenF1 and not imported yet (catch-up, ADR 0028).",
+            backlog,
         )
         yield _gauge(
             "stintline_races_overdue",

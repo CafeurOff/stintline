@@ -2,6 +2,7 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 
+import { session } from "@/test/fixtures/session";
 import { renderRoute } from "@/test/render";
 import { problem, server, SESSION_ID } from "@/test/server";
 
@@ -44,6 +45,18 @@ describe("Layout and navigation", () => {
 
     expect(router.state.location.pathname).toBe("/sessions/80/tyres");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("names the session in the picker and hides the tyre tab outside races", async () => {
+    server.use(
+      http.get("*/api/v1/sessions/:id", () => HttpResponse.json({ ...session, id: 69, kind: "Q" })),
+    );
+    renderRoute("/sessions/69");
+
+    expect(
+      await screen.findByRole("button", { name: /Hungarian Grand Prix 2025 · Quali/ }),
+    ).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Tyres" })).toBeNull();
   });
 
   it("filters the race dialog by country", async () => {

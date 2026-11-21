@@ -1,0 +1,14 @@
+[
+{"category":"Other","date":"2025-08-02T10:15:13+00:00","driver_number":null,"flag":null,"lap_number":null,"meeting_key":1266,"message":"RISK OF RAIN FOR F1 THIRD PRACTICE SESSION IS 0 %","qualifying_phase":null,"scope":null,"sector":null,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T10:30:00+00:00","driver_number":null,"flag":"GREEN","lap_number":null,"meeting_key":1266,"message":"GREEN LIGHT - PIT EXIT OPEN","qualifying_phase":null,"scope":"Track","sector":null,"session_key":9923},
+{"category":"SessionStatus","date":"2025-08-02T10:30:00.053000+00:00","driver_number":null,"flag":null,"lap_number":null,"meeting_key":1266,"message":"SESSION STARTED","qualifying_phase":null,"scope":null,"sector":null,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:18:34+00:00","driver_number":null,"flag":"YELLOW","lap_number":null,"meeting_key":1266,"message":"YELLOW IN TRACK SECTOR 18","qualifying_phase":null,"scope":"Sector","sector":18,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:18:35+00:00","driver_number":null,"flag":"YELLOW","lap_number":null,"meeting_key":1266,"message":"YELLOW IN TRACK SECTOR 17","qualifying_phase":null,"scope":"Sector","sector":17,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:18:35+00:00","driver_number":null,"flag":"DOUBLE YELLOW","lap_number":null,"meeting_key":1266,"message":"DOUBLE YELLOW IN TRACK SECTOR 18","qualifying_phase":null,"scope":"Sector","sector":18,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:18:36+00:00","driver_number":null,"flag":"CLEAR","lap_number":null,"meeting_key":1266,"message":"CLEAR IN TRACK SECTOR 17","qualifying_phase":null,"scope":"Sector","sector":17,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:18:45+00:00","driver_number":null,"flag":"DOUBLE YELLOW","lap_number":null,"meeting_key":1266,"message":"DOUBLE YELLOW IN TRACK SECTOR 18","qualifying_phase":null,"scope":"Sector","sector":18,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:30:00+00:00","driver_number":null,"flag":"CHEQUERED","lap_number":null,"meeting_key":1266,"message":"CHEQUERED FLAG","qualifying_phase":null,"scope":"Track","sector":null,"session_key":9923},
+{"category":"SessionStatus","date":"2025-08-02T11:30:00.063000+00:00","driver_number":null,"flag":null,"lap_number":null,"meeting_key":1266,"message":"SESSION FINISHED","qualifying_phase":null,"scope":null,"sector":null,"session_key":9923},
+{"category":"Other","date":"2025-08-02T11:30:13+00:00","driver_number":null,"flag":null,"lap_number":null,"meeting_key":1266,"message":"FIRST CAR TO TAKE THE FLAG - CAR 22 (TSU)","qualifying_phase":null,"scope":null,"sector":null,"session_key":9923},
+{"category":"Flag","date":"2025-08-02T11:36:46+00:00","driver_number":null,"flag":"YELLOW","lap_number":null,"meeting_key":1266,"message":"YELLOW IN TRACK SECTOR 15","qualifying_phase":null,"scope":"Sector","sector":15,"session_key":9923}
+]

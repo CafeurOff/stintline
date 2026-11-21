@@ -24,6 +24,16 @@ describe("Grand Prix page", () => {
     expect(router.state.location.search).toBe("?session=Q");
   });
 
+  it("lists every session of the weekend, linking only the replays that are ready", async () => {
+    renderRoute("/events/14");
+
+    const weekend = await screen.findByRole("region", { name: "Weekend sessions" });
+    const links = within(weekend).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([`/sessions/${SESSION_ID}`]);
+    expect(within(weekend).getByText("Practice 1")).toBeVisible();
+    expect(within(weekend).getAllByText("Being imported")).toHaveLength(4);
+  });
+
   it("shows a not-found page for an unknown Grand Prix", async () => {
     renderRoute("/events/999");
 

@@ -11,6 +11,11 @@ urlpatterns = [
     path(
         "sessions/<int:session_id>/stints", views.SessionStintsView.as_view(), name="session-stints"
     ),
+    path(
+        "sessions/<int:session_id>/timeline",
+        views.SessionTimelineView.as_view(),
+        name="session-timeline",
+    ),
     path("sessions/<int:session_id>/track", views.SessionTrackView.as_view(), name="session-track"),
     path(
         "sessions/<int:session_id>/sectors",

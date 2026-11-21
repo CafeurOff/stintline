@@ -15,7 +15,7 @@ from django.utils import timezone
 
 from stintline.ingestion import tasks, telemetry
 from stintline.ingestion.sources import open_sources
-from stintline.racing.models import RACE_KINDS, Session
+from stintline.racing.models import INGESTED_KINDS, Session
 
 
 class Command(BaseCommand):
@@ -43,7 +43,7 @@ class Command(BaseCommand):
         elif season is not None:
             sessions = Session.objects.filter(
                 event__season__year=season,
-                kind__in=RACE_KINDS,
+                kind__in=INGESTED_KINDS,
                 ingested_at__isnull=False,
             ).order_by("-ends_at")
         elif altitude:

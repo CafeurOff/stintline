@@ -69,7 +69,7 @@ The public demo (`infra/docker-compose.demo.yml`, `make demo-up`) runs the produ
 
 ## Key flows
 
-1. **Import.** `refresh_recent` runs every 30 minutes: it refreshes the calendar, imports each finished race or sprint (OpenF1 timing and Jolpica results), then builds its analysis figures and telemetry. Re-running is a no-op.
+1. **Import.** `refresh_recent` runs every 30 minutes: it refreshes the calendar, imports each finished race or sprint (OpenF1 timing and Jolpica results), then builds its analysis figures and telemetry. Practice and qualifying sessions are imported the same way (ADR 0028): those of the last three days at once, older ones four per run. While a session is live OpenF1 refuses every request, so nothing is queued until 45 minutes after it ends. Re-running is a no-op.
 2. **Strategy query.** `POST /api/v1/sessions/{id}/simulate/undercut` → the race context (cleaned laps, degradation fits, pace model, pit loss) is built once per session and cached → the simulation runs → JSON with the expected gain and an uncertainty interval.
 3. **Live (local).** `manage.py live` subscribes to the SignalR topics, merges their updates, keeps what the feed shows only once (pit-lane times, weather per lap) and publishes a snapshot at most once per second to the cache and the `live` Channels group. `GET /api/v1/live` gives the state; `/ws/live` streams the snapshots, and the browser applies the user's TV delay.
 4. **Replay.** `manage.py live --replay FILE --speed N` plays a recording (or one rebuilt from a stored race by `live_demo`) through the same publisher, so the web app cannot tell a replay from a live session.

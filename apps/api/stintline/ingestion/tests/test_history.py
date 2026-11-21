@@ -118,7 +118,7 @@ def test_refresh_recent_queues_finished_sessions_once_per_window() -> None:
         kind=SessionKind.RACE, openf1_session_key=1, ends_at=now - timedelta(hours=2)
     )
     SessionFactory.create(  # too fresh: data not published yet
-        kind=SessionKind.RACE, openf1_session_key=2, ends_at=now - timedelta(minutes=10)
+        kind=SessionKind.RACE, openf1_session_key=2, ends_at=now - timedelta(minutes=50)
     )
     SessionFactory.create(  # imported recently: wait
         kind=SessionKind.RACE,

@@ -13,27 +13,27 @@ from stintline.racing.models import Session, SessionKind
 pytestmark = pytest.mark.django_db
 
 
-def finished_linked_races() -> int:
-    return Session.objects.filter(
-        kind__in=[SessionKind.RACE, SessionKind.SPRINT], openf1_session_key__isnull=False
-    ).count()
+def finished_linked_sessions() -> int:
+    return Session.objects.filter(openf1_session_key__isnull=False).count()
 
 
-def test_ingest_season_task_upserts_calendar_and_queues_finished_races() -> None:
+def test_ingest_season_task_upserts_calendar_and_queues_every_finished_session() -> None:
     with patch.object(tasks.ingest_session, "delay") as delay:
         queued = tasks.ingest_season.delay(2025).get()
 
     assert Session.objects.filter(event__season__year=2025).count() > 100
-    assert len(queued) == finished_linked_races() == delay.call_count
-    assert finished_linked_races() == 24 + 6  # 24 races and 6 sprints in 2025
+    assert len(queued) == finished_linked_sessions() == delay.call_count
+    # 18 conventional weekends (FP1-FP3, Q, R) and 6 sprint weekends (FP1, SQ, sprint, Q, R)
+    assert finished_linked_sessions() == 18 * 5 + 6 * 5
 
 
 def test_ingest_event_task_only_queues_the_requested_round() -> None:
     with patch.object(tasks.ingest_session, "delay") as delay:
         queued = tasks.ingest_event.delay(2025, 14).get()
 
-    assert len(queued) == 1
-    delay.assert_called_once_with(queued[0])
+    kinds = set(Session.objects.filter(pk__in=queued).values_list("kind", flat=True))
+    assert kinds == {"FP1", "FP2", "FP3", "Q", "R"}
+    assert delay.call_count == len(queued) == 5
 
 
 def test_ingest_session_task_returns_counts(seeded: None) -> None:

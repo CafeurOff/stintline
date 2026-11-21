@@ -66,16 +66,27 @@ def session_stints(session_id: int) -> QuerySet[SessionEntry]:
 
 
 def track_outline(session_id: int) -> TrackOutline | None:
-    return TrackOutline.objects.filter(session_id=session_id).first()
+    """The session's own outline, else the latest one drawn at the same circuit: a wet or
+    red-flagged practice can have no clean lap to draw from (ADR 0028)."""
+    own = TrackOutline.objects.filter(session_id=session_id).first()
+    if own is not None:
+        return own
+    circuit = Session.objects.filter(pk=session_id).values_list("event__circuit_id", flat=True)
+    return (
+        TrackOutline.objects.filter(session__event__circuit_id__in=circuit)
+        .order_by("-session__ends_at")
+        .first()
+    )
 
 
 def session_sectors(session_id: int) -> list[dict[str, object]]:
     """Best lap, best sector times and top speed of every car (rows without timing skipped).
+    Laps deleted by race control count for none of them.
 
     The ideal lap is the sum of the three best sectors, possibly from different laps.
     """
     rows = (
-        Lap.objects.filter(entry__session_id=session_id)
+        Lap.objects.filter(entry__session_id=session_id, is_deleted=False)
         .values("entry__car_number")
         .annotate(
             best_lap_s=Min("lap_time_s"),

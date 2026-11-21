@@ -22,7 +22,13 @@ class SessionKind(models.TextChoices):
 
 
 RACE_KINDS = frozenset({SessionKind.RACE, SessionKind.SPRINT})
-"""Sessions whose timing data is ingested (strategy only concerns races)."""
+"""Races: strategy, pit stops, race analysis and points only concern these (ADR 0028)."""
+
+INGESTED_KINDS = frozenset(SessionKind)
+"""Sessions whose timing data is imported and replayed: every kind (ADR 0028)."""
+
+QUALIFYING_KINDS = frozenset({SessionKind.QUALIFYING, SessionKind.SPRINT_QUALIFYING})
+"""Sessions split into knock-out segments (Q1-Q3, SQ1-SQ3)."""
 
 
 class EventFormat(models.TextChoices):
@@ -221,6 +227,9 @@ class Lap(models.Model):
     sector_3_s = models.FloatField(null=True, blank=True)
     is_pit_out_lap = models.BooleanField(default=False)
     is_pit_in_lap = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(
+        default=False, help_text="Lap time deleted by race control (track limits)"
+    )
     started_at = models.DateTimeField(null=True, blank=True)
     speed_trap_kph = models.PositiveSmallIntegerField(null=True, blank=True)
 
@@ -298,6 +307,9 @@ class RaceControlMessage(models.Model):
     scope = models.CharField(max_length=32, blank=True)
     sector = models.PositiveSmallIntegerField(null=True, blank=True)
     car_number = models.PositiveSmallIntegerField(null=True, blank=True)
+    qualifying_phase = models.PositiveSmallIntegerField(
+        null=True, blank=True, help_text="Qualifying segment (1-3) the message belongs to"
+    )
     message = models.TextField()
     digest = models.CharField(max_length=64, help_text="sha256 of the message identity")
 
@@ -355,6 +367,30 @@ class TrackStatus(models.Model):
 
     def __str__(self) -> str:
         return f"{self.session} {self.status} L{self.lap_start}-{self.lap_end}"
+
+
+class QualifyingSegment(models.Model):
+    """One knock-out segment of a qualifying or sprint-qualifying session (Q1, Q2, Q3),
+    derived from race control messages and replaced as a whole on each import."""
+
+    session = models.ForeignKey(
+        Session, on_delete=models.CASCADE, related_name="qualifying_segments"
+    )
+    number = models.PositiveSmallIntegerField(help_text="1, 2 or 3")
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["session", "number"]
+        constraints = [
+            models.UniqueConstraint(fields=["session", "number"], name="segment_unique_number"),
+            models.CheckConstraint(
+                condition=Q(ended_at__gte=F("started_at")), name="segment_ordered"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.session} Q{self.number}"
 
 
 class TrackOutline(models.Model):
@@ -434,8 +470,8 @@ class TeamRadio(models.Model):
 
 
 class TelemetryLap(models.Model):
-    """Car data and positions over one lap (the driver's fastest clean lap of a race or
-    sprint). Bounded upstream requests (OpenF1 ``car_data`` and ``location``), ADR 0013.
+    """Car data and positions over one lap (the driver's fastest clean lap of the
+    session). Bounded upstream requests (OpenF1 ``car_data`` and ``location``), ADR 0013.
 
     ``samples`` holds parallel lists keyed by channel: ``t`` (seconds from the start of the
     lap), ``speed`` (km/h), ``throttle`` (%), ``brake`` (0/1), ``gear``, ``rpm``, ``drs``.

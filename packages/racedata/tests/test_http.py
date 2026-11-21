@@ -10,6 +10,7 @@ from racedata import (
     NotFoundError,
     ProviderError,
     RateLimitedError,
+    UnauthorizedError,
     UpstreamUnavailableError,
 )
 from racedata.http import HttpClient, RateLimit, RateLimiter, RetryPolicy, SystemClock
@@ -150,3 +151,12 @@ def test_system_clock_is_monotonic() -> None:
     first = clock.monotonic()
     clock.sleep(0)
     assert clock.monotonic() >= first
+
+
+def test_unauthorized_is_raised_at_once_with_its_detail(clock: FakeClock) -> None:
+    transport, calls = sequence_transport(httpx.Response(401, json={"detail": "Sign in"}))
+
+    with pytest.raises(UnauthorizedError) as caught:
+        make_client(transport, clock).get_json("x")
+    assert caught.value.detail == "Sign in"
+    assert len(calls) == 1

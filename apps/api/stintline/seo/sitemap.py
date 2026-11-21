@@ -6,9 +6,9 @@ from collections.abc import Iterator
 from xml.sax.saxutils import escape
 
 from django.core.cache import cache
-from django.db.models import Max
+from django.db.models import Exists, Max, OuterRef
 
-from stintline.racing.models import Circuit, Driver, Event, Season, Session, Team
+from stintline.racing.models import Circuit, Driver, Event, Lap, Season, Session, Team
 from stintline.seo.document import page_url
 from stintline.seo.pages import STATIC, Locale
 
@@ -29,6 +29,12 @@ def paths() -> Iterator[str]:
         yield f"teams/{ref}"
     for ref in Circuit.objects.order_by("ref").values_list("ref", flat=True):
         yield f"circuits/{ref}"
+    # Replays of every imported session, races and practice alike (ADR 0028).
+    replays = Session.objects.filter(
+        Exists(Lap.objects.filter(entry__session=OuterRef("pk")))
+    ).order_by("-ends_at")
+    for session_id in replays.values_list("pk", flat=True):
+        yield f"sessions/{session_id}"
 
 
 LOCALES: tuple[Locale, ...] = ("en", "fr")

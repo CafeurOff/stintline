@@ -13,7 +13,7 @@ from rest_framework.views import APIView
 
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
-from stintline.racing.models import Session
+from stintline.racing.models import RACE_KINDS, Session
 from stintline.strategy_api import model_card, services, telemetry
 from stintline.strategy_api.api import serializers as s
 from stintline_strategy.telemetry import TelemetryError
@@ -23,6 +23,10 @@ ERRORS: dict[int, Any] = {400: ProblemSerializer, 404: ProblemSerializer}
 
 def _context(session_id: int) -> tuple[Session, services.RaceContext]:
     session = get_object_or_404(Session.objects.select_related("event__season"), pk=session_id)
+    if session.kind not in RACE_KINDS:
+        # Practice and qualifying have no race clock, stops or strategy (ADR 0028): their
+        # replay is ``/sessions/{id}/timeline``.
+        raise ValidationError({"session": ["Strategy applies to races and sprints only."]})
     try:
         return session, services.race_context(session)
     except services.StrategyInputError as exc:

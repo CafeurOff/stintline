@@ -1,0 +1,11 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/stints",
+  "params": {
+    "session_key": "9930"
+  },
+  "recorded_at": "2026-11-21T02:05:31+00:00",
+  "sha256": "541f25a5018a7066eec905349586bb24a954233210bf2581509b688c0031d019",
+  "bytes": 7669,
+  "dropped_fields": []
+}

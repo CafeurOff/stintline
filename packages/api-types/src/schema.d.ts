@@ -721,6 +721,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/sessions/{session_id}/timeline": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Every lap on the session clock, with tyres and qualifying segments
+     * @description Any imported session (practice, qualifying, sprint and race): the data of the session replay (ADR 0028). 404 when the session has no timed lap.
+     */
+    get: operations["session_timeline_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/sessions/{session_id}/track": {
     parameters: {
       query?: never;
@@ -2165,6 +2185,8 @@ export interface components {
       tyre_ages: (number | null)[];
       pit_in_laps: number[];
     };
+    /** @enum {string} */
+    ReplayEnum: "ready" | "pending" | "upcoming" | "none";
     ReportEntry: {
       /** Format: int64 */
       car_number: number;
@@ -2290,6 +2312,8 @@ export interface components {
       kind: components["schemas"]["KindEnum"];
       /** Format: date-time */
       starts_at?: string | null;
+      /** Format: date-time */
+      ends_at?: string | null;
       readonly event: components["schemas"]["EventSummary"];
       readonly total_laps: number | null;
       readonly entries: components["schemas"]["Entry"][];
@@ -2354,7 +2378,11 @@ export interface components {
       kind: components["schemas"]["KindEnum"];
       /** Format: date-time */
       scheduled_start?: string | null;
+      /** Format: date-time */
+      ends_at?: string | null;
       readonly has_data: boolean;
+      /** @description ready: the replay opens; pending: finished, timing being imported; upcoming: not finished yet; none: no lap timing exists for it (before 2023) */
+      readonly replay: components["schemas"]["ReplayEnum"];
     };
     SideRound: {
       quali: number | null;
@@ -2720,6 +2748,107 @@ export interface components {
       lap_number: number;
       /** Format: double */
       lap_time_s: number;
+    };
+    /**
+     * @description Every lap of a session on the session clock, for practice and qualifying replays,
+     *     with the flags, race control messages and weather on the same clock.
+     */
+    Timeline: {
+      /**
+       * Format: date-time
+       * @description Origin of every ``*_s`` value
+       */
+      starts_at: string;
+      /** Format: double */
+      duration_s: number;
+      cars: components["schemas"]["TimelineCar"][];
+      segments: components["schemas"]["TimelineSegment"][];
+      /** @description Red flags, safety cars */
+      flags: components["schemas"]["TimelineFlag"][];
+      race_control: components["schemas"]["TimelineMessage"][];
+      weather: components["schemas"]["TimelineWeather"][];
+    };
+    TimelineCar: {
+      car_number: number;
+      laps: components["schemas"]["TimelineLap"][];
+    };
+    TimelineFlag: {
+      status: components["schemas"]["TimelineFlagStatusEnum"];
+      /** Format: double */
+      start_s: number;
+      /** Format: double */
+      end_s: number | null;
+    };
+    /**
+     * @description * `SC` - SC
+     *     * `VSC` - VSC
+     *     * `RED` - RED
+     * @enum {string}
+     */
+    TimelineFlagStatusEnum: "SC" | "VSC" | "RED";
+    TimelineLap: {
+      lap: number;
+      /**
+       * Format: double
+       * @description Seconds from the start of the session
+       */
+      start_s: number;
+      /**
+       * Format: double
+       * @description Back at the line; null when the car stopped mid-lap
+       */
+      end_s: number | null;
+      /**
+       * Format: double
+       * @description When the car is on track (an out lap starts in the garage)
+       */
+      drive_start_s: number | null;
+      /**
+       * Format: double
+       * @description Share of the lap behind the car then
+       */
+      drive_from: number;
+      /** Format: double */
+      time_s: number | null;
+      sectors_s: (number | null)[];
+      compound: string | null;
+      tyre_age: number | null;
+      pit_out: boolean;
+      pit_in: boolean;
+      /** @description Lap time deleted by race control */
+      deleted: boolean;
+    };
+    TimelineMessage: {
+      /** Format: double */
+      at_s: number;
+      category: string;
+      flag: string;
+      car_number: number | null;
+      message: string;
+    };
+    TimelineSegment: {
+      /** @description 1, 2 or 3 (Q1-Q3 or SQ1-SQ3) */
+      number: number;
+      /** Format: double */
+      start_s: number;
+      /**
+       * Format: double
+       * @description Chequered flag of the segment
+       */
+      end_s: number;
+      /** @description Car numbers knocked out, best first */
+      eliminated: number[];
+    };
+    TimelineWeather: {
+      /** Format: double */
+      at_s: number;
+      /** Format: double */
+      air_temperature_c: number | null;
+      /** Format: double */
+      track_temperature_c: number | null;
+      rainfall: boolean;
+      /** Format: double */
+      wind_speed_ms: number | null;
     };
     Title: {
       season: number;
@@ -4229,6 +4358,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  session_timeline_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        session_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Timeline"];
         };
       };
       404: {

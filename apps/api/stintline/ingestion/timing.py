@@ -1,5 +1,9 @@
-"""Timing of one finished race or sprint (OpenF1): entries, laps, stints, pit stops, race
-control, weather, team radio and the circuit outline.
+"""Timing of one finished session of any kind (OpenF1, ADR 0028): entries, laps, stints,
+pit stops, race control, weather, team radio, qualifying segments and the circuit outline.
+
+Races and sprints take driver identity from the Jolpica classification. Practice and
+qualifying sessions take it from entries already stored (``identity``) and their
+classification from OpenF1 ``session_result``.
 
 Network calls happen before any transaction is opened. Writes are upserts on natural keys,
 and derived track-status periods are replaced as a whole inside the same transaction.
@@ -16,7 +20,7 @@ import structlog
 from django.db import models, transaction
 from django.utils import timezone
 
-from racedata.derive import reference_lap, track_status_periods
+from racedata.derive import deleted_laps, qualifying_segments, reference_lap, track_status_periods
 from racedata.errors import ProviderError
 from racedata.fixtures import MissingFixtureError
 from racedata.models import (
@@ -27,20 +31,26 @@ from racedata.models import (
     PositionSample,
     RaceControlRecord,
     ResultRecord,
+    SessionResultRecord,
     StintRecord,
     TeamRadioRecord,
     WeatherRecord,
 )
 from racedata.models import SessionKind as SourceKind
 from racedata.sources import Sources
+from stintline.ingestion.identity import resolve_identities
 from stintline.ingestion.services import IngestReport, result_fields, upsert_driver_and_team
 from stintline.racing.models import (
+    INGESTED_KINDS,
+    QUALIFYING_KINDS,
     RACE_KINDS,
     Lap,
     PitStop,
+    QualifyingSegment,
     RaceControlMessage,
     Session,
     SessionEntry,
+    SessionKind,
     Stint,
     TeamRadio,
     TrackOutline,
@@ -63,6 +73,8 @@ class _SessionPayload:
     weather: list[WeatherRecord]
     outline: _Outline | None
     team_radio: list[TeamRadioRecord] = field(default_factory=list)
+    classification: list[SessionResultRecord] = field(default_factory=list)
+    """OpenF1 ``session_result`` of a practice or qualifying session (races use Jolpica)."""
 
 
 @dataclass(frozen=True)
@@ -72,10 +84,10 @@ class _Outline:
 
 
 def is_ingestable(session: Session, now: datetime | None = None) -> bool:
-    """Race or sprint, linked to OpenF1, and finished."""
+    """Any session kind (ADR 0028), linked to OpenF1, and finished."""
     now = now or timezone.now()
     return (
-        session.kind in RACE_KINDS
+        session.kind in INGESTED_KINDS
         and session.openf1_session_key is not None
         and session.ends_at is not None
         and session.ends_at <= now
@@ -83,19 +95,23 @@ def is_ingestable(session: Session, now: datetime | None = None) -> bool:
 
 
 def ingest_session(session: Session, sources: Sources) -> IngestReport:
-    """Import entries, laps, stints, pit stops, race control, weather and track status."""
+    """Import entries, laps, stints, pit stops, race control, weather and track status.
+
+    Raises ``LiveSessionLockedError`` while any F1 session is live: nothing is written and
+    ``ingested_at`` stays empty, so the import is simply taken up again later."""
     report = IngestReport()
-    if session.kind not in RACE_KINDS or session.openf1_session_key is None:
-        report.skipped.append(f"session {session.pk}: not a race linked to OpenF1")
+    if session.kind not in INGESTED_KINDS or session.openf1_session_key is None:
+        report.skipped.append(f"session {session.pk}: not linked to OpenF1")
         log.info("session_ingest_skipped", session_id=session.pk, kind=session.kind)
         return report
 
     key = session.openf1_session_key
     event = session.event
     kind = SourceKind(session.kind)
+    is_race = session.kind in RACE_KINDS
     payload = _SessionPayload(
         drivers=sources.timing.drivers(key),
-        results=sources.results.results(event.season.year, event.round, kind),
+        results=(sources.results.results(event.season.year, event.round, kind) if is_race else []),
         laps=sources.timing.laps(key),
         stints=sources.timing.stints(key),
         pits=sources.timing.pit(key),
@@ -107,6 +123,7 @@ def ingest_session(session: Session, sources: Sources) -> IngestReport:
         race_control=sources.timing.race_control(key),
         weather=sources.timing.weather(key),
         outline=None,
+        classification=[] if is_race else sources.timing.session_result(key),
     )
     payload = _with_outline(payload, key, sources, report)
     payload = _with_team_radio(payload, key, sources, report)
@@ -122,7 +139,7 @@ def _with_outline(
     payload: _SessionPayload, key: int, sources: Sources, report: IngestReport
 ) -> _SessionPayload:
     """Fetch the reference lap trace. Optional: a missing trace never blocks timing data."""
-    lap = reference_lap(payload.laps, payload.pits)
+    lap = reference_lap(payload.laps, payload.pits, deleted_laps(payload.race_control))
     if lap is None or lap.started_at is None or lap.lap_time_s is None:
         report.skipped.append("track outline: no clean reference lap")
         return payload
@@ -157,9 +174,14 @@ drawing, so the outline is skipped instead."""
 
 
 def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -> None:
-    entries = _upsert_entries(session, p.drivers, p.results, report)
+    if session.kind in RACE_KINDS:
+        entries = _upsert_entries(session, p.drivers, p.results, report)
+    else:
+        entries = _upsert_timed_entries(session, p.drivers, p.classification, report)
     by_number = {e.car_number: e for e in entries}
     pit_laps = {(pit.driver_number, pit.lap_number) for pit in p.pits}
+    deleted = deleted_laps(p.race_control)
+    report.add("deleted_laps", len(deleted))
 
     _upsert(
         Lap,
@@ -173,6 +195,7 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
                 sector_3_s=lap.sector_3_s,
                 is_pit_out_lap=lap.is_pit_out_lap,
                 is_pit_in_lap=(lap.driver_number, lap.lap_number) in pit_laps,
+                is_deleted=(lap.driver_number, lap.lap_number) in deleted,
                 started_at=lap.started_at,
                 speed_trap_kph=lap.speed_trap_kph,
             )
@@ -218,6 +241,7 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
                 scope=m.scope or "",
                 sector=m.sector,
                 car_number=m.driver_number,
+                qualifying_phase=m.qualifying_phase,
                 message=m.message,
                 digest=_digest(m),
             )
@@ -260,6 +284,18 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
         for period in track_status_periods(p.race_control)
     )
     report.add("track_status", len(periods))
+    if session.kind in QUALIFYING_KINDS:
+        QualifyingSegment.objects.filter(session=session).delete()
+        segments = QualifyingSegment.objects.bulk_create(
+            QualifyingSegment(
+                session=session,
+                number=segment.number,
+                started_at=segment.started_at,
+                ended_at=segment.ended_at,
+            )
+            for segment in qualifying_segments(p.race_control)
+        )
+        report.add("qualifying_segments", len(segments))
     by_car = {e.car_number for e in entries}
     _upsert(
         TeamRadio,
@@ -321,6 +357,66 @@ def _upsert_entries(
         log.warning("entries_unmatched", session_id=session.pk, car_numbers=unmatched)
     report.add("entries", len(entries))
     return entries
+
+
+def _upsert_timed_entries(
+    session: Session,
+    drivers: list[DriverEntry],
+    classification: list[SessionResultRecord],
+    report: IngestReport,
+) -> list[SessionEntry]:
+    """Entries of a practice or qualifying session: identity from stored entries
+    (``identity``), classification from OpenF1. Qualifying results imported from Jolpica
+    stay canonical: timing only fills what they left empty."""
+    identities, unknown = resolve_identities(session, drivers)
+    if unknown:
+        report.skipped.append(f"timing cars without a known driver: {unknown}")
+        log.warning("entries_unidentified", session_id=session.pk, car_numbers=unknown)
+    results = {r.driver_number: r for r in classification}
+    existing = {e.driver_id: e for e in SessionEntry.objects.filter(session=session)}
+    entries: list[SessionEntry] = []
+    for car in drivers:
+        identity = identities.get(car.driver_number)
+        if identity is None:
+            continue
+        timing: dict[str, object] = {
+            "team": identity.team,
+            "car_number": car.driver_number,
+            "team_colour": car.team_colour or "",
+            "team_display_name": car.team_name or "",
+            "media_id": car.media_id or "",
+        }
+        before = existing.get(identity.driver.pk)
+        for column, value in _classification_fields(results.get(car.driver_number)).items():
+            kept = getattr(before, column) if before is not None else None
+            jolpica_owned = session.kind == SessionKind.QUALIFYING and kept not in (None, "", 0)
+            if not jolpica_owned:
+                timing[column] = value
+        entry, _ = SessionEntry.objects.update_or_create(
+            session=session, driver=identity.driver, defaults=timing
+        )
+        entries.append(entry)
+    report.add("entries", len(entries))
+    return entries
+
+
+def _classification_fields(r: SessionResultRecord | None) -> dict[str, object]:
+    """Classification columns from OpenF1 ``session_result``: position, best lap, laps and
+    the best time of each qualifying segment."""
+    if r is None:
+        return {}
+    segments = [*r.segment_times_s, None, None, None][:3]
+    status = "DSQ" if r.dsq else "DNS" if r.dns else "DNF" if r.dnf else ""
+    return {
+        "finish_position": r.position,
+        "classification": str(r.position) if r.position is not None else status,
+        "status": status,
+        "laps_completed": r.laps or 0,
+        "fastest_lap_s": r.best_lap_s,
+        "q1_s": segments[0],
+        "q2_s": segments[1],
+        "q3_s": segments[2],
+    }
 
 
 def _pit_stops(
