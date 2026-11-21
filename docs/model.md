@@ -59,6 +59,7 @@ compound models + pit loss ──► optimal 1- or 2-stop window
 | `UndercutConfig.max_reply_laps` | 3 | `analysis.py` | The car ahead must pit within 3 laps, or the stops are unrelated. |
 | `MIN_CLEAN_LAPS` | 5 | `analysis/build.py` | Clean laps a car needs before its median race pace is stored. |
 | `MIN_STATIONARY_S` | 1.6 s | `analysis/build.py` | Faster stationary times are timing glitches (the record is about 1.8 s). |
+| `FORM_MIN_CLEAN_LAPS` | 10 | `racing/careers.py` | Clean laps both teammates need before the driver profile's form strip gives their fuel-corrected pace gap: about a sixth of a Grand Prix, so a teammate who retired early or ran mostly behind the safety car does not make the other look quick or slow. |
 | `MIN_RACES` | 3 | `analysis/season.py` | Races with a consistency figure a driver needs to be ranked over a season. |
 | `PACE_WINDOW_RACES` | 3 | `technical/selectors.py` | Races before an upgrade, and from it on, whose median gap to the field is compared. |
 | `MIN_WINDOW_RACES` | 2 | `technical/selectors.py` | Fewer races on a side give no comparison. |

@@ -16,6 +16,7 @@ import { forecasts } from "./fixtures/forecast";
 import { homeResponse } from "./fixtures/home";
 import {
   driver,
+  driverForm,
   driverResults,
   drivers,
   progression,
@@ -146,6 +147,7 @@ const handlers = [
       : problem(404, "not_found", "Not found"),
   ),
   http.get("*/api/v1/drivers/:ref/results", () => HttpResponse.json(driverResults)),
+  http.get("*/api/v1/drivers/:ref/form", () => HttpResponse.json(driverForm)),
   http.get("*/api/v1/teams", () => HttpResponse.json(teams)),
   http.get("*/api/v1/teams/:ref", ({ params }) =>
     params.ref === team.team.ref ? HttpResponse.json(team) : problem(404, "not_found", "Not found"),

@@ -15,7 +15,7 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
   stintline/racing/      ORM models: Season, Event, Session, Team, Driver, DriverPortrait,
                          SessionEntry, Lap, Stint, PitStop, RaceControlMessage, WeatherSample,
                          TrackStatus, QualifyingSegment, TrackOutline, Standing, TeamRadio,
-                         TelemetryLap; read queries in selectors.py, careers.py (driver records),
+                         TelemetryLap; read queries in selectors.py, careers.py (driver records and form),
                          hub.py (home, teams, championship progression) and timeline.py (laps of
                          any session on its clock, ADR 0028)
   stintline/ingestion/   idempotent upserts: calendar (`schedule.py`), session timing of every kind

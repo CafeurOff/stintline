@@ -6,6 +6,7 @@ import { events } from "../src/test/fixtures/events";
 import { homeResponse } from "../src/test/fixtures/home";
 import {
   driver,
+  driverForm,
   driverResults,
   drivers,
   progression,
@@ -65,6 +66,7 @@ export async function mockApi(page: Page) {
     ["**/api/v1/drivers?*", drivers],
     ["**/api/v1/drivers/norris", driver],
     ["**/api/v1/drivers/norris/results*", driverResults],
+    ["**/api/v1/drivers/norris/form", driverForm],
     ["**/api/v1/seasons/2025/standings", standings],
     ["**/api/v1/seasons/2025/standings?*", standings],
     ["**/api/v1/seasons/2025/standings/progression", progression],

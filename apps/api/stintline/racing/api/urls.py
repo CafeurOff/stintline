@@ -37,6 +37,7 @@ urlpatterns = [
     path("teams/<slug:ref>", views.TeamCareerView.as_view(), name="team"),
     path("drivers", views.DriverListView.as_view(), name="drivers"),
     path("drivers/<slug:ref>", views.DriverCareerView.as_view(), name="driver"),
+    path("drivers/<slug:ref>/form", views.DriverFormView.as_view(), name="driver-form"),
     path("drivers/<slug:ref>/portrait", views.DriverPortraitView.as_view(), name="driver-portrait"),
     path("drivers/<slug:ref>/results", views.DriverResultsView.as_view(), name="driver-results"),
 ]

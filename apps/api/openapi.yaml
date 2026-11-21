@@ -425,6 +425,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/drivers/{ref}/form:
+    get:
+      operationId: driver_form_retrieve
+      summary: 'Last five Grands Prix: finish, grid and fuel-corrected pace gap to
+        the teammate'
+      parameters:
+      - in: path
+        name: ref
+        schema:
+          type: string
+        required: true
+      tags:
+      - drivers
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverForm'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/drivers/{ref}/portrait:
     get:
       operationId: driver_portrait_retrieve
@@ -2657,6 +2685,20 @@ components:
       - media
       - seasons
       - totals
+    DriverForm:
+      type: object
+      properties:
+        min_clean_laps:
+          type: integer
+          description: Clean laps both cars need before a pace gap is given
+        races:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormRace'
+          description: Last Grands Prix started, oldest first
+      required:
+      - min_clean_laps
+      - races
     DriverListItem:
       type: object
       properties:
@@ -3240,6 +3282,95 @@ components:
       - rain_probability_pct
       - weather_code
       - wind_ms
+    FormRace:
+      type: object
+      properties:
+        session_id:
+          type: integer
+        event_id:
+          type: integer
+        has_data:
+          type: boolean
+          readOnly: true
+          description: Lap timing stored for this race
+        season:
+          type: integer
+        round:
+          type: integer
+        event_name:
+          type: string
+        country:
+          type: string
+        race_date:
+          type: string
+          format: date
+        team:
+          $ref: '#/components/schemas/Team'
+        grid_position:
+          type: integer
+          nullable: true
+          description: '0: pit-lane start'
+        finish_position:
+          type: integer
+          nullable: true
+        classification:
+          type: string
+        status:
+          type: string
+        points:
+          type: number
+          format: double
+        teammate:
+          allOf:
+          - $ref: '#/components/schemas/FormTeammate'
+          nullable: true
+          readOnly: true
+          description: The other car of the same team in that race (a stand-in counts)
+        pace_gap_s:
+          type: number
+          format: double
+          nullable: true
+          description: 'Fuel-corrected median clean lap minus the teammate''s, s/lap
+            (negative: quicker); null without timing or with too few clean laps for
+            either car'
+      required:
+      - classification
+      - country
+      - event_id
+      - event_name
+      - finish_position
+      - grid_position
+      - has_data
+      - pace_gap_s
+      - points
+      - race_date
+      - round
+      - season
+      - session_id
+      - status
+      - team
+      - teammate
+    FormTeammate:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Jolpica driverId
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        code:
+          type: string
+          maxLength: 3
+        given_name:
+          type: string
+          maxLength: 64
+        family_name:
+          type: string
+          maxLength: 64
+      required:
+      - family_name
+      - given_name
+      - ref
     FormatEnum:
       enum:
       - conventional

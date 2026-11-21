@@ -13,6 +13,7 @@ from stintline.racing.api.serializers.common import (
     TeamSerializer,
     portrait_of,
 )
+from stintline.racing.careers import FormRace
 from stintline.racing.models import (
     Driver,
     SessionEntry,
@@ -172,3 +173,52 @@ class DriverResultSerializer(serializers.ModelSerializer[SessionEntry]):
 class DriverQuerySerializer(serializers.Serializer[Any]):
     search = serializers.CharField(required=False, max_length=64)
     season = serializers.IntegerField(required=False, min_value=1950, max_value=2100)
+
+
+class FormTeammateSerializer(serializers.ModelSerializer[Driver]):
+    class Meta:
+        model = Driver
+        fields = ["ref", "code", "given_name", "family_name"]
+
+
+class FormRaceSerializer(serializers.Serializer[Any]):
+    session_id = serializers.IntegerField(source="entry.session.id")
+    event_id = serializers.IntegerField(source="entry.session.event.id")
+    has_data = serializers.SerializerMethodField(help_text="Lap timing stored for this race")
+    season = serializers.IntegerField(source="entry.session.event.season.year")
+    round = serializers.IntegerField(source="entry.session.event.round")
+    event_name = serializers.CharField(source="entry.session.event.name")
+    country = serializers.CharField(source="entry.session.event.circuit.country")
+    race_date = serializers.DateField(source="entry.session.event.race_date")
+    team = TeamSerializer(source="entry.team")
+    grid_position = serializers.IntegerField(
+        source="entry.grid_position", allow_null=True, help_text="0: pit-lane start"
+    )
+    finish_position = serializers.IntegerField(source="entry.finish_position", allow_null=True)
+    classification = serializers.CharField(source="entry.classification")
+    status = serializers.CharField(source="entry.status")
+    points = serializers.FloatField(source="entry.points")
+    teammate = serializers.SerializerMethodField(
+        help_text="The other car of the same team in that race (a stand-in counts)"
+    )
+    pace_gap_s = serializers.FloatField(
+        allow_null=True,
+        help_text="Fuel-corrected median clean lap minus the teammate's, s/lap (negative: "
+        "quicker); null without timing or with too few clean laps for either car",
+    )
+
+    def get_has_data(self, race: FormRace) -> bool:
+        return race.entry.session.ingested_at is not None
+
+    @extend_schema_field(FormTeammateSerializer(allow_null=True))
+    def get_teammate(self, race: FormRace) -> dict[str, Any] | None:
+        if race.teammate is None:
+            return None
+        return dict(FormTeammateSerializer(race.teammate.driver).data)
+
+
+class DriverFormSerializer(serializers.Serializer[Any]):
+    min_clean_laps = serializers.IntegerField(
+        help_text="Clean laps both cars need before a pace gap is given"
+    )
+    races = FormRaceSerializer(many=True, help_text="Last Grands Prix started, oldest first")

@@ -21,6 +21,13 @@ NOT_STARTED = ("W", "F", "DNQ", "DNPQ", "EX")
 FASTEST_LAP_DATA_FROM = 2004
 """First season with fastest-lap ranks in Jolpica. Careers starting earlier get ``None``
 rather than an undercount."""
+FORM_RACES = 5
+"""Grands Prix in a driver's form strip."""
+FORM_MIN_CLEAN_LAPS = 10
+"""Clean laps both teammates need before their pace gap is shown. The engine already needs
+5 for a median (``analysis.build.MIN_CLEAN_LAPS``); a form strip compares two medians, so a
+car that retired early, or ran mostly behind the safety car, must not make the other look
+quick: 10 laps is about a sixth of a Grand Prix."""
 
 
 @dataclass
@@ -163,6 +170,55 @@ def driver_results(driver: Driver, season: int | None) -> QuerySet[SessionEntry]
     return entries.select_related(
         "session__event__season", "session__event__circuit", "team"
     ).order_by("-session__event__race_date", "session__kind")
+
+
+@dataclass(frozen=True)
+class FormRace:
+    """One Grand Prix of a driver's form strip."""
+
+    entry: SessionEntry
+    teammate: SessionEntry | None
+    pace_gap_s: float | None
+    """Driver's fuel-corrected median clean lap minus the teammate's (negative: quicker)."""
+
+
+def _clean_pace(entry: SessionEntry | None) -> float | None:
+    """Fuel-corrected median clean lap, when it rests on enough laps for a form gap."""
+    stats = getattr(entry, "stats", None) if entry is not None else None
+    if stats is None or stats.clean_laps < FORM_MIN_CLEAN_LAPS:
+        return None
+    pace: float | None = stats.median_corrected_s
+    return pace
+
+
+def driver_form(driver: Driver) -> list[FormRace]:
+    """The driver's last ``FORM_RACES`` Grands Prix started, oldest first, across seasons.
+
+    Sprints are left out. The teammate is the other car of the same team in that race (a
+    stand-in counts); with several (early seasons), the lowest car number. The pace gap needs
+    stored analysis figures (timing from 2023) and ``FORM_MIN_CLEAN_LAPS`` for both cars.
+    """
+    latest = list(
+        _starts(SessionEntry.objects.filter(driver=driver, session__kind=SessionKind.RACE))
+        .select_related("session__event__season", "session__event__circuit", "team", "stats")
+        .order_by("-session__event__race_date")[:FORM_RACES]
+    )
+    others = (
+        SessionEntry.objects.filter(session_id__in=[e.session_id for e in latest])
+        .exclude(driver=driver)
+        .select_related("driver", "stats")
+        .order_by("car_number")
+    )
+    teammates: dict[tuple[int, int], SessionEntry] = {}
+    for other in others:
+        teammates.setdefault((other.session_id, other.team_id), other)
+    races: list[FormRace] = []
+    for entry in reversed(latest):
+        teammate = teammates.get((entry.session_id, entry.team_id))
+        mine, theirs = _clean_pace(entry), _clean_pace(teammate)
+        gap = round(mine - theirs, 3) if mine is not None and theirs is not None else None
+        races.append(FormRace(entry=entry, teammate=teammate, pace_gap_s=gap))
+    return races
 
 
 def search_drivers(text: str | None, season: int | None) -> QuerySet[Driver]:

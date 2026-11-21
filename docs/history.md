@@ -39,12 +39,12 @@ No v1 file was carried over. The rewrite kept only the source mapping (which Jol
 | — | Race replay redesign: glass stage, timing tower, 3D view of the race | 0026 |
 | — | Production on the shared server | 0027 |
 | — | Practice and qualifying replays: every session imported, timing on the session clock, segments and knock-outs | 0028 |
+| — | Driver form on every profile: the last five Grands Prix (finish, places gained) and the fuel-corrected pace gap to the teammate | — |
 
 ## Ideas not built yet
 
 Validated as a direction in November 2026, in this order:
 
-- **Driver form**: the last five races as a compact strip (finish, places gained, pace gap to the teammate).
 - **Undercut atlas**: how much an undercut gained at each circuit in past races, from the backtest.
 - **Strategy preview** before a race: likely one- and two-stop windows from the degradation and pit-loss models, shown next to the forecast.
 - **Season review**: a page written from the data at the end of each season.
