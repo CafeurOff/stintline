@@ -19,7 +19,7 @@ EnvironmentFile=/etc/stintline/vps.env
 EnvironmentFile=/etc/stintline/stintline.env
 # One process: provider rate limits are enforced in-process (ADR 0004).
 ExecStart=/opt/stintline/current/apps/api/venv/bin/celery -A config worker \
-    --loglevel=INFO --concurrency=1 --hostname=stintline@%%H
+    --loglevel=INFO --concurrency=1
 Restart=on-failure
 RestartSec=10
 # Long imports (telemetry): let the current task finish or be re-queued (acks_late).
