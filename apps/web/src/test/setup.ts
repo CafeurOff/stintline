@@ -8,8 +8,8 @@ import { loadMessages } from "@/lib/i18n/messages";
 import { server } from "./server";
 
 // Pages are lazy-loaded: the first import of a page in a busy parallel run can take
-// longer than the default 1 s that find* queries wait.
-configure({ asyncUtilTimeout: 5000 });
+// longer than the default 1 s that find* queries wait (over 5 s on a single busy core).
+configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(async () => {
   await Promise.all([loadMessages("en"), loadMessages("fr")]);
