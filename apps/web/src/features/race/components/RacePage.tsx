@@ -1,5 +1,5 @@
 import type { Schema } from "@stintline/api-types";
-import { type CSSProperties, useMemo, useState } from "react";
+import { type CSSProperties, lazy, Suspense, useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
@@ -20,7 +20,6 @@ import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
-import { SessionReplay } from "@/features/session-replay/components/SessionReplay";
 import { SessionSwitcher } from "@/features/session-replay/components/SessionSwitcher";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
@@ -75,6 +74,11 @@ export function RacePage() {
   return <RaceLoader sessionId={sessionId} />;
 }
 
+/** Practice and qualifying replays load on demand: a race page never needs them. */
+const SessionReplay = lazy(async () => ({
+  default: (await import("@/features/session-replay/components/SessionReplay")).SessionReplay,
+}));
+
 /** Sessions replayed with the race clock and the strategy tools; the others are replayed on
  * the session clock (ADR 0028). */
 const RACE_KINDS: readonly string[] = ["R", "SPRINT"];
@@ -92,7 +96,13 @@ function RaceLoader({ sessionId }: { sessionId: number }) {
 
   const error = session.error ?? replay.error ?? track.error;
   if (error instanceof ApiError && error.status === 404) return <NotFoundPage />;
-  if (session.data && !isRace) return <SessionReplay session={session.data} />;
+  if (session.data && !isRace) {
+    return (
+      <Suspense fallback={<Skeleton className="h-[70vh]" />}>
+        <SessionReplay session={session.data} />
+      </Suspense>
+    );
+  }
   // The replay needs lap timing: practice, qualifying and races before 2023 have none.
   if (session.data && replay.error instanceof ApiError && replay.error.status === 400) {
     return <NoTiming eventId={session.data.event.id} name={session.data.event.name} />;
