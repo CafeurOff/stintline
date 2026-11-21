@@ -1,0 +1,11 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/session_result",
+  "params": {
+    "session_key": "9924"
+  },
+  "recorded_at": "2026-11-21T02:05:30+00:00",
+  "sha256": "09acb81329731d8522e549fc9d37281325df2c7d8d6463f6487d4b989f7d2a90",
+  "bytes": 3927,
+  "dropped_fields": []
+}

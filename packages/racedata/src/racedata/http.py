@@ -20,6 +20,7 @@ from racedata.errors import (
     NotFoundError,
     ProviderError,
     RateLimitedError,
+    UnauthorizedError,
     UpstreamUnavailableError,
 )
 
@@ -214,12 +215,30 @@ class HttpClient:
                 continue
             if status == HTTP_NOT_FOUND:
                 raise NotFoundError(self.provider, f"HTTP 404 on {url}")
+            if status == httpx.codes.UNAUTHORIZED:
+                raise UnauthorizedError(
+                    self.provider, f"HTTP 401 on {url}", _error_detail(response)
+                )
             if status >= httpx.codes.BAD_REQUEST:
                 raise ProviderError(self.provider, f"HTTP {status} on {url}")
             return response
 
         assert last_error is not None  # noqa: S101  (loop ran at least once)
         raise last_error
+
+
+ERROR_DETAIL_CHARS = 300
+"""Enough of an error body to recognise it; the rest is never needed."""
+
+
+def _error_detail(response: httpx.Response) -> str:
+    """The ``detail`` of a JSON error body (FastAPI style, as OpenF1 sends), else its text."""
+    try:
+        body = response.json()
+    except ValueError:
+        return response.text[:ERROR_DETAIL_CHARS]
+    detail = body.get("detail") if isinstance(body, dict) else None
+    return str(detail if detail is not None else body)[:ERROR_DETAIL_CHARS]
 
 
 def _retry_after(response: httpx.Response) -> float | None:

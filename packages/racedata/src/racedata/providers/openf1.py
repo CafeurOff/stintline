@@ -9,7 +9,12 @@ from typing import Any, TypeVar
 
 import structlog
 
-from racedata.errors import InvalidPayloadError, NotFoundError
+from racedata.errors import (
+    InvalidPayloadError,
+    LiveSessionLockedError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from racedata.http import HttpClient
 from racedata.models import (
     CarSample,
@@ -20,6 +25,7 @@ from racedata.models import (
     PositionSample,
     RaceControlRecord,
     SessionKind,
+    SessionResultRecord,
     StintRecord,
     TeamRadioRecord,
     TimingSession,
@@ -31,6 +37,10 @@ PROVIDER = "openf1"
 log = structlog.get_logger(__name__)
 
 T = TypeVar("T")
+
+LIVE_LOCK_MARKERS = ("session in progress", "until the session ends")
+"""Words of the 401 OpenF1 sends to every unauthenticated request while an F1 session is
+live (recorded 2026-11-21, fixture ``openf1/_errors/live_session_lock.json``)."""
 
 SESSION_NAMES: dict[str, SessionKind] = {
     "Practice 1": SessionKind.PRACTICE_1,
@@ -67,6 +77,12 @@ class OpenF1Source:
             # (e.g. `pit` for a sprint without stops). That is data, not a failure.
             log.info("openf1_empty_result", endpoint=endpoint)
             return []
+        except UnauthorizedError as exc:
+            if is_live_session_lock(exc.detail):
+                raise LiveSessionLockedError(
+                    PROVIDER, f"{endpoint}: withheld while a session is live"
+                ) from exc
+            raise
         if not isinstance(data, list) or not all(isinstance(r, dict) for r in data):
             raise InvalidPayloadError(PROVIDER, f"{endpoint}: expected a list of objects")
         return data
@@ -115,6 +131,10 @@ class OpenF1Source:
     def weather(self, session_key: int) -> list[WeatherRecord]:
         rows = self._rows("weather", {"session_key": session_key})
         return self._parse_all("weather", rows, _weather)
+
+    def session_result(self, session_key: int) -> list[SessionResultRecord]:
+        rows = self._rows("session_result", {"session_key": session_key})
+        return self._parse_all("session_result", rows, _session_result)
 
     def team_radio(self, session_key: int) -> list[TeamRadioRecord]:
         rows = self._rows("team_radio", {"session_key": session_key})
@@ -276,6 +296,36 @@ def _race_control(r: dict[str, Any]) -> RaceControlRecord:
         sector=optional_int(r.get("sector")),
         driver_number=optional_int(r.get("driver_number")),
         message=str(r.get("message") or ""),
+        qualifying_phase=optional_int(r.get("qualifying_phase")),
+    )
+
+
+def is_live_session_lock(detail: str) -> bool:
+    """Whether a 401 explanation is OpenF1's live-session lock (not a bad credential)."""
+    lowered = detail.lower()
+    return any(marker in lowered for marker in LIVE_LOCK_MARKERS)
+
+
+def _session_result(r: dict[str, Any]) -> SessionResultRecord:
+    """``duration`` is a number in practice and races, and a list of Q1-Q3 bests in
+    qualifying (``null`` where no time was set)."""
+    duration = r.get("duration")
+    segments: tuple[float | None, ...] = ()
+    if isinstance(duration, list):
+        segments = tuple(optional_float(v) for v in duration)
+        timed = [v for v in segments if v is not None]
+        best = min(timed) if timed else None
+    else:
+        best = optional_float(duration)
+    return SessionResultRecord(
+        driver_number=int(r["driver_number"]),
+        position=optional_int(r.get("position")),
+        best_lap_s=best,
+        segment_times_s=segments,
+        laps=optional_int(r.get("number_of_laps")),
+        dnf=bool(r.get("dnf")),
+        dns=bool(r.get("dns")),
+        dsq=bool(r.get("dsq")),
     )
 
 

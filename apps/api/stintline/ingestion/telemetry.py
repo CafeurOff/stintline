@@ -17,7 +17,7 @@ from django.db.models import QuerySet
 
 from racedata.models import PositionSample
 from racedata.sources import Sources
-from stintline.racing.models import RACE_KINDS, Lap, Session, TelemetryLap
+from stintline.racing.models import INGESTED_KINDS, Lap, Session, TelemetryLap
 
 log = structlog.get_logger(__name__)
 
@@ -26,7 +26,8 @@ MIN_CAR_SAMPLES = 20
 
 
 def fastest_clean_laps(session: Session) -> list[Lap]:
-    """Per car, the fastest timed lap that is not lap 1, a pit-in or a pit-out lap."""
+    """Per car, the fastest timed lap that is not lap 1, a pit-in or a pit-out lap, nor a
+    lap whose time was deleted (track limits: off the racing line, ADR 0028)."""
     laps = (
         Lap.objects.filter(
             entry__session=session,
@@ -35,6 +36,7 @@ def fastest_clean_laps(session: Session) -> list[Lap]:
             started_at__isnull=False,
             is_pit_in_lap=False,
             is_pit_out_lap=False,
+            is_deleted=False,
         )
         .select_related("entry")
         .order_by("entry_id", "lap_time_s", "lap_number")
@@ -46,10 +48,10 @@ def fastest_clean_laps(session: Session) -> list[Lap]:
 
 
 def missing_telemetry() -> QuerySet[Session]:
-    """Timed races and sprints with laps but no telemetry yet, most recent first."""
+    """Imported sessions (any kind) with laps but no telemetry yet, most recent first."""
     return (
         Session.objects.filter(
-            kind__in=RACE_KINDS,
+            kind__in=INGESTED_KINDS,
             openf1_session_key__isnull=False,
             ingested_at__isnull=False,
             entries__laps__isnull=False,

@@ -7,14 +7,20 @@ from datetime import datetime, timedelta
 
 import structlog
 from celery import shared_task
+from django.core.cache import cache
 from django.db.models import Max, Q
 from django.utils import timezone
 
-from racedata.errors import ProviderError, RateLimitedError, UpstreamUnavailableError
+from racedata.errors import (
+    LiveSessionLockedError,
+    ProviderError,
+    RateLimitedError,
+    UpstreamUnavailableError,
+)
 from stintline.analysis.tasks import build_race_analysis, build_stale_analysis
 from stintline.ingestion import history, portraits, schedule, telemetry, timing
 from stintline.ingestion.sources import open_sources
-from stintline.racing.models import RACE_KINDS, Event, Season, Session
+from stintline.racing.models import INGESTED_KINDS, RACE_KINDS, Event, Season, Session
 
 log = structlog.get_logger(__name__)
 
@@ -25,7 +31,38 @@ RETRY_BACKOFF_MAX_S = 600
 MAX_RETRIES = 5
 
 
-def _queue_finished_race_sessions(events: list[Event]) -> list[int]:
+OPENF1_LOCK_KEY = "ingestion:openf1-live-lock"
+OPENF1_LOCK_COOLDOWN = timedelta(minutes=10)
+"""After OpenF1 answered with its live-session lock, other tasks skip their requests for
+this long instead of each collecting the same 401 (ADR 0028)."""
+LIVE_LOCK_GRACE = timedelta(minutes=45)
+"""OpenF1 keeps its lock after the official end of a session (Las Vegas FP3 2026 ended at
+01:30 UTC, OpenF1 answered again between 01:59 and 02:04): ``refresh_recent`` waits this
+long before asking again."""
+
+
+def openf1_locked() -> bool:
+    return cache.get(OPENF1_LOCK_KEY) is not None
+
+
+def _defer(task: str, exc: LiveSessionLockedError | None = None, **context: object) -> None:
+    """A live session is not a failure: note it, keep quiet for a while, try again later.
+    ``ingested_at`` is left as it was, so ``refresh_recent`` takes the work up again."""
+    if exc is not None:
+        cache.set(OPENF1_LOCK_KEY, 1, int(OPENF1_LOCK_COOLDOWN.total_seconds()))
+    log.info("ingest_deferred_live_session", task=task, **context)
+
+
+def live_session(now: datetime) -> Session | None:
+    """A session running now by the calendar, or ended less than ``LIVE_LOCK_GRACE`` ago."""
+    return (
+        Session.objects.filter(starts_at__lte=now, ends_at__gte=now - LIVE_LOCK_GRACE)
+        .order_by("starts_at")
+        .first()
+    )
+
+
+def _queue_finished_sessions(events: list[Event]) -> list[int]:
     queued: list[int] = []
     for session in Session.objects.filter(event__in=events).select_related("event__season"):
         if timing.is_ingestable(session):
@@ -43,10 +80,14 @@ def _queue_finished_race_sessions(events: list[Event]) -> list[int]:
     acks_late=True,
 )
 def ingest_season(season: int) -> list[int]:
-    """Upsert the season calendar, then queue every finished race and sprint."""
-    with open_sources() as sources:
-        events = schedule.ingest_calendar(season, sources)
-    queued = _queue_finished_race_sessions(events)
+    """Upsert the season calendar, then queue every finished session (all kinds)."""
+    try:
+        with open_sources() as sources:
+            events = schedule.ingest_calendar(season, sources)
+    except LiveSessionLockedError as exc:
+        _defer("ingest_season", exc, season=season)
+        return []
+    queued = _queue_finished_sessions(events)
     ingest_season_results.delay(season)
     log.info("ingest_season_queued", season=season, sessions=len(queued))
     return queued
@@ -61,10 +102,14 @@ def ingest_season(season: int) -> list[int]:
     acks_late=True,
 )
 def ingest_event(season: int, round_: int) -> list[int]:
-    """Refresh the calendar and queue the finished race sessions of one round."""
-    with open_sources() as sources:
-        events = [e for e in schedule.ingest_calendar(season, sources) if e.round == round_]
-    return _queue_finished_race_sessions(events)
+    """Refresh the calendar and queue the finished sessions of one round."""
+    try:
+        with open_sources() as sources:
+            events = [e for e in schedule.ingest_calendar(season, sources) if e.round == round_]
+    except LiveSessionLockedError as exc:
+        _defer("ingest_event", exc, season=season, round=round_)
+        return []
+    return _queue_finished_sessions(events)
 
 
 @shared_task(
@@ -77,9 +122,17 @@ def ingest_event(season: int, round_: int) -> list[int]:
 )
 def ingest_session(session_id: int) -> dict[str, int]:
     session = Session.objects.select_related("event__season").get(pk=session_id)
-    with open_sources() as sources:
-        report = timing.ingest_session(session, sources)
-    build_race_analysis.delay(session.pk)
+    if openf1_locked():
+        _defer("ingest_session", session_id=session_id)
+        return {}
+    try:
+        with open_sources() as sources:
+            report = timing.ingest_session(session, sources)
+    except LiveSessionLockedError as exc:
+        _defer("ingest_session", exc, session_id=session_id)
+        return {}
+    if session.kind in RACE_KINDS:
+        build_race_analysis.delay(session.pk)
     ingest_telemetry.delay(session.pk)
     return report.counts
 
@@ -95,9 +148,16 @@ def ingest_session(session_id: int) -> dict[str, int]:
 def ingest_telemetry(session_id: int) -> int:
     """Fastest-lap telemetry of every car (about 40 bounded requests, ADR 0013)."""
     session = Session.objects.get(pk=session_id)
-    with open_sources() as sources:
-        stored = telemetry.ingest_telemetry(session, sources, timezone.now())
-    if stored:
+    if openf1_locked():
+        _defer("ingest_telemetry", session_id=session_id)
+        return 0
+    try:
+        with open_sources() as sources:
+            stored = telemetry.ingest_telemetry(session, sources, timezone.now())
+    except LiveSessionLockedError as exc:
+        _defer("ingest_telemetry", exc, session_id=session_id)
+        return 0
+    if stored and session.kind in RACE_KINDS:
         build_race_analysis.delay(session.pk)
     return stored
 
@@ -113,8 +173,15 @@ def ingest_telemetry(session_id: int) -> int:
 def add_telemetry_altitude(session_id: int) -> int:
     """Altitude for laps stored before it was kept (one bounded request per lap)."""
     session = Session.objects.get(pk=session_id)
-    with open_sources() as sources:
-        return telemetry.add_altitude(session, sources)
+    if openf1_locked():
+        _defer("add_telemetry_altitude", session_id=session_id)
+        return 0
+    try:
+        with open_sources() as sources:
+            return telemetry.add_altitude(session, sources)
+    except LiveSessionLockedError as exc:
+        _defer("add_telemetry_altitude", exc, session_id=session_id)
+        return 0
 
 
 TELEMETRY_BACKFILL_PER_RUN = 4
@@ -123,6 +190,10 @@ of the OpenF1 budget every 30 minutes, so new races are never held up behind the
 ALTITUDE_BACKFILL_PER_RUN = 4
 """Races whose stored laps get their altitude per ``refresh_recent`` run (ADR 0021): one
 ``location`` request per lap, ~80 requests, under 3 minutes of the OpenF1 budget."""
+SESSION_BACKFILL_PER_RUN = 4
+"""Older practice and qualifying sessions imported per ``refresh_recent`` run (ADR 0028):
+~10 timing requests each, then ~40 for telemetry, so ~200 requests every 30 minutes,
+most recent first. The ~350 sessions since 2023 take about 45 hours."""
 
 
 RESULTS_DELAY = timedelta(hours=1)
@@ -158,8 +229,12 @@ def ingest_season_results(season: int) -> dict[str, int]:
 def refresh_calendar() -> int:
     """On demand: refresh the current season's calendar and OpenF1 session links now."""
     now = timezone.now()
-    with open_sources() as sources:
-        events = schedule.ingest_calendar(now.year, sources)
+    try:
+        with open_sources() as sources:
+            events = schedule.ingest_calendar(now.year, sources)
+    except LiveSessionLockedError as exc:
+        _defer("refresh_calendar", exc, season=now.year)
+        return 0
     Season.objects.filter(year=now.year).update(calendar_synced_at=now)
     return len(events)
 
@@ -177,6 +252,9 @@ def _sync_calendar_if_stale(year: int, now: datetime) -> None:
     try:
         with open_sources() as sources:
             schedule.ingest_calendar(year, sources)
+    except LiveSessionLockedError as exc:
+        _defer("calendar_sync", exc, season=year)
+        return
     except ProviderError as exc:
         log.warning("calendar_sync_failed", season=year, error=type(exc).__name__)
         return
@@ -187,34 +265,57 @@ def _sync_calendar_if_stale(year: int, now: datetime) -> None:
 def refresh_recent(now_iso: str | None = None) -> list[int]:
     """Every 30 minutes, and when a worker starts: keep the data up to date.
 
+    0. While a session is live (calendar, or OpenF1's lock seen recently), queue no OpenF1
+       work: every request would get a 401 until it ends (ADR 0028).
     1. Refresh the current season's calendar when it is older than ``CALENDAR_MAX_AGE``.
-    2. Import every finished race and sprint never imported (catch-up after downtime),
-       and re-import those that finished within ``REFRESH_WINDOW`` (penalties arrive late),
-       at most once per ``REFRESH_EVERY``.
-    3. Re-import results and standings of seasons with new sessions, and of the current
-       season when a race finished after its last results import.
+    2. Import every finished race and sprint never imported (catch-up after downtime), and
+       every other session that ended within ``REFRESH_WINDOW``; re-import those at most
+       once per ``REFRESH_EVERY`` within the window (penalties and deletions arrive late).
+    3. Older practice and qualifying sessions never imported: ``SESSION_BACKFILL_PER_RUN``
+       per run, most recent first (so the current season comes first).
+    4. Re-import results and standings of seasons with new races, and of the current season
+       when a race finished after its last results import.
 
     Idempotent: safe to run as often as needed.
     """
     now = datetime.fromisoformat(now_iso) if now_iso else timezone.now()
+    running = live_session(now)
+    if running is not None or openf1_locked():
+        _defer("refresh_recent", session_id=running.pk if running else None)
+        build_stale_analysis.delay()
+        return []
     _sync_calendar_if_stale(now.year, now)
 
     finished = Session.objects.filter(
-        kind__in=RACE_KINDS,
+        kind__in=INGESTED_KINDS,
         openf1_session_key__isnull=False,
         ends_at__lte=now - RESULTS_DELAY,
     )
     missing = Q(ingested_at__isnull=True)
     stale = Q(ends_at__gte=now - REFRESH_WINDOW, ingested_at__lte=now - REFRESH_EVERY)
-    due = finished.filter(missing | stale).select_related("event__season").order_by("ends_at")
+    recent = Q(ends_at__gte=now - REFRESH_WINDOW)
+    races = Q(kind__in=RACE_KINDS)
+    due = list(
+        finished.filter((races & (missing | stale)) | (~races & recent & (missing | stale)))
+        .select_related("event__season")
+        .order_by("ends_at")
+    )
+    due += list(
+        finished.filter(~races & missing & ~recent)
+        .select_related("event__season")
+        .order_by("-ends_at")[:SESSION_BACKFILL_PER_RUN]
+    )
     queued = []
     seasons: set[int] = set()
     for session in due:
         ingest_session.delay(session.pk)
         queued.append(session.pk)
-        seasons.add(session.event.season.year)
+        if session.kind in RACE_KINDS:
+            seasons.add(session.event.season.year)
 
-    last_end = finished.filter(event__season__year=now.year).aggregate(last=Max("ends_at"))["last"]
+    last_end = finished.filter(races, event__season__year=now.year).aggregate(last=Max("ends_at"))[
+        "last"
+    ]
     current = Season.objects.filter(year=now.year).first()
     if (
         last_end is not None

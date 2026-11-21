@@ -167,7 +167,10 @@ def has_running_order(context: RaceContext) -> bool:
 
 def build_race_stats(session: Session) -> RaceStats | None:
     """Compute and store the figures of one race or sprint. ``None`` when the session has
-    no usable laps (not imported yet, or cancelled)."""
+    no usable laps (not imported yet, or cancelled), or is not a race (ADR 0028)."""
+    if session.kind not in RACE_KINDS:
+        log.info("analysis_skipped", session_id=session.pk, reason="not_a_race")
+        return None
     try:
         context = race_context(session)
     except StrategyInputError:

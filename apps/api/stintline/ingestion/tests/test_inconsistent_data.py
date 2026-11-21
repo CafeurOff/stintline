@@ -22,6 +22,7 @@ from racedata.models import (
     RaceControlRecord,
     ResultRecord,
     ScheduledSession,
+    SessionResultRecord,
     StintRecord,
     TeamRadioRecord,
     TimingSession,
@@ -92,6 +93,7 @@ class FakeData:
     timing_sessions: list[TimingSession] = field(default_factory=list)
     locations: list[PositionSample] = field(default_factory=list)
     team_radio: list[TeamRadioRecord] = field(default_factory=list)
+    session_results: list[SessionResultRecord] = field(default_factory=list)
 
 
 class FakeSource:
@@ -140,6 +142,9 @@ class FakeSource:
         self, session_key: int, driver_number: int, start: dt.datetime, end: dt.datetime
     ) -> list[CarSample]:
         return []
+
+    def session_result(self, session_key: int) -> list[SessionResultRecord]:
+        return self.d.session_results
 
 
 def fake_sources(data: FakeData) -> Sources:
@@ -265,18 +270,17 @@ def test_duplicate_weather_and_pit_rows_are_collapsed() -> None:
     assert Lap.objects.get(lap_number=2).is_pit_in_lap
 
 
-def test_non_race_or_unlinked_sessions_are_skipped() -> None:
-    quali = SessionFactory.create(kind=SessionKind.QUALIFYING)
+def test_unlinked_sessions_are_skipped() -> None:
     unlinked = SessionFactory.create(openf1_session_key=None)
 
-    for session in (quali, unlinked):
-        report = timing.ingest_session(session, fake_sources(FakeData()))
-        assert report.counts == {}
-        assert report.skipped
+    report = timing.ingest_session(unlinked, fake_sources(FakeData()))
+
+    assert report.counts == {}
+    assert report.skipped
 
 
-def test_is_ingestable_requires_a_finished_linked_race() -> None:
-    finished = SessionFactory.create()
+def test_is_ingestable_requires_a_finished_linked_session() -> None:
+    finished = SessionFactory.create(kind=SessionKind.PRACTICE_2)
     running = SessionFactory.create(ends_at=None)
     later = dt.datetime(2030, 1, 1, tzinfo=dt.UTC)
 

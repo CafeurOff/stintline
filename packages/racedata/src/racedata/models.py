@@ -203,6 +203,25 @@ class RaceControlRecord(_DTO):
     sector: int | None
     driver_number: int | None
     message: str
+    qualifying_phase: int | None = None
+    """Knock-out segment (1-3) of a qualifying session the message belongs to."""
+
+
+class SessionResultRecord(_DTO):
+    """One car's line in the timing classification of a session (OpenF1 ``session_result``).
+
+    Practice: ``best_lap_s`` is the fastest lap. Qualifying: ``segment_times_s`` holds the
+    best lap of Q1, Q2 and Q3 (``None`` where the car did not set one), and ``best_lap_s``
+    the fastest of them. Positions are ``None`` for cars not classified."""
+
+    driver_number: int
+    position: int | None
+    best_lap_s: float | None
+    segment_times_s: tuple[float | None, ...] = ()
+    laps: int | None = None
+    dnf: bool = False
+    dns: bool = False
+    dsq: bool = False
 
 
 class WeatherRecord(_DTO):
@@ -250,6 +269,14 @@ class TrackStatusPeriod(_DTO):
     ended_at: datetime | None
     lap_start: int | None
     lap_end: int | None
+
+
+class QualifyingSegmentPeriod(_DTO):
+    """One knock-out segment (Q1-Q3) of a qualifying session, from race control."""
+
+    number: int
+    started_at: datetime
+    ended_at: datetime
 
 
 class DriverInfo(_DTO):

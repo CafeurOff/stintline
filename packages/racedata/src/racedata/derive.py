@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+import re
+from collections.abc import Collection, Iterable
 from datetime import datetime
 
 from racedata.models import (
     LapRecord,
     PitRecord,
+    QualifyingSegmentPeriod,
     RaceControlRecord,
     TrackStatusKind,
     TrackStatusPeriod,
@@ -82,11 +84,16 @@ def track_status_periods(messages: Iterable[RaceControlRecord]) -> list[TrackSta
     return periods
 
 
-def reference_lap(laps: Iterable[LapRecord], pits: Iterable[PitRecord]) -> LapRecord | None:
+def reference_lap(
+    laps: Iterable[LapRecord],
+    pits: Iterable[PitRecord],
+    excluded: Collection[tuple[int, int]] = (),
+) -> LapRecord | None:
     """The lap used to draw the circuit: the fastest timed lap that is neither lap 1, a
-    pit-out lap nor a pit-in lap, so the car follows the racing line from line to line.
-    Returns ``None`` when no lap qualifies (e.g. a race abandoned on lap 1)."""
-    pit_laps = {(pit.driver_number, pit.lap_number) for pit in pits}
+    pit-out lap, a pit-in lap nor ``excluded`` (deleted laps, which cut the track), so the
+    car follows the racing line from line to line. Returns ``None`` when no lap qualifies
+    (e.g. a race abandoned on lap 1)."""
+    pit_laps = {(pit.driver_number, pit.lap_number) for pit in pits} | set(excluded)
     candidates = [
         lap
         for lap in laps
@@ -98,3 +105,50 @@ def reference_lap(laps: Iterable[LapRecord], pits: Iterable[PitRecord]) -> LapRe
         and (lap.driver_number, lap.lap_number) not in pit_laps
     ]
     return min(candidates, key=lambda lap: (lap.lap_time_s, lap.driver_number), default=None)
+
+
+_DELETED = re.compile(
+    r"^CAR (?P<car>\d+) \([A-Z]{3}\) (?:TIME [\d:.]+ |LAP )DELETED\b.*?\bLAP (?P<lap>\d+)\b"
+)
+_REINSTATED = re.compile(
+    r"^CAR (?P<car>\d+) \([A-Z]{3}\) (?:TIME [\d:.]+ |LAP )REINSTATED\b.*?\bLAP (?P<lap>\d+)\b"
+)
+
+
+def deleted_laps(messages: Iterable[RaceControlRecord]) -> set[tuple[int, int]]:
+    """``(car, lap)`` of every lap time deleted by race control and not reinstated since.
+
+    OpenF1 flags deletions only in messages, in two wordings seen since 2023:
+    ``CAR 44 (HAM) TIME 1:29.374 DELETED - TRACK LIMITS AT TURN 4 LAP 2 15:08:15`` and
+    ``CAR 14 (ALO) LAP DELETED - TRACK LIMITS AT TURN 6 LAP 7 14:22:01``. An unknown
+    wording leaves the lap counted (ADR 0028)."""
+    deleted: set[tuple[int, int]] = set()
+    for m in sorted(messages, key=lambda m: m.occurred_at):
+        text = m.message.strip().upper()
+        if match := _DELETED.match(text):
+            deleted.add((int(match["car"]), int(match["lap"])))
+        elif match := _REINSTATED.match(text):
+            deleted.discard((int(match["car"]), int(match["lap"])))
+    return deleted
+
+
+def qualifying_segments(messages: Iterable[RaceControlRecord]) -> list[QualifyingSegmentPeriod]:
+    """Q1-Q3 windows: from the first message of a phase to its chequered flag (or its last
+    message when the flag is missing). Laps started before the flag still count, so the
+    replay uses the window to name the segment, not to drop laps."""
+    by_phase: dict[int, list[RaceControlRecord]] = {}
+    for m in messages:
+        if m.qualifying_phase is not None and m.qualifying_phase > 0:
+            by_phase.setdefault(m.qualifying_phase, []).append(m)
+    segments: list[QualifyingSegmentPeriod] = []
+    for number in sorted(by_phase):
+        rows = sorted(by_phase[number], key=lambda m: m.occurred_at)
+        flags = [m.occurred_at for m in rows if (m.flag or "").upper() == "CHEQUERED"]
+        segments.append(
+            QualifyingSegmentPeriod(
+                number=number,
+                started_at=rows[0].occurred_at,
+                ended_at=flags[0] if flags else rows[-1].occurred_at,
+            )
+        )
+    return segments

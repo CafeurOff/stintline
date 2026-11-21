@@ -1,0 +1,12 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/laps",
+  "params": {
+    "session_key": "9928",
+    "driver_number": "1",
+    "lap_number": "2"
+  },
+  "status": 401,
+  "recorded_at": "2026-11-21T01:47:53+00:00",
+  "note": "Body of the HTTP 401 OpenF1 sends to every unauthenticated request while an F1 session is live (Las Vegas FP3 2026). No Retry-After header."
+}

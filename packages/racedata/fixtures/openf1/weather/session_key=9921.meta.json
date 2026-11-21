@@ -1,0 +1,11 @@
+{
+  "provider": "openf1",
+  "url": "https://api.openf1.org/v1/weather",
+  "params": {
+    "session_key": "9921"
+  },
+  "recorded_at": "2026-11-21T02:04:47+00:00",
+  "sha256": "2a762de76008afc712c61b911d17ea7f22e35a8a87d092327e8884c1739bf969",
+  "bytes": 23428,
+  "dropped_fields": []
+}

@@ -30,3 +30,19 @@ class InvalidPayloadError(ProviderError):
 
 class NotFoundError(ProviderError):
     """The requested resource does not exist upstream (HTTP 404)."""
+
+
+class UnauthorizedError(ProviderError):
+    """The upstream service requires authentication for this request (HTTP 401)."""
+
+    def __init__(self, provider: str, message: str, detail: str = "") -> None:
+        super().__init__(provider, message)
+        self.detail = detail
+        """The upstream explanation, trimmed (never shown to clients)."""
+
+
+class LiveSessionLockedError(ProviderError):
+    """Data is withheld while an F1 session is live (OpenF1 free tier, ADR 0028).
+
+    Not a failure of the request itself: the same call succeeds once the session has
+    ended, so callers defer the work instead of retrying or reporting an error."""
