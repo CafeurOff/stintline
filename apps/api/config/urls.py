@@ -5,6 +5,8 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from stintline.core.metrics_view import metrics
+
 urlpatterns = [
     path("api/v1/", include("stintline.core.api.urls")),
     path("api/v1/", include("stintline.racing.api.urls")),
@@ -18,6 +20,8 @@ urlpatterns = [
     path("api/v1/", include("stintline.championship.api.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
+    # Prometheus, loopback only (ADR 0027). Before the web pages, which catch every path.
+    path("metrics", metrics, name="metrics"),
 ]
 
 if settings.ADMIN_ENABLED:

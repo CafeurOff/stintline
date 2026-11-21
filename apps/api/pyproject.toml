@@ -20,6 +20,8 @@ dependencies = [
     "stintline-strategy",
     "stintline-racedata",
     "django-stubs-ext>=5.2,<5.3",
+    "django-prometheus>=2.3",
+    "prometheus-client>=0.21",
 ]
 
 [dependency-groups]
