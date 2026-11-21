@@ -26,6 +26,7 @@ import { countryName } from "@/lib/i18n/geo";
 
 import { useCircuits } from "../api";
 import { AnalysisTabs, DriverChip } from "./AnalysisParts";
+import { CircuitUndercuts } from "./CircuitUndercuts";
 import type { Profile } from "./CircuitsPage";
 
 interface Ranked {
@@ -354,6 +355,7 @@ export function CircuitDetail({ circuitRef }: { circuitRef: string }) {
             </Panel>
           </div>
         </div>
+        <CircuitUndercuts circuitRef={p.circuit.ref} />
       </div>
     </div>
   );
