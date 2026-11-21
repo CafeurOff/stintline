@@ -37,6 +37,8 @@ No v1 file was carried over. The rewrite kept only the source mapping (which Jol
 | — | Night-race glass design, Wikimedia portrait relay, page heads and language addresses | 0023–0025 |
 | — | Open-source preparation: comments, folder layout, faster tests, public docs | — |
 | — | Race replay redesign: glass stage, timing tower, 3D view of the race | 0026 |
+| — | Production on the shared server | 0027 |
+| — | Practice and qualifying replays: every session imported, timing on the session clock, segments and knock-outs | 0028 |
 
 ## Ideas not built yet
 
@@ -47,3 +49,4 @@ Validated as a direction in November 2026, in this order:
 - **Strategy preview** before a race: likely one- and two-stop windows from the degradation and pit-loss models, shown next to the forecast.
 - **Season review**: a page written from the data at the end of each season.
 - **Eras comparison**: points rescaled to today's system to compare drivers across decades.
+- **Practice analysis** (ADR 0028): long-run pace and best lap per compound, stored per session like the race figures.

@@ -1,6 +1,6 @@
 # 0028. Practice and qualifying replays
 
-- Status: Proposed
+- Status: Accepted (maintainer validated the plan on 2026-11-21)
 - Date: 2026-11-21
 - Amends: ADR 0004 (scope of timing imports), ADR 0013 and 0021 (telemetry of any session),
   ADR 0017 (analysis stays race-only), ADR 0026 (the replay page)
@@ -73,8 +73,9 @@ reviewed:
   import. Deleted laps never count as a best lap and never feed telemetry.
 - `RaceControlMessage.qualifying_phase` (1–3, OpenF1 `qualifying_phase`).
 - `QualifyingSegment(session, number, started_at, ended_at)`, natural key
-  `(session, number)`, derived from the messages of each phase and replaced as a whole like
-  `TrackStatus`.
+  `(session, number)`, derived from the messages of each phase (from the green light at the
+  pit exit to the chequered flag: delay notices before the green light carry the phase too)
+  and replaced as a whole like `TrackStatus`.
 
 ### Import
 - Entries of non-race sessions: identity as in option 1; position, Q1/Q2/Q3 best times and
@@ -87,9 +88,16 @@ reviewed:
 
 ### Replay
 - `GET /sessions/{id}/timeline` (any imported session): per car, every lap with its start
-  (seconds from the session start), time, sectors, compound, tyre age, out/in/deleted flags;
-  the qualifying segments and who was eliminated in each. Weather, race control, track status
-  and telemetry come from the existing endpoints.
+  (seconds from the session start), end, time, sectors, compound, tyre age, out/in/deleted
+  flags; the qualifying segments and who was eliminated in each; the flag periods, race
+  control messages and weather samples on the same clock. Telemetry comes from the existing
+  endpoints.
+- An out lap's OpenF1 time runs from the car's previous crossing of the line, garage
+  included (Alonso, Hungary 2025 Q: 774 s). A lap ends no later than the next one starts, and
+  an out lap is drawn on track only for its timed sectors, each taken as a third of the lap
+  (`drive_start_s`, `drive_from`); its time is not shown.
+- A session without its own circuit outline (a wet practice with no clean lap, Las Vegas FP1
+  2026) borrows the latest outline drawn at the same circuit.
 - The page `/sessions/:id` keeps its URL. A race or sprint opens the race replay (ADR 0026); any
   other session opens a session replay: a timing tower ordered by best lap **at the replay
   instant** (gap to the fastest, laps, current tyre, in garage / on track), the qualifying
@@ -120,6 +128,8 @@ telemetry (160) and altitude (80) backfills. The ~360 sessions since 2023 take a
   (`OPENF1_LOCK_COOLDOWN`, 10 min) stops the other queued tasks from asking again meanwhile.
 - `refresh_recent` queues no OpenF1 work while a session is running according to the calendar,
   until `LIVE_LOCK_GRACE` (45 min) after its end; the calendar sync defers the same way.
+  Measured on 2026-11-21: Las Vegas FP3 ended at 01:30 UTC, OpenF1 answered again between
+  01:59 and 02:04.
 
 ## Consequences
 - Positive: every session of a weekend can be replayed, in 2D and 3D; qualifying shows its
@@ -127,7 +137,8 @@ telemetry (160) and altitude (80) backfills. The ~360 sessions since 2023 take a
 - Negative / risks:
   - Database: practice has fewer laps per car than a race but the same telemetry (one lap per
     car); about 0.5 MB per session, ~200 MB for the backlog. Measured on real data in the PR.
-  - Reserve drivers who never raced are missing from FP1 replays (reported at import).
+  - Reserve drivers who never raced are missing from FP1 replays (reported at import):
+    Drugovich and Aron in Hungary FP1 2025, two cars in Las Vegas FP1 2026.
   - The deleted-lap parser depends on the wording of race control messages; an unknown
     wording leaves the lap counted, and the test fixtures pin the known forms.
 - Follow-ups: practice analysis (long-run pace, best lap per compound) stored per session like

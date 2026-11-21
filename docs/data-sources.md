@@ -27,13 +27,16 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
   | `laps` | `lap_number`, `lap_duration`, `duration_sector_1..3`, `is_pit_out_lap`, `date_start`, `i1_speed`, `i2_speed`, `st_speed` |
   | `stints` | `stint_number`, `compound`, `lap_start`, `lap_end`, `tyre_age_at_start` |
   | `pit` | `lap_number`, `pit_duration` (pit-lane time), `date`. Newer seasons may add stationary time |
-  | `race_control` | `category`, `flag`, `message`, `scope`, `sector`, `lap_number`, `date` |
+  | `race_control` | `category`, `flag`, `message`, `scope`, `sector`, `lap_number`, `qualifying_phase`, `date` |
+  | `session_result` | `position`, `duration` (best lap; a list of the Q1-Q3 bests in qualifying), `number_of_laps`, `dnf`, `dns`, `dsq`. Read for practice and qualifying only (ADR 0028) |
   | `weather` | `air_temperature`, `track_temperature`, `humidity`, `rainfall`, `wind_speed`, `date` |
   | `intervals` | `gap_to_leader`, `interval`, `date` (race only) |
 
 - `team_radio` gives one URL per message; StintLine stores the reference only. An empty result set is HTTP 404 `{"detail":"No results found."}`, read as an empty list.
 - `car_data` and `location` are only ever fetched over one lap: the reference lap that draws the circuit (fastest clean lap, about 320 samples, ADR 0007) and each driver's fastest clean lap for telemetry (below).
 - Free tier: no live data. Sponsor tier (live, MQTT or WebSocket) is not used (ADR 0002).
+- **Live-session lock.** While any F1 session is live, every unauthenticated request, past sessions included, gets HTTP 401 `{"detail": "Live F1 session in progress. Global API access (including past sessions) is restricted to authenticated users until the session ends…"}`, without `Retry-After`. The lock outlasts the session: Las Vegas FP3 2026 ended at 01:30 UTC and OpenF1 answered again between 01:59 and 02:04. `racedata` raises `LiveSessionLockedError`; imports are deferred, not failed (ADR 0028).
+- Practice and qualifying (ADR 0028): `lap_duration` of a pit-out lap runs from the car's previous crossing of the line, so it includes the time spent in the garage (774 s for an 18-minute wait). Deleted lap times exist only as race control messages (`CAR 44 (HAM) TIME 1:29.374 DELETED - TRACK LIMITS AT TURN 4 LAP 2 …`, or `… LAP DELETED …`). Every race control message of a qualifying session carries its `qualifying_phase`, delay notices before the green light included.
 - Pitfalls: `lap_duration` is null on some laps (lap 1, pit-out, deleted). `compound` can be `UNKNOWN`. Requests that are too large return errors, so query per session and per driver.
 
 ### Car data (ADR 0013)
@@ -103,6 +106,8 @@ Recorded responses in `packages/racedata/fixtures/<provider>/<path>/<params>.jso
 | `jolpica/{drivers,constructors,circuits}` | Jolpica | Biographies since 1950 |
 | `jolpica/1950/*` | Jolpica | A pre-timing season for history tests (shared drives, final standings only) |
 | `openf1/location` for each of the nine races, bounded by `date>` and `date<` to the reference lap | OpenF1 | Circuit outlines |
+| `openf1/{drivers,laps,stints,pit,race_control,weather,team_radio,session_result}` with `session_key` 9921–9924 and 9930 | OpenF1 | Practice 1–3 and qualifying of the 2025 Hungarian Grand Prix, sprint qualifying of the 2025 Belgian Grand Prix (ADR 0028) |
+| `openf1/_errors/live_session_lock.json` | OpenF1 | The 401 body sent while a session is live (recorded 2026-11-21) |
 | Same endpoints for `session_key` 10006, 9971, 9955, 9920, 9877, 9839 and rounds 3, 9, 11, 15, 20, 24 | OpenF1 + Jolpica | Held-out backtest races: Japan, Spain, Austria, Netherlands, Mexico City, Abu Dhabi (`seed_demo --backtest`) |
 
 Observed quirks, all covered by tests:
