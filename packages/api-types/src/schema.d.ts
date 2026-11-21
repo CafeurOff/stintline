@@ -191,6 +191,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/drivers/{ref}/form": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Last five Grands Prix: finish, grid and fuel-corrected pace gap to the teammate */
+    get: operations["driver_form_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/drivers/{ref}/portrait": {
     parameters: {
       query?: never;
@@ -1244,6 +1261,12 @@ export interface components {
       totals: components["schemas"]["CareerTotals"];
       seasons: components["schemas"]["SeasonLine"][];
     };
+    DriverForm: {
+      /** @description Clean laps both cars need before a pace gap is given */
+      min_clean_laps: number;
+      /** @description Last Grands Prix started, oldest first */
+      races: components["schemas"]["FormRace"][];
+    };
     DriverListItem: {
       /** @description Jolpica driverId */
       ref: string;
@@ -1467,6 +1490,40 @@ export interface components {
       /** Format: double */
       wind_ms: number | null;
       weather_code: number | null;
+    };
+    FormRace: {
+      session_id: number;
+      event_id: number;
+      /** @description Lap timing stored for this race */
+      readonly has_data: boolean;
+      season: number;
+      round: number;
+      event_name: string;
+      country: string;
+      /** Format: date */
+      race_date: string;
+      team: components["schemas"]["Team"];
+      /** @description 0: pit-lane start */
+      grid_position: number | null;
+      finish_position: number | null;
+      classification: string;
+      status: string;
+      /** Format: double */
+      points: number;
+      /** @description The other car of the same team in that race (a stand-in counts) */
+      readonly teammate: components["schemas"]["FormTeammate"] | null;
+      /**
+       * Format: double
+       * @description Fuel-corrected median clean lap minus the teammate's, s/lap (negative: quicker); null without timing or with too few clean laps for either car
+       */
+      pace_gap_s: number | null;
+    };
+    FormTeammate: {
+      /** @description Jolpica driverId */
+      ref: string;
+      code?: string;
+      given_name: string;
+      family_name: string;
     };
     /**
      * @description * `conventional` - Conventional
@@ -3430,6 +3487,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["DriverCareer"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+    };
+  };
+  driver_form_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DriverForm"];
         };
       };
       404: {

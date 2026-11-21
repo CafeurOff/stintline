@@ -22,6 +22,7 @@ from stintline.racing.api.serializers.calendar import EventSerializer
 from stintline.racing.api.serializers.common import SeasonSerializer
 from stintline.racing.api.serializers.drivers import (
     DriverCareerSerializer,
+    DriverFormSerializer,
     DriverListItemSerializer,
     DriverQuerySerializer,
     DriverResultSerializer,
@@ -219,6 +220,23 @@ class DriverCareerView(APIView):
         driver = get_object_or_404(Driver, ref=ref)
         data = DriverCareerSerializer(careers.driver_career(driver)).data
         return cached_response(request, data, "driver", ref, _data_stamp())
+
+
+class DriverFormView(APIView):
+    @extend_schema(
+        operation_id="driver_form_retrieve",
+        summary="Last five Grands Prix: finish, grid and fuel-corrected pace gap to the teammate",
+        responses={200: DriverFormSerializer, 404: ProblemSerializer},
+        tags=["drivers"],
+    )
+    def get(self, request: Request, ref: str) -> Response:
+        driver = get_object_or_404(Driver, ref=ref)
+        data = DriverFormSerializer(
+            {"min_clean_laps": careers.FORM_MIN_CLEAN_LAPS, "races": careers.driver_form(driver)}
+        ).data
+        # Analysis figures are rebuilt after imports: their date is part of the version.
+        built = Session.objects.aggregate(last=Max("stats__built_at"))["last"]
+        return cached_response(request, data, "driver-form", ref, _data_stamp(), built)
 
 
 class DriverPortraitView(APIView):
