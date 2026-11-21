@@ -68,3 +68,71 @@ make demo-up        # rebuilds the images; migrations run before the API starts
 ```
 
 The database lives in the `demo-postgres` volume. `make demo-down` keeps it.
+
+## Production on stintline.omexis.fr
+
+The public instance does not use the Compose stack: it runs as an app of the maintainer's
+server, managed by the separate vps-infra repository (ADR 0027). `deploy/vps/` describes it.
+
+| Piece | Where |
+| --- | --- |
+| API and pages | `stintline-web.service`: uvicorn, 2 workers, `127.0.0.1:8020` |
+| Imports | `stintline-worker.service` (Celery, one process) and `stintline-beat.service` (primary server only) |
+| Built files | nginx serves `apps/web/dist` of the current release; everything else goes to the API |
+| Database | `stintline` on the server's PostgreSQL 17 (socket, peer authentication: no password) |
+| Redis | database 6 of the server's Redis, ACL user `stintline` (`REDIS_URL`) |
+| Generated settings | `/etc/stintline/vps.env` (`DATABASE_URL`, `REDIS_URL`), written by vps-infra |
+| Secrets and settings | `/etc/stintline/stintline.env`: `DJANGO_SECRET_KEY` (generated on the server), `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `SITE_URL`. `vps secrets edit stintline` |
+| Releases | `/opt/stintline/releases/<tag>`, `current` and `previous` (read-only for the app) |
+| Data | `/var/lib/stintline` (provider cache, beat schedule) |
+
+### Releasing
+
+Tag the commit (`vX.Y.Z`), then on the server `vps deploy stintline vX.Y.Z`. The release is
+built as `deploy` (`deploy/vps/build.sh`: uv, Node 22 pinned by checksum, pnpm, collectstatic),
+then `deploy/vps/release.sh` runs `check --deploy` and the migrations while beat is stopped,
+then the switch and a health check on `/api/v1/health`. An unhealthy release is rolled back
+by itself; `vps rollback stintline` goes back by hand. Migrations are never reverted: keep
+them compatible with the previous release.
+
+### Supervision
+
+Grafana (vps-infra) shows StintLine with the other apps: status, version, traffic and slowest
+views, CPU and memory, database size, backups, logs, and its key numbers (seasons, races with
+replays, age of the last import, races overdue). Alerts go to Discord: API down, probe on
+`https://stintline.omexis.fr/api/v1/health`, worker or beat stopped, a race not imported 12 h
+after it ended, headlines not refreshed for 6 h. `vps status`, `vps kpi stintline`,
+`vps logs stintline`.
+
+### Backups and restore
+
+`vps-backup@stintline.timer` dumps the database (`pg_dump -Fc`) with `/var/lib/stintline` and
+`/etc/stintline` every night, encrypted, to S3 with restic (14 daily, 8 weekly, 12 monthly
+snapshots). A monthly test restores the latest dump into a scratch database and compares it.
+
+```bash
+vps backup list app:stintline                       # snapshots
+vps backup now stintline                            # one now
+vps backup restore-db stintline stintline_restore   # latest dump into a NEW database
+# check it (vps db shell stintline_restore), then to replace the live data:
+vps maintenance on stintline
+sudo systemctl stop stintline-web stintline-worker stintline-beat
+sudo -u postgres psql -c 'ALTER DATABASE stintline RENAME TO stintline_old' \
+                      -c 'ALTER DATABASE stintline_restore RENAME TO stintline'
+sudo -u postgres psql -c 'ALTER DATABASE stintline OWNER TO stintline'
+vps restart stintline && vps maintenance off stintline
+# once the site is checked: sudo -u postgres dropdb stintline_old
+```
+
+### Loading a database copied from another machine
+
+```bash
+pg_dump -Fc -U stintline stintline > stintline.dump        # on the source machine
+scp stintline.dump <server>:/tmp/
+# on the server (the API keeps serving; worker and beat must not write meanwhile)
+sudo systemctl stop stintline-worker stintline-beat
+sudo chown stintline /tmp/stintline.dump
+sudo -u stintline pg_restore --clean --if-exists --no-owner --no-privileges \
+     -d stintline /tmp/stintline.dump
+vps restart stintline && rm /tmp/stintline.dump
+```

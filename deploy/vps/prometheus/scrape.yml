@@ -1,0 +1,10 @@
+# StintLine scrape job -> /etc/prometheus/scrape.d/stintline.yml (vps-infra app-apply). Job
+# name `stintline`: rules.yml uses it. django-prometheus (views, latency, 5xx) and the data
+# coverage gauges (stintline/core/metrics.py), straight from uvicorn on loopback.
+scrape_configs:
+  - job_name: stintline
+    metrics_path: /metrics
+    scrape_interval: 60s
+    static_configs:
+      - targets: ['127.0.0.1:8020']
+        labels: {app: stintline, down_alert: own}

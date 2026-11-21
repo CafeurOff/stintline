@@ -1,0 +1,6 @@
+# StintLine public endpoints -> /etc/prometheus/probes.d/stintline.yml (blackbox, through DNS,
+# nginx and TLS). `criticality` becomes the severity of EndpointDown (vps-infra).
+- targets: ['https://stintline.omexis.fr/api/v1/health']
+  labels: {module: http_2xx, component: stintline-api, criticality: critical, app: stintline}
+- targets: ['https://stintline.omexis.fr/']
+  labels: {module: http_2xx, component: stintline-site, criticality: warning, app: stintline}
