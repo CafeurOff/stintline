@@ -24,6 +24,7 @@ import { useDriver } from "@/lib/queries";
 import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
+import { DriverForm } from "./DriverForm";
 import { DriverSeason } from "./DriverSeason";
 
 type Career = Schema<"DriverCareer">;
@@ -49,6 +50,7 @@ export function DriverPage() {
     <div className="flex flex-col gap-4">
       <DriverHeader career={data} />
       <KeyFigures label={t("driver.figures")} figures={figures(data, i18n)} />
+      {data.totals.starts > 0 && <DriverForm driverRef={data.driver.ref} />}
       {data.totals.last_season !== null && (
         <DriverSeason
           driverRef={data.driver.ref}

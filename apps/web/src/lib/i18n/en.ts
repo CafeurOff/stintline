@@ -1414,6 +1414,23 @@ export const en = {
   "event.sessionPending": "Being imported",
   "event.sessionUpcoming": "Upcoming",
   "event.sessionNone": "No timing",
+  "form.title": "Form",
+  "form.list": "Last Grands Prix",
+  "form.note": "Last five Grands Prix · pace is the fuel-corrected median clean lap",
+  "form.round": "R{round}",
+  "form.from": "from P{grid}",
+  "form.fromPitLane": "from the pit lane",
+  "form.vs": "vs {name}",
+  "form.noGap": "Fewer than {n} clean laps for one of the two cars: no pace gap",
+  "form.wins": "{n} {n|win|wins}",
+  "form.morePodiums": "{n} more {n|podium|podiums}",
+  "form.podiums": "{n} {n|podium|podiums}",
+  "form.noPodium": "No podium",
+  "form.averages": "Average start {grid}, average finish {finish}",
+  "form.averageStart": "Average start {grid}",
+  "form.quicker": "On average {gap} a lap quicker than {name}, ahead in {k} of {n}",
+  "form.slower": "On average {gap} a lap slower than {name}, ahead in {k} of {n}",
+  "form.theTeammate": "the teammate",
 } as const;
 
 export type MessageKey = keyof typeof en;
