@@ -52,7 +52,7 @@ To load real data instead of the demo races:
 
 Once running, the Celery worker imports each race after it finishes. `make help` lists every target.
 
-There is no public instance yet. `make demo-up` runs the production images in replay-only mode ([`docs/deploy.md`](docs/deploy.md)).
+The public replay-only instance runs at <https://stintline.omexis.fr> (ADR 0027). `make demo-up` runs the production images in replay-only mode on any machine ([`docs/deploy.md`](docs/deploy.md)).
 
 ## Architecture
 

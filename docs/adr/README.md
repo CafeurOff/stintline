@@ -30,3 +30,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0024](0024-wikimedia-portraits-relay.md) | Wikipedia portraits relayed from our origin | Accepted |
 | [0025](0025-page-heads-and-language-urls.md) | Page heads rendered by the API, and one URL per language | Accepted |
 | [0026](0026-race-replay-stage-and-3d-view.md) | Race replay stage, timing tower and a 3D view of the race | Accepted |
+| [0027](0027-production-on-the-shared-vps.md) | Production on the shared VPS (vps-infra), without Docker | Accepted |

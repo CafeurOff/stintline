@@ -60,6 +60,8 @@ packages/strategy/   Strategy engine, import `stintline_strategy` (numpy + scipy
 packages/api-types/  TypeScript types generated from the OpenAPI schema (never hand-edited)
 infra/               docker compose (dev, and `docker-compose.demo.yml`: public replay-only demo),
                      Dockerfiles, nginx, `demo.env.example`
+deploy/vps/          production on stintline.omexis.fr through vps-infra (ADR 0027): manifest,
+                     build/release hooks, systemd units, nginx site, Prometheus rules
 docs/                architecture, data sources, model, design, deploy, history, ADRs, research
 ```
 

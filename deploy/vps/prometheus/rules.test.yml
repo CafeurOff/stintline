@@ -1,0 +1,36 @@
+# promtool test rules rules.test.yml
+rule_files: [rules.yml]
+evaluation_interval: 1m
+tests:
+  - interval: 1m
+    input_series:
+      - series: 'up{job="stintline",instance="127.0.0.1:8020"}'
+        values: '1 1 0 0 0 0'
+      - series: 'stintline_races_overdue{job="stintline"}'
+        values: '0 1x420'
+      - series: 'stintline_seasons{job="stintline"}'
+        values: '77x5'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: StintlineApiDown
+        exp_alerts:
+          - exp_labels: {severity: critical, service: stintline, job: stintline, instance: "127.0.0.1:8020"}
+            exp_annotations:
+              summary: "StintLine : l'API (uvicorn) ne répond plus"
+              description: "stintline.omexis.fr en 502. `vps logs stintline` · `vps restart stintline`."
+      - eval_time: 3h
+        alertname: StintlineRaceImportOverdue
+        exp_alerts: []
+      - eval_time: 7h
+        alertname: StintlineRaceImportOverdue
+        exp_alerts:
+          - exp_labels: {severity: warning, service: stintline}
+            exp_annotations:
+              summary: "StintLine : course terminée non importée"
+              description: "1 course(s) ou sprint(s) finie(s) depuis plus de 12 h sans import. Fournisseur en retard ou en panne ? `vps logs stintline-worker`."
+    promql_expr_test:
+      - expr: vps:kpi{kpi="Saisons"}
+        eval_time: 2m
+        exp_samples:
+          - labels: 'vps:kpi{app="stintline", section="metier", idx="01", unit="count", kpi="Saisons"}'
+            value: 77

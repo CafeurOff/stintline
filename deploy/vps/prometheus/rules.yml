@@ -1,0 +1,82 @@
+# StintLine alert rules -> /etc/prometheus/rules.d/stintline.yml (vps-infra app-apply). Host,
+# datastore, endpoint, TLS and backup alerts live in vps-infra.
+# Tests: promtool test rules rules.test.yml
+groups:
+  - name: stintline
+    rules:
+      - alert: StintlineApiDown
+        expr: up{job="stintline"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: stintline
+        annotations:
+          summary: "StintLine : l'API (uvicorn) ne répond plus"
+          description: "stintline.omexis.fr en 502. `vps logs stintline` · `vps restart stintline`."
+
+      - alert: StintlineWorkerDown
+        expr: node_systemd_unit_state{name="stintline-worker.service",state="active"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          service: stintline
+        annotations:
+          summary: "StintLine : worker Celery arrêté"
+          description: "Plus aucun import (Grands Prix, actualités, documents FIA). Le site reste servi avec les données déjà en base. `vps logs stintline-worker`."
+
+      - alert: StintlineBeatDown
+        expr: node_systemd_unit_state{name="stintline-beat.service",state="active"} == 0 and on() vps_primary == 1
+        for: 5m
+        labels:
+          severity: warning
+          service: stintline
+        annotations:
+          summary: "StintLine : Celery beat arrêté"
+          description: "refresh_recent ne tourne plus : les prochains Grands Prix ne seront pas importés."
+
+      - alert: StintlineRaceImportOverdue
+        expr: max(stintline_races_overdue) > 0
+        for: 6h
+        labels:
+          severity: warning
+          service: stintline
+        annotations:
+          summary: "StintLine : course terminée non importée"
+          description: "{{ $value }} course(s) ou sprint(s) finie(s) depuis plus de 12 h sans import. Fournisseur en retard ou en panne ? `vps logs stintline-worker`."
+
+      - alert: StintlineHeadlinesStale
+        expr: time() - max(stintline_last_headlines_timestamp_seconds) > 6 * 3600 and max(stintline_last_headlines_timestamp_seconds) > 0
+        for: 30m
+        labels:
+          severity: warning
+          service: stintline
+        annotations:
+          summary: "StintLine : actualités non rafraîchies depuis 6 h"
+          description: "La tâche refresh_headlines (toutes les 30 min) n'aboutit plus. `vps logs stintline-worker`."
+
+  # Key numbers shown by vps-infra's Grafana dashboards (Accueil, Application): one `vps:kpi`
+  # series per number. Labels: kpi = tile title; section = metier | sante; idx = order
+  # (idx 0x = also on Accueil); unit = eur | count | percent | s | bool | bad (red when > 0).
+  - name: stintline-kpi
+    rules:
+      - record: vps:kpi
+        expr: max(stintline_seasons)
+        labels: {app: stintline, section: metier, idx: "01", unit: count, kpi: "Saisons"}
+      - record: vps:kpi
+        expr: max(stintline_races_with_telemetry)
+        labels: {app: stintline, section: metier, idx: "02", unit: count, kpi: "Courses rejouables"}
+      - record: vps:kpi
+        expr: time() - max(stintline_last_ingest_timestamp_seconds)
+        labels: {app: stintline, section: metier, idx: "03", unit: s, kpi: "Dernier import"}
+      - record: vps:kpi
+        expr: max(stintline_sessions)
+        labels: {app: stintline, section: metier, idx: "10", unit: count, kpi: "Sessions"}
+      - record: vps:kpi
+        expr: max(stintline_sessions_ingested)
+        labels: {app: stintline, section: metier, idx: "11", unit: count, kpi: "Sessions chronométrées"}
+      - record: vps:kpi
+        expr: max(stintline_races_overdue)
+        labels: {app: stintline, section: sante, idx: "20", unit: bad, kpi: "Courses en retard d'import"}
+      - record: vps:kpi
+        expr: time() - max(stintline_last_headlines_timestamp_seconds)
+        labels: {app: stintline, section: sante, idx: "21", unit: s, kpi: "Âge des actualités"}
