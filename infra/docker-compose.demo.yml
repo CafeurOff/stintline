@@ -22,6 +22,7 @@ x-api: &api
     REDIS_URL: redis://redis:6379/0
     # The image's code directory is read-only for the app user.
     RACEDATA_CACHE_DIR: /tmp/racedata-cache
+    RADIO_WHISPER_DIR: /tmp/whisper-models
     LOG_JSON: "true"
   restart: unless-stopped
 

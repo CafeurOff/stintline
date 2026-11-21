@@ -32,7 +32,7 @@ Last verified: 2026-11-11 (news feeds), 2026-11-03 (the rest).
   | `weather` | `air_temperature`, `track_temperature`, `humidity`, `rainfall`, `wind_speed`, `date` |
   | `intervals` | `gap_to_leader`, `interval`, `date` (race only) |
 
-- `team_radio` gives one URL per message; StintLine stores the reference only. An empty result set is HTTP 404 `{"detail":"No results found."}`, read as an empty list.
+- `team_radio` gives one URL per message; StintLine stores the reference and the text of the clip, transcribed on our machine (ADR 0029). The audio is fetched once from `livetiming.formula1.com` to be transcribed, never stored. Many clips are only a few seconds of beeps. An empty result set is HTTP 404 `{"detail":"No results found."}`, read as an empty list.
 - `car_data` and `location` are only ever fetched over one lap: the reference lap that draws the circuit (fastest clean lap, about 320 samples, ADR 0007) and each driver's fastest clean lap for telemetry (below).
 - Free tier: no live data. Sponsor tier (live, MQTT or WebSocket) is not used (ADR 0002).
 - **Live-session lock.** While any F1 session is live, every unauthenticated request, past sessions included, gets HTTP 401 `{"detail": "Live F1 session in progress. Global API access (including past sessions) is restricted to authenticated users until the session ends…"}`, without `Retry-After`. The lock outlasts the session: Las Vegas FP3 2026 ended at 01:30 UTC and OpenF1 answered again between 01:59 and 02:04. `racedata` raises `LiveSessionLockedError`; imports are deferred, not failed (ADR 0028).

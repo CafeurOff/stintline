@@ -49,7 +49,7 @@ Snapshot date: 2026-11-03. This ecosystem changes often (see the October 2026 ar
 ### 2.5 Non-API sources
 - **FIA timing PDFs** (Pit Stop Summary, Lap Analysis, History Chart): official and authoritative, with filenames following `YYYY_RR_ccc_f1_r0_timing_<type>_v01.pdf`. Parsing is brittle (layout drift, multi-page tables). Best use is as an independent check of pit-stop durations during backtest validation, not as a primary feed.
 - **Broadcast OCR / video analysis**: technically possible (timing tower OCR), legally excluded (FOM broadcast rights). **Not used.**
-- **Team radio audio + speech-to-text**: OpenF1 `team_radio` exposes clip URLs. Transcribing them (e.g. Whisper) could detect "box box" calls, but the audio is FOM content. Out of scope. Possibly an opt-in local experiment later.
+- **Team radio audio + speech-to-text**: OpenF1 `team_radio` exposes clip URLs. Transcribing them (e.g. Whisper) could detect "box box" calls, but the audio is FOM content. Built in ADR 0029: clips are played from their source, fetched only to be transcribed by Whisper on our machine, and only the text is kept.
 - **Weather**: OpenF1 `weather` gives on-track samples (air/track temperature, rainfall, wind). Open-Meteo adds a forecast (rain probability for the next hour), which is relevant to strategy and free under CC-BY 4.0.
 - **Community datasets**: TracingInsights (Apache-2.0 per its docs) re-publishes lap and telemetry JSON. Its provenance relies on FastF1 / MultiViewer, so the same upstream terms apply.
 - **MultiViewer** (desktop app, F1 TV based) and its undocumented circuits API: not a data source for us.

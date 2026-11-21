@@ -1,7 +1,7 @@
 # StintLine — guide for contributors and AI sessions
 
 ## What this is
-StintLine is a site for Formula 1 fans built on public timing and results data (ADR 0008). Its core is race strategy: stint analysis, fuel-corrected tyre degradation, pit loss per circuit, undercut/overcut simulation, pit-exit prediction and what-if replays, backtested against real races and shown on the circuit. Around it: every Grand Prix since 1950, careers and standings, analysis pages, FIA documents, telemetry, news and a local live mode.
+StintLine is a site for Formula 1 fans built on public timing and results data (ADR 0008). Its core is race strategy: stint analysis, fuel-corrected tyre degradation, pit loss per circuit, undercut/overcut simulation, pit-exit prediction and what-if replays, backtested against real races and shown on the circuit. Around it: every Grand Prix since 1950, careers and standings, analysis pages, FIA documents, telemetry, team radio with transcripts, news and a local live mode.
 It must stay accessible to casual fans first, with deeper charts for hardcore fans. It is not affiliated with Formula 1, the FIA or any team.
 
 ## Status
@@ -20,7 +20,8 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
                          any session on its clock, ADR 0028)
   stintline/ingestion/   idempotent upserts: calendar (`schedule.py`), session timing of every kind
                          (`timing.py`, practice identities in `identity.py`), history
-                         (`history.py`), telemetry, portraits, shared writers (`services.py`);
+                         (`history.py`), telemetry, portraits, team radio transcripts
+                         (`radio.py`, ADR 0029), shared writers (`services.py`);
                          Celery tasks, `ingest` and `seed_demo` commands
   stintline/strategy_api/ ORM to engine adapter (`adapters.py`), strategy endpoints (`services.py`), model card (`model_card.py`), `backtest` command
   stintline/news/        headlines from news feeds (model, refresh task, `refresh_news` command),
@@ -37,7 +38,7 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
                          `read_technical`), technical endpoints (ADR 0019)
   stintline/live/        live publisher (snapshot + pit now + session history), Channels consumer
                          `/ws/live`, `live` and `live_demo` commands, circuit context from stored
-                         races (ADR 0011, 0020)
+                         races, live radio transcription (`radio.py`) (ADR 0011, 0020, 0029)
   stintline/championship/ title maths (ADR 0022): points rules per season (`rules.py`), pure
                          arithmetic (`maths.py`), tallies from stored results (`selectors.py`),
                          `check_title_rules`, title endpoint
@@ -49,7 +50,8 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
 apps/web/            React 19, TypeScript strict, Vite, Tailwind 4, TanStack Query, React Router
   src/app/ (router, layout, theme)  src/features/<feature>/  src/components/{ui,racing}/  src/lib/
 packages/racedata/   Pure Python, import `racedata`. Capability protocols (schedule, results, timing),
-                     adapters (openf1, jolpica, wikipedia, news feeds, fia documents, open-meteo), live timing client (`racedata.live`:
+                     adapters (openf1, jolpica, wikipedia, news feeds, fia documents, open-meteo), team radio clips and Whisper
+                     transcription (`racedata.radio`, extra `transcription`), live timing client (`racedata.live`:
                      SignalR, merge, snapshot view, recordings), HTTP client (rate limit, retry,
                      cache, timeout), DTOs, derive/matching helpers, fixture recorder
   fixtures/          recorded upstream responses (tests + offline demo)
@@ -105,6 +107,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | FIA documents | `manage.py ingest_fia [--season 2026] [--texts 200] [--all-events]` (1 request / 10 s; also every 30 min via Celery beat) · record a fixture: `uv run python -m racedata.tools.record_fixture fia "<season page>/event/Hungarian Grand Prix"` |
 | Technical documents | `manage.py read_technical [--season 2026] [--limit 50] [--all]` (re-read upgrades and power-unit PDFs after a parser change; 1 request / 10 s) |
 | Title maths | `manage.py check_title_rules [--season 1988]` (recounts seasons with our points rules and lists drivers whose total differs from the official standings) |
+| Team radio transcripts | `manage.py transcribe_radio [--session ID \| --season 2025] [--limit N] [--redo] [--sync]` (Whisper `base.en` on the CPU, ADR 0029; also after each import, 25 clips per task, and 2 backlog sessions per `refresh_recent`) |
 | Weather forecasts | `manage.py refresh_forecasts` (sessions within 15 days; also every 3 h via Celery beat and on worker start) |
 | Pre-commit | `pre-commit run --all-files` |
 | Screenshots (PRs, mock-ups) | `SHOTS_ROUTES="/,/drivers/norris" SHOTS_THEMES="dark,light" pnpm --filter web shots` (production build + recorded demo API, desktop and phone, into `apps/web/shots-out/`) |
@@ -156,6 +159,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 - **Analysis figures (ADR 0017).** Bump `ANALYSIS_FORMAT` in `stintline/analysis/build.py` when a stored figure changes meaning, so every race is rebuilt. A race is wet only when intermediate or wet tyres were fitted (rain samples alone do not count). A pit loss stands for its circuit only when it is reliable (`RaceStats.pit_loss_reliable`: dry, ≥ 8 green stops, spread ≤ 25 %): Monza 2026 had a red flag missing from the timing and a 1,842 s median pit lane. Some sessions have no lap start times (Miami 2025): no running order, so passes and laps led are null, not zero.
 - **FIA documents (ADR 0018).** fia.com allows one request per 10 s (robots.txt): every call goes through `paddock.throttle` (a Redis slot shared by the worker and the API), never around it. The PDF relay and the portrait relay (ADR 0024) are the only views that can reach upstream; the PDF is cached a week and a reader goes before the import. "Published on … CET" is Paris wall-clock time. FIA event names differ from ours (`services.match_event`). The decision `Time` is when the stewards noted the incident. PDFs are never stored; the extracted text is. `pdfjs-dist` stays on 4.x (5+ needs Node 22.13). A `sr-only` element must not sit inside an unpositioned scroll wrapper (see `apps/web/CLAUDE.md`).
 - **Technical documents (ADR 0019).** Teams lay out their own upgrade pages: rows start with a number, descriptions continue in the same column; picture-only pages are skipped. Never strip images from an upgrades PDF fixture (table borders go with them). Power-unit columns are placed by x position; allowances come from the FIA's sentences only. A reader registers in `AppConfig.ready` (`paddock.readers.register`).
+- **Team radio (ADR 0029).** Clips are played from `livetiming.formula1.com` and fetched only to be transcribed: never store or re-host the audio. `racedata.radio` refuses any other URL. A timing re-import keeps the transcript columns (`RADIO_TRANSCRIPT_FIELDS`, `_upsert(keep=…)`). `transcript` is null until transcribed and empty when nothing intelligible was said (or the clip was unreadable, `transcript_model = "unreadable"`). PyAV stays below 16 (`faster-whisper` 1.2 passes `metadata_errors`). Tests never load Whisper (`RADIO_TRANSCRIPTION_ENABLED` is off in test settings; inject a fake transcriber). Many clips are a few seconds of beeps: an empty transcript is normal. Two address updates in a row in the web app overwrite each other: change `car` and `lap`/`t` in one `update`.
 - **Weather and live tower (ADR 0020).** Open-Meteo data is CC BY 4.0: show `ForecastCredit` wherever a forecast appears. Forecast times are requested in GMT (UTC). The Open-Meteo fixture is hand-built from the documented format: re-record it when the network is available. Flag periods come from `SessionData.StatusSeries`, which also lists earlier sessions of the weekend (dropped from 30 min before the start). Pit-lane times disappear from `PitLaneTimeCollection`: `SessionHistory` keeps them, and loses them if the live process restarts.
 - **Title maths (ADR 0022).** Points rules live in `stintline/championship/rules.py`: add a line when a season's rules change, then run `check_title_rules`. Jolpica's standings are wrong for 1967 (Brabham 48, officially 46) and 1977 (Lauda 70 and Reutemann 41, officially 72 and 42): trust the recount. Before 1958 shared drives and shared fastest laps are missing from race results (totals 1–5 points short). A tie is never "settled" unless the countback is sure.
 - **Page heads and languages (ADR 0025).** nginx serves files and sends every other path to the API, which renders the built index.html with the page's head (`stintline.seo`). French pages live under `/fr` (router basename); the language comes from the address. A new route in `apps/web/src/app/router.tsx` needs a line in `seo/pages.py` (else the server answers 404) and in `seo/document.py` `PAGE_MODULES`. The API prod image is built with the web image as its `web` build context. French Grand Prix names live in `apps/web/src/lib/i18n/event-names.fr.json`, shared by both.
