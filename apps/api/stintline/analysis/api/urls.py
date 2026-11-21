@@ -14,5 +14,10 @@ urlpatterns = [
     ),
     path("analysis/seasons/<int:year>/pit-stops", views.PitStopsView.as_view(), name="pit-stops"),
     path("analysis/circuits", views.CircuitsView.as_view(), name="circuits"),
+    path(
+        "analysis/circuits/<slug:ref>/undercuts",
+        views.CircuitUndercutsView.as_view(),
+        name="circuit-undercuts",
+    ),
     path("sessions/<int:session_id>/pace", views.SessionPaceView.as_view(), name="pace"),
 ]

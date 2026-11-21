@@ -11,12 +11,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from stintline.analysis import circuits, duels, pace, season
+from stintline.analysis import circuits, duels, pace, season, undercuts
 from stintline.analysis.api import serializers as s
 from stintline.analysis.models import RaceStats
 from stintline.core.api.serializers import ProblemSerializer
 from stintline.core.http import cached_response
-from stintline.racing.models import Driver, Season, Session
+from stintline.racing.models import Circuit, Driver, Season, Session
 from stintline.strategy_api import services
 from stintline_strategy.analysis import PaceFilter
 
@@ -118,6 +118,19 @@ class CircuitsView(APIView):
     def get(self, request: Request) -> Response:
         data = s.CircuitProfileSerializer(circuits.circuit_profiles(), many=True).data
         return cached_response(request, data, "circuits", *_stamp())
+
+
+class CircuitUndercutsView(APIView):
+    @extend_schema(
+        operation_id="analysis_circuit_undercuts_retrieve",
+        summary="Every green-flag undercut tried at a circuit since 2023, and what it gained",
+        responses={200: s.CircuitUndercutsSerializer, **ERRORS},
+        tags=TAG,
+    )
+    def get(self, request: Request, ref: str) -> Response:
+        circuit = get_object_or_404(Circuit, ref=ref)
+        data = s.CircuitUndercutsSerializer(undercuts.circuit_undercuts(circuit)).data
+        return cached_response(request, data, "undercuts", circuit.pk, *_stamp())
 
 
 class SessionPaceView(APIView):
