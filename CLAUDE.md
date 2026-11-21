@@ -28,7 +28,8 @@ apps/api/            Django 5.2 LTS + DRF, Python 3.13, uv. HTTP API, ingestion,
                          `story.py`), news endpoints (ADR 0012, 0013)
   stintline/analysis/    per-race figures stored after each import (`build.py`), head-to-heads
                          (`duels.py`), race pace (`pace.py`), consistency and pit stops (`season.py`),
-                         track DNA (`circuits.py`), analysis endpoints (ADR 0017)
+                         track DNA (`circuits.py`), every undercut tried at a circuit (`undercuts.py`),
+                         analysis endpoints (ADR 0017)
   stintline/paddock/     FIA documents and stewards' decisions: import (`services.py`, `refresh.py`),
                          shared fia.com slot (`throttle.py`), PDF relay (`relay.py`), search and
                          decisions (`selectors.py`), endpoints (ADR 0018)
