@@ -18,7 +18,7 @@ dependencies = [
     "uvicorn[standard]>=0.34",
     "whitenoise>=6.8",
     "stintline-strategy",
-    "stintline-racedata",
+    "stintline-racedata[transcription]",
     "django-stubs-ext>=5.2,<5.3",
     "django-prometheus>=2.3",
     "prometheus-client>=0.21",

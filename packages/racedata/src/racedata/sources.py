@@ -12,6 +12,7 @@ from racedata.config import (
     FEEDS,
     FIA,
     JOLPICA,
+    LIVETIMING_STATIC,
     OPEN_METEO,
     OPENF1,
     WIKIMEDIA_UPLOAD,
@@ -34,6 +35,7 @@ from racedata.providers.jolpica import JolpicaSource
 from racedata.providers.openf1 import OpenF1Source
 from racedata.providers.openmeteo import OpenMeteoSource
 from racedata.providers.wikipedia import IMAGE_HOSTS, WikimediaImageSource, WikipediaSource
+from racedata.radio import RadioClipSource
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,8 @@ class Sources:
     """Open-Meteo forecasts at the circuits (ADR 0020). ``None`` in test doubles."""
     images: WikimediaImageSource | None = None
     """Portrait thumbnails relayed by the API (ADR 0024). ``None`` offline (fixtures)."""
+    radio: RadioClipSource | None = None
+    """Team radio clips, fetched to be transcribed (ADR 0029). ``None`` offline (fixtures)."""
 
     def close(self) -> None:
         for client in self.clients:
@@ -96,11 +100,13 @@ def build_http_sources(
         host: HttpClient(WIKIMEDIA_UPLOAD.name, f"https://{host}", limits=WIKIMEDIA_UPLOAD.limits)
         for host in IMAGE_HOSTS
     }
+    radio = _http_client(LIVETIMING_STATIC, None, None)
     sources = _sources(openf1, jolpica, wikipedia, feeds, fia, weather)
     return replace(
         sources,
-        clients=(*sources.clients, *images.values()),
+        clients=(*sources.clients, *images.values(), radio),
         images=WikimediaImageSource(images),
+        radio=RadioClipSource(radio),
     )
 
 
