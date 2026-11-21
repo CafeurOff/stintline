@@ -167,7 +167,7 @@ describe("Live page", () => {
     expect(within(side).getByText("Rejoins 12th")).toBeVisible();
   });
 
-  it("plays team radio from the official recordings", async () => {
+  it("plays team radio from the official recordings with what was said", async () => {
     goLive();
     renderRoute("/live");
 
@@ -176,6 +176,8 @@ describe("Live page", () => {
       "src",
       expect.stringContaining("livetiming.formula1.com/static/") as string,
     );
+    expect(screen.getByText("Box box, box this lap.")).toBeVisible();
+    expect(screen.getByText("Transcription on its way.")).toBeVisible();
   });
 
   it("follows the snapshots pushed over the socket and remembers the TV delay", async () => {

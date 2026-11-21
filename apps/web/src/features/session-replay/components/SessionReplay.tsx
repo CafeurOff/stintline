@@ -7,6 +7,7 @@ import { Panel } from "@/components/layout/Panel";
 import { Flag } from "@/components/racing/Flag";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { RadioPanel } from "@/features/radio/components/RadioPanel";
 import { useTrack } from "@/features/race/api";
 import { Race3DView } from "@/features/race/components/Race3DView";
 import { type CarMarker, TrackMap } from "@/features/race/components/TrackMap";
@@ -301,9 +302,27 @@ function Replay({
           <SessionConditions timeline={data} time={time} />
         </aside>
       </div>
+      <RadioPanel
+        sessionId={session.id}
+        byCar={byCar}
+        selected={selected}
+        onSeek={(message) => {
+          const at = secondsSince(data.starts_at, message.recorded_at, data.duration_s);
+          clock.pause();
+          clock.setTime(at);
+          // One address change: two in a row would each start from the same address.
+          update({ car: message.car_number, t: Math.round(at) });
+        }}
+      />
       <Panel id="session-telemetry" title={t("sreplay.telemetry")} icon={<Activity />}>
         <TelemetrySection sessionId={session.id} />
       </Panel>
     </div>
   );
+}
+
+/** A moment of the session as seconds on its replay clock, kept inside the session. */
+function secondsSince(startsAt: string, at: string, duration: number): number {
+  const seconds = (Date.parse(at) - Date.parse(startsAt)) / 1000;
+  return Math.min(Math.max(seconds, 0), duration);
 }

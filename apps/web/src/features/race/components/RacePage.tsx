@@ -20,6 +20,7 @@ import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
+import { RadioPanel } from "@/features/radio/components/RadioPanel";
 import { SessionSwitcher } from "@/features/session-replay/components/SessionSwitcher";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
@@ -547,6 +548,20 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
             )}
           </aside>
         )}
+      </div>
+      <div className="mt-5">
+        <RadioPanel
+          sessionId={sessionId}
+          byCar={byCar}
+          selected={selected}
+          onSeek={(message) => {
+            if (message.lap === null) return;
+            clock.pause();
+            clock.setTime(leaderTimeAtLap(clocks, message.lap));
+            // One address change: two in a row would each start from the same address.
+            update({ car: message.car_number, plan: null, lap: message.lap });
+          }}
+        />
       </div>
     </div>
   );

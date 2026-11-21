@@ -285,11 +285,13 @@ export const liveSnapshot = {
       at: "2026-11-01T22:29:16.457000Z",
       number: 5,
       url: "https://livetiming.formula1.com/static/2026/2026-11-01_Mexico_City_Grand_Prix/2026-11-01_Race/TeamRadio/BOR_5_20261101_162902.mp3",
+      transcript: "Box box, box this lap.",
     },
     {
       at: "2026-11-01T22:29:16.457000Z",
       number: 3,
       url: "https://livetiming.formula1.com/static/2026/2026-11-01_Mexico_City_Grand_Prix/2026-11-01_Race/TeamRadio/VER_3_20261101_162901.mp3",
+      transcript: null,
     },
   ],
   weather: {

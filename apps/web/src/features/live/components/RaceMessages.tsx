@@ -41,7 +41,14 @@ export function Radio({ snapshot }: { snapshot: LiveSnapshot }) {
                 <span className="font-semibold">{car?.code ?? radio.number}</span>
                 <span className="text-muted tabular-nums">{clock(radio.at, locale)}</span>
               </span>
-              {/* No transcript exists for team radio clips, so there is no caption track to add. */}
+              {radio.transcript ? (
+                <q lang="en" className="text-sm">
+                  {radio.transcript}
+                </q>
+              ) : radio.transcript === null ? (
+                <p className="text-xs text-muted italic">{t("radio.pending")}</p>
+              ) : null}
+              {/* The transcript above is the text alternative: a caption track would repeat it. */}
               {/* eslint-disable-next-line jsx-a11y/media-has-caption -- see above */}
               <audio
                 controls

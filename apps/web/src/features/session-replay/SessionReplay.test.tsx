@@ -144,6 +144,32 @@ describe("SessionReplay", () => {
     expect(within(nav).getAllByText("(Being imported)", { exact: false })).toHaveLength(3);
   });
 
+  it("moves the clock to the moment of a team radio message", async () => {
+    useQualifying();
+    server.use(
+      http.get("*/api/v1/sessions/:id/radio", () =>
+        HttpResponse.json([
+          {
+            car_number: 81,
+            recorded_at: "2025-08-02T14:15:30Z",
+            url: "https://livetiming.formula1.com/static/2025/q/OSCPIA01_81.mp3",
+            lap: 4,
+            transcript: "Push now, last lap.",
+            transcript_confidence: 0.9,
+          },
+        ]),
+      ),
+    );
+    const { router } = renderRoute(`/sessions/${String(QUALI_ID)}?t=60&radio=all`);
+
+    const panel = await screen.findByRole("region", { name: "Team radio" });
+    await userEvent.click(await within(panel).findByRole("button", { name: "Go to lap 4 (PIA)" }));
+
+    const search = new URLSearchParams(router.state.location.search);
+    expect(search.get("t")).toBe("930");
+    expect(search.get("car")).toBe("81");
+  });
+
   it("says when a session has no timing yet", async () => {
     useQualifying(null);
     renderRoute(`/sessions/${String(QUALI_ID)}`);

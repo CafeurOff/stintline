@@ -28,6 +28,7 @@ import {
 import { lapsResponse } from "./fixtures/laps";
 import { offlineLive } from "./fixtures/live";
 import { model } from "./fixtures/model";
+import { radio } from "./fixtures/radio";
 import { headlines, hungaryReport, sprintReport } from "./fixtures/news";
 import {
   decisions,
@@ -86,6 +87,7 @@ const handlers = [
   http.get("*/api/v1/sessions/:id/track", () => HttpResponse.json(track)),
   http.get("*/api/v1/sessions/:id/replay", () => HttpResponse.json(replay)),
   http.get("*/api/v1/sessions/:id/sectors", () => HttpResponse.json(sectors)),
+  http.get("*/api/v1/sessions/:id/radio", () => HttpResponse.json(radio)),
   http.get("*/api/v1/sessions/:id/laps", ({ request }) => {
     const cars = (new URL(request.url).searchParams.get("cars") ?? "").split(",").map(Number);
     return HttpResponse.json(lapsResponse.filter((lap) => cars.includes(lap.car_number)));
