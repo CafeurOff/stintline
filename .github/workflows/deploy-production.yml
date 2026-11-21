@@ -1,9 +1,11 @@
 # Production deploy of stintline.omexis.fr (ADR 0027). Pushing a tag vX.Y.Z runs the whole
 # CI on that exact commit, then asks the server to deploy it. Manual run: Actions -> Deploy
-# Production -> Run workflow, with the tag.
+# Production -> Run workflow, choosing the TAG (not a branch) in "Use workflow from".
 #
-# Repository secrets:
-#   VPS_HOST         the server (gra-prod-01)
+# Only maintainers can create v* tags (repository ruleset), and the secrets below live in the
+# `production` environment, which only accepts v*.*.* tags: no branch, fork or pull request
+# can read them.
+#   VPS_HOST         the server
 #   VPS_KNOWN_HOSTS  its ed25519 host key, pinned once from a trusted machine and checked
 #                    against the server's own fingerprint (never a keyscan inside CI)
 #   VPS_SSH_KEY      private half of the key given to vps-infra `app-apply --ci-key`. On the
@@ -18,8 +20,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag to deploy (e.g. v1.0.2)"
-        required: true
+        description: "Tag to deploy (empty: the tag chosen in Use workflow from)"
+        required: false
 
 concurrency:
   group: deploy-production

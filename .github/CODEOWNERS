@@ -1,0 +1,7 @@
+# Every change is reviewed by the maintainer (ruleset on main: code owner review).
+# deploy/ and .github/ run on the production server or with its deploy key: never merge a
+# change there without reading it line by line.
+*               @CafeurOff
+/deploy/        @CafeurOff
+/.github/       @CafeurOff
+/infra/         @CafeurOff
