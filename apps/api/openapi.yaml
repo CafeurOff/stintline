@@ -23,6 +23,40 @@ paths:
                 items:
                   $ref: '#/components/schemas/CircuitProfile'
           description: ''
+  /api/v1/analysis/circuits/{ref}/undercuts:
+    get:
+      operationId: analysis_circuit_undercuts_retrieve
+      summary: Every green-flag undercut tried at a circuit since 2023, and what it
+        gained
+      parameters:
+      - in: path
+        name: ref
+        schema:
+          type: string
+        required: true
+      tags:
+      - analysis
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CircuitUndercuts'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/analysis/head-to-head:
     get:
       operationId: analysis_head_to_head_retrieve
@@ -1989,6 +2023,38 @@ components:
       - winner_strategy
       - winner_team
       - year
+    CircuitUndercuts:
+      type: object
+      properties:
+        circuit:
+          $ref: '#/components/schemas/Circuit'
+        races:
+          type: integer
+          description: Grands Prix analysed at this circuit
+        attempts:
+          type: array
+          items:
+            $ref: '#/components/schemas/UndercutAttempt'
+        successes:
+          type: integer
+        dry_attempts:
+          type: integer
+        median_gain_s:
+          type: number
+          format: double
+          nullable: true
+          description: Median gain over dry races; null below min_attempts
+        min_attempts:
+          type: integer
+          description: Dry attempts needed before the median is given
+      required:
+      - attempts
+      - circuit
+      - dry_attempts
+      - median_gain_s
+      - min_attempts
+      - races
+      - successes
     Compare:
       type: object
       properties:
@@ -6991,6 +7057,83 @@ components:
         * `HARD` - HARD
         * `INTERMEDIATE` - INTERMEDIATE
         * `WET` - WET
+    UndercutAttempt:
+      type: object
+      properties:
+        year:
+          type: integer
+        event_id:
+          type: integer
+        session_id:
+          type: integer
+        wet:
+          type: boolean
+          description: Intermediate or wet tyres were fitted that race
+        attacker:
+          allOf:
+          - $ref: '#/components/schemas/UndercutCar'
+          description: The car that pitted first
+        defender:
+          allOf:
+          - $ref: '#/components/schemas/UndercutCar'
+          description: The car directly ahead, which replied
+        attacker_lap:
+          type: integer
+          description: Lap on which the attacker pitted
+        defender_lap:
+          type: integer
+          description: Lap on which the defender pitted
+        gap_before_s:
+          type: number
+          format: double
+          description: Attacker behind by this much before
+        gap_after_s:
+          type: number
+          format: double
+          description: 'Attacker minus defender after the defender''s out-lap (negative:
+            ahead)'
+        gain_s:
+          type: number
+          format: double
+          description: gap_before_s - gap_after_s
+        success:
+          type: boolean
+          description: The attacker came out ahead
+      required:
+      - attacker
+      - attacker_lap
+      - defender
+      - defender_lap
+      - event_id
+      - gain_s
+      - gap_after_s
+      - gap_before_s
+      - session_id
+      - success
+      - wet
+      - year
+    UndercutCar:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        driver:
+          allOf:
+          - $ref: '#/components/schemas/Driver'
+          nullable: true
+        team:
+          allOf:
+          - $ref: '#/components/schemas/Team'
+          nullable: true
+        colour:
+          type: string
+          nullable: true
+          description: Team colour that weekend
+      required:
+      - car_number
+      - colour
+      - driver
+      - team
     UndercutRequestRequest:
       type: object
       properties:

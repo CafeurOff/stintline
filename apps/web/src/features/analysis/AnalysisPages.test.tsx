@@ -1,8 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http } from "msw";
+import { HttpResponse, http } from "msw";
 
 import { renderRoute } from "@/test/render";
+import { circuitUndercuts } from "@/test/fixtures/undercuts";
 import { problem, server } from "@/test/server";
 
 describe("Analysis pages", () => {
@@ -89,6 +90,72 @@ describe("Analysis pages", () => {
     expect(await screen.findByRole("heading", { name: "Suzuka Circuit", level: 1 })).toBeVisible();
     expect(screen.getByRole("region", { name: "Winning strategies" })).toBeVisible();
     expect(screen.getByRole("table", { name: "Race by race" })).toBeVisible();
+  });
+
+  it("lists every undercut tried at a circuit with what it gained", async () => {
+    renderRoute("/circuits/bahrain");
+
+    const panel = await screen.findByRole("region", { name: "Every undercut here" });
+    expect(
+      await within(panel).findByText("8 green-flag attempts since 2023, 6 gained the place"),
+    ).toBeVisible();
+    expect(
+      within(panel).getByText("+3.0 s median gain on the car ahead (dry races)"),
+    ).toBeVisible();
+    const attempts = within(panel).getAllByRole("listitem");
+    expect(attempts).toHaveLength(8);
+    const bearman = attempts.find((li) => li.textContent.includes("Bearman"));
+    expect(bearman).toHaveTextContent("1.6 s behind → 5.8 s ahead");
+    expect(bearman).toHaveTextContent("+7.3 s");
+    expect(bearman).toHaveTextContent("Came out ahead");
+    const norris = attempts.find((li) => li.textContent.includes("Norris"));
+    expect(norris).toHaveTextContent("−2.1 s");
+    expect(norris).toHaveTextContent("Stayed behind");
+    expect(
+      within(panel).getByRole("link", {
+        name: "Open the undercut simulator: BEA on ALB, 2025",
+      }),
+    ).toHaveAttribute("href", "/sessions/20?mode=undercut&car=87&lap=13");
+  });
+
+  it("says when a circuit has too few dry undercuts for a median", async () => {
+    const [first] = circuitUndercuts.attempts;
+    server.use(
+      http.get("*/api/v1/analysis/circuits/:ref/undercuts", () =>
+        HttpResponse.json({ ...circuitUndercuts, attempts: [first], median_gain_s: null }),
+      ),
+    );
+    renderRoute("/circuits/bahrain", { locale: "fr" });
+
+    const panel = await screen.findByRole("region", { name: "Tous les undercuts ici" });
+    expect(
+      await within(panel).findByText(
+        "Trop peu de tentatives sur le sec pour une médiane (au moins 3)",
+      ),
+    ).toBeVisible();
+  });
+
+  it("says when no undercut was tried at a circuit", async () => {
+    server.use(
+      http.get("*/api/v1/analysis/circuits/:ref/undercuts", () =>
+        HttpResponse.json({ ...circuitUndercuts, attempts: [], successes: 0, median_gain_s: null }),
+      ),
+    );
+    renderRoute("/circuits/bahrain");
+
+    expect(await screen.findByText("No green-flag undercut tried here yet.")).toBeVisible();
+  });
+
+  it("offers a retry when the undercuts cannot be loaded", async () => {
+    server.use(
+      http.get("*/api/v1/analysis/circuits/:ref/undercuts", () =>
+        problem(503, "upstream_unavailable", "Upstream unavailable"),
+      ),
+    );
+    renderRoute("/circuits/bahrain");
+
+    const panel = await screen.findByRole("region", { name: "Every undercut here" });
+    expect(await within(panel).findByRole("button", { name: /retry/i })).toBeVisible();
   });
 
   it("says when a circuit has no timed race", async () => {

@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 
 import { degradation } from "../src/test/fixtures/degradation";
 import { circuits } from "../src/test/fixtures/analysis";
+import { bahrainProfile, circuitUndercuts } from "../src/test/fixtures/undercuts";
 import { events } from "../src/test/fixtures/events";
 import { homeResponse } from "../src/test/fixtures/home";
 import {
@@ -74,7 +75,8 @@ export async function mockApi(page: Page) {
     ["**/api/v1/seasons/2025/standings/progression", progression],
     ["**/api/v1/seasons/2025/title", title],
     ["**/api/v1/live", offlineLive],
-    ["**/api/v1/analysis/circuits*", circuits],
+    ["**/api/v1/analysis/circuits", [...circuits, bahrainProfile]],
+    ["**/api/v1/analysis/circuits/*/undercuts", circuitUndercuts],
     ["**/api/v1/stewards/decisions*", decisions],
   ];
   for (const [pattern, body] of routes) {

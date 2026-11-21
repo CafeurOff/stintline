@@ -79,6 +79,20 @@ export function useCircuits() {
   });
 }
 
+export function useCircuitUndercuts(ref: string) {
+  return useQuery({
+    queryKey: ["analysis", "circuit-undercuts", ref],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await api.GET("/api/v1/analysis/circuits/{ref}/undercuts", {
+          params: { path: { ref } },
+          signal,
+        }),
+      ),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useSessionPace(sessionId: number | null, options: PaceOptions) {
   return useQuery({
     queryKey: ["analysis", "pace", sessionId, options],

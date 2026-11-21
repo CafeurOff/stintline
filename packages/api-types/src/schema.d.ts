@@ -21,6 +21,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/analysis/circuits/{ref}/undercuts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Every green-flag undercut tried at a circuit since 2023, and what it gained */
+    get: operations["analysis_circuit_undercuts_retrieve"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/analysis/head-to-head": {
     parameters: {
       query?: never;
@@ -996,6 +1013,21 @@ export interface components {
       fastest_lap_s: number | null;
       undercut_attempts: number;
       undercut_successes: number;
+    };
+    CircuitUndercuts: {
+      circuit: components["schemas"]["Circuit"];
+      /** @description Grands Prix analysed at this circuit */
+      races: number;
+      attempts: components["schemas"]["UndercutAttempt"][];
+      successes: number;
+      dry_attempts: number;
+      /**
+       * Format: double
+       * @description Median gain over dry races; null below min_attempts
+       */
+      median_gain_s: number | null;
+      /** @description Dry attempts needed before the median is given */
+      min_attempts: number;
     };
     Compare: {
       car_a: number;
@@ -2993,6 +3025,45 @@ export interface components {
      * @enum {string}
      */
     TyreCompoundEnum: "SOFT" | "MEDIUM" | "HARD" | "INTERMEDIATE" | "WET";
+    UndercutAttempt: {
+      year: number;
+      event_id: number;
+      session_id: number;
+      /** @description Intermediate or wet tyres were fitted that race */
+      wet: boolean;
+      /** @description The car that pitted first */
+      attacker: components["schemas"]["UndercutCar"];
+      /** @description The car directly ahead, which replied */
+      defender: components["schemas"]["UndercutCar"];
+      /** @description Lap on which the attacker pitted */
+      attacker_lap: number;
+      /** @description Lap on which the defender pitted */
+      defender_lap: number;
+      /**
+       * Format: double
+       * @description Attacker behind by this much before
+       */
+      gap_before_s: number;
+      /**
+       * Format: double
+       * @description Attacker minus defender after the defender's out-lap (negative: ahead)
+       */
+      gap_after_s: number;
+      /**
+       * Format: double
+       * @description gap_before_s - gap_after_s
+       */
+      gain_s: number;
+      /** @description The attacker came out ahead */
+      success: boolean;
+    };
+    UndercutCar: {
+      car_number: number;
+      driver: components["schemas"]["Driver"] | null;
+      team: components["schemas"]["Team"] | null;
+      /** @description Team colour that weekend */
+      colour: string | null;
+    };
     UndercutRequestRequest: {
       /** @description Car behind, pitting first */
       attacker: number;
@@ -3127,6 +3198,43 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CircuitProfile"][];
+        };
+      };
+    };
+  };
+  analysis_circuit_undercuts_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        ref: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CircuitUndercuts"];
+        };
+      };
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
+        };
+      };
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Problem"];
         };
       };
     };

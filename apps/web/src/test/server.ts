@@ -48,6 +48,7 @@ import { telemetryCompare, telemetryLaps } from "./fixtures/telemetry";
 import { title } from "./fixtures/title";
 import { track } from "./fixtures/track";
 import { undercut } from "./fixtures/undercut";
+import { bahrainProfile, circuitUndercuts } from "./fixtures/undercuts";
 
 const healthyResponse: Schema<"Health"> = {
   status: "ok",
@@ -101,7 +102,8 @@ const handlers = [
   http.get("*/api/v1/analysis/head-to-head", () => HttpResponse.json(headToHead)),
   http.get("*/api/v1/analysis/seasons/:year/consistency", () => HttpResponse.json(consistency)),
   http.get("*/api/v1/analysis/seasons/:year/pit-stops", () => HttpResponse.json(pitStops)),
-  http.get("*/api/v1/analysis/circuits", () => HttpResponse.json(circuits)),
+  http.get("*/api/v1/analysis/circuits", () => HttpResponse.json([...circuits, bahrainProfile])),
+  http.get("*/api/v1/analysis/circuits/:ref/undercuts", () => HttpResponse.json(circuitUndercuts)),
   http.get("*/api/v1/sessions/:id/pace", () => HttpResponse.json(sessionPace)),
   http.get("*/api/v1/documents/events", () => HttpResponse.json(documentEvents)),
   http.get("*/api/v1/technical/upgrades", () => HttpResponse.json(upgrades)),

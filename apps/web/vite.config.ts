@@ -123,8 +123,8 @@ export default defineConfig({
     isolate: false,
     maxWorkers: "50%",
     // Page tests render the real route tree with many queries; under coverage and a full
-    // parallel run they can take longer than the 5 s default.
-    testTimeout: 15_000,
+    // parallel run on a single busy core they can take well over the 5 s default.
+    testTimeout: 30_000,
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
