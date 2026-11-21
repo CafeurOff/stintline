@@ -31,6 +31,7 @@ import { GoFurther, RacePreview, ResultFacts } from "./EventExtras";
 import { EventHero } from "./EventHero";
 import { type Kind, SessionResults } from "./SessionResults";
 import { StewardsPanel } from "./StewardsPanel";
+import { WeekendSessions } from "./WeekendSessions";
 
 const RESULT_KINDS: readonly Kind[] = ["R", "SPRINT", "Q"];
 
@@ -68,6 +69,7 @@ function EventLoader({ eventId }: { eventId: number }) {
   return (
     <div className="flex flex-col gap-4">
       <EventHero event={data} replays={replays} raceId={race?.id ?? null} />
+      <WeekendSessions sessions={data.sessions} />
       <WeekendForecast eventId={data.id} />
       {race?.has_data && <RaceFigures sessionId={race.id} />}
       <div className="grid gap-4 xl:grid-cols-3">

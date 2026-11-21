@@ -72,8 +72,9 @@ export function useTrack(sessionId: number, enabled = true) {
   });
 }
 
-export function useReplay(sessionId: number) {
+export function useReplay(sessionId: number, enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["session", sessionId, "replay"],
     queryFn: async ({ signal }) =>
       unwrap(

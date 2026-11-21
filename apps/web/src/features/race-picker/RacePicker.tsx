@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
 import { eventName } from "@/lib/i18n/content";
 import { useI18n } from "@/lib/i18n/context";
+import { sessionShort } from "@/lib/sessions";
 import { countryName } from "@/lib/i18n/geo";
 import type { Locale } from "@/lib/i18n/locale";
 import { useNow } from "@/lib/useNow";
@@ -91,7 +92,7 @@ export function RacePicker({ sessionId, view }: RacePickerProps) {
           <span className="block truncate font-bold">
             {current
               ? `${eventName(current.event.name, locale)} ${current.event.season}${
-                  current.kind === "SPRINT" ? ` · ${t("picker.sprint")}` : ""
+                  current.kind === "R" ? "" : ` · ${sessionShort(current.kind, t)}`
                 }`
               : t("common.loading")}
           </span>

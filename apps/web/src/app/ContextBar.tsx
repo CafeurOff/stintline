@@ -127,9 +127,11 @@ export function RaceBar({ sessionId, onTyres }: { sessionId: number; onTyres: bo
         <NavLink to={`/sessions/${sessionId}`} end className={tabLink}>
           {t("nav.circuit")}
         </NavLink>
-        <NavLink to={`/sessions/${sessionId}/tyres`} className={tabLink}>
-          {t("nav.tyres")}
-        </NavLink>
+        {(session.data?.kind === "R" || session.data?.kind === "SPRINT") && (
+          <NavLink to={`/sessions/${sessionId}/tyres`} className={tabLink}>
+            {t("nav.tyres")}
+          </NavLink>
+        )}
         {eventId !== undefined && (
           <NavLink to={`/events/${eventId}`} className={tabLink}>
             {t("nav.event")}

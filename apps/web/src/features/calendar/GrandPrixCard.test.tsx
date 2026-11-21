@@ -14,7 +14,13 @@ const upcoming: Schema<"Event"> = {
   winner: null,
   format: "sprint",
   sessions: [
-    { id: 1, kind: "R" as const, scheduled_start: "2099-03-16T04:00:00Z", has_data: false },
+    {
+      id: 1,
+      kind: "R" as const,
+      scheduled_start: "2099-03-16T04:00:00Z",
+      has_data: false,
+      replay: "upcoming" as const,
+    },
   ],
 };
 

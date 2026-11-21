@@ -20,6 +20,9 @@ import { teamColour } from "@/lib/teams";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
+import { SessionReplay } from "@/features/session-replay/components/SessionReplay";
+import { SessionSwitcher } from "@/features/session-replay/components/SessionSwitcher";
+
 import { useReplay, useSessionDetail, useTrack } from "../api";
 import { byFinish, driverCode, driverName, entriesByCar, type Entry, entryPhoto } from "../entries";
 import {
@@ -72,16 +75,24 @@ export function RacePage() {
   return <RaceLoader sessionId={sessionId} />;
 }
 
+/** Sessions replayed with the race clock and the strategy tools; the others are replayed on
+ * the session clock (ADR 0028). */
+const RACE_KINDS: readonly string[] = ["R", "SPRINT"];
+
 function RaceLoader({ sessionId }: { sessionId: number }) {
   const { locale } = useI18n();
   const session = useSessionDetail(sessionId);
-  const replay = useReplay(sessionId);
-  const track = useTrack(sessionId);
+  const isRace = session.data ? RACE_KINDS.includes(session.data.kind) : false;
+  const replay = useReplay(sessionId, isRace);
+  const track = useTrack(sessionId, isRace);
   const event = session.data?.event;
-  useDocumentTitle(event ? `${eventName(event.name, locale)} ${String(event.season)}` : null);
+  useDocumentTitle(
+    event && isRace ? `${eventName(event.name, locale)} ${String(event.season)}` : null,
+  );
 
   const error = session.error ?? replay.error ?? track.error;
   if (error instanceof ApiError && error.status === 404) return <NotFoundPage />;
+  if (session.data && !isRace) return <SessionReplay session={session.data} />;
   // The replay needs lap timing: practice, qualifying and races before 2023 have none.
   if (session.data && replay.error instanceof ApiError && replay.error.status === 400) {
     return <NoTiming eventId={session.data.event.id} name={session.data.event.name} />;
@@ -323,6 +334,9 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
             {t("race.pageTitle", { event: name, year: session.event.season })}
           </h1>
           <p className="mt-1 max-w-[80ch] text-sm text-muted">{t("race.pageIntro")}</p>
+          <div className="mt-3">
+            <SessionSwitcher eventId={session.event.id} current={sessionId} />
+          </div>
         </div>
         <TermList ids={["undercut", "overcut", "pitLoss", "stint"]} />
       </header>
