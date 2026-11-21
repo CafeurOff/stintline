@@ -79,6 +79,11 @@ class RadioSerializer(serializers.Serializer[Any]):
     at = serializers.DateTimeField(allow_null=True)
     number = serializers.IntegerField()
     url = serializers.URLField(help_text="Official recording, played from its source")
+    transcript = serializers.CharField(
+        allow_null=True,
+        allow_blank=True,
+        help_text="What was said (ADR 0029): null until transcribed, empty when unintelligible",
+    )
 
 
 class WeatherSerializer(serializers.Serializer[Any]):

@@ -1141,7 +1141,7 @@ paths:
   /api/v1/sessions/{session_id}/radio:
     get:
       operationId: session_radio_list
-      summary: Team radio messages (references to the official recordings)
+      summary: 'Team radio messages: official recordings, lap and transcript'
       parameters:
       - in: path
         name: session_id
@@ -5162,9 +5162,15 @@ components:
           type: string
           format: uri
           description: Official recording, played from its source
+        transcript:
+          type: string
+          nullable: true
+          description: 'What was said (ADR 0029): null until transcribed, empty when
+            unintelligible'
       required:
       - at
       - number
+      - transcript
       - url
     Replay:
       type: object
@@ -6323,19 +6329,33 @@ components:
       properties:
         car_number:
           type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
         recorded_at:
           type: string
           format: date-time
         url:
           type: string
           format: uri
-          maxLength: 300
+          description: Official recording, played from its source
+        lap:
+          type: integer
+          nullable: true
+          description: The car's lap when the message was recorded
+        transcript:
+          type: string
+          nullable: true
+          description: 'What was said, transcribed by speech recognition (ADR 0029):
+            null while not transcribed yet, empty when nothing intelligible was said'
+        transcript_confidence:
+          type: number
+          format: double
+          nullable: true
+          description: Mean token probability of the transcript (0 to 1)
       required:
       - car_number
+      - lap
       - recorded_at
+      - transcript
+      - transcript_confidence
       - url
     TeamSeason:
       type: object

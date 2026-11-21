@@ -31,3 +31,5 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0025](0025-page-heads-and-language-urls.md) | Page heads rendered by the API, and one URL per language | Accepted |
 | [0026](0026-race-replay-stage-and-3d-view.md) | Race replay stage, timing tower and a 3D view of the race | Accepted |
 | [0027](0027-production-on-the-shared-vps.md) | Production on the shared VPS (vps-infra), without Docker | Accepted |
+| [0028](0028-practice-and-qualifying-replays.md) | Practice and qualifying replays | Accepted |
+| [0029](0029-team-radio-transcription.md) | Team radio transcribed on our machine with Whisper | Accepted |

@@ -55,7 +55,6 @@ from stintline.racing.models import (
     Session,
     SessionEntry,
     Team,
-    TeamRadio,
 )
 from stintline.racing.timeline import session_timeline as timeline_of
 
@@ -321,16 +320,16 @@ class SeasonStandingsView(APIView):
 class SessionRadioView(APIView):
     @extend_schema(
         operation_id="session_radio_list",
-        summary="Team radio messages (references to the official recordings)",
+        summary="Team radio messages: official recordings, lap and transcript",
         responses=TeamRadioSerializer(many=True),
         tags=["racing"],
     )
     def get(self, request: Request, session_id: int) -> Response:
         stamp = _session_or_404(session_id).ingested_at
-        rows = TeamRadio.objects.filter(session_id=session_id).order_by("recorded_at")
-        return cached_response(
-            request, TeamRadioSerializer(rows, many=True).data, "radio", session_id, stamp
-        )
+        rows = selectors.session_radio(session_id)
+        data = TeamRadioSerializer(rows, many=True).data
+        heard = selectors.radio_stamp(session_id)
+        return cached_response(request, data, "radio", session_id, stamp, heard)
 
 
 class EventDetailView(APIView):

@@ -7,6 +7,7 @@ import { Panel } from "@/components/layout/Panel";
 import { Flag } from "@/components/racing/Flag";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/States";
+import { RadioPanel } from "@/features/radio/components/RadioPanel";
 import { useTrack } from "@/features/race/api";
 import { Race3DView } from "@/features/race/components/Race3DView";
 import { type CarMarker, TrackMap } from "@/features/race/components/TrackMap";
@@ -285,25 +286,42 @@ function Replay({
           />
         </div>
 
-        <aside
-          aria-live="polite"
-          className="glass flex flex-col gap-6 self-start rounded-[20px] p-5 xl:order-3"
-        >
-          {entry && selectedCar && selectedLine && (
-            <DriverLaps
-              entry={entry}
-              laps={selectedCar.laps}
-              state={carStateAt(selectedCar, time)}
-              best={selectedLine.best}
-              time={time}
-            />
-          )}
-          <SessionConditions timeline={data} time={time} />
-        </aside>
+        <div className="flex min-w-0 flex-col gap-5 self-start xl:order-3">
+          <aside aria-live="polite" className="glass flex flex-col gap-6 rounded-[20px] p-5">
+            {entry && selectedCar && selectedLine && (
+              <DriverLaps
+                entry={entry}
+                laps={selectedCar.laps}
+                state={carStateAt(selectedCar, time)}
+                best={selectedLine.best}
+                time={time}
+              />
+            )}
+            <SessionConditions timeline={data} time={time} />
+          </aside>
+          <RadioPanel
+            sessionId={session.id}
+            byCar={byCar}
+            selected={selected}
+            onSeek={(message) => {
+              const at = secondsSince(data.starts_at, message.recorded_at, data.duration_s);
+              clock.pause();
+              clock.setTime(at);
+              // One address change: two in a row would each start from the same address.
+              update({ car: message.car_number, t: Math.round(at) });
+            }}
+          />
+        </div>
       </div>
       <Panel id="session-telemetry" title={t("sreplay.telemetry")} icon={<Activity />}>
         <TelemetrySection sessionId={session.id} />
       </Panel>
     </div>
   );
+}
+
+/** A moment of the session as seconds on its replay clock, kept inside the session. */
+function secondsSince(startsAt: string, at: string, duration: number): number {
+  const seconds = (Date.parse(at) - Date.parse(startsAt)) / 1000;
+  return Math.min(Math.max(seconds, 0), duration);
 }

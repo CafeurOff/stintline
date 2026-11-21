@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from bisect import bisect_right
+from dataclasses import dataclass
+from datetime import datetime
+
 from django.db.models import Count, Exists, F, Max, Min, OuterRef, Prefetch, QuerySet
 
 from stintline.racing.models import (
@@ -12,6 +16,7 @@ from stintline.racing.models import (
     Session,
     SessionEntry,
     Stint,
+    TeamRadio,
     TrackOutline,
     TrackStatus,
 )
@@ -110,3 +115,55 @@ def session_sectors(session_id: int) -> list[dict[str, object]]:
             }
         )
     return out
+
+
+@dataclass(frozen=True, slots=True)
+class RadioMessage:
+    car_number: int
+    recorded_at: datetime
+    url: str
+    lap: int | None
+    """The car's lap when the message was recorded; ``None`` before its first timed lap
+    starts or when the session has no lap start times."""
+    transcript: str | None
+    """``None`` while not transcribed yet, ``""`` when nothing intelligible was said."""
+    transcript_confidence: float | None
+
+
+def session_radio(session_id: int) -> list[RadioMessage]:
+    """Team radio of a session, oldest first, each placed on its car's lap (ADR 0029)."""
+    starts: dict[int, tuple[list[datetime], list[int]]] = {}
+    laps = (
+        Lap.objects.filter(entry__session_id=session_id, started_at__isnull=False)
+        .order_by("entry__car_number", "started_at")
+        .values_list("entry__car_number", "started_at", "lap_number")
+    )
+    for car, started_at, number in laps:
+        if started_at is None:  # excluded by the filter; narrows the type
+            continue
+        times, numbers = starts.setdefault(car, ([], []))
+        times.append(started_at)
+        numbers.append(number)
+    out: list[RadioMessage] = []
+    for row in TeamRadio.objects.filter(session_id=session_id).order_by("recorded_at", "pk"):
+        times, numbers = starts.get(row.car_number, ([], []))
+        index = bisect_right(times, row.recorded_at) - 1
+        out.append(
+            RadioMessage(
+                car_number=row.car_number,
+                recorded_at=row.recorded_at,
+                url=row.url,
+                lap=numbers[index] if index >= 0 else None,
+                transcript=row.transcript if row.transcribed_at is not None else None,
+                transcript_confidence=row.transcript_confidence,
+            )
+        )
+    return out
+
+
+def radio_stamp(session_id: int) -> datetime | None:
+    """Changes whenever a clip of the session is transcribed (for the response ETag)."""
+    stamp: datetime | None = TeamRadio.objects.filter(session_id=session_id).aggregate(
+        last=Max("transcribed_at")
+    )["last"]
+    return stamp

@@ -19,7 +19,6 @@ from stintline.racing.models import (
     Session,
     SessionEntry,
     Stint,
-    TeamRadio,
     TrackStatus,
 )
 
@@ -137,10 +136,24 @@ class TrackSerializer(serializers.Serializer[Any]):
     )
 
 
-class TeamRadioSerializer(serializers.ModelSerializer[TeamRadio]):
-    class Meta:
-        model = TeamRadio
-        fields = ["car_number", "recorded_at", "url"]
+class TeamRadioSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    recorded_at = serializers.DateTimeField()
+    url = serializers.URLField(help_text="Official recording, played from its source")
+    lap = serializers.IntegerField(
+        allow_null=True, help_text="The car's lap when the message was recorded"
+    )
+    transcript = serializers.CharField(
+        allow_null=True,
+        allow_blank=True,
+        help_text=(
+            "What was said, transcribed by speech recognition (ADR 0029): null while not "
+            "transcribed yet, empty when nothing intelligible was said"
+        ),
+    )
+    transcript_confidence = serializers.FloatField(
+        allow_null=True, help_text="Mean token probability of the transcript (0 to 1)"
+    )
 
 
 class SectorsSerializer(serializers.Serializer[Any]):

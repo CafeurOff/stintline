@@ -66,9 +66,18 @@ OPEN_METEO = ProviderConfig(
     limits=(RateLimit(max_calls=1, period_s=1.0), RateLimit(max_calls=500, period_s=3600.0)),
 )
 
+LIVETIMING_STATIC = ProviderConfig(
+    name="livetiming",
+    base_url="https://livetiming.formula1.com",
+    # Team radio clips (ADR 0029): small MP3 files on a CDN, fetched once each to be
+    # transcribed, never stored. Two per second keeps a race backlog polite.
+    limits=(RateLimit(max_calls=2, period_s=1.0),),
+)
+
 PROVIDERS = {
     cfg.name: cfg for cfg in (OPENF1, JOLPICA, WIKIPEDIA, WIKIMEDIA_UPLOAD, FIA, OPEN_METEO)
 }
+"""JSON providers the fixture recorder knows (radio clips are audio, recorded by hand)."""
 
 
 @dataclass(frozen=True, slots=True)

@@ -451,18 +451,46 @@ class Standing(models.Model):
         return f"{self.season} R{self.round} P{self.position} {who}"
 
 
+RADIO_TRANSCRIPT_FIELDS = (
+    "transcript",
+    "transcript_language",
+    "transcript_confidence",
+    "transcript_model",
+    "transcribed_at",
+)
+"""Written by the transcription job (ADR 0029), never by a timing re-import."""
+
+
 class TeamRadio(models.Model):
-    """A team radio message: a reference to the official recording, never re-hosted."""
+    """A team radio message: a reference to the official recording, never re-hosted, and
+    what was said in it, transcribed on our machine (ADR 0029). The audio is never stored.
+
+    ``transcribed_at`` is null until the clip was transcribed; after that ``transcript`` may
+    still be empty (a clip with no intelligible speech, or one gone upstream)."""
 
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name="team_radio")
     car_number = models.PositiveSmallIntegerField()
     recorded_at = models.DateTimeField()
     url = models.URLField(max_length=300)
+    transcript = models.TextField(blank=True, default="")
+    transcript_language = models.CharField(max_length=8, blank=True, default="")
+    transcript_confidence = models.FloatField(
+        null=True, blank=True, help_text="Mean token probability of the transcript (0 to 1)"
+    )
+    transcript_model = models.CharField(max_length=40, blank=True, default="")
+    transcribed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["session", "recorded_at"]
         constraints = [
             models.UniqueConstraint(fields=["session", "url"], name="radio_unique_session_url"),
+        ]
+        indexes = [
+            models.Index(
+                fields=["session"],
+                condition=Q(transcribed_at__isnull=True),
+                name="radio_untranscribed",
+            ),
         ]
 
     def __str__(self) -> str:

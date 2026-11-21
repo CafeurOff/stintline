@@ -17,8 +17,9 @@ from racedata.errors import (
     RateLimitedError,
     UpstreamUnavailableError,
 )
+from racedata.radio import TranscriptionUnavailableError
 from stintline.analysis.tasks import build_race_analysis, build_stale_analysis
-from stintline.ingestion import history, portraits, schedule, telemetry, timing
+from stintline.ingestion import history, portraits, radio, schedule, telemetry, timing
 from stintline.ingestion.sources import open_sources
 from stintline.racing.models import INGESTED_KINDS, RACE_KINDS, Event, Season, Session
 
@@ -134,7 +135,48 @@ def ingest_session(session_id: int) -> dict[str, int]:
     if session.kind in RACE_KINDS:
         build_race_analysis.delay(session.pk)
     ingest_telemetry.delay(session.pk)
+    if radio.enabled() and radio.pending(session).exists():
+        transcribe_radio.delay(session.pk)
     return report.counts
+
+
+RADIO_CLIPS_PER_TASK = 25
+"""Clips transcribed per task (about a minute with ``base.en`` on one core). A race holds
+100 to 300 clips: the backlog is cut into short tasks that queue the next one, so imports
+queued meanwhile never wait long behind it on the single worker process."""
+
+
+@shared_task(
+    autoretry_for=RETRYABLE,
+    retry_backoff=RETRY_BACKOFF_S,
+    retry_backoff_max=RETRY_BACKOFF_MAX_S,
+    retry_jitter=True,
+    max_retries=MAX_RETRIES,
+    acks_late=True,
+)
+def transcribe_radio(session_id: int) -> int:
+    """Transcribe the next team radio clips of a session (ADR 0029), then queue the rest."""
+    if not radio.enabled():
+        return 0
+    session = Session.objects.get(pk=session_id)
+    with open_sources() as sources:
+        if sources.radio is None:
+            log.info("radio_transcription_offline", session_id=session_id)
+            return 0
+        try:
+            report = radio.transcribe_session(
+                session,
+                sources.radio,
+                radio.build_transcriber(),
+                limit=RADIO_CLIPS_PER_TASK,
+                now=timezone.now(),
+            )
+        except TranscriptionUnavailableError:
+            log.warning("radio_transcription_unavailable", session_id=session_id)
+            return 0
+    if report.remaining:
+        transcribe_radio.delay(session_id)
+    return report.transcribed
 
 
 @shared_task(
@@ -194,6 +236,10 @@ SESSION_BACKFILL_PER_RUN = 4
 """Older practice and qualifying sessions imported per ``refresh_recent`` run (ADR 0028):
 ~10 timing requests each, then ~40 for telemetry, so ~200 requests every 30 minutes,
 most recent first. The ~350 sessions since 2023 take about 45 hours."""
+RADIO_BACKFILL_PER_RUN = 2
+"""Sessions with clips still to transcribe started per ``refresh_recent`` run (ADR 0029),
+most recent first. Each one then queues itself until its clips are done; two at a time
+keep the single worker free for imports between their short tasks."""
 
 
 RESULTS_DELAY = timedelta(hours=1)
@@ -331,6 +377,15 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
     flat = telemetry.missing_altitude().exclude(pk__in=queued)[:ALTITUDE_BACKFILL_PER_RUN]
     for session in flat:
         add_telemetry_altitude.delay(session.pk)
+    unheard = []
+    if radio.enabled():
+        unheard = list(
+            radio.sessions_with_pending_radio()
+            .exclude(pk__in=queued)
+            .values_list("pk", flat=True)[:RADIO_BACKFILL_PER_RUN]
+        )
+    for session_id in unheard:
+        transcribe_radio.delay(session_id)
     build_stale_analysis.delay()
     log.info(
         "refresh_recent_queued",
@@ -338,6 +393,7 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
         seasons=sorted(seasons),
         telemetry=len(backlog),
         altitude=len(flat),
+        radio=len(unheard),
     )
     return queued
 

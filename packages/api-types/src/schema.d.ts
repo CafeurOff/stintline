@@ -609,7 +609,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** Team radio messages (references to the official recordings) */
+    /** Team radio messages: official recordings, lap and transcript */
     get: operations["session_radio_list"];
     put?: never;
     post?: never;
@@ -2261,6 +2261,8 @@ export interface components {
        * @description Official recording, played from its source
        */
       url: string;
+      /** @description What was said (ADR 0029): null until transcribed, empty when unintelligible */
+      transcript: string | null;
     };
     Replay: {
       total_laps: number;
@@ -2709,12 +2711,23 @@ export interface components {
       positions: (number | null)[];
     };
     TeamRadio: {
-      /** Format: int64 */
       car_number: number;
       /** Format: date-time */
       recorded_at: string;
-      /** Format: uri */
+      /**
+       * Format: uri
+       * @description Official recording, played from its source
+       */
       url: string;
+      /** @description The car's lap when the message was recorded */
+      lap: number | null;
+      /** @description What was said, transcribed by speech recognition (ADR 0029): null while not transcribed yet, empty when nothing intelligible was said */
+      transcript: string | null;
+      /**
+       * Format: double
+       * @description Mean token probability of the transcript (0 to 1)
+       */
+      transcript_confidence: number | null;
     };
     TeamSeason: {
       year: number;

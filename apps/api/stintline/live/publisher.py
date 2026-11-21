@@ -40,6 +40,10 @@ class Publisher:
         self._context = context
         self._dirty = False
         self._last_publish = 0.0
+        self.transcripts: dict[str, str] = {}
+        """What was said in each radio clip, by URL, filled by ``live.radio`` (ADR 0029)."""
+        self.radio_urls: list[str] = []
+        """Clips in the latest snapshot, newest first."""
 
     def apply(self, event: Event) -> None:
         if isinstance(event, Snapshot):
@@ -69,11 +73,18 @@ class Publisher:
                     "margin_behind_s": stop.margin_behind_s,
                 }
             )
+        for radio in data["team_radio"]:
+            radio["transcript"] = self.transcripts.get(radio["url"])
+        self.radio_urls = [radio["url"] for radio in data["team_radio"]]
         data["reference_session_id"] = circuit.reference_session_id
         data["pit_loss_s"] = circuit.pit_loss_s
         data["pit_loss_sigma_s"] = circuit.pit_loss_sigma_s
         data["updated_at"] = self._clock()
         return data
+
+    def add_transcript(self, url: str, text: str) -> None:
+        self.transcripts[url] = text
+        self._dirty = True
 
     def publish_if_due(self, *, force: bool = False) -> bool:
         now = self._clock()
