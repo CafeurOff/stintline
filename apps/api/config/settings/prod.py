@@ -6,8 +6,9 @@ from config.settings.base import env
 DEBUG = False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
-# The container health check calls the API over plain HTTP from inside the container.
-SECURE_REDIRECT_EXEMPT = [r"^api/v1/health$"]
+# Plain HTTP from the machine itself: the container or vps-infra health check, and the
+# Prometheus scrape of /metrics on loopback (ADR 0027).
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health$", r"^metrics$"]
 SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=31_536_000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_CONTENT_TYPE_NOSNIFF = True

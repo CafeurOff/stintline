@@ -5,6 +5,7 @@ environment (see ``.env.example`` at the repository root). There are no default 
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import unquote
 
 import django_stubs_ext
 import environ
@@ -87,6 +88,9 @@ TEMPLATES = [
 ]
 
 DATABASES = {"default": env.db("DATABASE_URL")}
+# A Unix socket directory written as a percent-encoded host (vps-infra:
+# postgresql://user@%2Fvar%2Frun%2Fpostgresql/db) is not decoded by django-environ.
+DATABASES["default"]["HOST"] = unquote(DATABASES["default"].get("HOST", ""))
 DATABASES["default"]["CONN_MAX_AGE"] = env.int("DATABASE_CONN_MAX_AGE", default=60)
 
 REDIS_URL: str = env.str("REDIS_URL", default="redis://localhost:6379/0")
