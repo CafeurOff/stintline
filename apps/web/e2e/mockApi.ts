@@ -21,6 +21,7 @@ import { decisions } from "../src/test/fixtures/paddock";
 import { pitExit } from "../src/test/fixtures/pitExit";
 import { pitLoss } from "../src/test/fixtures/pitLoss";
 import { replay } from "../src/test/fixtures/replay";
+import { radio } from "../src/test/fixtures/radio";
 import { session } from "../src/test/fixtures/session";
 import { stints } from "../src/test/fixtures/stints";
 import { strategyResponse, type StrategyRequest } from "../src/test/fixtures/strategy";
@@ -60,6 +61,7 @@ export async function mockApi(page: Page) {
     [`**/api/v1/sessions/${SESSION_ID}/degradation`, degradation],
     [`**/api/v1/sessions/${SESSION_ID}/track`, track],
     [`**/api/v1/sessions/${SESSION_ID}/replay`, replay],
+    [`**/api/v1/sessions/${SESSION_ID}/radio`, radio],
     ["**/api/v1/model", model],
     ["**/api/v1/home", homeResponse],
     ["**/api/v1/forecasts*", []],

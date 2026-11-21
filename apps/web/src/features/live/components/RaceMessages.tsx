@@ -2,6 +2,8 @@ import type { Schema } from "@stintline/api-types";
 
 import { useI18n } from "@/lib/i18n/context";
 import { teamColour } from "@/lib/teams";
+import { RadioPlayButton, RadioProgress } from "@/features/radio/components/RadioPlayButton";
+import { useRadioPlayer } from "@/features/radio/useRadioPlayer";
 
 import type { LiveSnapshot } from "../buffer";
 
@@ -16,6 +18,7 @@ function clock(value: string | null | undefined, locale: string): string {
 
 export function Radio({ snapshot }: { snapshot: LiveSnapshot }) {
   const { t, locale } = useI18n();
+  const player = useRadioPlayer();
   const byNumber = new Map(snapshot.cars.map((c) => [c.number, c]));
   if (snapshot.team_radio.length === 0) return null;
   return (
@@ -23,40 +26,39 @@ export function Radio({ snapshot }: { snapshot: LiveSnapshot }) {
       <h2 id="live-radio" className="text-lg font-bold">
         {t("live.radio")}
       </h2>
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col">
         {snapshot.team_radio.slice(0, 8).map((radio) => {
           const car = byNumber.get(radio.number);
-          const label = t("live.radioOf", {
-            code: car?.code ?? String(radio.number),
-            time: clock(radio.at, locale),
-          });
+          const code = car?.code ?? String(radio.number);
+          const colour = teamColour(car?.colour);
           return (
-            <li key={radio.url} className="flex flex-col gap-1">
-              <span className="flex items-center gap-2 text-sm">
-                <span
-                  aria-hidden="true"
-                  className="h-3 w-1 rounded-full"
-                  style={{ backgroundColor: teamColour(car?.colour) }}
-                />
-                <span className="font-semibold">{car?.code ?? radio.number}</span>
-                <span className="text-muted tabular-nums">{clock(radio.at, locale)}</span>
-              </span>
-              {radio.transcript ? (
-                <q lang="en" className="text-sm">
-                  {radio.transcript}
-                </q>
-              ) : radio.transcript === null ? (
-                <p className="text-xs text-muted italic">{t("radio.pending")}</p>
-              ) : null}
-              {/* The transcript above is the text alternative: a caption track would repeat it. */}
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption -- see above */}
-              <audio
-                controls
-                preload="none"
-                src={radio.url}
-                aria-label={label}
-                className="h-8 w-full"
+            <li key={radio.url} className="flex gap-3 border-b border-line py-2.5 last:border-b-0">
+              <RadioPlayButton
+                url={radio.url}
+                label={t("live.radioOf", { code, time: clock(radio.at, locale) })}
+                pauseLabel={t("radio.pause", { code })}
+                playback={player}
+                onToggle={player.toggle}
               />
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <span className="flex items-center gap-2 text-sm">
+                  <span
+                    aria-hidden="true"
+                    className="h-3 w-1 rounded-full"
+                    style={{ backgroundColor: colour }}
+                  />
+                  <span className="font-semibold">{code}</span>
+                  <span className="text-muted tabular-nums">{clock(radio.at, locale)}</span>
+                </span>
+                {radio.transcript ? (
+                  <q lang="en" className="text-sm">
+                    {radio.transcript}
+                  </q>
+                ) : radio.transcript === null ? (
+                  <p className="text-xs text-muted italic">{t("radio.pending")}</p>
+                ) : null}
+                {player.url === radio.url && <RadioProgress playback={player} colour={colour} />}
+              </div>
             </li>
           );
         })}

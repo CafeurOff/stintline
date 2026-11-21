@@ -1,9 +1,7 @@
 import { Radio } from "lucide-react";
 
 import { PillSwitch } from "@/components/layout/Glass";
-import { ShowAll } from "@/components/layout/Collapsible";
 import { Panel } from "@/components/layout/Panel";
-import { useCollapsed } from "@/components/layout/useCollapsed";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/States";
 import { driverCode, driverName, type Entry } from "@/features/race/entries";
@@ -13,14 +11,14 @@ import { useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useSessionRadio } from "../api";
 import { isBoxCall, isUncertain, radioOf, type TeamRadio } from "../radio";
-
-/** Messages shown before "show all": about one screen. */
-const FIRST_MESSAGES = 8;
+import { type RadioPlayback, useRadioPlayer } from "../useRadioPlayer";
+import { RadioPlayButton, RadioProgress } from "./RadioPlayButton";
 
 /**
  * Team radio of a session (ADR 0029): every clip played from the official recording, with
  * what was said (automatic transcription) and the lap it was sent on. Follows the selected
- * driver, or every driver with `?radio=all`.
+ * driver, or every driver with `?radio=all`. The list scrolls inside the panel so the page
+ * keeps its length; one compact player serves every clip.
  */
 export function RadioPanel({
   sessionId,
@@ -40,7 +38,7 @@ export function RadioPanel({
   const radio = useSessionRadio(sessionId);
   const entry = byCar.get(selected);
   const messages = radioOf(radio.data ?? [], scope === "all" ? null : selected);
-  const { shown, hidden, open, setOpen } = useCollapsed(messages, FIRST_MESSAGES);
+  const player = useRadioPlayer();
 
   return (
     <Panel
@@ -60,7 +58,7 @@ export function RadioPanel({
           }}
         />
       }
-      bodyClassName="flex flex-col gap-4 px-5 pb-5"
+      bodyClassName="flex flex-col gap-3 px-5 pb-5"
     >
       {radio.isError ? (
         <ErrorState error={radio.error} onRetry={() => void radio.refetch()} />
@@ -73,25 +71,21 @@ export function RadioPanel({
             : t("radio.noneFor", { name: driverName(entry) })}
         </p>
       ) : (
-        <>
-          <ol className="flex flex-col divide-y divide-line">
-            {shown.map((message) => (
-              <RadioMessage
-                key={message.url}
-                message={message}
-                entry={byCar.get(message.car_number)}
-                onSeek={onSeek}
-              />
-            ))}
-          </ol>
-          <ShowAll
-            hidden={hidden}
-            open={open}
-            onToggle={() => {
-              setOpen(!open);
-            }}
-          />
-        </>
+        <ol
+          aria-label={t("radio.list")}
+          className="relative -mx-2 flex max-h-[19rem] flex-col overflow-y-auto px-2"
+        >
+          {messages.map((message) => (
+            <RadioMessage
+              key={message.url}
+              message={message}
+              entry={byCar.get(message.car_number)}
+              playback={player}
+              onToggle={player.toggle}
+              onSeek={onSeek}
+            />
+          ))}
+        </ol>
       )}
       <p className="text-xs text-muted">{t("radio.note")}</p>
     </Panel>
@@ -110,55 +104,62 @@ function clock(value: string, locale: string): string {
 function RadioMessage({
   message,
   entry,
+  playback,
+  onToggle,
   onSeek,
 }: {
   message: TeamRadio;
   entry: Entry | undefined;
+  playback: RadioPlayback;
+  onToggle: (url: string) => void;
   onSeek: ((message: TeamRadio) => void) | undefined;
 }) {
   const { t, locale } = useI18n();
   const code = entry ? driverCode(entry) : `#${String(message.car_number)}`;
   const lap = message.lap === null ? null : t("radio.lap", { lap: message.lap });
+  const colour = teamColour(entry?.team_colour);
+  const label = t("radio.play", { code, time: clock(message.recorded_at, locale) });
   return (
-    <li className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span
-          aria-hidden="true"
-          className="h-4 w-1 rounded-full"
-          style={{ backgroundColor: teamColour(entry?.team_colour) }}
-        />
-        <span className="font-bold">{code}</span>
-        {lap &&
-          (onSeek ? (
-            <button
-              type="button"
-              onClick={() => {
-                onSeek(message);
-              }}
-              aria-label={t("radio.seek", { code, lap: message.lap ?? 0 })}
-              className="num rounded-full border border-line px-2 py-0.5 text-xs font-semibold hover:border-ink"
-            >
-              {lap}
-            </button>
-          ) : (
-            <span className="num text-xs text-muted">{lap}</span>
-          ))}
-        {isBoxCall(message.transcript) && (
-          <span className="rounded-full bg-mark px-2 py-0.5 text-xs font-bold text-white">
-            {t("radio.box")}
-          </span>
-        )}
-      </div>
-      <Transcript message={message} />
-      {/* The transcript above is the text alternative: a caption track would repeat it. */}
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption -- see above */}
-      <audio
-        controls
-        preload="none"
-        src={message.url}
-        aria-label={t("radio.play", { code, time: clock(message.recorded_at, locale) })}
-        className="h-8 w-full"
+    <li className="flex gap-3 border-b border-line py-3 last:border-b-0">
+      <RadioPlayButton
+        url={message.url}
+        label={label}
+        pauseLabel={t("radio.pause", { code })}
+        playback={playback}
+        onToggle={onToggle}
       />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <span
+            aria-hidden="true"
+            className="h-3.5 w-1 rounded-full"
+            style={{ backgroundColor: colour }}
+          />
+          <span className="font-bold">{code}</span>
+          {lap &&
+            (onSeek ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onSeek(message);
+                }}
+                aria-label={t("radio.seek", { code, lap: message.lap ?? 0 })}
+                className="rounded-full border border-line px-2 py-0.5 text-xs font-semibold tabular-nums hover:border-ink"
+              >
+                {lap}
+              </button>
+            ) : (
+              <span className="text-xs text-muted tabular-nums">{lap}</span>
+            ))}
+          {isBoxCall(message.transcript) && (
+            <span className="rounded-full bg-mark px-2 py-0.5 text-xs font-bold text-white">
+              {t("radio.box")}
+            </span>
+          )}
+        </div>
+        <Transcript message={message} />
+        {playback.url === message.url && <RadioProgress playback={playback} colour={colour} />}
+      </div>
     </li>
   );
 }

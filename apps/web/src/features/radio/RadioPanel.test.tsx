@@ -22,7 +22,45 @@ describe("RadioPanel", () => {
     expect(within(panel).getByText("No words recognised in this clip.")).toBeVisible();
     expect(within(panel).getByText("Transcription on its way.")).toBeVisible();
     expect(within(panel).queryByText("Box call")).not.toBeInTheDocument();
-    expect(within(panel).getAllByLabelText(/^Radio of NOR at \d\d:\d\d:\d\d UTC$/)).toHaveLength(4);
+    expect(
+      within(panel).getAllByRole("button", { name: /^Radio of NOR at \d\d:\d\d:\d\d UTC$/ }),
+    ).toHaveLength(4);
+  });
+
+  it("plays one clip at a time with its own controls", async () => {
+    let paused = true;
+    const sources: string[] = [];
+    vi.spyOn(HTMLMediaElement.prototype, "paused", "get").mockImplementation(() => paused);
+    const play = vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      paused = false;
+      sources.push(this.src);
+      this.dispatchEvent(new Event("play"));
+      return Promise.resolve();
+    });
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      paused = true;
+      this.dispatchEvent(new Event("pause"));
+    });
+    renderRoute(`${race}?car=4`);
+    const panel = await radioPanel();
+    const [first] = await within(panel).findAllByRole("button", { name: /^Radio of NOR/ });
+
+    if (!first) throw new Error("no radio button");
+    await userEvent.click(first);
+
+    expect(play).toHaveBeenCalledOnce();
+    expect(sources[0]).toContain("LANNOR01_4_20250803_152104.mp3");
+    const pause = await within(panel).findByRole("button", { name: "Pause the radio of NOR" });
+    expect(pause).toHaveAttribute("aria-pressed", "true");
+    expect(within(panel).getByText("0:00")).toBeVisible();
+
+    await userEvent.click(pause);
+
+    expect(await within(panel).findAllByRole("button", { name: /^Radio of NOR/ })).toHaveLength(4);
   });
 
   it("shows every driver's radio and marks the calls to pit", async () => {

@@ -286,34 +286,33 @@ function Replay({
           />
         </div>
 
-        <aside
-          aria-live="polite"
-          className="glass flex flex-col gap-6 self-start rounded-[20px] p-5 xl:order-3"
-        >
-          {entry && selectedCar && selectedLine && (
-            <DriverLaps
-              entry={entry}
-              laps={selectedCar.laps}
-              state={carStateAt(selectedCar, time)}
-              best={selectedLine.best}
-              time={time}
-            />
-          )}
-          <SessionConditions timeline={data} time={time} />
-        </aside>
+        <div className="flex min-w-0 flex-col gap-5 self-start xl:order-3">
+          <aside aria-live="polite" className="glass flex flex-col gap-6 rounded-[20px] p-5">
+            {entry && selectedCar && selectedLine && (
+              <DriverLaps
+                entry={entry}
+                laps={selectedCar.laps}
+                state={carStateAt(selectedCar, time)}
+                best={selectedLine.best}
+                time={time}
+              />
+            )}
+            <SessionConditions timeline={data} time={time} />
+          </aside>
+          <RadioPanel
+            sessionId={session.id}
+            byCar={byCar}
+            selected={selected}
+            onSeek={(message) => {
+              const at = secondsSince(data.starts_at, message.recorded_at, data.duration_s);
+              clock.pause();
+              clock.setTime(at);
+              // One address change: two in a row would each start from the same address.
+              update({ car: message.car_number, t: Math.round(at) });
+            }}
+          />
+        </div>
       </div>
-      <RadioPanel
-        sessionId={session.id}
-        byCar={byCar}
-        selected={selected}
-        onSeek={(message) => {
-          const at = secondsSince(data.starts_at, message.recorded_at, data.duration_s);
-          clock.pause();
-          clock.setTime(at);
-          // One address change: two in a row would each start from the same address.
-          update({ car: message.car_number, t: Math.round(at) });
-        }}
-      />
       <Panel id="session-telemetry" title={t("sreplay.telemetry")} icon={<Activity />}>
         <TelemetrySection sessionId={session.id} />
       </Panel>

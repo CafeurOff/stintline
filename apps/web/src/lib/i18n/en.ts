@@ -1411,6 +1411,8 @@ export const en = {
   "radio.all": "Everyone",
   "radio.none": "No team radio was published for this session.",
   "radio.noneFor": "No team radio from {name} in this session.",
+  "radio.list": "Team radio messages",
+  "radio.pause": "Pause the radio of {code}",
   "radio.lap": "Lap {lap}",
   "radio.seek": "Go to lap {lap} ({code})",
   "radio.play": "Radio of {code} at {time} UTC",

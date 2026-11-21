@@ -1434,6 +1434,8 @@ export const fr: Record<MessageKey, string> = {
   "radio.all": "Tous",
   "radio.none": "Aucune radio publiée pour cette session.",
   "radio.noneFor": "Aucune radio de {name} dans cette session.",
+  "radio.list": "Messages radio",
+  "radio.pause": "Mettre en pause la radio de {code}",
   "radio.lap": "Tour {lap}",
   "radio.seek": "Aller au tour {lap} ({code})",
   "radio.play": "Radio de {code} à {time} UTC",

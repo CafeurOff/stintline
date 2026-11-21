@@ -171,11 +171,19 @@ describe("Live page", () => {
     goLive();
     renderRoute("/live");
 
-    const radio = await screen.findAllByLabelText(/^Radio of /);
-    expect(radio[0]).toHaveAttribute(
-      "src",
-      expect.stringContaining("livetiming.formula1.com/static/") as string,
-    );
+    const sources: string[] = [];
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      sources.push(this.src);
+      return Promise.resolve();
+    });
+
+    const [first] = await screen.findAllByRole("button", { name: /^Radio of / });
+    if (!first) throw new Error("no radio button");
+    await userEvent.click(first);
+
+    expect(sources[0]).toContain("livetiming.formula1.com/static/");
     expect(screen.getByText("Box box, box this lap.")).toBeVisible();
     expect(screen.getByText("Transcription on its way.")).toBeVisible();
   });
