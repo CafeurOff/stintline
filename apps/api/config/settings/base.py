@@ -214,7 +214,17 @@ RACEDATA = {
     "JOLPICA_BASE_URL": env.str("JOLPICA_BASE_URL", default="https://api.jolpi.ca/ergast/f1"),
 }
 
-STINTLINE_VERSION: str = env.str("STINTLINE_VERSION", default="0.1.0")
+
+def _release_version() -> str:
+    """The tag of the running release: vps-infra writes it to VERSION at the release root
+    (ADR 0027). Without it (development, tests, Docker), the package version."""
+    path = REPO_ROOT / "VERSION"
+    if path.is_file():
+        return path.read_text(encoding="utf-8").strip().removeprefix("v") or "0.1.0"
+    return "0.1.0"
+
+
+STINTLINE_VERSION: str = env.str("STINTLINE_VERSION", default=_release_version())
 
 LOGGING = build_logging_config(
     json_logs=env.bool("LOG_JSON", default=False),

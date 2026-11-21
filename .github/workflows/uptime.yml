@@ -1,0 +1,30 @@
+# External health check of stintline.omexis.fr, from GitHub's network (ADR 0027). The
+# server's own probes (vps-infra blackbox -> Discord) cannot report the server being down;
+# this one can: a failed scheduled run e-mails the repository owner.
+# GitHub may delay scheduled runs by a few minutes, and disables them after 60 days without
+# any commit: re-enable from the Actions tab if that happens.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    name: stintline.omexis.fr answers
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Health and home page
+        run: |
+          fail=0
+          for path in /api/v1/health /; do
+            code="$(curl -s --max-time 20 --retry 3 --retry-delay 20 --retry-all-errors \
+                    -o /dev/null -w '%{http_code}' "https://stintline.omexis.fr$path" || echo 000)"
+            echo "$path -> HTTP $code"
+            [[ "$code" == 200 ]] || fail=1
+          done
+          exit $fail

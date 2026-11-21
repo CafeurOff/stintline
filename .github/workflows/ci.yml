@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Run again on the exact tag before a production deploy (deploy-production.yml).
+  workflow_call:
 
 concurrency:
   group: ci-${{ github.ref }}
