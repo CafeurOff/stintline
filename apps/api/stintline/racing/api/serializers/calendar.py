@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -18,6 +19,7 @@ from stintline.racing.models import (
     SessionEntry,
     SessionKind,
 )
+from stintline.racing.timeline import replay_state
 
 
 class WinnerSerializer(serializers.ModelSerializer[SessionEntry]):
@@ -31,10 +33,19 @@ class WinnerSerializer(serializers.ModelSerializer[SessionEntry]):
 
 class SessionSummarySerializer(serializers.ModelSerializer[Session]):
     has_data = serializers.BooleanField(read_only=True)
+    replay = serializers.SerializerMethodField(
+        help_text=(
+            "ready: the replay opens; pending: finished, timing being imported; upcoming: "
+            "not finished yet; none: no lap timing exists for it (before 2023)"
+        )
+    )
 
     class Meta:
         model = Session
-        fields = ["id", "kind", "scheduled_start", "has_data"]
+        fields = ["id", "kind", "scheduled_start", "ends_at", "has_data", "replay"]
+
+    def get_replay(self, session: Session) -> Literal["ready", "pending", "upcoming", "none"]:
+        return replay_state(session, bool(getattr(session, "has_data", False)), timezone.now())
 
 
 class EventSummarySerializer(serializers.ModelSerializer[Event]):

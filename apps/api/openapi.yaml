@@ -1365,6 +1365,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
           description: ''
+  /api/v1/sessions/{session_id}/timeline:
+    get:
+      operationId: session_timeline_retrieve
+      description: 'Any imported session (practice, qualifying, sprint and race):
+        the data of the session replay (ADR 0028). 404 when the session has no timed
+        lap.'
+      summary: Every lap on the session clock, with tyres and qualifying segments
+      parameters:
+      - in: path
+        name: session_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - racing
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timeline'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: ''
   /api/v1/sessions/{session_id}/track:
     get:
       operationId: session_track_retrieve
@@ -4983,6 +5013,13 @@ components:
       - line_times_s
       - pit_in_laps
       - tyre_ages
+    ReplayEnum:
+      enum:
+      - ready
+      - pending
+      - upcoming
+      - none
+      type: string
     ReportEntry:
       type: object
       properties:
@@ -5286,6 +5323,10 @@ components:
           type: string
           format: date-time
           nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
         event:
           allOf:
           - $ref: '#/components/schemas/EventSummary'
@@ -5430,13 +5471,25 @@ components:
           type: string
           format: date-time
           nullable: true
+        ends_at:
+          type: string
+          format: date-time
+          nullable: true
         has_data:
           type: boolean
           readOnly: true
+        replay:
+          allOf:
+          - $ref: '#/components/schemas/ReplayEnum'
+          readOnly: true
+          description: 'ready: the replay opens; pending: finished, timing being imported;
+            upcoming: not finished yet; none: no lap timing exists for it (before
+            2023)'
       required:
       - has_data
       - id
       - kind
+      - replay
     SideRound:
       type: object
       properties:
@@ -6439,6 +6492,206 @@ components:
       - entry
       - lap_number
       - lap_time_s
+    Timeline:
+      type: object
+      description: |-
+        Every lap of a session on the session clock, for practice and qualifying replays,
+        with the flags, race control messages and weather on the same clock.
+      properties:
+        starts_at:
+          type: string
+          format: date-time
+          description: Origin of every ``*_s`` value
+        duration_s:
+          type: number
+          format: double
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineCar'
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineSegment'
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineFlag'
+          description: Red flags, safety cars
+        race_control:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineMessage'
+        weather:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineWeather'
+      required:
+      - cars
+      - duration_s
+      - flags
+      - race_control
+      - segments
+      - starts_at
+      - weather
+    TimelineCar:
+      type: object
+      properties:
+        car_number:
+          type: integer
+        laps:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineLap'
+      required:
+      - car_number
+      - laps
+    TimelineFlag:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/TimelineFlagStatusEnum'
+        start_s:
+          type: number
+          format: double
+        end_s:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - end_s
+      - start_s
+      - status
+    TimelineFlagStatusEnum:
+      enum:
+      - SC
+      - VSC
+      - RED
+      type: string
+      description: |-
+        * `SC` - SC
+        * `VSC` - VSC
+        * `RED` - RED
+    TimelineLap:
+      type: object
+      properties:
+        lap:
+          type: integer
+        start_s:
+          type: number
+          format: double
+          description: Seconds from the start of the session
+        end_s:
+          type: number
+          format: double
+          nullable: true
+          description: Back at the line; null when the car stopped mid-lap
+        time_s:
+          type: number
+          format: double
+          nullable: true
+        sectors_s:
+          type: array
+          items:
+            type: number
+            format: double
+            nullable: true
+          maxItems: 3
+          minItems: 3
+        compound:
+          type: string
+          nullable: true
+        tyre_age:
+          type: integer
+          nullable: true
+        pit_out:
+          type: boolean
+        pit_in:
+          type: boolean
+        deleted:
+          type: boolean
+          description: Lap time deleted by race control
+      required:
+      - compound
+      - deleted
+      - end_s
+      - lap
+      - pit_in
+      - pit_out
+      - sectors_s
+      - start_s
+      - time_s
+      - tyre_age
+    TimelineMessage:
+      type: object
+      properties:
+        at_s:
+          type: number
+          format: double
+        category:
+          type: string
+        flag:
+          type: string
+        car_number:
+          type: integer
+          nullable: true
+        message:
+          type: string
+      required:
+      - at_s
+      - car_number
+      - category
+      - flag
+      - message
+    TimelineSegment:
+      type: object
+      properties:
+        number:
+          type: integer
+          description: 1, 2 or 3 (Q1-Q3 or SQ1-SQ3)
+        start_s:
+          type: number
+          format: double
+        end_s:
+          type: number
+          format: double
+          description: Chequered flag of the segment
+        eliminated:
+          type: array
+          items:
+            type: integer
+          description: Car numbers knocked out, best first
+      required:
+      - eliminated
+      - end_s
+      - number
+      - start_s
+    TimelineWeather:
+      type: object
+      properties:
+        at_s:
+          type: number
+          format: double
+        air_temperature_c:
+          type: number
+          format: double
+          nullable: true
+        track_temperature_c:
+          type: number
+          format: double
+          nullable: true
+        rainfall:
+          type: boolean
+        wind_speed_ms:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - air_temperature_c
+      - at_s
+      - rainfall
+      - track_temperature_c
+      - wind_speed_ms
     Title:
       type: object
       properties:

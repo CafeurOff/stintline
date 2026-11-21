@@ -12,11 +12,12 @@ from django.core.cache import cache
 from django.test import Client
 from django.utils import timezone
 
-from stintline.racing.models import DriverPortrait
+from stintline.racing.models import DriverPortrait, Lap, SessionKind
 from stintline.racing.tests.factories import (
     CircuitFactory,
     DriverFactory,
     EventFactory,
+    SessionEntryFactory,
     SessionFactory,
     TeamFactory,
 )
@@ -260,3 +261,24 @@ def test_pages_allow_their_own_inline_scripts_by_hash(settings: Any) -> None:
     assert "frame-ancestors 'none'" in policy
     # One hash: the inline script, not the module script nor the JSON-LD block.
     assert policy.count("sha256-") == 1
+
+
+def test_practice_and_qualifying_replays_are_named_and_have_no_tyre_page() -> None:
+    quali = SessionFactory.create(kind=SessionKind.QUALIFYING, event__name="Hungarian Grand Prix")
+
+    html = Client().get(f"/fr/sessions/{quali.pk}").content.decode()
+
+    assert "Qualifications" in html
+    assert Client().get(f"/sessions/{quali.pk}/tyres").status_code == 404
+
+
+def test_sitemap_lists_imported_replays_of_every_kind() -> None:
+    practice = SessionFactory.create(kind=SessionKind.PRACTICE_1)
+    not_imported = SessionFactory.create(kind=SessionKind.PRACTICE_2)
+    lap = SessionEntryFactory.create(session=practice)
+    Lap.objects.create(entry=lap, lap_number=1, lap_time_s=90.0)
+
+    xml = Client().get("/sitemap.xml").content.decode()
+
+    assert f"<loc>https://stintline.test/sessions/{practice.pk}</loc>" in xml
+    assert f"/sessions/{not_imported.pk}<" not in xml

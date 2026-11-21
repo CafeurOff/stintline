@@ -32,6 +32,7 @@ from stintline.racing.api.serializers.sessions import (
     SectorsSerializer,
     SessionDetailSerializer,
     TeamRadioSerializer,
+    TimelineSerializer,
     TrackSerializer,
 )
 from stintline.racing.api.serializers.standings import (
@@ -55,6 +56,7 @@ from stintline.racing.models import (
     Team,
     TeamRadio,
 )
+from stintline.racing.timeline import session_timeline as timeline_of
 
 
 class SeasonListView(generics.ListAPIView[Season]):
@@ -106,6 +108,26 @@ class SessionDetailView(APIView):
         return cached_response(
             request, SessionDetailSerializer(session).data, "session", session_id, stamp
         )
+
+
+class SessionTimelineView(APIView):
+    @extend_schema(
+        operation_id="session_timeline_retrieve",
+        summary="Every lap on the session clock, with tyres and qualifying segments",
+        description=(
+            "Any imported session (practice, qualifying, sprint and race): the data of the "
+            "session replay (ADR 0028). 404 when the session has no timed lap."
+        ),
+        responses={200: TimelineSerializer, 404: ProblemSerializer},
+        tags=["racing"],
+    )
+    def get(self, request: Request, session_id: int) -> Response:
+        session = get_object_or_404(Session, pk=session_id)
+        timeline = timeline_of(session)
+        if timeline is None:
+            raise NotFound("This session has no lap timing.")
+        data = TimelineSerializer(timeline).data
+        return cached_response(request, data, "timeline", session_id, session.ingested_at)
 
 
 class SessionStintsView(APIView):

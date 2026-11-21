@@ -71,11 +71,12 @@ def track_outline(session_id: int) -> TrackOutline | None:
 
 def session_sectors(session_id: int) -> list[dict[str, object]]:
     """Best lap, best sector times and top speed of every car (rows without timing skipped).
+    Laps deleted by race control count for none of them.
 
     The ideal lap is the sum of the three best sectors, possibly from different laps.
     """
     rows = (
-        Lap.objects.filter(entry__session_id=session_id)
+        Lap.objects.filter(entry__session_id=session_id, is_deleted=False)
         .values("entry__car_number")
         .annotate(
             best_lap_s=Min("lap_time_s"),

@@ -18,7 +18,7 @@ from typing import Any, Literal
 
 from django.conf import settings
 
-from stintline.racing.models import Circuit, Driver, Event, Session, Team
+from stintline.racing.models import RACE_KINDS, Circuit, Driver, Event, Session, Team
 
 Locale = Literal["en", "fr"]
 SITE_NAME = "StintLine"
@@ -203,12 +203,37 @@ def _event(event_id: str) -> PageMeta | None:
     )
 
 
+SESSION_NAMES: dict[str, Text] = {
+    "FP1": Text("Practice 1", "Essais libres 1"),
+    "FP2": Text("Practice 2", "Essais libres 2"),
+    "FP3": Text("Practice 3", "Essais libres 3"),
+    "SQ": Text("Sprint qualifying", "Qualifications sprint"),
+    "Q": Text("Qualifying", "Qualifications"),
+    "SPRINT": Text("Sprint", "Sprint"),
+    "R": Text("Race", "Course"),
+}
+
+
 def _session(session_id: str, view: Text) -> PageMeta | None:
     session = Session.objects.select_related("event__season").filter(pk=int(session_id)).first()
     if session is None:
         return None
     name = event_name(session.event.name)
     year = session.event.season.year
+    if session.kind not in RACE_KINDS:
+        if view is TYRES:
+            return None  # the tyre model only exists for races (ADR 0028)
+        kind = SESSION_NAMES[session.kind]
+        return PageMeta(
+            Text(f"{name.en} {year} · {kind.en}", f"{name.fr} {year} · {kind.fr}"),
+            Text(
+                f"{kind.en} of the {year} {name.en} replayed on the circuit: lap times, "
+                "tyres, track status and telemetry of the fastest laps.",
+                f"{kind.fr} du {name.fr} {year} rejoués sur le circuit : temps au tour, "
+                "pneus, statut de la piste et télémétrie des meilleurs tours.",
+            ),
+            kind="article",
+        )
     return PageMeta(
         Text(f"{name.en} {year} · {view.en}", f"{name.fr} {year} · {view.fr}"),
         Text(

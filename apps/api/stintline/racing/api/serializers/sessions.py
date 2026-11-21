@@ -72,7 +72,16 @@ class SessionDetailSerializer(serializers.ModelSerializer[Session]):
 
     class Meta:
         model = Session
-        fields = ["id", "kind", "starts_at", "event", "total_laps", "entries", "neutralisations"]
+        fields = [
+            "id",
+            "kind",
+            "starts_at",
+            "ends_at",
+            "event",
+            "total_laps",
+            "entries",
+            "neutralisations",
+        ]
 
     def get_total_laps(self, session: Session) -> int | None:
         winners = [e.laps_completed for e in session.entries.all() if e.finish_position == 1]
@@ -144,3 +153,69 @@ class SectorsSerializer(serializers.Serializer[Any]):
         allow_null=True, help_text="Sum of the three best sectors, from any laps"
     )
     top_speed_kph = serializers.IntegerField(allow_null=True, help_text="Speed trap maximum")
+
+
+class TimelineLapSerializer(serializers.Serializer[Any]):
+    lap = serializers.IntegerField()
+    start_s = serializers.FloatField(help_text="Seconds from the start of the session")
+    end_s = serializers.FloatField(
+        allow_null=True, help_text="Back at the line; null when the car stopped mid-lap"
+    )
+    time_s = serializers.FloatField(allow_null=True)
+    sectors_s = serializers.ListField(
+        child=serializers.FloatField(allow_null=True), min_length=3, max_length=3
+    )
+    compound = serializers.CharField(allow_null=True)
+    tyre_age = serializers.IntegerField(allow_null=True)
+    pit_out = serializers.BooleanField()
+    pit_in = serializers.BooleanField()
+    deleted = serializers.BooleanField(help_text="Lap time deleted by race control")
+
+
+class TimelineCarSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    laps = TimelineLapSerializer(many=True)
+
+
+class TimelineSegmentSerializer(serializers.Serializer[Any]):
+    number = serializers.IntegerField(help_text="1, 2 or 3 (Q1-Q3 or SQ1-SQ3)")
+    start_s = serializers.FloatField()
+    end_s = serializers.FloatField(help_text="Chequered flag of the segment")
+    eliminated = serializers.ListField(
+        child=serializers.IntegerField(), help_text="Car numbers knocked out, best first"
+    )
+
+
+class TimelineFlagSerializer(serializers.Serializer[Any]):
+    status = serializers.ChoiceField(choices=["SC", "VSC", "RED"])
+    start_s = serializers.FloatField()
+    end_s = serializers.FloatField(allow_null=True)
+
+
+class TimelineMessageSerializer(serializers.Serializer[Any]):
+    at_s = serializers.FloatField()
+    category = serializers.CharField()
+    flag = serializers.CharField(allow_blank=True)
+    car_number = serializers.IntegerField(allow_null=True)
+    message = serializers.CharField()
+
+
+class TimelineWeatherSerializer(serializers.Serializer[Any]):
+    at_s = serializers.FloatField()
+    air_temperature_c = serializers.FloatField(allow_null=True)
+    track_temperature_c = serializers.FloatField(allow_null=True)
+    rainfall = serializers.BooleanField()
+    wind_speed_ms = serializers.FloatField(allow_null=True)
+
+
+class TimelineSerializer(serializers.Serializer[Any]):
+    """Every lap of a session on the session clock, for practice and qualifying replays,
+    with the flags, race control messages and weather on the same clock."""
+
+    starts_at = serializers.DateTimeField(help_text="Origin of every ``*_s`` value")
+    duration_s = serializers.FloatField()
+    cars = TimelineCarSerializer(many=True)
+    segments = TimelineSegmentSerializer(many=True)
+    flags = TimelineFlagSerializer(many=True, help_text="Red flags, safety cars")
+    race_control = TimelineMessageSerializer(many=True)
+    weather = TimelineWeatherSerializer(many=True)
