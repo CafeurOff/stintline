@@ -1,0 +1,35 @@
+name: propose
+description: >
+  Scout run: find the single most valuable next change for StintLine and turn it into a
+  proposal issue (with mock-ups for anything visible) that the maintainer answers yes or no.
+  Small, invisible fixes are sent straight to the build stage. No code lands from this run.
+steps:
+  - id: scout
+    name: Scout and propose
+    prompt: |
+      {{task}}
+
+      Read `.ai/cezar/AUTOPILOT.md` now and follow it; it wins over anything in this prompt
+      except stricter rules in CLAUDE.md.
+
+      1. Throttle. `gh issue list --label agent:proposal --state open --json number,labels` and
+         `gh pr list --author @me --state open`. If 2 or more open proposals have no `agent:go`
+         label, or 3 or more agent PRs are open, write "Nothing to do: waiting on the
+         maintainer" and stop. Do not create anything.
+      2. Memory. Read open and closed issues labelled `agent:proposal` and closed unmerged PRs
+         by @me (`gh pr list --author @me --state closed`). Never propose again what was closed
+         without merging; learn from the maintainer's comments there.
+      3. Look. Run the site's screenshots (desktop + phone, dark + light) on the main pages and
+         actually look at them; read the code, tests, ADRs and docs of the area you suspect.
+         Pick ONE change, the most valuable one, sized for a single run.
+      4. Small and invisible (a bug with an obvious fix, a missing test, a performance or
+         accessibility fix with no visual change, under ~150 changed lines): open the issue in
+         the proposal format with labels `agent:proposal` and `agent:small`, then add the label
+         `agent:go` with a second command (`gh issue edit <n> --add-label agent:go`). It goes
+         to the build stage; the maintainer still says yes or no on the pull request.
+      5. Anything else: build the mock-ups (current vs proposed, desktop + phone), upload them
+         with `.ai/cezar/bin/upload-shots.sh proposal-<short-slug> <png>...`, and open the
+         proposal issue (labels `agent:proposal`, plus `agent:frontend` if visible), assigned
+         to CafeurOff. Stop there: never start building before `agent:go`.
+      6. Leave the worktree without commits. End with the issue URL and one line on why this
+         change beat the others.

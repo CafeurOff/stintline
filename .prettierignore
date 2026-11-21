@@ -3,6 +3,7 @@ dist
 coverage
 playwright-report
 test-results
+shots-out
 pnpm-lock.yaml
 apps/api
 packages/strategy

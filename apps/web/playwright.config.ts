@@ -8,6 +8,8 @@ const PORT = 4173;
  */
 export default defineConfig({
   testDir: "./e2e",
+  // Screenshots for pull requests, not journeys: `pnpm shots` (playwright.shots.config.ts).
+  testIgnore: "shots/**",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
