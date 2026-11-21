@@ -109,7 +109,7 @@ LOGPROB_MIN = -1.0
 ``NO_SPEECH_MAX`` and its mean log probability below ``LOGPROB_MIN``: the thresholds
 Whisper itself uses to skip silent windows."""
 HALLUCINATIONS = frozenset(
-    {"thank you", "thanks for watching", "thank you for watching", "you", "bye"}
+    {"thank you", "thanks for watching", "thank you for watching", "you", "bye", "beep"}
 )
 """Phrases Whisper invents on noise (they come from video subtitles in its training data).
 A segment made of one of them alone is dropped."""

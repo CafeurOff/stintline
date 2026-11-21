@@ -44,6 +44,7 @@ from stintline.racing.models import (
     INGESTED_KINDS,
     QUALIFYING_KINDS,
     RACE_KINDS,
+    RADIO_TRANSCRIPT_FIELDS,
     Lap,
     PitStop,
     QualifyingSegment,
@@ -309,6 +310,7 @@ def _write_session(session: Session, p: _SessionPayload, report: IngestReport) -
         unique=["session", "url"],
         report=report,
         name="team_radio",
+        keep=RADIO_TRANSCRIPT_FIELDS,
     )
     if p.outline is not None:
         TrackOutline.objects.update_or_create(
@@ -490,14 +492,24 @@ def _last_per_key[M: models.Model](
 
 
 def _upsert[M: (Lap, Stint, PitStop, RaceControlMessage, WeatherSample, TeamRadio)](
-    model: type[M], objs: list[M], *, unique: list[str], report: IngestReport, name: str
+    model: type[M],
+    objs: list[M],
+    *,
+    unique: list[str],
+    report: IngestReport,
+    name: str,
+    keep: tuple[str, ...] = (),
 ) -> None:
+    """Insert new rows and refresh existing ones, except the ``keep`` columns, which are
+    written by another job (radio transcripts) and survive a re-import."""
     objs = _last_per_key(model, objs, unique, report, name)
     if not objs:
         report.add(name, 0)
         return
     update_fields = [
-        f.name for f in model._meta.concrete_fields if not f.primary_key and f.name not in unique
+        f.name
+        for f in model._meta.concrete_fields
+        if not f.primary_key and f.name not in unique and f.name not in keep
     ]
     model.objects.bulk_create(
         objs,

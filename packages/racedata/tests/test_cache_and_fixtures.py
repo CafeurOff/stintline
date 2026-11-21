@@ -64,7 +64,7 @@ def test_build_http_sources_wires_cache_and_base_urls(tmp_path: Path) -> None:
         openf1_base_url="https://mirror.test/v1/", jolpica_base_url=None, cache_dir=tmp_path
     )
     try:
-        openf1, jolpica, wikipedia, fia, weather, *feeds, upload, thumb = sources.clients
+        openf1, jolpica, wikipedia, fia, weather, *feeds, upload, thumb, radio = sources.clients
         assert openf1.base_url == "https://mirror.test/v1"
         assert jolpica.base_url == "https://api.jolpi.ca/ergast/f1"
         assert wikipedia.base_url == "https://en.wikipedia.org/w"
@@ -73,5 +73,6 @@ def test_build_http_sources_wires_cache_and_base_urls(tmp_path: Path) -> None:
         assert [c.base_url for c in feeds] == [f.base_url for f in FEEDS]
         assert upload.base_url == "https://upload.wikimedia.org"
         assert thumb.base_url == "https://thumb.wikimedia.org"
+        assert radio.base_url == "https://livetiming.formula1.com"
     finally:
         sources.close()

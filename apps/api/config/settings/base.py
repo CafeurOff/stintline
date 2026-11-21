@@ -214,6 +214,14 @@ RACEDATA = {
     "JOLPICA_BASE_URL": env.str("JOLPICA_BASE_URL", default="https://api.jolpi.ca/ergast/f1"),
 }
 
+RADIO_TRANSCRIPTION = {
+    # Team radio speech-to-text on this machine (ADR 0029). Defaults in racedata.radio.
+    "ENABLED": env.bool("RADIO_TRANSCRIPTION_ENABLED", default=True),
+    "MODEL": env.str("RADIO_WHISPER_MODEL", default="base.en"),
+    "MODEL_DIR": env.str("RADIO_WHISPER_DIR", default=str(BASE_DIR / ".whisper-models")),
+    "CPU_THREADS": env.int("RADIO_WHISPER_THREADS", default=0),
+}
+
 
 def _release_version() -> str:
     """The tag of the running release: vps-infra writes it to VERSION at the release root

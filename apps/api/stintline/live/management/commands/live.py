@@ -3,7 +3,8 @@
 Local live mode (ADR 0002): connect to the official live timing feed from this machine,
 keep the session state, and broadcast a snapshot every second to ``/ws/live``. With
 ``--replay`` a recording is played back instead, at ``--speed`` times real time (for
-development, demos and checking a recorded weekend).
+development, demos and checking a recorded weekend). Team radio is transcribed as it
+arrives (ADR 0029) unless ``--no-transcribe`` or ``RADIO_TRANSCRIPTION_ENABLED`` is off.
 
 Personal use only. Never run this from a public server: the feed is for personal use
 and cloud addresses are blocked.
@@ -23,7 +24,11 @@ from django.core.management.base import BaseCommand, CommandParser
 from racedata.live import recording
 from racedata.live.client import run_forever
 from racedata.live.protocol import Event
+from racedata.radio import TranscriptionUnavailableError
+from racedata.sources import build_http_sources
+from stintline.ingestion import radio
 from stintline.live.publisher import PUBLISH_INTERVAL_S, Publisher
+from stintline.live.radio import LIVE_RADIO_INTERVAL_S, RadioListener
 
 log = structlog.get_logger(__name__)
 
@@ -35,6 +40,9 @@ class Command(BaseCommand):
         parser.add_argument("--record", type=Path, help="directory for raw recordings")
         parser.add_argument("--replay", type=Path, help="play a recording instead of the feed")
         parser.add_argument("--speed", type=float, default=1.0, help="replay speed factor")
+        parser.add_argument(
+            "--no-transcribe", action="store_true", help="do not transcribe team radio"
+        )
 
     def handle(
         self,
@@ -42,11 +50,14 @@ class Command(BaseCommand):
         record: Path | None = None,
         replay: Path | None = None,
         speed: float = 1.0,
+        no_transcribe: bool = False,
         **options: Any,
     ) -> None:
-        asyncio.run(self._run(record, replay, speed))
+        asyncio.run(self._run(record, replay, speed, transcribe=not no_transcribe))
 
-    async def _run(self, record: Path | None, replay: Path | None, speed: float) -> None:
+    async def _run(
+        self, record: Path | None, replay: Path | None, speed: float, *, transcribe: bool
+    ) -> None:
         publisher = Publisher()
         recorder = None
         if record is not None and replay is None:
@@ -72,6 +83,12 @@ class Command(BaseCommand):
                 await flush()
 
         ticker = asyncio.create_task(heartbeat())
+        listener = None
+        sources = build_http_sources() if transcribe and radio.enabled() else None
+        if sources is not None and sources.radio is not None:
+            listener = asyncio.create_task(
+                self._listen(RadioListener(publisher, sources.radio, radio.build_transcriber()))
+            )
         try:
             if replay is not None:
                 self.stdout.write(f"Replaying {replay} at x{speed}")
@@ -84,5 +101,20 @@ class Command(BaseCommand):
                 await run_forever(on_event)
         finally:
             ticker.cancel()
+            if listener is not None:
+                listener.cancel()
+            if sources is not None:
+                sources.close()
             if recorder is not None:
                 recorder.close()
+
+    async def _listen(self, listener: RadioListener) -> None:
+        """Transcribe new team radio clips in a thread, so the feed is never held up."""
+        while True:
+            try:
+                await asyncio.to_thread(listener.step)
+            except TranscriptionUnavailableError:
+                log.warning("live_radio_transcription_unavailable")
+                self.stderr.write("Team radio not transcribed: faster-whisper is not installed")
+                return
+            await asyncio.sleep(LIVE_RADIO_INTERVAL_S)

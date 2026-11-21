@@ -16,7 +16,8 @@ dependencies = [
 
 [project.optional-dependencies]
 # Team radio speech-to-text (ADR 0029): Whisper on the CPU, imported on first use.
-transcription = ["faster-whisper>=1.2"]
+# PyAV 16+ dropped the `metadata_errors` argument faster-whisper 1.2 passes when decoding.
+transcription = ["faster-whisper>=1.2", "av>=12,<16"]
 
 [dependency-groups]
 dev = ["respx>=0.22", "types-defusedxml>=0.7"]
