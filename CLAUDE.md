@@ -107,6 +107,8 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Title maths | `manage.py check_title_rules [--season 1988]` (recounts seasons with our points rules and lists drivers whose total differs from the official standings) |
 | Weather forecasts | `manage.py refresh_forecasts` (sessions within 15 days; also every 3 h via Celery beat and on worker start) |
 | Pre-commit | `pre-commit run --all-files` |
+| Screenshots (PRs, mock-ups) | `SHOTS_ROUTES="/,/drivers/norris" SHOTS_THEMES="dark,light" pnpm --filter web shots` (production build + recorded demo API, desktop and phone, into `apps/web/shots-out/`) |
+| Agent autopilot | `.ai/cezar/AUTOPILOT.md`: proposal issue → `agent:go` → PR with screenshots → maintainer approves |
 
 ## Conventions
 - **Language:** code, comments, identifiers, docs and commit messages in English.

@@ -33,6 +33,7 @@ coverage/
 # Frontend build and test output
 apps/web/dist/
 playwright-report/
+apps/web/shots-out/
 test-results/
 
 # Logs
