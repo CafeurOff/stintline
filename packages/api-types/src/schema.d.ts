@@ -2798,6 +2798,16 @@ export interface components {
        * @description Back at the line; null when the car stopped mid-lap
        */
       end_s: number | null;
+      /**
+       * Format: double
+       * @description When the car is on track (an out lap starts in the garage)
+       */
+      drive_start_s: number | null;
+      /**
+       * Format: double
+       * @description Share of the lap behind the car then
+       */
+      drive_from: number;
       /** Format: double */
       time_s: number | null;
       sectors_s: (number | null)[];

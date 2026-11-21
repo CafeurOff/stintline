@@ -16,6 +16,7 @@ from stintline.racing.models import (
     SessionEntry,
     SessionKind,
     Stint,
+    TrackOutline,
 )
 from stintline.racing.tests.factories import SessionEntryFactory, SessionFactory
 
@@ -76,6 +77,27 @@ def test_laps_are_placed_on_the_session_clock_with_their_tyres() -> None:
     assert laps[2]["pit_in"]
     assert laps[3]["deleted"]
     assert data["duration_s"] == 3600.0
+
+
+def test_an_out_lap_is_driven_only_after_the_garage() -> None:
+    session, entry = qualifying()
+    Lap.objects.create(  # left the line at 0, waited in the garage, timed in S2 and S3 only
+        entry=entry,
+        lap_number=1,
+        started_at=T0,
+        lap_time_s=774.0,
+        sector_2_s=40.0,
+        sector_3_s=30.0,
+        is_pit_out_lap=True,
+    )
+    lap(entry, 2, 700.0, 75.0)  # starts before the out lap's own "end"
+
+    laps = get(f"sessions/{session.pk}/timeline")["cars"][0]["laps"]
+
+    assert laps[0]["end_s"] == 700.0
+    assert laps[0]["drive_start_s"] == 630.0
+    assert laps[0]["drive_from"] == pytest.approx(1 / 3, abs=1e-3)
+    assert (laps[1]["drive_start_s"], laps[1]["drive_from"]) == (700.0, 0.0)
 
 
 def test_qualifying_segments_list_who_was_knocked_out() -> None:
@@ -205,3 +227,21 @@ def test_event_sessions_say_whether_their_replay_opens(
     event = get(f"events/{session.event_id}")
 
     assert event["sessions"][0]["replay"] == expected
+
+
+def test_a_session_without_its_own_outline_borrows_the_circuits_latest() -> None:
+    race = SessionFactory.create(kind=SessionKind.RACE)
+    TrackOutline.objects.create(
+        session=race,
+        car_number=1,
+        lap_number=5,
+        lap_time_s=90.0,
+        points=[[0, 0], [10, 0], [10, 10]],
+    )
+    wet_practice = SessionFactory.create(
+        kind=SessionKind.PRACTICE_1, event__circuit=race.event.circuit
+    )
+    elsewhere = SessionFactory.create(kind=SessionKind.PRACTICE_1)
+
+    assert get(f"sessions/{wet_practice.pk}/track")["lap_number"] == 5
+    get(f"sessions/{elsewhere.pk}/track", status=404)

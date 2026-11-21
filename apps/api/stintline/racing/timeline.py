@@ -35,8 +35,14 @@ class TimelineLap:
     lap: int
     start_s: float
     end_s: float | None
-    """When the car crossed the line again: the lap time, else the start of the next lap.
-    ``None`` when neither is known (the car went back to the garage mid-lap)."""
+    """When the car crossed the line again: the lap time, never after the start of the next
+    lap, else that start. ``None`` when neither is known (back to the garage mid-lap)."""
+    drive_start_s: float | None
+    """When the car is on track during this lap. An out lap starts at the previous crossing
+    of the line, so its time includes the stop in the garage: the car is placed on track
+    only for the sectors it was timed in (see ``_drive``)."""
+    drive_from: float
+    """Share of the lap already behind the car at ``drive_start_s`` (0 for a flying lap)."""
     time_s: float | None
     sectors_s: tuple[float | None, float | None, float | None]
     compound: str | None
@@ -179,19 +185,22 @@ def _car(entry: SessionEntry, origin: datetime) -> TimelineCar:
         assert lap.started_at is not None  # noqa: S101  (filtered above)
         start = (lap.started_at - origin).total_seconds()
         following = laps[index + 1] if index + 1 < len(laps) else None
-        if lap.lap_time_s is not None:
-            end: float | None = start + lap.lap_time_s
-        elif following is not None and following.lap_number == lap.lap_number + 1:
+        next_start = None
+        if following is not None and following.lap_number == lap.lap_number + 1:
             assert following.started_at is not None  # noqa: S101
-            end = (following.started_at - origin).total_seconds()
-        else:
-            end = None
+            next_start = (following.started_at - origin).total_seconds()
+        timed_end = None if lap.lap_time_s is None else start + lap.lap_time_s
+        ends = [e for e in (timed_end, next_start) if e is not None]
+        end = min(ends) if ends else None
+        drive_start, drive_from = _drive(lap, start, end)
         compound, age = _tyre(stints, lap.lap_number)
         out.append(
             TimelineLap(
                 lap=lap.lap_number,
                 start_s=round(start, 3),
                 end_s=None if end is None else round(end, 3),
+                drive_start_s=None if drive_start is None else round(drive_start, 3),
+                drive_from=round(drive_from, 3),
                 time_s=lap.lap_time_s,
                 sectors_s=(lap.sector_1_s, lap.sector_2_s, lap.sector_3_s),
                 compound=compound,
@@ -202,6 +211,27 @@ def _car(entry: SessionEntry, origin: datetime) -> TimelineCar:
             )
         )
     return TimelineCar(car_number=entry.car_number, laps=out)
+
+
+SECTORS = 3
+
+
+def _drive(lap: Lap, start: float, end: float | None) -> tuple[float | None, float]:
+    """When the car is on track during the lap, and the share of the lap behind it then.
+
+    A flying lap is driven from its start. An out lap begins at the car's previous crossing
+    of the line, so most of it can be spent in the garage: the car is shown only for the
+    sectors timed on that lap (S1 is missing when it left the pit lane mid-sector), each
+    taken as a third of the lap. Without any timed sector it is shown from its start."""
+    if end is None:
+        return None, 0.0
+    if not lap.is_pit_out_lap:
+        return start, 0.0
+    sectors = [s for s in (lap.sector_1_s, lap.sector_2_s, lap.sector_3_s) if s is not None]
+    if not sectors:
+        return start, 0.0
+    driven = min(sum(sectors), end - start)
+    return end - driven, 1 - len(sectors) / SECTORS
 
 
 def _tyre(stints: list[Stint], lap: int) -> tuple[str | None, int | None]:

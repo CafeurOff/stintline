@@ -6586,6 +6586,15 @@ components:
           format: double
           nullable: true
           description: Back at the line; null when the car stopped mid-lap
+        drive_start_s:
+          type: number
+          format: double
+          nullable: true
+          description: When the car is on track (an out lap starts in the garage)
+        drive_from:
+          type: number
+          format: double
+          description: Share of the lap behind the car then
         time_s:
           type: number
           format: double
@@ -6614,6 +6623,8 @@ components:
       required:
       - compound
       - deleted
+      - drive_from
+      - drive_start_s
       - end_s
       - lap
       - pit_in

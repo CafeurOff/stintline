@@ -161,6 +161,10 @@ class TimelineLapSerializer(serializers.Serializer[Any]):
     end_s = serializers.FloatField(
         allow_null=True, help_text="Back at the line; null when the car stopped mid-lap"
     )
+    drive_start_s = serializers.FloatField(
+        allow_null=True, help_text="When the car is on track (an out lap starts in the garage)"
+    )
+    drive_from = serializers.FloatField(help_text="Share of the lap behind the car then")
     time_s = serializers.FloatField(allow_null=True)
     sectors_s = serializers.ListField(
         child=serializers.FloatField(allow_null=True), min_length=3, max_length=3

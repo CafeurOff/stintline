@@ -163,6 +163,7 @@ def test_qualifying_segments_run_to_their_chequered_flag() -> None:
         rc(0, "GREEN LIGHT - PIT EXIT OPEN", phase=1),
         rc(18, "CHEQUERED FLAG", phase=1, flag="CHEQUERED"),
         rc(19, "CAR 4 (NOR) TIME DELETED ... LAP 5", phase=1),
+        rc(22, "START OF Q2 WILL BE DELAYED", phase=2),
         rc(26, "GREEN LIGHT - PIT EXIT OPEN", phase=2),
         rc(41, "CHEQUERED FLAG", phase=2, flag="CHEQUERED"),
         rc(49, "GREEN LIGHT - PIT EXIT OPEN", phase=3),
@@ -175,6 +176,7 @@ def test_qualifying_segments_run_to_their_chequered_flag() -> None:
     assert [s.number for s in segments] == [1, 2, 3]
     assert segments[0].started_at == T0
     assert segments[0].ended_at == T0 + timedelta(minutes=18)
+    assert segments[1].started_at == T0 + timedelta(minutes=26)  # the green light, not the notice
     assert segments[2].ended_at == T0 + timedelta(minutes=60)  # no flag: last message
 
 

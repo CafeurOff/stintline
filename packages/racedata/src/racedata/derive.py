@@ -132,10 +132,14 @@ def deleted_laps(messages: Iterable[RaceControlRecord]) -> set[tuple[int, int]]:
     return deleted
 
 
+_PIT_EXIT_OPEN = "PIT EXIT OPEN"
+
+
 def qualifying_segments(messages: Iterable[RaceControlRecord]) -> list[QualifyingSegmentPeriod]:
-    """Q1-Q3 windows: from the first message of a phase to its chequered flag (or its last
-    message when the flag is missing). Laps started before the flag still count, so the
-    replay uses the window to name the segment, not to drop laps."""
+    """Q1-Q3 windows: from the green light at the pit exit (else the first message of the
+    phase: race control tags the delay notices before it with the phase too) to the
+    chequered flag (else the phase's last message). Laps started before the flag still
+    count, so the replay uses the window to name the segment, not to drop laps."""
     by_phase: dict[int, list[RaceControlRecord]] = {}
     for m in messages:
         if m.qualifying_phase is not None and m.qualifying_phase > 0:
@@ -144,10 +148,11 @@ def qualifying_segments(messages: Iterable[RaceControlRecord]) -> list[Qualifyin
     for number in sorted(by_phase):
         rows = sorted(by_phase[number], key=lambda m: m.occurred_at)
         flags = [m.occurred_at for m in rows if (m.flag or "").upper() == "CHEQUERED"]
+        green = [m.occurred_at for m in rows if _PIT_EXIT_OPEN in m.message.upper()]
         segments.append(
             QualifyingSegmentPeriod(
                 number=number,
-                started_at=rows[0].occurred_at,
+                started_at=green[0] if green else rows[0].occurred_at,
                 ended_at=flags[0] if flags else rows[-1].occurred_at,
             )
         )
