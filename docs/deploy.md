@@ -97,7 +97,9 @@ migrations while beat is stopped, then the switch and a health check on `/api/v1
 unhealthy release is rolled back by the server; a failed public check afterwards (health with
 the new version, home page, sitemap, robots, `/metrics` closed) rolls back from the workflow.
 
-By hand on the server: `vps deploy stintline v1.2.3`, `vps rollback stintline`,
+Only maintainers can push `v*` tags (repository ruleset); the deploy key lives in the
+`production` environment, which only accepts `v*.*.*` tags. By hand on the server:
+`vps deploy stintline v1.2.3`, `vps rollback stintline`,
 `vps releases stintline`. Migrations are never reverted: keep them compatible with the
 previous release. `/api/v1/health` reports the tag of the running release (the `VERSION`
 file vps-infra writes at the release root).
