@@ -1,0 +1,103 @@
+# Production deploy of stintline.omexis.fr (ADR 0027). Pushing a tag vX.Y.Z runs the whole
+# CI on that exact commit, then asks the server to deploy it. Manual run: Actions -> Deploy
+# Production -> Run workflow, with the tag.
+#
+# Repository secrets:
+#   VPS_HOST         the server (gra-prod-01)
+#   VPS_KNOWN_HOSTS  its ed25519 host key, pinned once from a trusted machine and checked
+#                    against the server's own fingerprint (never a keyscan inside CI)
+#   VPS_SSH_KEY      private half of the key given to vps-infra `app-apply --ci-key`. On the
+#                    server it is pinned to `deploy-gate stintline`: only
+#                    `deploy <tag> | build <tag> | rollback | status | releases`, no shell,
+#                    no tunnel, no other app.
+name: Deploy Production
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to deploy (e.g. v1.0.2)"
+        required: true
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  SITE: https://stintline.omexis.fr
+
+jobs:
+  ci:
+    name: CI on the tag
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to the VPS
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://stintline.omexis.fr
+    steps:
+      - name: Check the tag
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "not a release tag: $TAG"; exit 1; }
+
+      - name: Set up SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          test -s ~/.ssh/known_hosts || { echo "VPS_KNOWN_HOSTS secret is empty"; exit 1; }
+          cat > ~/.ssh/config <<CONF
+          Host vps
+            HostName ${{ secrets.VPS_HOST }}
+            User deploy
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            BatchMode yes
+          CONF
+
+      # app-release: fetch the tag, build, `check --deploy` and migrations, switch, health
+      # check on the server; an unhealthy release is rolled back there and this step fails.
+      - name: Deploy
+        id: deploy
+        run: ssh vps deploy "$TAG"
+
+      - name: Public checks
+        run: |
+          sleep 10
+          fail=0
+          check() {  # path, expected status, text the body must contain
+            local body code
+            body="$(mktemp)"
+            code="$(curl -s --max-time 30 --retry 2 -o "$body" -w '%{http_code}' "$SITE$1" || echo 000)"
+            if [[ "$code" == "$2" ]] && grep -q -- "$3" "$body"; then echo "ok   $1 ($code)"
+            else echo "FAIL $1 (HTTP $code, expected $2 with '$3')"; fail=1; fi
+          }
+          check /api/v1/health 200 "\"version\":\"${TAG#v}\""
+          check / 200 "<title>"
+          check /sitemap.xml 200 "<urlset"
+          check /robots.txt 200 "Sitemap:"
+          check /metrics 404 ""
+          exit $fail
+
+      # Covers a public check failing after the server accepted the release.
+      - name: Roll back on failed public checks
+        if: failure() && steps.deploy.outcome == 'success'
+        run: ssh vps rollback
+
+      - name: Release status
+        if: always() && steps.deploy.outcome != 'skipped'
+        run: ssh vps status || true

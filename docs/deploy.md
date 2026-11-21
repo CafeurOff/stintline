@@ -82,18 +82,25 @@ server, managed by the separate vps-infra repository (ADR 0027). `deploy/vps/` d
 | Database | `stintline` on the server's PostgreSQL 17 (socket, peer authentication: no password) |
 | Redis | database 6 of the server's Redis, ACL user `stintline` (`REDIS_URL`) |
 | Generated settings | `/etc/stintline/vps.env` (`DATABASE_URL`, `REDIS_URL`), written by vps-infra |
-| Secrets and settings | `/etc/stintline/stintline.env`: `DJANGO_SECRET_KEY` (generated on the server), `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `SITE_URL`. `vps secrets edit stintline` |
+| Secrets and settings | `/etc/stintline/stintline.env`: `DJANGO_SECRET_KEY` (generated on the server), `DJANGO_ALLOWED_HOSTS` (the host name, plus `127.0.0.1,localhost` for the health check and the Prometheus scrape), `DJANGO_CSRF_TRUSTED_ORIGINS`, `SITE_URL`. `vps secrets edit stintline` |
 | Releases | `/opt/stintline/releases/<tag>`, `current` and `previous` (read-only for the app) |
 | Data | `/var/lib/stintline` (provider cache, beat schedule) |
 
 ### Releasing
 
-Tag the commit (`vX.Y.Z`), then on the server `vps deploy stintline vX.Y.Z`. The release is
-built as `deploy` (`deploy/vps/build.sh`: uv, Node 22 pinned by checksum, pnpm, collectstatic),
-then `deploy/vps/release.sh` runs `check --deploy` and the migrations while beat is stopped,
-then the switch and a health check on `/api/v1/health`. An unhealthy release is rolled back
-by itself; `vps rollback stintline` goes back by hand. Migrations are never reverted: keep
-them compatible with the previous release.
+Push a tag: `git tag -a v1.2.3 -m "..." && git push origin v1.2.3`. The **Deploy Production**
+workflow runs the whole CI on that commit, then asks the server to deploy it over SSH (a key
+that can only run `deploy`, `build`, `rollback`, `status` and `releases` for this app). On the
+server the release is built as `deploy` (`deploy/vps/build.sh`: uv, Node 22 pinned by
+checksum, pnpm, collectstatic), `deploy/vps/release.sh` runs `check --deploy` and the
+migrations while beat is stopped, then the switch and a health check on `/api/v1/health`. An
+unhealthy release is rolled back by the server; a failed public check afterwards (health with
+the new version, home page, sitemap, robots, `/metrics` closed) rolls back from the workflow.
+
+By hand on the server: `vps deploy stintline v1.2.3`, `vps rollback stintline`,
+`vps releases stintline`. Migrations are never reverted: keep them compatible with the
+previous release. `/api/v1/health` reports the tag of the running release (the `VERSION`
+file vps-infra writes at the release root).
 
 ### Supervision
 
@@ -103,6 +110,10 @@ replays, age of the last import, races overdue). Alerts go to Discord: API down,
 `https://stintline.omexis.fr/api/v1/health`, worker or beat stopped, a race not imported 12 h
 after it ended, headlines not refreshed for 6 h. `vps status`, `vps kpi stintline`,
 `vps logs stintline`.
+
+Those probes run on the server itself. The **Uptime** workflow checks the health endpoint
+and the home page from GitHub's network every 15 minutes; a failed run e-mails the
+repository owner, so the server being down or unreachable is reported too.
 
 ### Backups and restore
 
