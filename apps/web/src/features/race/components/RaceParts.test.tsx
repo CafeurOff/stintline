@@ -6,14 +6,14 @@ import { session } from "@/test/fixtures/session";
 import { renderWithProviders } from "@/test/render";
 import { problem, server, SESSION_ID } from "@/test/server";
 
+import { resetWebGLCheck } from "@/features/telemetry/webgl";
+
 import { byFinish, entriesByCar } from "../entries";
 import type { TowerLine } from "../tower";
 import { Race3DView } from "./Race3DView";
 import { RaceTower } from "./RaceTower";
 import { ReplayBar } from "./ReplayBar";
 
-const webgl = vi.hoisted(() => ({ available: true }));
-vi.mock("@/features/telemetry/webgl", () => ({ hasWebGL: () => webgl.available }));
 // The WebGL scene cannot run in jsdom: a stand-in shows what it was given.
 vi.mock("./Race3DScene", () => ({
   default: ({
@@ -118,8 +118,20 @@ describe("Race3DView", () => {
     { carNumber: 81, code: "PIA", colour: "#ff8000", fraction: 0.2, selected: false },
   ];
 
+  // Test files share one module graph (isolate: false), so Race3DView may already be bound
+  // to the real WebGL check: answer it through the canvas instead of mocking the module.
+  function webgl(available: boolean) {
+    resetWebGLCheck();
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+      available ? ({} as WebGL2RenderingContext) : null,
+    );
+  }
+
+  beforeEach(() => {
+    webgl(true);
+  });
   afterEach(() => {
-    webgl.available = true;
+    resetWebGLCheck();
   });
 
   it("draws the race on the fastest lap's track and switches cameras", async () => {
@@ -160,7 +172,7 @@ describe("Race3DView", () => {
   });
 
   it("keeps to the map in a browser without WebGL", () => {
-    webgl.available = false;
+    webgl(false);
     renderWithProviders(
       <Race3DView sessionId={SESSION_ID} cars={cars} ghost={null} circuit="X" onSelect={vi.fn()} />,
     );
