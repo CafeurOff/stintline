@@ -84,7 +84,7 @@ function FormCell({
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto_7.5rem] items-center gap-x-3 gap-y-2 border-b border-line px-5 py-3 lg:flex lg:flex-col lg:items-stretch lg:rounded-xl lg:border lg:px-4">
       <div className="min-w-0">
-        <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs lg:flex-nowrap">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
           <Flag country={race.country} />
           <span className="num shrink-0 text-muted">
             {showSeason && `${String(race.season)} · `}
@@ -92,8 +92,7 @@ function FormCell({
           </span>
           <Link
             to={`/events/${String(race.event_id)}`}
-            title={name}
-            className="font-semibold hover:underline max-lg:basis-full lg:truncate"
+            className="min-w-0 font-semibold hover:underline max-lg:basis-full"
           >
             {name}
           </Link>
