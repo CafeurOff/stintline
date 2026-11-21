@@ -1,7 +1,8 @@
 # StintLine autopilot — playbook for unattended agent runs
 
-Agents run unattended on a dedicated box, through cezar automations, under a GitHub machine
-account with Write access. The maintainer (@CafeurOff) only answers **yes or no**:
+Agents run unattended on a dedicated box, through cezar automations, as the GitHub App
+`stintline-autopilot` (contents, issues and pull requests on this repository only; no
+workflows, no administration; tokens that expire within the hour). The maintainer (@CafeurOff) only answers **yes or no**:
 
 | Stage | Agent does | Maintainer's yes | Maintainer's no |
 | --- | --- | --- | --- |

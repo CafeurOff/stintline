@@ -13,11 +13,11 @@ steps:
       except stricter rules in CLAUDE.md.
 
       1. Throttle. `gh issue list --label agent:proposal --state open --json number,labels` and
-         `gh pr list --author @me --state open`. If 2 or more open proposals have no `agent:go`
+         `gh pr list --author app/stintline-autopilot --state open`. If 2 or more open proposals have no `agent:go`
          label, or 3 or more agent PRs are open, write "Nothing to do: waiting on the
          maintainer" and stop. Do not create anything.
       2. Memory. Read open and closed issues labelled `agent:proposal` and closed unmerged PRs
-         by @me (`gh pr list --author @me --state closed`). Never propose again what was closed
+         by the autopilot (`gh pr list --author app/stintline-autopilot --state closed`). Never propose again what was closed
          without merging; learn from the maintainer's comments there.
       3. Look. Run the site's screenshots (desktop + phone, dark + light) on the main pages and
          actually look at them; read the code, tests, ADRs and docs of the area you suspect.

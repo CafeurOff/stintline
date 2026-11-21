@@ -5,7 +5,7 @@
 #
 # Images go to the orphan branch `agent-assets` (never merged, never deployed) under <slug>/,
 # and are linked through raw.githubusercontent.com so they show in issues, pull requests and
-# the GitHub mobile app. Uses the git credentials of the machine account (`gh auth setup-git`).
+# the GitHub mobile app. Uses the git credentials of the autopilot GitHub App (`gh auth setup-git`).
 set -euo pipefail
 
 slug="${1:?usage: upload-shots.sh <slug> <file.png>...}"
