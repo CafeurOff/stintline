@@ -312,3 +312,44 @@ class CircuitProfileSerializer(serializers.Serializer[Any]):
     fastest_lap_s = serializers.FloatField(allow_null=True)
     fastest_lap_year = serializers.IntegerField(allow_null=True)
     history = CircuitRaceSerializer(many=True)
+
+
+# ------------------------------------------------------------------------ undercuts
+
+
+class UndercutCarSerializer(serializers.Serializer[Any]):
+    car_number = serializers.IntegerField()
+    driver = DriverSerializer(allow_null=True)
+    team = TeamSerializer(allow_null=True)
+    colour = serializers.CharField(allow_null=True, help_text="Team colour that weekend")
+
+
+class UndercutAttemptSerializer(serializers.Serializer[Any]):
+    year = serializers.IntegerField()
+    event_id = serializers.IntegerField()
+    session_id = serializers.IntegerField()
+    wet = serializers.BooleanField(help_text="Intermediate or wet tyres were fitted that race")
+    attacker = UndercutCarSerializer(help_text="The car that pitted first")
+    defender = UndercutCarSerializer(help_text="The car directly ahead, which replied")
+    attacker_lap = serializers.IntegerField(help_text="Lap on which the attacker pitted")
+    defender_lap = serializers.IntegerField(help_text="Lap on which the defender pitted")
+    gap_before_s = serializers.FloatField(help_text="Attacker behind by this much before")
+    gap_after_s = serializers.FloatField(
+        help_text="Attacker minus defender after the defender's out-lap (negative: ahead)"
+    )
+    gain_s = serializers.FloatField(help_text="gap_before_s - gap_after_s")
+    success = serializers.BooleanField(help_text="The attacker came out ahead")
+
+
+class CircuitUndercutsSerializer(serializers.Serializer[Any]):
+    circuit = CircuitSerializer()
+    races = serializers.IntegerField(help_text="Grands Prix analysed at this circuit")
+    attempts = UndercutAttemptSerializer(many=True)
+    successes = serializers.IntegerField()
+    dry_attempts = serializers.IntegerField()
+    median_gain_s = serializers.FloatField(
+        allow_null=True, help_text="Median gain over dry races; null below min_attempts"
+    )
+    min_attempts = serializers.IntegerField(
+        help_text="Dry attempts needed before the median is given"
+    )
