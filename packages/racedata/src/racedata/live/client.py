@@ -1,7 +1,7 @@
 """SignalR Core client for the official live timing hub (no authentication).
 
-Run from a personal connection only (ADR 0002): cloud addresses are reportedly blocked,
-and the formula1.com terms restrict live timing to personal use.
+The hub refuses some datacenter addresses: a server reaches it through a relay that serves
+the same ``/signalrcore`` paths behind a bearer token (ADR 0030).
 """
 
 from __future__ import annotations
@@ -26,8 +26,11 @@ from racedata.live.protocol import (
     subscribe,
 )
 
-NEGOTIATE_URL = "https://livetiming.formula1.com/signalrcore/negotiate"
-HUB_URL = "wss://livetiming.formula1.com/signalrcore"
+HUB_ORIGIN = "https://livetiming.formula1.com"
+NEGOTIATE_PATH = "/signalrcore/negotiate"
+HUB_PATH = "/signalrcore"
+NEGOTIATE_URL = HUB_ORIGIN + NEGOTIATE_PATH
+HUB_URL = "wss://livetiming.formula1.com" + HUB_PATH
 USER_AGENT = "StintLine/0.1 (+https://github.com/CafeurOff/stintline)"
 KEEP_ALIVE_S = 15.0
 """The hub drops clients silent for 30 s: a ping every 15 s keeps the connection open."""
@@ -52,19 +55,37 @@ class HubError(RuntimeError):
     """The hub refused the handshake or closed the connection with an error."""
 
 
-async def connect_official(timeout_s: float = 20.0) -> Connection:
+def hub_urls(relay_url: str | None = None) -> tuple[str, str]:
+    """The negotiate and WebSocket URLs: the official hub, or a relay serving its paths."""
+    origin = (relay_url or HUB_ORIGIN).rstrip("/")
+    ws_origin = (
+        "wss://" + origin.removeprefix("https://")
+        if origin.startswith("https://")
+        else ("ws://" + origin.removeprefix("http://"))
+    )
+    return origin + NEGOTIATE_PATH, ws_origin + HUB_PATH
+
+
+async def connect_official(
+    timeout_s: float = 20.0, *, relay_url: str | None = None, relay_token: str | None = None
+) -> Connection:
     """Negotiate with the hub, then open the WebSocket.
 
     The load balancer requires its ``AWSALBCORS`` cookie, set by a pre-flight request.
+    With ``relay_url``, both go through the relay with ``relay_token`` as a bearer token
+    (never sent to the hub itself).
     """
+    negotiate_url, hub_url = hub_urls(relay_url)
     headers = {"User-Agent": USER_AGENT}
+    if relay_url and relay_token:
+        headers["Authorization"] = f"Bearer {relay_token}"
     async with httpx.AsyncClient(timeout=timeout_s, headers=headers) as http:
-        await http.options(NEGOTIATE_URL)
-        response = await http.post(NEGOTIATE_URL, params={"negotiateVersion": 1})
+        await http.options(negotiate_url)
+        response = await http.post(negotiate_url, params={"negotiateVersion": 1})
         response.raise_for_status()
         token = response.json().get("connectionToken")
         cookie = "; ".join(f"{k}={v}" for k, v in http.cookies.items())
-    url = f"{HUB_URL}?id={token}" if token else HUB_URL
+    url = f"{hub_url}?id={token}" if token else hub_url
     return await websockets.connect(
         url,
         additional_headers={**headers, **({"Cookie": cookie} if cookie else {})},

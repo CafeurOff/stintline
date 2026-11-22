@@ -71,7 +71,7 @@ docs/                architecture, data sources, model, design, deploy, history,
 ```
 
 Data flow: `providers (racedata) -> Celery ingestion -> Postgres -> strategy engine -> DRF /api/v1 -> web`.
-Live flow: `livetiming SignalR (local only) -> manage.py live -> Redis (cache + channel layer) -> /ws/live -> web (TV delay)`.
+Live flow: `livetiming SignalR (through the relay in production, ADR 0030) -> manage.py live -> Redis (cache + channel layer) -> /ws/live -> web (TV delay)`.
 Details: `docs/architecture.md`, `docs/data-sources.md`, `docs/adr/`.
 
 Hard boundaries:
@@ -102,7 +102,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | Record a fixture | `uv run python -m racedata.tools.record_fixture openf1 laps session_key=9928` |
 | Telemetry | `manage.py ingest_telemetry [--session ID \| --season 2025] [--sync]` (queues every race still missing it without options; also after each import and 4 older races per `refresh_recent`) · `--altitude` fetches positions again for laps stored without altitude (ADR 0021) |
 | News headlines | `manage.py refresh_news` (also every 30 min via Celery beat and on worker start) · record a feed fixture: `uv run python -m racedata.tools.record_fixture feeds autosport` |
-| Live mode (local, personal use) | `make live` (follows the feed, records to `./recordings`) · `make live-replay FILE=recordings/x.jsonl SPEED=10` · `manage.py live_demo --session 70 --out recordings/demo.jsonl` |
+| Live mode (production: `stintline-live.service`; locally:) | `make live` (follows the feed, records to `./recordings`) · `make live-replay FILE=recordings/x.jsonl SPEED=10` · `manage.py live_demo --session 70 --out recordings/demo.jsonl` |
 | Public demo (replay-only) | `cp infra/demo.env.example infra/demo.env`, then `make demo-up` (http://localhost:8080) · `make demo-load` copies the local database into it · `make demo-down` (see `docs/deploy.md`) |
 | Analysis figures | `manage.py build_analysis [--season 2025 \| --session ID \| --all]` (stale races by default; also after each import and every `refresh_recent`) |
 | FIA documents | `manage.py ingest_fia [--season 2026] [--texts 200] [--all-events]` (1 request / 10 s; also every 30 min via Celery beat) · record a fixture: `uv run python -m racedata.tools.record_fixture fia "<season page>/event/Hungarian Grand Prix"` |

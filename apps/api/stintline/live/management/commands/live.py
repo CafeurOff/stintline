@@ -1,13 +1,13 @@
 """``manage.py live [--record DIR] [--replay FILE --speed 10]``
 
-Local live mode (ADR 0002): connect to the official live timing feed from this machine,
+Live mode (ADR 0011, 0030): connect to the official live timing feed,
 keep the session state, and broadcast a snapshot every second to ``/ws/live``. With
 ``--replay`` a recording is played back instead, at ``--speed`` times real time (for
 development, demos and checking a recorded weekend). Team radio is transcribed as it
 arrives (ADR 0029) unless ``--no-transcribe`` or ``RADIO_TRANSCRIPTION_ENABLED`` is off.
 
-Personal use only. Never run this from a public server: the feed is for personal use
-and cloud addresses are blocked.
+On a server the hub refuses, ``RADIO_RELAY_URL`` / ``RADIO_RELAY_TOKEN`` (the relay that
+already serves the team radio clips) carry the connection too (ADR 0030).
 """
 
 from __future__ import annotations
@@ -19,10 +19,11 @@ from typing import Any
 
 import structlog
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.core.management.base import BaseCommand, CommandParser
 
 from racedata.live import recording
-from racedata.live.client import run_forever
+from racedata.live.client import Connection, connect_official, run_forever
 from racedata.live.protocol import Event
 from racedata.radio import TranscriptionUnavailableError
 from stintline.ingestion import radio
@@ -31,6 +32,15 @@ from stintline.live.publisher import PUBLISH_INTERVAL_S, Publisher
 from stintline.live.radio import LIVE_RADIO_INTERVAL_S, RadioListener
 
 log = structlog.get_logger(__name__)
+
+
+async def _connect() -> Connection:
+    """The official hub, through the configured relay when there is one."""
+    cfg = settings.RACEDATA
+    return await connect_official(
+        relay_url=cfg.get("RADIO_RELAY_URL") or None,
+        relay_token=cfg.get("RADIO_RELAY_TOKEN") or None,
+    )
 
 
 class Command(BaseCommand):
@@ -98,7 +108,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS("Replay finished"))
             else:
                 self.stdout.write("Following the live timing feed (Ctrl+C to stop)")
-                await run_forever(on_event)
+                await run_forever(on_event, connect=_connect)
         finally:
             ticker.cancel()
             if listener is not None:

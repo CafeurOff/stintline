@@ -319,7 +319,7 @@ def test_live_command_replays_a_recording(
 def test_live_command_keeps_running_when_it_cannot_record(
     tmp_path: Path, db: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    async def no_feed(on_event: Any) -> None:
+    async def no_feed(on_event: Any, **_: Any) -> None:
         await on_event(Snapshot(SNAPSHOT))
 
     blocked = tmp_path / "file"
@@ -335,3 +335,30 @@ def test_live_command_keeps_running_when_it_cannot_record(
 
     assert "continuing without" in err.getvalue()
     assert cache.get(CACHE_KEY)["lap"] == 71
+
+
+def test_live_connects_through_the_configured_relay(
+    settings: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from stintline.live.management.commands import live
+
+    calls: list[dict[str, Any]] = []
+
+    async def fake_connect(**kwargs: Any) -> str:
+        calls.append(kwargs)
+        return "connection"
+
+    monkeypatch.setattr(live, "connect_official", fake_connect)
+    settings.RACEDATA = {
+        **settings.RACEDATA,
+        "RADIO_RELAY_URL": "https://relay.test",
+        "RADIO_RELAY_TOKEN": "s3cret",
+    }
+    asyncio.run(live._connect())
+    settings.RACEDATA = {**settings.RACEDATA, "RADIO_RELAY_URL": "", "RADIO_RELAY_TOKEN": ""}
+    asyncio.run(live._connect())
+
+    assert calls == [
+        {"relay_url": "https://relay.test", "relay_token": "s3cret"},
+        {"relay_url": None, "relay_token": None},
+    ]
