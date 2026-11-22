@@ -47,9 +47,9 @@ class Command(BaseCommand):
         if not sync:
             if not radio.enabled():
                 self.stderr.write("RADIO_TRANSCRIPTION_ENABLED is off: queued tasks do nothing")
-            for pk in ids:
-                tasks.transcribe_radio.delay(pk)
-            self.stdout.write(self.style.SUCCESS(f"{len(ids)} sessions queued"))
+            started = sum(tasks.queue_transcription(pk) for pk in ids)
+            running = f" ({len(ids) - started} already running)" if started < len(ids) else ""
+            self.stdout.write(self.style.SUCCESS(f"{started} sessions queued{running}"))
             return
         total = 0
         transcriber = radio.build_transcriber()

@@ -62,6 +62,13 @@ from stintline.racing.models import (
 log = structlog.get_logger(__name__)
 
 
+class ClassificationPendingError(Exception):
+    """A race or sprint whose Jolpica classification is not published yet (it comes a few
+    hours after the flag, sometimes the next day). Driver identity comes from it, so an
+    import now would store a session with no entry and no lap (Las Vegas 2026). Nothing is
+    written and ``ingested_at`` stays as it was: ``refresh_recent`` tries again later."""
+
+
 @dataclass(frozen=True)
 class _SessionPayload:
     drivers: list[DriverEntry]
@@ -98,8 +105,9 @@ def is_ingestable(session: Session, now: datetime | None = None) -> bool:
 def ingest_session(session: Session, sources: Sources) -> IngestReport:
     """Import entries, laps, stints, pit stops, race control, weather and track status.
 
-    Raises ``LiveSessionLockedError`` while any F1 session is live: nothing is written and
-    ``ingested_at`` stays empty, so the import is simply taken up again later."""
+    Raises ``LiveSessionLockedError`` while any F1 session is live, and
+    ``ClassificationPendingError`` for a race or sprint not classified yet: nothing is
+    written and ``ingested_at`` stays as it was, so the import is taken up again later."""
     report = IngestReport()
     if session.kind not in INGESTED_KINDS or session.openf1_session_key is None:
         report.skipped.append(f"session {session.pk}: not linked to OpenF1")
@@ -110,9 +118,13 @@ def ingest_session(session: Session, sources: Sources) -> IngestReport:
     event = session.event
     kind = SourceKind(session.kind)
     is_race = session.kind in RACE_KINDS
+    # First, so a race still waiting for its classification costs one request.
+    results = sources.results.results(event.season.year, event.round, kind) if is_race else []
+    if is_race and not results:
+        raise ClassificationPendingError(f"session {session.pk}: no classification yet")
     payload = _SessionPayload(
         drivers=sources.timing.drivers(key),
-        results=(sources.results.results(event.season.year, event.round, kind) if is_race else []),
+        results=results,
         laps=sources.timing.laps(key),
         stints=sources.timing.stints(key),
         pits=sources.timing.pit(key),

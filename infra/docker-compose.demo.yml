@@ -68,7 +68,7 @@ services:
   worker:
     <<: *api
     # One process: provider rate limits are enforced in-process (ADR 0004).
-    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=1"]
+    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=1", "--queues=celery,radio"]
     healthcheck:
       disable: true
     depends_on:

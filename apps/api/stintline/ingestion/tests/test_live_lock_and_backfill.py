@@ -92,6 +92,26 @@ def test_ingest_session_task_defers_quietly_and_sets_the_cooldown() -> None:
     assert session.ingested_at is None
 
 
+def test_ingest_session_task_waits_quietly_for_the_classification() -> None:
+    session = SessionFactory.create(kind=SessionKind.RACE)
+    with (
+        mock.patch.object(tasks, "open_sources", return_value=_Opened(mock.Mock())),
+        mock.patch.object(
+            timing, "ingest_session", side_effect=timing.ClassificationPendingError("x")
+        ),
+        mock.patch.object(tasks.ingest_telemetry, "delay") as telemetry_delay,
+        mock.patch.object(build_race_analysis, "delay") as analysis_delay,
+        mock.patch.object(tasks.log, "info") as info,
+    ):
+        counts = tasks.ingest_session(session.pk)
+
+    assert counts == {}
+    telemetry_delay.assert_not_called()
+    analysis_delay.assert_not_called()
+    info.assert_called_once_with("ingest_waiting_for_classification", session_id=session.pk)
+    assert not tasks.openf1_locked()
+
+
 def test_tasks_skip_their_requests_during_the_cooldown() -> None:
     session = SessionFactory.create(kind=SessionKind.PRACTICE_2)
     cache.set(tasks.OPENF1_LOCK_KEY, 1)

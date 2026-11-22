@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 import httpx
 import pytest
+from django.core.cache import cache
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import override_settings
@@ -278,6 +279,99 @@ def test_refresh_recent_starts_the_radio_backlog(seeded: None) -> None:
 
     # Assert
     assert delay.call_count == tasks.RADIO_BACKFILL_PER_RUN
+
+
+@pytest.fixture(autouse=True)
+def _no_chains() -> Iterator[None]:
+    cache.clear()
+    yield
+    cache.clear()
+
+
+def test_a_session_has_one_transcription_chain_at_a_time(seeded: None) -> None:
+    # Arrange
+    session = race()
+
+    # Act
+    with patch.object(tasks.transcribe_radio, "delay") as delay:
+        first = tasks.queue_transcription(session.pk)
+        again = tasks.queue_transcription(session.pk)
+
+    # Assert
+    assert (first, again) == (True, False)
+    delay.assert_called_once_with(session.pk)
+
+
+@override_settings(RADIO_TRANSCRIPTION=ENABLED)
+def test_a_finished_chain_lets_the_session_be_queued_again(seeded: None) -> None:
+    # Arrange
+    session = race()
+    refused = {r.url.rsplit("/", 1)[-1]: 403 for r in TeamRadio.objects.filter(session=session)}
+    with patch.object(tasks.transcribe_radio, "delay"):
+        tasks.queue_transcription(session.pk)
+
+    # Act
+    with (
+        patch.object(tasks, "open_sources", lambda: online(clips(refused))),
+        patch.object(radio, "build_transcriber", FakeTranscriber),
+        patch.object(tasks.transcribe_radio, "delay") as delay,
+    ):
+        tasks.transcribe_radio(session.pk)
+        queued_again = tasks.queue_transcription(session.pk)
+
+    # Assert
+    assert queued_again
+    delay.assert_called_once_with(session.pk)
+
+
+@override_settings(RADIO_TRANSCRIPTION=ENABLED)
+def test_refresh_recent_waits_for_the_radio_queue_before_the_backlog(seeded: None) -> None:
+    # Act
+    with (
+        patch.object(tasks.ingest_session, "delay"),
+        patch.object(tasks.ingest_season_results, "delay"),
+        patch.object(tasks.ingest_telemetry, "delay"),
+        patch.object(tasks.add_telemetry_altitude, "delay"),
+        patch("stintline.ingestion.tasks.build_stale_analysis.delay"),
+        patch.object(tasks, "_sync_calendar_if_stale"),
+        patch.object(tasks, "radio_queue_waiting", return_value=3),
+        patch.object(tasks.transcribe_radio, "delay") as delay,
+    ):
+        tasks.refresh_recent.delay("2030-01-01T00:00:00+00:00").get()
+
+    # Assert
+    delay.assert_not_called()
+
+
+def test_transcription_runs_on_its_own_queue() -> None:
+    from django.conf import settings
+
+    from config.celery import app
+
+    route = app.amqp.router.route({}, tasks.transcribe_radio.name)
+
+    assert route["queue"].name == settings.RADIO_QUEUE
+
+
+def test_only_the_default_queue_worker_catches_up_on_start() -> None:
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from config.celery import catch_up_on_start
+
+    def worker(*queues: str) -> Mock:
+        consumer = Mock()
+        consumer.app.conf.task_default_queue = "celery"
+        consumer.task_consumer.queues = [SimpleNamespace(name=q) for q in queues]
+        return consumer
+
+    radio_worker, import_worker = worker("radio"), worker("celery")
+
+    catch_up_on_start(radio_worker)
+    catch_up_on_start(import_worker)
+
+    radio_worker.app.send_task.assert_not_called()
+    assert import_worker.app.send_task.call_count == 3
 
 
 # ---------------------------------------------------------------- command

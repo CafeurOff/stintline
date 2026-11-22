@@ -185,6 +185,37 @@ def test_timing_rows_for_unclassified_cars_are_skipped() -> None:
     assert any("[99]" in s for s in report.skipped)
 
 
+def test_race_without_classification_writes_nothing_and_stays_to_import() -> None:
+    # Jolpica publishes a race's classification hours after OpenF1's timing (Las Vegas 2026).
+    earlier = dt.datetime(2025, 6, 1, 16, tzinfo=dt.UTC)
+    pending = SessionFactory.create(kind=SessionKind.RACE)
+    imported = SessionFactory.create(kind=SessionKind.SPRINT, ingested_at=earlier)
+    data = FakeData(
+        drivers=[
+            DriverEntry(
+                driver_number=10,
+                acronym="ALP",
+                first_name=None,
+                last_name=None,
+                team_name=None,
+                team_colour=None,
+            )
+        ],
+        laps=[lap(10, 1)],
+    )
+
+    for session in (pending, imported):
+        with pytest.raises(timing.ClassificationPendingError):
+            timing.ingest_session(session, fake_sources(data))
+
+    pending.refresh_from_db()
+    imported.refresh_from_db()
+    assert pending.ingested_at is None
+    assert imported.ingested_at == earlier
+    assert not SessionEntry.objects.exists()
+    assert not Lap.objects.exists()
+
+
 def test_inverted_stint_bounds_are_dropped_not_fatal() -> None:
     session = SessionFactory.create()
     data = FakeData(

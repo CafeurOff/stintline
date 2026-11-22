@@ -184,7 +184,7 @@ def test_endpoint_rejects_a_bad_event() -> None:
 def test_worker_start_also_refreshes_forecasts() -> None:
     from config.celery import catch_up_on_start
 
-    sender = mock.Mock()
+    sender = mock.Mock(task_consumer=None)
 
     catch_up_on_start(sender)
 
