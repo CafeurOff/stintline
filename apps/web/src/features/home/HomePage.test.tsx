@@ -24,6 +24,30 @@ describe("Home page", () => {
     expect(within(next).getByRole("timer")).toBeVisible();
   });
 
+  it("offers the live page instead of a countdown while a session is under way", async () => {
+    const next = homeResponse.next_event;
+    if (!next) throw new Error("fixture without a next event");
+    const now = Date.now();
+    const iso = (offsetMin: number) => new Date(now + offsetMin * 60_000).toISOString();
+    const sessions = next.sessions.map((s) =>
+      s.kind === "R" ? { ...s, scheduled_start: iso(-30), ends_at: iso(90) } : s,
+    );
+    server.use(
+      http.get("*/api/v1/home", () =>
+        HttpResponse.json({ ...homeResponse, next_event: { ...next, sessions } }),
+      ),
+    );
+    renderRoute("/");
+
+    const hero = await screen.findByRole("region", { name: /Italian Grand Prix/ });
+    expect(within(hero).getByText("Race under way")).toBeVisible();
+    expect(within(hero).getByRole("link", { name: "Follow it live" })).toHaveAttribute(
+      "href",
+      "/live",
+    );
+    expect(within(hero).queryByRole("timer")).not.toBeInTheDocument();
+  });
+
   it("sums up the last race in key figures and facts", async () => {
     renderRoute("/");
 

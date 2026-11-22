@@ -7,10 +7,10 @@ first in qualifying, or first on the grid when the event has no qualifying store
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import datetime
 from typing import Any
 
-from django.db.models import Case, Exists, OuterRef, QuerySet, Subquery, When
+from django.db.models import Case, Exists, OuterRef, Q, QuerySet, Subquery, When
 
 from stintline.racing.careers import NOT_STARTED
 from stintline.racing.media import media_for
@@ -185,15 +185,27 @@ def podium(session: Session) -> list[SessionEntry]:
     )
 
 
-def home(today: date) -> dict[str, Any]:
+def home(now: datetime) -> dict[str, Any]:
+    """The next Grand Prix is the first whose race has not finished yet, the last race the
+    latest one finished and classified. By the race's end time, not its date: on race day
+    the Grand Prix just raced must give way as soon as the flag falls (Las Vegas 2026 stayed
+    "next" until midnight). The date decides only for races without an end time."""
+    today = now.date()
+    race_end = Session.objects.filter(event=OuterRef("pk"), kind=SessionKind.RACE).values(
+        "ends_at"
+    )[:1]
     next_event = (
-        Event.objects.filter(race_date__gte=today)
+        Event.objects.annotate(race_end=Subquery(race_end))
+        .filter(
+            Q(race_end__gt=now) | Q(race_end__isnull=True, race_date__gte=today),
+        )
         .order_by("race_date")
         .values_list("pk", flat=True)
     ).first()
     classified = SessionEntry.objects.filter(session=OuterRef("pk"), finish_position=1)
     last_race = (
-        Session.objects.filter(kind=SessionKind.RACE, event__race_date__lt=today)
+        Session.objects.filter(kind=SessionKind.RACE)
+        .filter(Q(ends_at__lte=now) | Q(ends_at__isnull=True, event__race_date__lt=today))
         .filter(Exists(classified))
         .select_related("event__season", "event__circuit")
         .order_by("-event__race_date")

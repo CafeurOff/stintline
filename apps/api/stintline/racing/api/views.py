@@ -394,6 +394,10 @@ class TeamCareerView(APIView):
         return cached_response(request, data, "team", ref, _data_stamp())
 
 
+HOME_MAX_AGE_S = 300
+"""The home page moves on when a race finishes: browsers revalidate it every few minutes."""
+
+
 class HomeView(APIView):
     @extend_schema(
         operation_id="home_retrieve",
@@ -402,9 +406,14 @@ class HomeView(APIView):
         tags=["racing"],
     )
     def get(self, request: Request) -> Response:
-        today = timezone.now().date()
-        data = HomeSerializer(hub.home(today)).data
-        return cached_response(request, data, "home", today.isoformat(), _data_stamp())
+        home = hub.home(timezone.now())
+        data = HomeSerializer(home).data
+        # Changes when a race finishes (next and last race move on), not only at midnight.
+        next_event = home["next_event"].pk if home["next_event"] else None
+        last_race = home["last_race"]["session_id"] if home["last_race"] else None
+        return cached_response(
+            request, data, "home", next_event, last_race, _data_stamp(), max_age=HOME_MAX_AGE_S
+        )
 
 
 class SeasonProgressionView(APIView):

@@ -343,6 +343,8 @@ export const fr: Record<MessageKey, string> = {
   "dash.fact.dnfBody": "{names}",
   "dash.calendar": "Calendrier de la saison",
   "dash.readMore": "Lire",
+  "home.underway": "{session} en cours",
+  "home.watchLive": "Suivre en direct",
   "home.startsIn": "{session} commence dans",
   "home.circuitStats": "Stats du circuit",
   "home.weekend": "Programme du week-end",
