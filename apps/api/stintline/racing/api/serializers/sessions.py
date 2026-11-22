@@ -143,6 +143,13 @@ class TeamRadioSerializer(serializers.Serializer[Any]):
     lap = serializers.IntegerField(
         allow_null=True, help_text="The car's lap when the message was recorded"
     )
+    lap_fraction = serializers.FloatField(
+        allow_null=True,
+        help_text=(
+            "How far into that lap (0 to 1) the message was recorded: a replay plays it at "
+            "that moment on the car's clock. Null when the lap's length is unknown"
+        ),
+    )
     transcript = serializers.CharField(
         allow_null=True,
         allow_blank=True,

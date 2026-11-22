@@ -1,5 +1,5 @@
 import type { Schema } from "@stintline/api-types";
-import { type CSSProperties, lazy, Suspense, useMemo, useState } from "react";
+import { type CSSProperties, lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { DriverAvatar } from "@/components/racing/DriverAvatar";
@@ -21,6 +21,7 @@ import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { intParam, useSearchParamsState } from "@/lib/useSearchParam";
 
 import { RadioPanel } from "@/features/radio/components/RadioPanel";
+import type { TeamRadio } from "@/features/radio/radio";
 import { SessionSwitcher } from "@/features/session-replay/components/SessionSwitcher";
 
 import { useReplay, useSessionDetail, useTrack } from "../api";
@@ -30,6 +31,7 @@ import {
   type CarClock,
   leaderLap,
   leaderTimeAtLap,
+  radioRaceTime,
   pointAt,
   progressAt,
   raceEndTime,
@@ -153,6 +155,10 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
     [replay.cars, byCar],
   );
   const clockByCar = useMemo(() => new Map(clocks.map((c) => [c.carNumber, c])), [clocks]);
+  const radioMoment = useCallback(
+    (message: TeamRadio) => radioRaceTime(clocks, clockByCar, message),
+    [clocks, clockByCar],
+  );
   const replayByCar = useMemo(
     () => new Map(replay.cars.map((c) => [c.car_number, c])),
     [replay.cars],
@@ -550,10 +556,12 @@ function Race({ sessionId, session, replay, track }: RaceProps) {
             sessionId={sessionId}
             byCar={byCar}
             selected={selected}
+            time={time}
+            moment={radioMoment}
             onSeek={(message) => {
               if (message.lap === null) return;
               clock.pause();
-              clock.setTime(leaderTimeAtLap(clocks, message.lap));
+              clock.setTime(radioMoment(message));
               // One address change: two in a row would each start from the same address.
               update({ car: message.car_number, plan: null, lap: message.lap });
             }}

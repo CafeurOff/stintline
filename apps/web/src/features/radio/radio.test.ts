@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { radio } from "@/test/fixtures/radio";
 
-import { isBoxCall, isUncertain, radioOf } from "./radio";
+import { isBoxCall, isUncertain, radioFeed, radioOf } from "./radio";
 
 describe("isBoxCall", () => {
   it.each([
@@ -35,5 +35,22 @@ describe("radioOf", () => {
     expect(radioOf(radio, 4).map((m) => m.lap)).toEqual([12, 52, 69, 70]);
     expect(radioOf(radio, null)).toHaveLength(radio.length);
     expect(radioOf(radio, 99)).toEqual([]);
+  });
+});
+
+describe("radioFeed", () => {
+  const moment = (m: { recorded_at: string }) => Date.parse(m.recorded_at) / 1000;
+
+  it("keeps what was said by the replay time, newest first, and counts the rest", () => {
+    const time = Date.parse("2025-08-03T13:45:00Z") / 1000;
+
+    const feed = radioFeed(radio, moment, time);
+
+    expect(feed.heard.map((m) => m.lap)).toEqual([31, 12]);
+    expect(feed.upcoming).toBe(radio.length - 2);
+  });
+
+  it("holds everything back before the first message", () => {
+    expect(radioFeed(radio, moment, 0)).toEqual({ heard: [], upcoming: radio.length });
   });
 });

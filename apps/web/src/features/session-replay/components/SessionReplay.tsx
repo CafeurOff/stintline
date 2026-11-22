@@ -303,6 +303,8 @@ function Replay({
             sessionId={session.id}
             byCar={byCar}
             selected={selected}
+            time={time}
+            moment={(message) => secondsSince(data.starts_at, message.recorded_at, data.duration_s)}
             onSeek={(message) => {
               const at = secondsSince(data.starts_at, message.recorded_at, data.duration_s);
               clock.pause();

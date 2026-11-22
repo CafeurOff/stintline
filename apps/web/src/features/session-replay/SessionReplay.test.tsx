@@ -154,6 +154,7 @@ describe("SessionReplay", () => {
             recorded_at: "2025-08-02T14:15:30Z",
             url: "https://livetiming.formula1.com/static/2025/q/OSCPIA01_81.mp3",
             lap: 4,
+            lap_fraction: 0.5,
             transcript: "Push now, last lap.",
             transcript_confidence: 0.9,
           },
@@ -163,6 +164,9 @@ describe("SessionReplay", () => {
     const { router } = renderRoute(`/sessions/${String(QUALI_ID)}?t=60&radio=all`);
 
     const panel = await screen.findByRole("region", { name: "Team radio" });
+    expect(await within(panel).findByText("1 message to come")).toBeVisible();
+    expect(within(panel).queryByText(/Push now/)).not.toBeInTheDocument();
+    await userEvent.click(within(panel).getByRole("button", { name: "Show all" }));
     await userEvent.click(await within(panel).findByRole("button", { name: "Go to lap 4 (PIA)" }));
 
     const search = new URLSearchParams(router.state.location.search);

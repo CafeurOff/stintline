@@ -7,6 +7,7 @@ import {
   pointAt,
   progressAt,
   raceEndTime,
+  radioRaceTime,
   runningOrder,
 } from "./replay";
 
@@ -73,5 +74,26 @@ describe("pointAt", () => {
     expect(pointAt(square, 0.125)).toEqual([5, 0]);
     expect(pointAt(square, 1.25)).toEqual([10, 0]);
     expect(pointAt([], 0.5)).toEqual([0, 0]);
+  });
+});
+
+describe("radioRaceTime", () => {
+  const car = { carNumber: 4, lineTimes: [100, 190, 280], finished: true };
+  const other = { carNumber: 81, lineTimes: [98, 186], finished: true };
+  const clocks = [car, other];
+  const byCar = new Map(clocks.map((c) => [c.carNumber, c]));
+
+  it("places a message as far into the lap as it was sent, on its car's clock", () => {
+    expect(radioRaceTime(clocks, byCar, { car_number: 4, lap: 2, lap_fraction: 0.5 })).toBe(145);
+    expect(radioRaceTime(clocks, byCar, { car_number: 4, lap: 1, lap_fraction: 0.25 })).toBe(25);
+  });
+
+  it("uses the lap start without a fraction, and the start before the first lap", () => {
+    expect(radioRaceTime(clocks, byCar, { car_number: 4, lap: 3, lap_fraction: null })).toBe(190);
+    expect(radioRaceTime(clocks, byCar, { car_number: 4, lap: null })).toBe(0);
+  });
+
+  it("falls back on the leader for a car without a clock", () => {
+    expect(radioRaceTime(clocks, byCar, { car_number: 99, lap: 2, lap_fraction: 0.5 })).toBe(98);
   });
 });
