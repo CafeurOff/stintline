@@ -41,15 +41,19 @@ engineers said in every session, and to read it: a clip lasts 3 to 20 s, a race 
   "beep"). `faster-whisper` is the `transcription` extra, imported on first use; PyAV stays
   below 16 (16+ dropped an argument `faster-whisper` 1.2 passes).
 - `TeamRadio` gains `transcript`, `transcript_language`, `transcript_confidence` (mean token
-  probability), `transcript_model` and `transcribed_at`. A clip gone upstream, refused or
+  probability), `transcript_model` and `transcribed_at`. A clip gone upstream or
   undecodable is marked done with an empty text and `transcript_model = "unreadable"`.
+  A clip the CDN refuses (HTTP 403) stays pending and stops the batch: the CDN blocks some
+  datacenter addresses, which says nothing about the clip.
   A timing re-import never touches these columns.
 - The `transcribe_radio` Celery task does 25 clips, then queues itself for the rest, so
   imports queued meanwhile wait at most about a minute on the single worker. It is queued
   after each import, and `refresh_recent` starts two sessions of the backlog per run,
   most recent first. `manage.py transcribe_radio` runs or queues it by hand (`--redo` after
   a model change). Settings: `RADIO_TRANSCRIPTION_ENABLED`, `RADIO_WHISPER_MODEL`,
-  `RADIO_WHISPER_DIR`, `RADIO_WHISPER_THREADS`.
+  `RADIO_WHISPER_DIR`, `RADIO_WHISPER_THREADS`, and `RADIO_RELAY_URL` / `RADIO_RELAY_TOKEN`
+  for a server the CDN refuses: clips are then fetched from a relay that serves the same
+  `/static/…/TeamRadio/*.mp3` paths and nothing else, behind a bearer token.
 - `GET /api/v1/sessions/{id}/radio` adds the car's `lap` (from lap start times),
   `transcript` (`null` until transcribed, empty when nothing intelligible was said) and
   `transcript_confidence`. Its ETag follows the latest transcription.
@@ -63,8 +67,10 @@ engineers said in every session, and to read it: a clip lasts 3 to 20 s, a race 
   reference.
 
 ## Consequences
-- The worker needs outbound HTTPS to `livetiming.formula1.com` and, once, to Hugging Face
+- The worker needs outbound HTTPS to `livetiming.formula1.com` (or to the relay) and, once, to Hugging Face
   for the checkpoint (kept in `RADIO_WHISPER_DIR`, outside the read-only release).
+- Pages play the clips from the CDN in the visitor's browser: the page policy allows
+  `media-src https://livetiming.formula1.com`.
 - The model is loaded once per task and released after it: about 150 MB on top of Django
   while a batch runs.
 - Fixtures mode has no clip source: tests use a scripted transport and a fake transcriber,

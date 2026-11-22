@@ -137,6 +137,26 @@ def test_transcribe_session_keeps_earlier_clips_when_the_cdn_fails(seeded: None)
     assert radio.pending(session).count() == 36
 
 
+def test_transcribe_session_leaves_refused_clips_pending_and_stops(seeded: None) -> None:
+    # Arrange
+    session = race()
+    second = TeamRadio.objects.filter(session=session).order_by("recorded_at")[1]
+
+    # Act
+    report = radio.transcribe_session(
+        session,
+        clips({second.url.rsplit("/", 1)[-1]: 403}),
+        FakeTranscriber(),
+        limit=5,
+        now=NOW,
+    )
+
+    # Assert
+    assert (report.transcribed, report.empty, report.remaining) == (1, 0, 36)
+    assert report.refused
+    assert radio.pending(session).filter(pk=second.pk).exists()
+
+
 def test_reimport_keeps_the_transcripts(seeded: None) -> None:
     # Arrange
     session = race()
@@ -189,6 +209,26 @@ def test_transcribe_radio_task_transcribes_a_batch_then_queues_the_rest(seeded: 
     # Assert
     assert done == tasks.RADIO_CLIPS_PER_TASK
     delay.assert_called_once_with(session.pk)
+
+
+@override_settings(RADIO_TRANSCRIPTION=ENABLED)
+def test_transcribe_radio_task_does_not_queue_the_rest_when_refused(seeded: None) -> None:
+    # Arrange
+    session = race()
+    refused = {r.url.rsplit("/", 1)[-1]: 403 for r in TeamRadio.objects.filter(session=session)}
+
+    # Act
+    with (
+        patch.object(tasks, "open_sources", lambda: online(clips(refused))),
+        patch.object(radio, "build_transcriber", FakeTranscriber),
+        patch.object(tasks.transcribe_radio, "delay") as delay,
+    ):
+        done = tasks.transcribe_radio(session.pk)
+
+    # Assert
+    assert done == 0
+    delay.assert_not_called()
+    assert radio.pending(session).count() == 37
 
 
 @override_settings(RADIO_TRANSCRIPTION=ENABLED)

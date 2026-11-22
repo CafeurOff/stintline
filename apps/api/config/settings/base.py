@@ -212,6 +212,9 @@ RACEDATA = {
     "CACHE_DIR": env.str("RACEDATA_CACHE_DIR", default=str(BASE_DIR / ".racedata-cache")),
     "OPENF1_BASE_URL": env.str("OPENF1_BASE_URL", default="https://api.openf1.org/v1"),
     "JOLPICA_BASE_URL": env.str("JOLPICA_BASE_URL", default="https://api.jolpi.ca/ergast/f1"),
+    # Team radio clips through a relay when the live timing CDN refuses this server (ADR 0029).
+    "RADIO_RELAY_URL": env.str("RADIO_RELAY_URL", default=""),
+    "RADIO_RELAY_TOKEN": env.str("RADIO_RELAY_TOKEN", default=""),
 }
 
 RADIO_TRANSCRIPTION = {

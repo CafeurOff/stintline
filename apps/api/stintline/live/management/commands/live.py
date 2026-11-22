@@ -25,8 +25,8 @@ from racedata.live import recording
 from racedata.live.client import run_forever
 from racedata.live.protocol import Event
 from racedata.radio import TranscriptionUnavailableError
-from racedata.sources import build_http_sources
 from stintline.ingestion import radio
+from stintline.ingestion.sources import MODE_HTTP, build_sources
 from stintline.live.publisher import PUBLISH_INTERVAL_S, Publisher
 from stintline.live.radio import LIVE_RADIO_INTERVAL_S, RadioListener
 
@@ -84,7 +84,7 @@ class Command(BaseCommand):
 
         ticker = asyncio.create_task(heartbeat())
         listener = None
-        sources = build_http_sources() if transcribe and radio.enabled() else None
+        sources = build_sources(MODE_HTTP) if transcribe and radio.enabled() else None
         if sources is not None and sources.radio is not None:
             listener = asyncio.create_task(
                 self._listen(RadioListener(publisher, sources.radio, radio.build_transcriber()))

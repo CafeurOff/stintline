@@ -32,6 +32,11 @@ class NotFoundError(ProviderError):
     """The requested resource does not exist upstream (HTTP 404)."""
 
 
+class ForbiddenError(ProviderError):
+    """The upstream service refused the request (HTTP 403): often this machine's address,
+    not the resource, so the same request may succeed later or from elsewhere."""
+
+
 class UnauthorizedError(ProviderError):
     """The upstream service requires authentication for this request (HTTP 401)."""
 
