@@ -71,8 +71,9 @@ engineers said in every session, and to read it: a clip lasts 3 to 20 s, a race 
   for the checkpoint (kept in `RADIO_WHISPER_DIR`, outside the read-only release).
 - Pages play the clips from the CDN in the visitor's browser: the page policy allows
   `media-src https://livetiming.formula1.com`.
-- The model is loaded once per task and released after it: about 150 MB on top of Django
-  while a batch runs.
+- The model is loaded once per task and released after it: about 500 MB on top of Django
+  while a batch runs (about 800 MB in all, measured in production on 195 clips, whatever
+  the number of clips), about 2 s per clip on two threads.
 - Fixtures mode has no clip source: tests use a scripted transport and a fake transcriber,
   and the demo shows clips as "transcription on its way".
 - Words can be wrong (names, radio noise). `small.en` is more accurate for about three times
