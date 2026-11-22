@@ -259,6 +259,7 @@ def test_pages_allow_their_own_inline_scripts_by_hash(settings: Any) -> None:
     assert "script-src 'self' 'sha256-" in policy
     assert "'unsafe-inline'" not in policy.split("script-src")[1].split(";")[0]
     assert "frame-ancestors 'none'" in policy
+    assert "media-src 'self' https://livetiming.formula1.com" in policy
     # One hash: the inline script, not the module script nor the JSON-LD block.
     assert policy.count("sha256-") == 1
 
