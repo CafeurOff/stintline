@@ -56,6 +56,9 @@ SystemCallFilter=~@privileged @resources
 # numpy/scipy (strategy engine) set a NUMA memory policy at import through OpenBLAS: without
 # these the process is killed at startup with SIGSYS (seen with malo on this server).
 SystemCallFilter=mbind set_mempolicy get_mempolicy
+# CTranslate2 (Whisper, team radio transcripts) pins its threads with sched_setaffinity when
+# the model loads: without it the task is killed with SIGSYS (ADR 0029).
+SystemCallFilter=sched_setaffinity
 CapabilityBoundingSet=
 UMask=0027
 ReadWritePaths=/var/lib/stintline /var/log/stintline
