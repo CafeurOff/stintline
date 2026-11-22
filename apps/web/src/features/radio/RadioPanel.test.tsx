@@ -11,11 +11,17 @@ async function radioPanel() {
   return screen.findByRole("region", { name: "Team radio" });
 }
 
+/** The whole session's radio, not only what was said by the replay time. */
+async function showAll(panel: HTMLElement) {
+  await userEvent.click(await within(panel).findByRole("button", { name: "Show all" }));
+}
+
 describe("RadioPanel", () => {
   it("lists the selected driver's radio with what was said", async () => {
     renderRoute(`${race}?car=4`);
 
     const panel = await radioPanel();
+    await showAll(panel);
     expect(await within(panel).findByText(/Gap to Leclerc is three seconds/)).toBeVisible();
     expect(within(panel).getByText(/Don't box, we go to the end/)).toBeVisible();
     expect(within(panel).getByText("(uncertain)")).toBeVisible();
@@ -47,6 +53,7 @@ describe("RadioPanel", () => {
     });
     renderRoute(`${race}?car=4`);
     const panel = await radioPanel();
+    await showAll(panel);
     const [first] = await within(panel).findAllByRole("button", { name: /^Radio of NOR/ });
 
     if (!first) throw new Error("no radio button");
@@ -66,6 +73,7 @@ describe("RadioPanel", () => {
   it("shows every driver's radio and marks the calls to pit", async () => {
     const { router } = renderRoute(`${race}?car=4`);
     const panel = await radioPanel();
+    await showAll(panel);
     await within(panel).findByText(/Gap to Leclerc/);
 
     await userEvent.click(within(panel).getByRole("button", { name: "Everyone" }));
@@ -78,12 +86,41 @@ describe("RadioPanel", () => {
   it("moves the replay to the lap of a message", async () => {
     const { router } = renderRoute(`${race}?car=4&radio=all&lap=5`);
     const panel = await radioPanel();
+    await showAll(panel);
 
     await userEvent.click(await within(panel).findByRole("button", { name: "Go to lap 31 (PIA)" }));
 
     const search = new URLSearchParams(router.state.location.search);
     expect(search.get("lap")).toBe("31");
     expect(search.get("car")).toBe("81");
+    // Back on the replay clock, the message has just been sent.
+    await userEvent.click(within(panel).getByRole("button", { name: "Follow the replay" }));
+    expect(within(panel).getByText(/Box box, box this lap/)).toBeVisible();
+    expect(within(panel).getByText("New")).toBeVisible();
+  });
+
+  it("only shows what was said by the replay time, newest first", async () => {
+    renderRoute(`${race}?car=4&radio=all&lap=40`);
+    const panel = await radioPanel();
+
+    expect(await within(panel).findByText(/Box box, box this lap/)).toBeVisible();
+    const said = within(panel)
+      .getAllByRole("listitem")
+      .map((item) => item.textContent);
+    expect(said[0]).toContain("Box box");
+    expect(said[1]).toContain("Gap to Leclerc");
+    expect(within(panel).queryByText(/Don't box/)).not.toBeInTheDocument();
+    expect(within(panel).getByText("3 messages to come")).toBeVisible();
+  });
+
+  it("waits for a driver's first message", async () => {
+    renderRoute(`${race}?car=4&lap=5`);
+    const panel = await radioPanel();
+
+    expect(
+      await within(panel).findByText("No team radio yet at this point of the replay."),
+    ).toBeVisible();
+    expect(within(panel).getByText("4 messages to come")).toBeVisible();
   });
 
   it("says when a driver sent no radio", async () => {

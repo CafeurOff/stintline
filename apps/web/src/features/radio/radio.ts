@@ -27,3 +27,31 @@ export function isUncertain(radio: Pick<TeamRadio, "transcript" | "transcript_co
 export function radioOf(messages: readonly TeamRadio[], car: number | null): TeamRadio[] {
   return messages.filter((m) => car === null || m.car_number === car);
 }
+
+/** Replay seconds during which a message that just arrived is marked as new. */
+export const NEW_FOR_S = 90;
+
+/** Moment a message was sent, in seconds on the replay clock of the page. */
+export type RadioMoment = (message: TeamRadio) => number;
+
+export interface RadioFeed {
+  /** Messages already sent at the replay time, most recent first. */
+  heard: TeamRadio[];
+  /** Messages still to come. */
+  upcoming: number;
+}
+
+/** The team radio as it stood at replay time `time`: what was already said, newest first,
+ * like the broadcast, without spoiling what comes later. */
+export function radioFeed(
+  messages: readonly TeamRadio[],
+  moment: RadioMoment,
+  time: number,
+): RadioFeed {
+  const heard = messages
+    .map((message) => ({ message, at: moment(message) }))
+    .filter(({ at }) => at <= time)
+    .sort((a, b) => b.at - a.at)
+    .map(({ message }) => message);
+  return { heard, upcoming: messages.length - heard.length };
+}

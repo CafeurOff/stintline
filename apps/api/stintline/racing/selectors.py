@@ -125,6 +125,9 @@ class RadioMessage:
     lap: int | None
     """The car's lap when the message was recorded; ``None`` before its first timed lap
     starts or when the session has no lap start times."""
+    lap_fraction: float | None
+    """How far into ``lap`` (0 to 1) the message was recorded, so a replay can play it at
+    that moment on the car's own clock. ``None`` when the lap's length is unknown."""
     transcript: str | None
     """``None`` while not transcribed yet, ``""`` when nothing intelligible was said."""
     transcript_confidence: float | None
@@ -132,21 +135,22 @@ class RadioMessage:
 
 def session_radio(session_id: int) -> list[RadioMessage]:
     """Team radio of a session, oldest first, each placed on its car's lap (ADR 0029)."""
-    starts: dict[int, tuple[list[datetime], list[int]]] = {}
+    starts: dict[int, tuple[list[datetime], list[int], list[float | None]]] = {}
     laps = (
         Lap.objects.filter(entry__session_id=session_id, started_at__isnull=False)
         .order_by("entry__car_number", "started_at")
-        .values_list("entry__car_number", "started_at", "lap_number")
+        .values_list("entry__car_number", "started_at", "lap_number", "lap_time_s")
     )
-    for car, started_at, number in laps:
+    for car, started_at, number, seconds in laps:
         if started_at is None:  # excluded by the filter; narrows the type
             continue
-        times, numbers = starts.setdefault(car, ([], []))
+        times, numbers, lengths = starts.setdefault(car, ([], [], []))
         times.append(started_at)
         numbers.append(number)
+        lengths.append(seconds)
     out: list[RadioMessage] = []
     for row in TeamRadio.objects.filter(session_id=session_id).order_by("recorded_at", "pk"):
-        times, numbers = starts.get(row.car_number, ([], []))
+        times, numbers, lengths = starts.get(row.car_number, ([], [], []))
         index = bisect_right(times, row.recorded_at) - 1
         out.append(
             RadioMessage(
@@ -154,11 +158,29 @@ def session_radio(session_id: int) -> list[RadioMessage]:
                 recorded_at=row.recorded_at,
                 url=row.url,
                 lap=numbers[index] if index >= 0 else None,
+                lap_fraction=_lap_fraction(row.recorded_at, index, times, lengths),
                 transcript=row.transcript if row.transcribed_at is not None else None,
                 transcript_confidence=row.transcript_confidence,
             )
         )
     return out
+
+
+def _lap_fraction(
+    at: datetime, index: int, starts: list[datetime], lengths: list[float | None]
+) -> float | None:
+    """Share of lap ``index`` elapsed at ``at``, from the lap's time or, without one (a lap
+    not timed: pit in, red flag), from the next lap's start. Capped to [0, 1]: a message
+    after the flag is placed at the car's finish."""
+    if index < 0:
+        return None
+    length = lengths[index]
+    if not length and index + 1 < len(starts):
+        length = (starts[index + 1] - starts[index]).total_seconds()
+    if not length or length <= 0:
+        return None
+    share = (at - starts[index]).total_seconds() / length
+    return round(min(max(share, 0.0), 1.0), 4)
 
 
 def radio_stamp(session_id: int) -> datetime | None:

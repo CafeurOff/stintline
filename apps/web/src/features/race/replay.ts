@@ -75,6 +75,25 @@ export function leaderTimeAtLap(clocks: readonly CarClock[], lap: number): numbe
   return Number.isFinite(best) ? best : 0;
 }
 
+/**
+ * Race time when a team radio message was sent: as far into its lap as it was recorded
+ * (`lap_fraction`), on its own car's clock, so it plays when that car is there. At the lap
+ * start without a fraction, and at the start for a message sent before the first lap.
+ */
+export function radioRaceTime(
+  clocks: readonly CarClock[],
+  byCar: ReadonlyMap<number, CarClock>,
+  message: { car_number: number; lap: number | null; lap_fraction?: number | null },
+): number {
+  const { lap } = message;
+  if (lap === null) return 0;
+  const own = byCar.get(message.car_number);
+  const start = lap <= 1 ? 0 : (own?.lineTimes[lap - 2] ?? leaderTimeAtLap(clocks, lap));
+  const end = own?.lineTimes[lap - 1];
+  const fraction = message.lap_fraction ?? 0;
+  return end === undefined ? start : start + (end - start) * fraction;
+}
+
 /** End of the replay: when the last classified car takes the flag. */
 export function raceEndTime(clocks: readonly CarClock[]): number {
   return clocks.reduce((max, clock) => Math.max(max, clock.lineTimes.at(-1) ?? 0), 0);

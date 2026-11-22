@@ -329,7 +329,8 @@ class SessionRadioView(APIView):
         rows = selectors.session_radio(session_id)
         data = TeamRadioSerializer(rows, many=True).data
         heard = selectors.radio_stamp(session_id)
-        return cached_response(request, data, "radio", session_id, stamp, heard)
+        # The version changes with the response shape (2: lap_fraction).
+        return cached_response(request, data, "radio", 2, session_id, stamp, heard)
 
 
 class EventDetailView(APIView):

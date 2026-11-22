@@ -2721,6 +2721,11 @@ export interface components {
       url: string;
       /** @description The car's lap when the message was recorded */
       lap: number | null;
+      /**
+       * Format: double
+       * @description How far into that lap (0 to 1) the message was recorded: a replay plays it at that moment on the car's clock. Null when the lap's length is unknown
+       */
+      lap_fraction: number | null;
       /** @description What was said, transcribed by speech recognition (ADR 0029): null while not transcribed yet, empty when nothing intelligible was said */
       transcript: string | null;
       /**

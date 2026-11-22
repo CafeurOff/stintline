@@ -1,4 +1,5 @@
 import { Radio } from "lucide-react";
+import { useState } from "react";
 
 import { PillSwitch } from "@/components/layout/Glass";
 import { Panel } from "@/components/layout/Panel";
@@ -10,7 +11,15 @@ import { teamColour } from "@/lib/teams";
 import { useSearchParamsState } from "@/lib/useSearchParam";
 
 import { useSessionRadio } from "../api";
-import { isBoxCall, isUncertain, radioOf, type TeamRadio } from "../radio";
+import {
+  isBoxCall,
+  isUncertain,
+  NEW_FOR_S,
+  radioFeed,
+  radioOf,
+  type RadioMoment,
+  type TeamRadio,
+} from "../radio";
 import { type RadioPlayback, useRadioPlayer } from "../useRadioPlayer";
 import { RadioPlayButton, RadioProgress } from "./RadioPlayButton";
 
@@ -19,25 +28,39 @@ import { RadioPlayButton, RadioProgress } from "./RadioPlayButton";
  * what was said (automatic transcription) and the lap it was sent on. Follows the selected
  * driver, or every driver with `?radio=all`. The list scrolls inside the panel so the page
  * keeps its length; one compact player serves every clip.
+ *
+ * With a replay clock (`time` and `moment`), messages arrive when they were sent, newest
+ * first, as on the broadcast; the ones still to come are only counted, and can be shown.
  */
 export function RadioPanel({
   sessionId,
   byCar,
   selected,
   onSeek,
+  time,
+  moment,
 }: {
   sessionId: number;
   byCar: ReadonlyMap<number, Entry>;
   selected: number;
   /** Moves the replay to the moment of a message. */
   onSeek?: (message: TeamRadio) => void;
+  /** Replay time, in seconds on the clock `moment` uses. */
+  time?: number;
+  /** When each message was sent on the replay clock. */
+  moment?: RadioMoment;
 }) {
   const { t } = useI18n();
   const [params, update] = useSearchParamsState();
+  const [showAll, setShowAll] = useState(false);
   const scope = params.get("radio") === "all" ? "all" : "driver";
   const radio = useSessionRadio(sessionId);
   const entry = byCar.get(selected);
-  const messages = radioOf(radio.data ?? [], scope === "all" ? null : selected);
+  const ofScope = radioOf(radio.data ?? [], scope === "all" ? null : selected);
+  const following = time !== undefined && moment !== undefined && !showAll;
+  const feed = following ? radioFeed(ofScope, moment, time) : null;
+  const messages = feed ? feed.heard : ofScope;
+  const isNew = (message: TeamRadio) => following && time - moment(message) < NEW_FOR_S;
   const player = useRadioPlayer();
 
   return (
@@ -64,12 +87,14 @@ export function RadioPanel({
         <ErrorState error={radio.error} onRetry={() => void radio.refetch()} />
       ) : !radio.data ? (
         <Skeleton className="h-40" />
-      ) : messages.length === 0 ? (
+      ) : ofScope.length === 0 ? (
         <p className="text-muted">
           {scope === "all" || !entry
             ? t("radio.none")
             : t("radio.noneFor", { name: driverName(entry) })}
         </p>
+      ) : messages.length === 0 ? (
+        <p className="text-muted">{t("radio.notYet")}</p>
       ) : (
         <ol
           aria-label={t("radio.list")}
@@ -83,9 +108,26 @@ export function RadioPanel({
               playback={player}
               onToggle={player.toggle}
               onSeek={onSeek}
+              fresh={isNew(message)}
             />
           ))}
         </ol>
+      )}
+      {time !== undefined && moment !== undefined && ofScope.length > 0 && (
+        <p className="flex flex-wrap items-center gap-x-2 text-sm text-muted">
+          {feed && feed.upcoming > 0 && <span>{t("radio.upcoming", { n: feed.upcoming })}</span>}
+          {(showAll || (feed && feed.upcoming > 0)) && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowAll(!showAll);
+              }}
+              className="font-semibold text-ink underline-offset-2 hover:underline"
+            >
+              {showAll ? t("radio.follow") : t("radio.showAll")}
+            </button>
+          )}
+        </p>
       )}
       <p className="text-xs text-muted">{t("radio.note")}</p>
     </Panel>
@@ -107,12 +149,15 @@ function RadioMessage({
   playback,
   onToggle,
   onSeek,
+  fresh,
 }: {
   message: TeamRadio;
   entry: Entry | undefined;
   playback: RadioPlayback;
   onToggle: (url: string) => void;
   onSeek: ((message: TeamRadio) => void) | undefined;
+  /** Just arrived on the replay clock. */
+  fresh: boolean;
 }) {
   const { t, locale } = useI18n();
   const code = entry ? driverCode(entry) : `#${String(message.car_number)}`;
@@ -151,6 +196,11 @@ function RadioMessage({
             ) : (
               <span className="text-xs text-muted tabular-nums">{lap}</span>
             ))}
+          {fresh && (
+            <span className="rounded-full border border-mark px-2 py-0.5 text-xs font-bold text-mark">
+              {t("radio.new")}
+            </span>
+          )}
           {isBoxCall(message.transcript) && (
             <span className="rounded-full bg-mark px-2 py-0.5 text-xs font-bold text-white">
               {t("radio.box")}
