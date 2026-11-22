@@ -39,7 +39,11 @@ class Command(BaseCommand):
             sessions = Session.objects.filter(event__in=events).select_related("event__season")
             for session in sessions:
                 if timing.is_ingestable(session):
-                    report = timing.ingest_session(session, sources)
+                    try:
+                        report = timing.ingest_session(session, sources)
+                    except timing.ClassificationPendingError:
+                        self.stdout.write(f"{session}: classification not published yet")
+                        continue
                     self.stdout.write(f"{session}: {report.counts}")
             results = history.ingest_season_results(season, sources)
             self.stdout.write(f"{season} results and standings: {results.counts}")

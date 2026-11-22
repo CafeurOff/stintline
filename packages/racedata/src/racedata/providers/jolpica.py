@@ -37,6 +37,17 @@ PAGE_SIZE = 100
 
 log = structlog.get_logger(__name__)
 
+
+def is_final(data: Any) -> bool:
+    """Whether a response may be cached for good. Jolpica answers a race not classified yet
+    (or standings not updated yet) with an empty table, ``total: "0"``, that it fills a few
+    hours later: caching that would hide the classification for ever (Las Vegas 2026)."""
+    try:
+        return int(data["MRData"]["total"]) > 0
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 SCHEDULE_KEYS: tuple[tuple[str, SessionKind], ...] = (
     ("FirstPractice", SessionKind.PRACTICE_1),
     ("SecondPractice", SessionKind.PRACTICE_2),

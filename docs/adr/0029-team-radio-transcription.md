@@ -46,10 +46,12 @@ engineers said in every session, and to read it: a clip lasts 3 to 20 s, a race 
   A clip the CDN refuses (HTTP 403) stays pending and stops the batch: the CDN blocks some
   datacenter addresses, which says nothing about the clip.
   A timing re-import never touches these columns.
-- The `transcribe_radio` Celery task does 25 clips, then queues itself for the rest, so
-  imports queued meanwhile wait at most about a minute on the single worker. It is queued
-  after each import, and `refresh_recent` starts two sessions of the backlog per run,
-  most recent first. `manage.py transcribe_radio` runs or queues it by hand (`--redo` after
+- The `transcribe_radio` Celery task does 25 clips, then queues itself for the rest. It
+  runs on its own `radio` queue and worker (`stintline-radio.service`, a fresh process per
+  task), so imports never wait behind it. It is queued after each import, and
+  `refresh_recent` starts two sessions of the backlog per run, most recent first, only
+  when the radio queue is empty. A session has one chain at a time (a cache key held
+  while it runs). `manage.py transcribe_radio` runs or queues it by hand (`--redo` after
   a model change). Settings: `RADIO_TRANSCRIPTION_ENABLED`, `RADIO_WHISPER_MODEL`,
   `RADIO_WHISPER_DIR`, `RADIO_WHISPER_THREADS`, and `RADIO_RELAY_URL` / `RADIO_RELAY_TOKEN`
   for a server the CDN refuses: clips are then fetched from a relay that serves the same
@@ -73,7 +75,10 @@ engineers said in every session, and to read it: a clip lasts 3 to 20 s, a race 
   `media-src https://livetiming.formula1.com`.
 - The model is loaded once per task and released after it: about 500 MB on top of Django
   while a batch runs (about 800 MB in all, measured in production on 195 clips, whatever
-  the number of clips), about 2 s per clip on two threads.
+  the number of clips), about 2 s per clip on two threads. A worker process reused across
+  tasks still grew past 1.28 GB over hours of backlog (CTranslate2 keeps its arenas) and
+  stalled the only worker, imports included (Las Vegas 2026): hence the separate worker
+  with `--max-tasks-per-child=1`.
 - Fixtures mode has no clip source: tests use a scripted transport and a fake transcriber,
   and the demo shows clips as "transcription on its way".
 - Words can be wrong (names, radio noise). `small.en` is more accurate for about three times

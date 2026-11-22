@@ -294,3 +294,19 @@ def test_openf1_team_radio_requires_an_https_recording() -> None:
     radio = OpenF1Source(client_returning({"team_radio": rows})).team_radio(1)
 
     assert [r.url for r in radio] == ["https://x/a.mp3"]
+
+
+@pytest.mark.parametrize(
+    ("payload", "final"),
+    [
+        ({"MRData": {"total": "22", "RaceTable": {"Races": [{}]}}}, True),
+        # A race not classified yet: filled a few hours later, never cached (Las Vegas 2026).
+        ({"MRData": {"total": "0", "RaceTable": {"Races": []}}}, False),
+        ({"unexpected": True}, False),
+        ([], False),
+    ],
+)
+def test_jolpica_only_caches_published_tables(payload: Any, final: bool) -> None:
+    from racedata.providers.jolpica import is_final
+
+    assert is_final(payload) is final

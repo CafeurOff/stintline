@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 from racedata.cache import FileCache, ResponseCache
@@ -32,6 +34,7 @@ from racedata.providers.base import (
 from racedata.providers.feeds import FeedSource
 from racedata.providers.fia import FiaSource
 from racedata.providers.jolpica import JolpicaSource
+from racedata.providers.jolpica import is_final as jolpica_is_final
 from racedata.providers.openf1 import OpenF1Source
 from racedata.providers.openmeteo import OpenMeteoSource
 from racedata.providers.wikipedia import IMAGE_HOSTS, WikimediaImageSource, WikipediaSource
@@ -69,9 +72,14 @@ FIA_TIMEOUT_S = 40.0
 
 
 def _http_client(
-    cfg: ProviderConfig, base_url: str | None, cache: ResponseCache | None
+    cfg: ProviderConfig,
+    base_url: str | None,
+    cache: ResponseCache | None,
+    cache_if: Callable[[Any], bool] | None = None,
 ) -> HttpClient:
-    return HttpClient(cfg.name, base_url or cfg.base_url, limits=cfg.limits, cache=cache)
+    return HttpClient(
+        cfg.name, base_url or cfg.base_url, limits=cfg.limits, cache=cache, cache_if=cache_if
+    )
 
 
 def _fixture_client(cfg: ProviderConfig, root: Path) -> HttpClient:
@@ -88,12 +96,12 @@ def build_http_sources(
     radio_relay_token: str | None = None,
 ) -> Sources:
     """Live sources. With ``cache_dir``, responses are cached on disk (historical data is
-    immutable once published). With ``radio_relay_url``, team radio clips are fetched through
-    that relay (same paths, bearer ``radio_relay_token``): the live timing CDN refuses some
-    datacenter addresses (ADR 0029)."""
+    immutable once published; Jolpica's empty tables, filled later, are never cached). With
+    ``radio_relay_url``, team radio clips are fetched through that relay (same paths, bearer
+    ``radio_relay_token``): the live timing CDN refuses some datacenter addresses (ADR 0029)."""
     cache = FileCache(cache_dir) if cache_dir else None
     openf1 = _http_client(OPENF1, openf1_base_url, cache)
-    jolpica = _http_client(JOLPICA, jolpica_base_url, cache)
+    jolpica = _http_client(JOLPICA, jolpica_base_url, cache, jolpica_is_final)
     wikipedia = _http_client(WIKIPEDIA, None, None)
     feeds = FeedSource(
         [(feed, HttpClient(feed.key, feed.base_url, limits=FEED_LIMITS)) for feed in FEEDS]

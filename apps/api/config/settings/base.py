@@ -115,6 +115,10 @@ CELERY_TASK_ACKS_LATE = True
 CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TIMEZONE = "UTC"
+# Team radio transcription (Whisper, ADR 0029) has its own queue and worker: a long backlog
+# never holds an import up, and the model's memory is given back after every task.
+RADIO_QUEUE = "radio"
+CELERY_TASK_ROUTES = {"stintline.ingestion.tasks.transcribe_radio": {"queue": RADIO_QUEUE}}
 CELERY_BEAT_SCHEDULE = {
     # Keep everything up to date: current calendar, races and sprints shortly after they
     # finish, anything missed while the stack was down (stintline.ingestion.tasks).

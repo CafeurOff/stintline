@@ -130,7 +130,7 @@ def test_refresh_task_and_command_read_the_feeds(settings: Any) -> None:
 def test_worker_start_also_refreshes_headlines() -> None:
     from config.celery import catch_up_on_start
 
-    sender = mock.Mock()
+    sender = mock.Mock(task_consumer=None)
 
     catch_up_on_start(sender)
 

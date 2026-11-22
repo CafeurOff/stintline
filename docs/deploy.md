@@ -77,7 +77,8 @@ server, managed by the separate vps-infra repository (ADR 0027). `deploy/vps/` d
 | Piece | Where |
 | --- | --- |
 | API and pages | `stintline-web.service`: uvicorn, 2 workers, `127.0.0.1:8020` |
-| Imports | `stintline-worker.service` (Celery, one process) and `stintline-beat.service` (primary server only) |
+| Imports | `stintline-worker.service` (Celery, one process, default queue) and `stintline-beat.service` (primary server only) |
+| Team radio transcripts | `stintline-radio.service` (Celery, `radio` queue, one fresh process per task, ADR 0029) |
 | Built files | nginx serves `apps/web/dist` of the current release; everything else goes to the API |
 | Database | `stintline` on the server's PostgreSQL 17 (socket, peer authentication: no password) |
 | Redis | database 6 of the server's Redis, ACL user `stintline` (`REDIS_URL`) |

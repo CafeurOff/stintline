@@ -120,6 +120,19 @@ def test_cached_responses_skip_the_network(clock: FakeClock) -> None:
     client.close()
 
 
+def test_responses_refused_by_cache_if_are_fetched_again(clock: FakeClock) -> None:
+    transport, calls = sequence_transport(
+        httpx.Response(200, json=[]), httpx.Response(200, json=[1]), httpx.Response(200, json=[2])
+    )
+    client = make_client(transport, clock, cache=MemoryCache(), cache_if=bool)
+
+    assert client.get_json("x") == []
+    assert client.get_json("x") == [1]
+    assert client.get_json("x") == [1]
+    assert len(calls) == 2
+    client.close()
+
+
 def test_retry_policy_caps_delays() -> None:
     policy = RetryPolicy(base_delay_s=1.0, multiplier=10.0, max_delay_s=5.0)
 

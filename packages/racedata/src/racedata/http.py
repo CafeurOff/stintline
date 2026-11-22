@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 from collections import deque
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -128,8 +128,12 @@ class HttpClient:
         clock: Clock | None = None,
         user_agent: str = "StintLine/0.1 (+https://github.com/CafeurOff/stintline)",
         headers: Mapping[str, str] | None = None,
+        cache_if: Callable[[Any], bool] | None = None,
     ) -> None:
+        """``cache_if`` says whether a decoded response may be stored in ``cache``: an
+        answer that is final once published, not an empty one that will be filled later."""
         self.provider = provider
+        self._cache_if = cache_if
         self.base_url = base_url.rstrip("/")
         self._clock = clock or SystemClock()
         self._limiter = RateLimiter(limits, self._clock)
@@ -165,7 +169,8 @@ class HttpClient:
             data = response.json()
         except ValueError as exc:
             raise InvalidPayloadError(self.provider, f"invalid JSON from {url}") from exc
-        self._cache.set(key, data)
+        if self._cache_if is None or self._cache_if(data):
+            self._cache.set(key, data)
         return data
 
     def get_text(self, path: str, params: QueryParams | None = None, *, accept: str = "*/*") -> str:

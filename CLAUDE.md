@@ -108,7 +108,7 @@ Prerequisites: uv ≥ 0.9, Node ≥ 22.12 with pnpm 10, Docker with Compose v2. 
 | FIA documents | `manage.py ingest_fia [--season 2026] [--texts 200] [--all-events]` (1 request / 10 s; also every 30 min via Celery beat) · record a fixture: `uv run python -m racedata.tools.record_fixture fia "<season page>/event/Hungarian Grand Prix"` |
 | Technical documents | `manage.py read_technical [--season 2026] [--limit 50] [--all]` (re-read upgrades and power-unit PDFs after a parser change; 1 request / 10 s) |
 | Title maths | `manage.py check_title_rules [--season 1988]` (recounts seasons with our points rules and lists drivers whose total differs from the official standings) |
-| Team radio transcripts | `manage.py transcribe_radio [--session ID \| --season 2025] [--limit N] [--redo] [--sync]` (Whisper `base.en` on the CPU, ADR 0029; also after each import, 25 clips per task, and 2 backlog sessions per `refresh_recent`) |
+| Team radio transcripts | `manage.py transcribe_radio [--session ID \| --season 2025] [--limit N] [--redo] [--sync]` (Whisper `base.en` on the CPU, ADR 0029; also after each import, 25 clips per task, and 2 backlog sessions per `refresh_recent` when the `radio` queue is empty; its own worker in production) |
 | Weather forecasts | `manage.py refresh_forecasts` (sessions within 15 days; also every 3 h via Celery beat and on worker start) |
 | Pre-commit | `pre-commit run --all-files` |
 | Screenshots (PRs, mock-ups) | `SHOTS_ROUTES="/,/drivers/norris" SHOTS_THEMES="dark,light" pnpm --filter web shots` (production build + recorded demo API, desktop and phone, into `apps/web/shots-out/`) |

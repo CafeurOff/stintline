@@ -4,12 +4,15 @@ idempotent, so retries and re-runs are safe."""
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+from typing import Any
 
 import structlog
-from celery import shared_task
+from celery import current_app, shared_task
+from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Max, Q
 from django.utils import timezone
+from kombu.exceptions import ChannelError
 
 from racedata.errors import (
     LiveSessionLockedError,
@@ -132,11 +135,14 @@ def ingest_session(session_id: int) -> dict[str, int]:
     except LiveSessionLockedError as exc:
         _defer("ingest_session", exc, session_id=session_id)
         return {}
+    except timing.ClassificationPendingError:
+        log.info("ingest_waiting_for_classification", session_id=session_id)
+        return {}
     if session.kind in RACE_KINDS:
         build_race_analysis.delay(session.pk)
     ingest_telemetry.delay(session.pk)
     if radio.enabled() and radio.pending(session).exists():
-        transcribe_radio.delay(session.pk)
+        queue_transcription(session.pk)
     return report.counts
 
 
@@ -155,13 +161,18 @@ queued meanwhile never wait long behind it on the single worker process."""
     acks_late=True,
 )
 def transcribe_radio(session_id: int) -> int:
-    """Transcribe the next team radio clips of a session (ADR 0029), then queue the rest."""
+    """Transcribe the next team radio clips of a session (ADR 0029), then queue the rest.
+
+    Runs on the ``radio`` queue (its own worker). Start a session with
+    :func:`queue_transcription`, which keeps one chain per session."""
     if not radio.enabled():
+        _end_chain(session_id)
         return 0
     session = Session.objects.get(pk=session_id)
     with open_sources() as sources:
         if sources.radio is None:
             log.info("radio_transcription_offline", session_id=session_id)
+            _end_chain(session_id)
             return 0
         try:
             report = radio.transcribe_session(
@@ -173,10 +184,51 @@ def transcribe_radio(session_id: int) -> int:
             )
         except TranscriptionUnavailableError:
             log.warning("radio_transcription_unavailable", session_id=session_id)
+            _end_chain(session_id)
             return 0
     if report.remaining and not report.refused:
+        cache.set(_chain_key(session_id), 1, int(RADIO_CHAIN_TTL.total_seconds()))
         transcribe_radio.delay(session_id)
+    else:
+        _end_chain(session_id)
     return report.transcribed
+
+
+RADIO_CHAIN_KEY = "ingestion:radio-chain:{}"
+RADIO_CHAIN_TTL = timedelta(hours=3)
+"""A session's transcription chain holds its key while it runs, renewed at each batch. It
+expires on its own if the chain dies (worker killed, retries exhausted)."""
+
+
+def _chain_key(session_id: int) -> str:
+    return RADIO_CHAIN_KEY.format(session_id)
+
+
+def _end_chain(session_id: int) -> None:
+    cache.delete(_chain_key(session_id))
+
+
+def queue_transcription(session_id: int) -> bool:
+    """Start transcribing a session unless a chain already runs for it. Without this, every
+    ``refresh_recent`` started the same sessions again and the chains piled up."""
+    if not cache.add(_chain_key(session_id), 1, int(RADIO_CHAIN_TTL.total_seconds())):
+        return False
+    transcribe_radio.delay(session_id)
+    return True
+
+
+def radio_queue_waiting() -> int:
+    """Transcription batches waiting on the ``radio`` queue (0 when the broker cannot say)."""
+    try:
+        with current_app.connection_for_read() as conn:
+            channel: Any = conn.default_channel
+            ok = channel.queue_declare(settings.RADIO_QUEUE, passive=True)
+    except ChannelError:
+        return 0  # Redis drops an empty queue: "no queue 'radio'" means nothing waits
+    except Exception:  # an unknown size must not stop refresh_recent
+        log.warning("radio_queue_size_unknown")
+        return 0
+    return int(ok.message_count)
 
 
 @shared_task(
@@ -238,8 +290,8 @@ SESSION_BACKFILL_PER_RUN = 4
 most recent first. The ~350 sessions since 2023 take about 45 hours."""
 RADIO_BACKFILL_PER_RUN = 2
 """Sessions with clips still to transcribe started per ``refresh_recent`` run (ADR 0029),
-most recent first. Each one then queues itself until its clips are done; two at a time
-keep the single worker free for imports between their short tasks."""
+most recent first, and only while the radio queue is empty. Each one then queues itself
+until its clips are done, on the radio worker (imports never wait behind it)."""
 
 
 RESULTS_DELAY = timedelta(hours=1)
@@ -377,15 +429,15 @@ def refresh_recent(now_iso: str | None = None) -> list[int]:
     flat = telemetry.missing_altitude().exclude(pk__in=queued)[:ALTITUDE_BACKFILL_PER_RUN]
     for session in flat:
         add_telemetry_altitude.delay(session.pk)
-    unheard = []
-    if radio.enabled():
-        unheard = list(
-            radio.sessions_with_pending_radio()
-            .exclude(pk__in=queued)
-            .values_list("pk", flat=True)[:RADIO_BACKFILL_PER_RUN]
-        )
-    for session_id in unheard:
-        transcribe_radio.delay(session_id)
+    unheard: list[int] = []
+    # The backlog only starts when the radio queue is drained: new races go first.
+    if radio.enabled() and radio_queue_waiting() == 0:
+        candidates = radio.sessions_with_pending_radio().exclude(pk__in=queued)
+        for session_id in candidates.values_list("pk", flat=True)[: RADIO_BACKFILL_PER_RUN * 4]:
+            if len(unheard) == RADIO_BACKFILL_PER_RUN:
+                break
+            if queue_transcription(session_id):
+                unheard.append(session_id)
     build_stale_analysis.delay()
     log.info(
         "refresh_recent_queued",
