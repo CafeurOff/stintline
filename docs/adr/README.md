@@ -33,3 +33,4 @@ Short records of significant decisions. To add one, run `/adr <title>` or copy `
 | [0027](0027-production-on-the-shared-vps.md) | Production on the shared VPS (vps-infra), without Docker | Accepted |
 | [0028](0028-practice-and-qualifying-replays.md) | Practice and qualifying replays | Accepted |
 | [0029](0029-team-radio-transcription.md) | Team radio transcribed on our machine with Whisper | Accepted |
+| [0030](0030-live-on-the-public-site.md) | Live timing on the public site, through a relay | Accepted |

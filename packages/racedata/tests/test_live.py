@@ -371,3 +371,18 @@ def test_recordings_round_trip_and_replay_with_their_spacing(tmp_path: Path) -> 
 
     assert [type(e).__name__ for e in events] == ["Snapshot", "Feed", "Feed"]
     assert pauses == [2.0, 0.5]
+
+
+def test_hub_urls_point_at_the_official_hub_or_at_a_relay() -> None:
+    assert client.hub_urls() == (
+        "https://livetiming.formula1.com/signalrcore/negotiate",
+        "wss://livetiming.formula1.com/signalrcore",
+    )
+    assert client.hub_urls("https://relay.test/") == (
+        "https://relay.test/signalrcore/negotiate",
+        "wss://relay.test/signalrcore",
+    )
+    assert client.hub_urls("http://localhost:8787") == (
+        "http://localhost:8787/signalrcore/negotiate",
+        "ws://localhost:8787/signalrcore",
+    )
