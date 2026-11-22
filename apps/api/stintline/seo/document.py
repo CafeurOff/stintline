@@ -21,6 +21,8 @@ from django.conf import settings
 from stintline.seo.pages import SITE_NAME, Locale, PageMeta
 
 FRENCH_PREFIX = "/fr"
+# Where team radio clips are played from (ADR 0029); the API serves their URLs as given.
+RADIO_MEDIA_ORIGIN = "https://livetiming.formula1.com"
 _TITLE = re.compile(r"<title>.*?</title>", re.S)
 _DESCRIPTION = re.compile(r'<meta\s+name="description"[^>]*>', re.S)
 _LANG = re.compile(r'<html lang="[a-z]+"')
@@ -195,7 +197,7 @@ def content_security_policy(html: str) -> str:
     """The page's policy: our own scripts plus the inline ones of this very document (theme,
     language and dictionary preload), allowed by their hash rather than 'unsafe-inline'.
     Pictures may come from any HTTPS host: official media and news pictures are URL
-    references (ADR 0006, 0015)."""
+    references (ADR 0006, 0015). Team radio clips play from the live timing CDN (ADR 0029)."""
     hashes = " ".join(
         f"'sha256-{base64.b64encode(hashlib.sha256(body.encode()).digest()).decode()}'"
         for body in _INLINE_SCRIPT.findall(html)
@@ -207,6 +209,8 @@ def content_security_policy(html: str) -> str:
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "font-src 'self'",
+        # Team radio clips are played from the official recording (ADR 0029).
+        f"media-src 'self' {RADIO_MEDIA_ORIGIN}",
         "connect-src 'self'",
         "worker-src 'self' blob:",
         "object-src 'none'",
