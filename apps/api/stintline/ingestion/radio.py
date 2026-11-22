@@ -2,7 +2,9 @@
 
 Each clip not yet transcribed is fetched once, handed to the speech-to-text engine running
 in this process, and dropped: only the text is stored. A clip gone upstream, refused or
-undecodable is marked transcribed with an empty text, so it is never fetched again.
+undecodable is marked transcribed with an empty text, so it is never fetched again. A clip
+the CDN refuses (HTTP 403, often this server's address rather than the clip) stays pending:
+the batch stops and the backlog waits for the next run.
 """
 
 from __future__ import annotations
@@ -14,7 +16,12 @@ import structlog
 from django.conf import settings
 from django.db.models import F, QuerySet
 
-from racedata.errors import ProviderError, RateLimitedError, UpstreamUnavailableError
+from racedata.errors import (
+    ForbiddenError,
+    ProviderError,
+    RateLimitedError,
+    UpstreamUnavailableError,
+)
 from racedata.radio import (
     RadioClipSource,
     Transcriber,
@@ -36,6 +43,8 @@ class RadioReport:
     empty: int
     """Clips with no intelligible speech, gone upstream or undecodable."""
     remaining: int
+    refused: bool = False
+    """The CDN refused a clip: the batch stopped early, the rest waits for a later run."""
 
 
 def enabled() -> bool:
@@ -82,11 +91,17 @@ def transcribe_session(
             (what was done before is kept).
     """
     transcribed = empty = 0
+    refused = False
     for radio in pending(session).order_by("recorded_at")[:limit]:
         try:
             transcript = transcriber.transcribe(clips.clip(radio.url))
         except (TranscriptionUnavailableError, UpstreamUnavailableError, RateLimitedError):
             raise
+        except ForbiddenError:
+            # This server is refused, not the clip: keep it pending and stop the batch.
+            log.warning("radio_clips_refused", session_id=session.pk, radio_id=radio.pk)
+            refused = True
+            break
         except ProviderError as exc:
             # Gone upstream, refused or undecodable: never fetched again.
             log.info("radio_clip_unreadable", radio_id=radio.pk, error=type(exc).__name__)
@@ -103,12 +118,18 @@ def transcribe_session(
             transcribed += 1
         else:
             empty += 1
-    report = RadioReport(transcribed=transcribed, empty=empty, remaining=pending(session).count())
+    report = RadioReport(
+        transcribed=transcribed,
+        empty=empty,
+        remaining=pending(session).count(),
+        refused=refused,
+    )
     log.info(
         "radio_transcribed",
         session_id=session.pk,
         transcribed=report.transcribed,
         empty=report.empty,
         remaining=report.remaining,
+        refused=report.refused,
     )
     return report

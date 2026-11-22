@@ -84,9 +84,13 @@ def build_http_sources(
     openf1_base_url: str | None = None,
     jolpica_base_url: str | None = None,
     cache_dir: Path | None = None,
+    radio_relay_url: str | None = None,
+    radio_relay_token: str | None = None,
 ) -> Sources:
     """Live sources. With ``cache_dir``, responses are cached on disk (historical data is
-    immutable once published)."""
+    immutable once published). With ``radio_relay_url``, team radio clips are fetched through
+    that relay (same paths, bearer ``radio_relay_token``): the live timing CDN refuses some
+    datacenter addresses (ADR 0029)."""
     cache = FileCache(cache_dir) if cache_dir else None
     openf1 = _http_client(OPENF1, openf1_base_url, cache)
     jolpica = _http_client(JOLPICA, jolpica_base_url, cache)
@@ -100,7 +104,16 @@ def build_http_sources(
         host: HttpClient(WIKIMEDIA_UPLOAD.name, f"https://{host}", limits=WIKIMEDIA_UPLOAD.limits)
         for host in IMAGE_HOSTS
     }
-    radio = _http_client(LIVETIMING_STATIC, None, None)
+    radio = HttpClient(
+        LIVETIMING_STATIC.name,
+        radio_relay_url or LIVETIMING_STATIC.base_url,
+        limits=LIVETIMING_STATIC.limits,
+        headers=(
+            {"Authorization": f"Bearer {radio_relay_token}"}
+            if radio_relay_url and radio_relay_token
+            else None
+        ),
+    )
     sources = _sources(openf1, jolpica, wikipedia, feeds, fia, weather)
     return replace(
         sources,

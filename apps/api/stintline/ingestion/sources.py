@@ -25,6 +25,8 @@ def build_sources(mode: str | None = None) -> Sources:
             openf1_base_url=cfg.get("OPENF1_BASE_URL"),
             jolpica_base_url=cfg.get("JOLPICA_BASE_URL"),
             cache_dir=Path(cache_dir) if cache_dir else None,
+            radio_relay_url=cfg.get("RADIO_RELAY_URL") or None,
+            radio_relay_token=cfg.get("RADIO_RELAY_TOKEN") or None,
         )
     raise ValueError(f"Unknown RACEDATA mode: {mode!r}")
 

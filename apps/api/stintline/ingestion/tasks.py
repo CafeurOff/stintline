@@ -174,7 +174,7 @@ def transcribe_radio(session_id: int) -> int:
         except TranscriptionUnavailableError:
             log.warning("radio_transcription_unavailable", session_id=session_id)
             return 0
-    if report.remaining:
+    if report.remaining and not report.refused:
         transcribe_radio.delay(session_id)
     return report.transcribed
 

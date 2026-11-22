@@ -11,7 +11,7 @@ from typing import Any, BinaryIO
 import httpx
 import pytest
 
-from racedata.errors import NotFoundError, ProviderError
+from racedata.errors import ForbiddenError, NotFoundError, ProviderError
 from racedata.http import HttpClient
 from racedata.radio import (
     RadioClipSource,
@@ -74,6 +74,51 @@ def test_clip_reports_a_missing_recording() -> None:
     # Act / Assert
     with pytest.raises(NotFoundError):
         source.clip(CLIP)
+
+
+def test_clip_reports_a_refused_download_apart_from_a_missing_one() -> None:
+    # Arrange
+    source, _ = _source(httpx.Response(403))
+
+    # Act / Assert
+    with pytest.raises(ForbiddenError):
+        source.clip(CLIP)
+
+
+def test_http_sources_fetch_the_clips_through_the_relay_with_its_token() -> None:
+    # Arrange
+    sources = build_http_sources(radio_relay_url="https://relay.test/", radio_relay_token="s3cret")
+    client = sources.clients[-1]
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, content=b"ID3audio")
+
+    client._client._transport = httpx.MockTransport(handler)
+
+    # Act
+    assert sources.radio is not None
+    audio = sources.radio.clip(CLIP)
+    sources.close()
+
+    # Assert
+    assert audio == b"ID3audio"
+    assert str(seen[0].url) == "https://relay.test" + CLIP.removeprefix(
+        "https://livetiming.formula1.com"
+    )
+    assert seen[0].headers["Authorization"] == "Bearer s3cret"
+
+
+def test_http_sources_send_no_token_to_the_cdn() -> None:
+    # Act
+    sources = build_http_sources(radio_relay_token="s3cret")
+    client = sources.clients[-1]
+    sources.close()
+
+    # Assert
+    assert client.base_url == "https://livetiming.formula1.com"
+    assert "Authorization" not in client._client.headers
 
 
 def test_http_sources_include_the_radio_clips_and_fixtures_do_not() -> None:

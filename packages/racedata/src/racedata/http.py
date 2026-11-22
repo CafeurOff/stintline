@@ -16,6 +16,7 @@ import httpx
 
 from racedata.cache import NullCache, ResponseCache, cache_key
 from racedata.errors import (
+    ForbiddenError,
     InvalidPayloadError,
     NotFoundError,
     ProviderError,
@@ -126,6 +127,7 @@ class HttpClient:
         transport: httpx.BaseTransport | None = None,
         clock: Clock | None = None,
         user_agent: str = "StintLine/0.1 (+https://github.com/CafeurOff/stintline)",
+        headers: Mapping[str, str] | None = None,
     ) -> None:
         self.provider = provider
         self.base_url = base_url.rstrip("/")
@@ -136,7 +138,7 @@ class HttpClient:
         self._client = httpx.Client(
             timeout=timeout_s,
             transport=transport,
-            headers={"User-Agent": user_agent},
+            headers={"User-Agent": user_agent, **(headers or {})},
             follow_redirects=True,
         )
 
@@ -215,6 +217,8 @@ class HttpClient:
                 continue
             if status == HTTP_NOT_FOUND:
                 raise NotFoundError(self.provider, f"HTTP 404 on {url}")
+            if status == httpx.codes.FORBIDDEN:
+                raise ForbiddenError(self.provider, f"HTTP 403 on {url}")
             if status == httpx.codes.UNAUTHORIZED:
                 raise UnauthorizedError(
                     self.provider, f"HTTP 401 on {url}", _error_detail(response)

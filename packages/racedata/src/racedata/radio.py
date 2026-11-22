@@ -41,7 +41,9 @@ class TranscriptionFailedError(ProviderError):
 
 
 class RadioClipSource:
-    """Downloads team radio clips, for transcription only."""
+    """Downloads team radio clips, for transcription only. The URL is checked against the
+    live timing CDN; its path is then fetched from the client's base URL (the CDN itself, or
+    a relay that serves the same paths)."""
 
     def __init__(self, client: HttpClient) -> None:
         self._client = client
