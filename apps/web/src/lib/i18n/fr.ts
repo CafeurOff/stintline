@@ -713,8 +713,9 @@ export const fr: Record<MessageKey, string> = {
   "live.pit.inPit": "{code} est dans la voie des stands.",
   "live.pit.unknown": "Pas encore de temps d'arrêt connu pour ce circuit.",
   "live.radio": "Radios d'équipe",
-  "live.radioOf": "Radio de {code} à {time} UTC",
-  "live.radioNote": "Lues depuis les enregistrements officiels, jamais copiées.",
+  "live.radioOf": "Radio de {code} à {time}",
+  "live.radioNote":
+    "Lues depuis les enregistrements officiels, jamais copiées. Paroles transcrites automatiquement (en anglais) : elles peuvent être fausses, l'enregistrement fait foi.",
   "live.raceControl": "Direction de course",
   "live.offline.title": "Pas de séance en direct pour l'instant",
   "live.offline.body":
@@ -722,7 +723,7 @@ export const fr: Record<MessageKey, string> = {
   "live.next": "Prochaine séance",
   "live.running.title": "Une séance est en cours",
   "live.running.body":
-    "Le direct n'est pas disponible sur ce site. Le replay, avec les voitures sur le circuit et les outils de stratégie, arrive peu après le drapeau à damier.",
+    "Le direct arrive dans un instant : cette page se met à jour toute seule. Le replay, avec les voitures sur le circuit et les outils de stratégie, arrive peu après le drapeau à damier.",
   "live.done": "Terminée",
   "live.replayBody":
     "Revoyez les voitures sur le circuit tour par tour, puis essayez une autre stratégie.",

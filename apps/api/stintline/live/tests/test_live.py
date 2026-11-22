@@ -186,13 +186,30 @@ def test_live_state(status: str, state: str) -> None:
     assert live_state(None) == "offline"
 
 
+def test_a_finished_session_leaves_the_live_page_hours_after_its_start() -> None:
+    from datetime import UTC, datetime
+
+    session = {"status": "Ends", "starts_at": "2026-11-21T04:00:00Z"}
+
+    assert live_state({"session": session}, datetime(2026, 11, 21, 7, 0, tzinfo=UTC)) == "finished"
+    assert live_state({"session": session}, datetime(2026, 11, 21, 9, 0, tzinfo=UTC)) == "offline"
+    started = {**session, "status": "Started"}
+    assert live_state({"session": started}, datetime(2026, 11, 21, 9, 0, tzinfo=UTC)) == "live"
+
+
 def test_live_endpoint_is_offline_without_the_live_process(db: None) -> None:
     body = APIClient().get("/api/v1/live").json()
 
     assert body == {"state": "offline", "snapshot": None, "next_session": None}
 
 
-def test_live_endpoint_serves_the_cached_snapshot(seeded: None) -> None:
+def test_live_endpoint_serves_the_cached_snapshot(
+    seeded: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from datetime import timedelta
+
+    # The recorded race is years old: keep it "finished" rather than past the window.
+    monkeypatch.setattr("stintline.live.api.views.FINISHED_SHOWN", timedelta(days=36500))
     pub = publisher([100.0])
     pub.apply(Snapshot(SNAPSHOT))
     pub.publish_if_due(force=True)
@@ -204,6 +221,9 @@ def test_live_endpoint_serves_the_cached_snapshot(seeded: None) -> None:
     assert body["state"] == "finished"
     assert body["snapshot"]["lap"] == 71
     assert len(body["snapshot"]["team_radio"]) == 3
+    monkeypatch.setattr("stintline.live.api.views.FINISHED_SHOWN", timedelta(0))
+    stale = APIClient().get("/api/v1/live").json()
+    assert (stale["state"], stale["snapshot"]) == ("offline", None)
 
 
 # ------------------------------------------------------------------ websocket

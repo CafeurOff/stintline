@@ -39,7 +39,7 @@ function useTicker(active: boolean): number {
   return now;
 }
 
-/** Live session from the local live process, with a TV delay; offline otherwise. */
+/** Live session from the live process, with a TV delay; offline otherwise. */
 export function LivePage() {
   const { t } = useI18n();
   const status = useLiveStatus();
