@@ -703,8 +703,9 @@ export const en = {
   "live.pit.inPit": "{code} is in the pit lane.",
   "live.pit.unknown": "No pit loss known for this circuit yet.",
   "live.radio": "Team radio",
-  "live.radioOf": "Radio of {code} at {time} UTC",
-  "live.radioNote": "Played from the official recordings, never copied.",
+  "live.radioOf": "Radio of {code} at {time}",
+  "live.radioNote":
+    "Played from the official recordings, never copied. Words transcribed automatically: they can be wrong, the clip is the reference.",
   "live.raceControl": "Race control",
   "live.offline.title": "No live session right now",
   "live.offline.body":
@@ -712,7 +713,7 @@ export const en = {
   "live.next": "Next session",
   "live.running.title": "A session is running",
   "live.running.body":
-    "Live timing is not available on this site. The replay, with the cars on the circuit and the strategy tools, appears shortly after the chequered flag.",
+    "Live timing is on its way: this page updates by itself. The replay, with the cars on the circuit and the strategy tools, appears shortly after the chequered flag.",
   "live.done": "Finished",
   "live.replayBody": "Watch the cars on the circuit lap by lap, then try another strategy.",
   "live.meanwhile": "While you wait",
