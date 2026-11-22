@@ -339,6 +339,8 @@ export const en = {
   "dash.fact.dnfBody": "{names}",
   "dash.calendar": "Season calendar",
   "dash.readMore": "Read",
+  "home.underway": "{session} under way",
+  "home.watchLive": "Follow it live",
   "home.startsIn": "{session} starts in",
   "home.circuitStats": "Circuit stats",
   "home.weekend": "Race weekend",

@@ -27,6 +27,14 @@ export function NextRaceHero({ event }: { event: Event }) {
   const session = event.sessions
     .filter((s) => s.scheduled_start && new Date(s.scheduled_start).getTime() > now)
     .sort((a, b) => (a.scheduled_start ?? "").localeCompare(b.scheduled_start ?? ""))[0];
+  // A session under way: no countdown at zero, a way to follow it live instead.
+  const running = event.sessions.find(
+    (s) =>
+      s.scheduled_start &&
+      s.ends_at &&
+      new Date(s.scheduled_start).getTime() <= now &&
+      new Date(s.ends_at).getTime() > now,
+  );
   const target = session?.scheduled_start ?? `${event.race_date}T12:00:00Z`;
   const left = timeLeft(new Date(target).getTime(), now);
   const forecast = useForecasts(event.id).data?.find((f) => f.session_id === session?.id);
@@ -61,35 +69,50 @@ export function NextRaceHero({ event }: { event: Event }) {
             </p>
           </div>
 
-          <div>
-            <p className="text-sm font-semibold text-muted">
-              {session
-                ? t("home.startsIn", { session: sessionLabel(session.kind, t) })
-                : t("home.nextRace")}
-            </p>
-            <div
-              role="timer"
-              aria-label={t("countdown.label", {
-                days: left.days,
-                hours: left.hours,
-                minutes: left.minutes,
-              })}
-              className="mt-1 flex gap-6 sm:gap-9"
-            >
-              {parts.map(([value, unit]) => (
-                <span key={unit} aria-hidden="true" className="flex flex-col">
-                  <span
-                    key={value}
-                    className="num timing animate-[tick_0.45s_ease-out] text-7xl leading-[0.85] sm:text-9xl"
-                    style={{ color: readable(accent, 80) }}
-                  >
-                    {two(value)}
-                  </span>
-                  <span className="mt-1 text-xs font-semibold text-muted">{unit}</span>
-                </span>
-              ))}
+          {running ? (
+            <div className="flex flex-col items-start gap-3">
+              <p
+                className="display flex items-center gap-3 text-3xl sm:text-5xl"
+                style={{ color: readable(accent, 80) }}
+              >
+                <span aria-hidden="true" className="size-3 animate-pulse rounded-full bg-mark" />
+                {t("home.underway", { session: sessionLabel(running.kind, t) })}
+              </p>
+              <Link to="/live" className={pillGlass}>
+                {t("home.watchLive")}
+              </Link>
             </div>
-          </div>
+          ) : (
+            <div>
+              <p className="text-sm font-semibold text-muted">
+                {session
+                  ? t("home.startsIn", { session: sessionLabel(session.kind, t) })
+                  : t("home.nextRace")}
+              </p>
+              <div
+                role="timer"
+                aria-label={t("countdown.label", {
+                  days: left.days,
+                  hours: left.hours,
+                  minutes: left.minutes,
+                })}
+                className="mt-1 flex gap-6 sm:gap-9"
+              >
+                {parts.map(([value, unit]) => (
+                  <span key={unit} aria-hidden="true" className="flex flex-col">
+                    <span
+                      key={value}
+                      className="num timing animate-[tick_0.45s_ease-out] text-7xl leading-[0.85] sm:text-9xl"
+                      style={{ color: readable(accent, 80) }}
+                    >
+                      {two(value)}
+                    </span>
+                    <span className="mt-1 text-xs font-semibold text-muted">{unit}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             <Link to={`/events/${String(event.id)}`} className={pillPrimary}>

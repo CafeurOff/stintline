@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 
 from racedata.sources import build_fixture_sources
 from stintline.ingestion import history
-from stintline.racing.models import Event
+from stintline.racing.models import Event, Session, SessionKind
 
 pytestmark = pytest.mark.django_db
 
@@ -36,6 +36,26 @@ def test_home_shows_next_event_last_podium_and_leaders(seeded: None) -> None:
     assert len(body["drivers"]) == 5
     assert body["drivers"][0]["driver"]["code"] == "NOR"
     assert body["constructors"][0]["team"]["ref"] == "mclaren"
+
+
+def test_on_race_day_the_grand_prix_gives_way_when_the_flag_falls(seeded: None) -> None:
+    race = Session.objects.get(event__name="Hungarian Grand Prix", kind=SessionKind.RACE)
+    assert race.ends_at is not None
+    during = race.ends_at - dt.timedelta(minutes=30)
+    after = race.ends_at + dt.timedelta(minutes=5)
+
+    with mock.patch("django.utils.timezone.now", return_value=during):
+        racing = APIClient().get("/api/v1/home")
+    with mock.patch("django.utils.timezone.now", return_value=after):
+        finished = APIClient().get("/api/v1/home")
+
+    assert during.date() == after.date()
+    assert racing.json()["next_event"]["name"] == "Hungarian Grand Prix"
+    assert racing.json()["last_race"]["event"]["name"] != "Hungarian Grand Prix"
+    assert finished.json()["next_event"]["name"] == "Dutch Grand Prix"
+    assert finished.json()["last_race"]["event"]["name"] == "Hungarian Grand Prix"
+    assert finished["ETag"] != racing["ETag"]
+    assert finished["Cache-Control"] == "public, max-age=300"
 
 
 def test_home_without_any_race_is_empty(db: None) -> None:

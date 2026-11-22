@@ -19,11 +19,13 @@ def etag_for(*parts: object) -> str:
     return f'"{digest}"'
 
 
-def cached_response(request: Request, data: Any, *etag_parts: object) -> Response:
+def cached_response(
+    request: Request, data: Any, *etag_parts: object, max_age: int = HISTORICAL_MAX_AGE_S
+) -> Response:
     """Return 304 when the client already has this version, else the data with
     ``ETag`` and ``Cache-Control`` headers."""
     etag = etag_for(*etag_parts)
-    headers = {"ETag": etag, "Cache-Control": f"public, max-age={HISTORICAL_MAX_AGE_S}"}
+    headers = {"ETag": etag, "Cache-Control": f"public, max-age={max_age}"}
     if etag in request.headers.get("If-None-Match", ""):
         return Response(status=status.HTTP_304_NOT_MODIFIED, headers=headers)
     return Response(data, headers=headers)
