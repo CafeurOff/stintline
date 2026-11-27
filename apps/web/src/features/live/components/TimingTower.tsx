@@ -71,33 +71,36 @@ export function TimingTower({
   const { t, f } = i18n;
   const sectors = Math.max(0, ...cars.map((c) => c.sectors.length));
   return (
-    <div className="relative overflow-x-auto">
-      <table className="data-table">
+    <div className="@container relative min-h-0 flex-1 overflow-auto">
+      <table className="data-table text-sm [&_td]:px-2 [&_td]:py-1.5 [&_th]:sticky [&_th]:top-0 [&_th]:z-10 [&_th]:bg-panel [&_th]:px-2 [&_th]:py-2">
         <caption className="sr-only">{t("live.order")}</caption>
         <thead>
           <tr>
             <th className="num">{t("col.position")}</th>
-            <th className="num hidden sm:table-cell">
+            <th className="num hidden @xl:table-cell">
               <span className="sr-only">{t("live.sinceStart")}</span>
             </th>
             <th>{t("col.driver")}</th>
             <th className="num">{t("live.gap")}</th>
-            <th className="num hidden sm:table-cell">{t("live.interval")}</th>
+            <th className="num hidden @2xl:table-cell">{t("live.interval")}</th>
             {Array.from({ length: sectors }, (_, i) => (
-              <th key={i} className="hidden md:table-cell">
+              <th key={i} className="hidden @lg:table-cell">
                 {t("live.sector.short", { n: i + 1 })}
               </th>
             ))}
             <th>{t("live.tyres")}</th>
-            <th className="num hidden md:table-cell">{t("live.stops")}</th>
-            <th className="num hidden lg:table-cell">{t("live.lastLap")}</th>
+            <th className="num hidden @3xl:table-cell">{t("live.stops")}</th>
+            <th className="num hidden @xs:table-cell">{t("live.lastLap")}</th>
           </tr>
         </thead>
         <tbody>
           {cars.map((car) => (
-            <tr key={car.number} className={car.number === selected ? "bg-raised" : ""}>
+            <tr
+              key={car.number}
+              className={`${car.number === selected ? "bg-raised" : ""} ${car.in_pit || car.retired ? "text-muted" : ""}`}
+            >
               <td className="num font-bold">{car.position ?? "—"}</td>
-              <td className="num hidden sm:table-cell">
+              <td className="num hidden @xl:table-cell">
                 {car.grid != null && car.position != null && (
                   <Move value={car.grid - car.position} />
                 )}
@@ -109,11 +112,11 @@ export function TimingTower({
                   onClick={() => {
                     onSelect(car.number);
                   }}
-                  className="flex items-center gap-2 font-semibold hover:underline"
+                  className="timing flex items-center gap-2 font-bold whitespace-nowrap hover:underline"
                 >
                   <span
                     aria-hidden="true"
-                    className="h-4 w-1 rounded-full"
+                    className="h-4 w-1 shrink-0 rounded-full"
                     style={{ backgroundColor: teamColour(car.colour) }}
                   />
                   {car.code}
@@ -129,13 +132,13 @@ export function TimingTower({
                 </button>
               </td>
               <td className="num">{gapText(car, i18n)}</td>
-              <td className="num hidden sm:table-cell">
+              <td className="num hidden @2xl:table-cell">
                 {car.interval_s == null ? "" : `+${f.number(car.interval_s, 3)}`}
               </td>
               {Array.from({ length: sectors }, (_, i) => {
                 const sector = car.sectors[i];
                 return (
-                  <td key={i} className="hidden md:table-cell">
+                  <td key={i} className="hidden @lg:table-cell">
                     {sector && <SectorCell sector={sector} index={i} />}
                   </td>
                 );
@@ -151,13 +154,13 @@ export function TimingTower({
                   )}
                 </span>
               </td>
-              <td className="num hidden md:table-cell">{car.pit_stops}</td>
-              <td className="num hidden lg:table-cell">{f.lapTime(car.last_lap_s)}</td>
+              <td className="num hidden @3xl:table-cell">{car.pit_stops}</td>
+              <td className="num hidden @xs:table-cell">{f.lapTime(car.last_lap_s)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="mt-2 hidden flex-wrap gap-x-4 gap-y-1 px-1 text-xs text-muted md:flex">
+      <p className="hidden flex-wrap gap-x-4 gap-y-1 border-t border-line px-3 py-2 text-xs text-muted @lg:flex">
         <Legend tone="bg-t-purple" label={t("live.sector.overall")} />
         <Legend tone="bg-t-green" label={t("live.sector.personal")} />
         <Legend tone="bg-t-yellow" label={t("live.sector.slower")} />

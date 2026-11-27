@@ -79,13 +79,20 @@ class Command(BaseCommand):
                 # Recording is a bonus: the live view must run without it.
                 log.warning("live_recording_disabled", path=str(path), error=str(exc))
                 self.stderr.write(f"Cannot record to {path} ({exc}); continuing without")
-        flush = sync_to_async(publisher.publish_if_due)
+        send = sync_to_async(publisher.send)
+        load_circuit = sync_to_async(publisher.load_circuit)
+
+        async def flush(*, force: bool = False) -> None:
+            if publisher.needs_circuit():
+                await load_circuit()
+            data = publisher.take_if_due(force=force)
+            if data is not None:
+                await send(data)
 
         async def on_event(event: Event) -> None:
             publisher.apply(event)
             if recorder is not None:
                 recorder.write(event)
-            await flush()
 
         async def heartbeat() -> None:
             while True:
@@ -104,11 +111,12 @@ class Command(BaseCommand):
                 self.stdout.write(f"Replaying {replay} at x{speed}")
                 async for event in recording.replay(replay, speed=speed):
                     await on_event(event)
-                await sync_to_async(publisher.publish_if_due)(force=True)
+                await flush(force=True)
                 self.stdout.write(self.style.SUCCESS("Replay finished"))
             else:
                 self.stdout.write("Following the live timing feed (Ctrl+C to stop)")
                 await run_forever(on_event, connect=_connect)
+                await flush(force=True)
         finally:
             ticker.cancel()
             if listener is not None:

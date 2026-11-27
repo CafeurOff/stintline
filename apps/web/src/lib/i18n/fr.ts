@@ -691,6 +691,8 @@ export const fr: Record<MessageKey, string> = {
     "Pas encore de tracé de ce circuit : il apparaît dès qu'une course y a été importée.",
   "live.side": "Pilote choisi, radios et direction de course",
   "live.order": "Ordre en piste",
+  "live.inPitList": "Au stand",
+  "live.remaining": "Temps restant",
   "live.gap": "Écart",
   "live.interval": "Intervalle",
   "live.tyres": "Pneus",

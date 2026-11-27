@@ -18,6 +18,7 @@ export const liveSnapshot = {
   total_laps: 71,
   track_status: "clear",
   remaining: "00:00:00",
+  remaining_s: 0,
   cars: [
     {
       number: 3,
@@ -42,6 +43,8 @@ export const liveSnapshot = {
       tyre_age: 32,
       tyre_new: false,
       lap_progress: 0.864,
+      progress_age_s: 1.2,
+      lap_rate: 0.0125,
       grid: 6,
       sectors: [
         {
@@ -94,6 +97,8 @@ export const liveSnapshot = {
       tyre_age: 32,
       tyre_new: false,
       lap_progress: 0.864,
+      progress_age_s: 1.2,
+      lap_rate: 0.0125,
       grid: 4,
       sectors: [
         {
@@ -146,6 +151,8 @@ export const liveSnapshot = {
       tyre_age: 34,
       tyre_new: false,
       lap_progress: 0.864,
+      progress_age_s: 1.2,
+      lap_rate: 0.0125,
       grid: 2,
       sectors: [
         {
@@ -207,6 +214,8 @@ export const liveSnapshot = {
       tyre_age: 32,
       tyre_new: false,
       lap_progress: 1.0,
+      progress_age_s: 1.2,
+      lap_rate: 0.0125,
       grid: 1,
       sectors: [
         {

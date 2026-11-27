@@ -1,5 +1,5 @@
 import type { Schema } from "@stintline/api-types";
-import { useId } from "react";
+import { useId, useMemo } from "react";
 
 import { useElementWidth } from "@/lib/useElementWidth";
 
@@ -30,8 +30,12 @@ interface TrackMapProps {
   title: string;
   /** Circuit colour lighting the racing line; race red by default. */
   accent?: string;
+  /** Size of the drawing; by default it leaves room for the panels around it. */
+  sizeClassName?: string;
   onSelect: (carNumber: number) => void;
 }
+
+const DEFAULT_SIZE = "max-h-[calc(100vh-26rem)] min-h-64";
 
 const CAR_RADIUS = 12;
 const LABEL_SIZE = 20;
@@ -52,6 +56,7 @@ export function TrackMap({
   ghost,
   title,
   accent = "var(--color-mark)",
+  sizeClassName = DEFAULT_SIZE,
   onSelect,
 }: TrackMapProps) {
   const titleId = useId();
@@ -60,13 +65,70 @@ export function TrackMap({
   const k = Math.min(Math.max(COMFORT_WIDTH / width, 1), MAX_MARKER_SCALE);
   const r = CAR_RADIUS * k;
   const fontSize = LABEL_SIZE * k;
-  const path = `M${track.points.map(([x, y]) => `${x} ${y}`).join(" L")} Z`;
-  const [a = [0, 0], b = [0, 0]] = [track.points[0], track.points[3]];
-  const [ax = 0, ay = 0] = a;
-  const [bx = 0, by = 0] = b;
-  const length = Math.hypot(bx - ax, by - ay) || 1;
-  const nx = (-(by - ay) / length) * (TARMAC / 2 + 4);
-  const ny = ((bx - ax) / length) * (TARMAC / 2 + 4);
+  // The circuit is drawn once per outline: cars move every frame on the live page.
+  const circuit = useMemo(() => {
+    const path = `M${track.points.map(([x, y]) => `${x} ${y}`).join(" L")} Z`;
+    const [a = [0, 0], b = [0, 0]] = [track.points[0], track.points[3]];
+    const [ax = 0, ay = 0] = a;
+    const [bx = 0, by = 0] = b;
+    const length = Math.hypot(bx - ax, by - ay) || 1;
+    const nx = (-(by - ay) / length) * (TARMAC / 2 + 4);
+    const ny = ((bx - ax) / length) * (TARMAC / 2 + 4);
+    return (
+      <g aria-hidden="true">
+        <path
+          d={path}
+          fill="none"
+          stroke="black"
+          strokeOpacity={0.55}
+          strokeWidth={TARMAC + 18}
+          strokeLinejoin="round"
+          transform="translate(0 10)"
+          filter={`url(#${glowId})`}
+        />
+        <path
+          d={path}
+          fill="none"
+          stroke={accent}
+          strokeOpacity={0.35}
+          strokeWidth={TARMAC + 10}
+          strokeLinejoin="round"
+          filter={`url(#${glowId})`}
+        />
+        <path
+          d={path}
+          fill="none"
+          stroke="var(--color-track-edge)"
+          strokeWidth={TARMAC + 4}
+          strokeLinejoin="round"
+        />
+        <path
+          d={path}
+          fill="none"
+          stroke="var(--color-track)"
+          strokeWidth={TARMAC}
+          strokeLinejoin="round"
+        />
+        <path
+          d={path}
+          fill="none"
+          stroke={accent}
+          strokeOpacity={0.85}
+          strokeWidth={2.5}
+          strokeLinejoin="round"
+        />
+        <line
+          x1={ax + nx}
+          y1={ay + ny}
+          x2={ax - nx}
+          y2={ay - ny}
+          stroke="var(--color-ink)"
+          strokeWidth={5}
+          strokeDasharray="5 5"
+        />
+      </g>
+    );
+  }, [track.points, accent, glowId]);
 
   return (
     <div ref={ref} className="min-w-0">
@@ -74,7 +136,7 @@ export function TrackMap({
         viewBox={`-30 -30 ${track.width + 60} ${track.height + 60}`}
         role="group"
         aria-labelledby={titleId}
-        className="mx-auto block h-auto max-h-[calc(100vh-26rem)] min-h-64 w-full overflow-visible"
+        className={`mx-auto block h-auto w-full overflow-visible ${sizeClassName}`}
       >
         <title id={titleId}>{title}</title>
         <defs>
@@ -82,58 +144,7 @@ export function TrackMap({
             <feGaussianBlur stdDeviation="9" />
           </filter>
         </defs>
-        <g aria-hidden="true">
-          <path
-            d={path}
-            fill="none"
-            stroke="black"
-            strokeOpacity={0.55}
-            strokeWidth={TARMAC + 18}
-            strokeLinejoin="round"
-            transform="translate(0 10)"
-            filter={`url(#${glowId})`}
-          />
-          <path
-            d={path}
-            fill="none"
-            stroke={accent}
-            strokeOpacity={0.35}
-            strokeWidth={TARMAC + 10}
-            strokeLinejoin="round"
-            filter={`url(#${glowId})`}
-          />
-          <path
-            d={path}
-            fill="none"
-            stroke="var(--color-track-edge)"
-            strokeWidth={TARMAC + 4}
-            strokeLinejoin="round"
-          />
-          <path
-            d={path}
-            fill="none"
-            stroke="var(--color-track)"
-            strokeWidth={TARMAC}
-            strokeLinejoin="round"
-          />
-          <path
-            d={path}
-            fill="none"
-            stroke={accent}
-            strokeOpacity={0.85}
-            strokeWidth={2.5}
-            strokeLinejoin="round"
-          />
-          <line
-            x1={ax + nx}
-            y1={ay + ny}
-            x2={ax - nx}
-            y2={ay - ny}
-            stroke="var(--color-ink)"
-            strokeWidth={5}
-            strokeDasharray="5 5"
-          />
-        </g>
+        {circuit}
         {ghost && ghost.zone.length > 1 && (
           <path
             d={`M${ghost.zone.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L")}`}

@@ -2,7 +2,8 @@
 
 The latest snapshot is kept in the cache (served by ``GET /api/v1/live`` and sent to new
 WebSocket clients); every snapshot is broadcast to the ``live`` Channels group, at most
-once per ``PUBLISH_INTERVAL_S``.
+once per ``PUBLISH_INTERVAL_S``. Feed events are only merged as they arrive: publishing
+runs on its own beat, so a burst of updates never holds up reading the feed.
 """
 
 from __future__ import annotations
@@ -23,7 +24,9 @@ from stintline.live.strategy import pit_now
 
 GROUP = "live"
 CACHE_KEY = "live:snapshot"
-PUBLISH_INTERVAL_S = 1.0
+PUBLISH_INTERVAL_S = 0.5
+"""Half a second: cars move between timing loops on the page, so a faster beat only adds
+traffic, and a slower one makes the tower lag behind the feed."""
 STALE_AFTER_S = 120
 """A snapshot older than this means the live process stopped: the UI shows offline."""
 
@@ -40,6 +43,8 @@ class Publisher:
         self._context = context
         self._dirty = False
         self._last_publish = 0.0
+        self._circuits: dict[int | None, CircuitContext] = {}
+        """Context per circuit key, read once (it needs the database)."""
         self.transcripts: dict[str, str] = {}
         """What was said in each radio clip, by URL, filled by ``live.radio`` (ADR 0029)."""
         self.radio_urls: list[str] = []
@@ -52,12 +57,32 @@ class Publisher:
             self.state.apply_feed(event.topic, event.payload)
         else:
             return
-        self.history.update(self.state)
+        self.history.update(self.state, at=self._clock())
         self._dirty = True
 
+    def _circuit_key(self) -> int | None:
+        circuit = (self.state.get("SessionInfo").get("Meeting") or {}).get("Circuit") or {}
+        key = circuit.get("Key") if isinstance(circuit, dict) else None
+        try:
+            return int(str(key)) if key is not None else None
+        except ValueError:
+            return None
+
+    def needs_circuit(self) -> bool:
+        """The session's circuit has not been read yet: call :meth:`load_circuit` from a
+        thread allowed to query the database before :meth:`take_if_due`."""
+        return self._circuit_key() not in self._circuits
+
+    def load_circuit(self) -> CircuitContext:
+        key = self._circuit_key()
+        context = self._circuits.get(key)
+        if context is None:
+            context = self._circuits[key] = self._context(key)
+        return context
+
     def snapshot(self) -> dict[str, Any]:
-        live = view(self.state, self.history)
-        circuit = self._context(live.session.circuit_key)
+        live = view(self.state, self.history, now=self._clock())
+        circuit = self.load_circuit()
         stops = pit_now(live.cars, circuit.pit_loss_s) if circuit.pit_loss_s is not None else {}
         data = live.model_dump(mode="json")
         for car in data["cars"]:
@@ -86,17 +111,31 @@ class Publisher:
         self.transcripts[url] = text
         self._dirty = True
 
-    def publish_if_due(self, *, force: bool = False) -> bool:
+    def take_if_due(self, *, force: bool = False) -> dict[str, Any] | None:
+        """The snapshot to publish now, if the state changed and the beat allows it.
+
+        Built on the thread that merges the feed (it reads the state being merged), then
+        handed to :meth:`send`, which may run elsewhere."""
         now = self._clock()
         if not self._dirty or (not force and now - self._last_publish < PUBLISH_INTERVAL_S):
-            return False
+            return None
         data = self.snapshot()
+        self._dirty = False
+        self._last_publish = now
+        return data
+
+    @staticmethod
+    def send(data: dict[str, Any]) -> None:
         cache.set(CACHE_KEY, data, STALE_AFTER_S)
         layer = get_channel_layer()
         if layer is not None:
             async_to_sync(layer.group_send)(GROUP, {"type": "live.snapshot", "data": data})
-        self._dirty = False
-        self._last_publish = now
+
+    def publish_if_due(self, *, force: bool = False) -> bool:
+        data = self.take_if_due(force=force)
+        if data is None:
+            return False
+        self.send(data)
         return True
 
 

@@ -3958,7 +3958,17 @@ components:
         lap_progress:
           type: number
           format: double
-          description: Share of the current lap completed
+          description: Share of the lap (in time) done at the last timing loop passed
+        progress_age_s:
+          type: number
+          format: double
+          nullable: true
+          description: Seconds since the car passed that timing loop
+        lap_rate:
+          type: number
+          format: double
+          nullable: true
+          description: Recent pace between timing loops, in laps per second
         grid:
           type: integer
           nullable: true
@@ -3983,6 +3993,7 @@ components:
       - in_pit
       - interval_s
       - lap_progress
+      - lap_rate
       - laps
       - laps_behind
       - last_lap_s
@@ -3992,6 +4003,7 @@ components:
       - pit_out
       - pit_stops
       - position
+      - progress_age_s
       - retired
       - sectors
       - stopped
@@ -4074,6 +4086,11 @@ components:
         remaining:
           type: string
           nullable: true
+        remaining_s:
+          type: number
+          format: double
+          nullable: true
+          description: Seconds left on the session clock when published
         cars:
           type: array
           items:
@@ -4130,6 +4147,7 @@ components:
       - race_control
       - reference_session_id
       - remaining
+      - remaining_s
       - session
       - team_radio
       - timeline

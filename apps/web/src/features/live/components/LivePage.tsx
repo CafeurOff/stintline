@@ -13,8 +13,9 @@ import { Offline } from "./Offline";
 
 const DELAY_KEY = "stintline-tv-delay";
 
-/** Map refresh while cars move between two feed updates. */
-const TICK_MS = 250;
+/** How often the page looks for the snapshot due under a TV delay. Without a delay, the
+ * page follows the socket and never ticks (cars move on their own, see `LiveTrack`). */
+const DELAY_TICK_MS = 500;
 
 function storedDelay(): TvDelay {
   try {
@@ -31,7 +32,7 @@ function useTicker(active: boolean): number {
     if (!active) return;
     const id = setInterval(() => {
       setNow(Date.now());
-    }, TICK_MS);
+    }, DELAY_TICK_MS);
     return () => {
       clearInterval(id);
     };
@@ -47,8 +48,8 @@ export function LivePage() {
   const online = status.data !== undefined && status.data.state !== "offline";
   const { buffer, connected } = useLiveSocket(online);
   const [delay, setDelay] = useState<TvDelay>(storedDelay);
-  const now = useTicker(online);
-  const shown = delayed(buffer, now, delay);
+  const now = useTicker(online && delay > 0);
+  const shown = delay > 0 ? delayed(buffer, now, delay) : (buffer.at(-1) ?? null);
   const snapshot = shown?.snapshot ?? status.data?.snapshot ?? null;
 
   if (status.isError) {
@@ -61,7 +62,6 @@ export function LivePage() {
     <Live
       snapshot={snapshot}
       receivedAt={shown?.receivedAt ?? now}
-      now={now}
       finished={status.data.state === "finished"}
       connected={connected}
       delay={delay}
