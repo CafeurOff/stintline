@@ -681,6 +681,8 @@ export const en = {
   "live.noTrack": "No drawing of this circuit yet: it appears once a race here has been imported.",
   "live.side": "Selected driver, team radio and race control",
   "live.order": "Running order",
+  "live.inPitList": "In the pits",
+  "live.remaining": "Time left",
   "live.gap": "Gap",
   "live.interval": "Interval",
   "live.tyres": "Tyres",
