@@ -12,6 +12,8 @@ show the whole session.
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -48,6 +50,11 @@ purple = overall best, pit = in the pit lane. Other non-zero codes count as yell
 EARLIER_SESSION_MARGIN = timedelta(minutes=30)
 """``StatusSeries`` also lists earlier sessions of the weekend: entries older than this
 before the session start are left out of the timeline."""
+LAP_RATE_RANGE = (1 / 600, 1 / 40)
+"""Plausible pace between two timing loops, in laps per second: a lap between 40 s and
+10 min. A rate outside it (pit stop, timing hiccup, reconnection) is not learnt."""
+LAP_RATE_SMOOTHING = 0.5
+"""Weight of the newest loop-to-loop pace in the smoothed rate (exponential average)."""
 WEATHER_POINTS_KEPT = 200
 PIT_TIMES_KEPT = 200
 _LAP_TIME = re.compile(r"^(?:(\d+):)?(\d+(?:\.\d+)?)$")
@@ -99,7 +106,12 @@ class LiveCar(_DTO):
     tyre_age: int | None
     tyre_new: bool | None
     lap_progress: float
-    """Share of the current lap completed, from the mini-sectors passed (0 to 1)."""
+    """Share of the current lap completed at the last timing loop passed (0 to 1), in time:
+    mini-sectors weighted by the car's sector times."""
+    progress_age_s: float | None = None
+    """Seconds since the car passed that timing loop (``None`` when not tracked)."""
+    lap_rate: float | None = None
+    """Recent pace between timing loops, in laps per second (``None`` until learnt)."""
     grid: int | None
     sectors: list[LiveSector]
 
@@ -223,15 +235,42 @@ def _float(value: Any) -> float | None:
         return None
 
 
-def _progress(line: dict[str, Any]) -> float:
-    done = total = 0
+def _segment_lists(line: dict[str, Any]) -> list[list[Any]]:
     sectors = line.get("Sectors") or []
+    out: list[list[Any]] = []
     for sector in sectors if isinstance(sectors, list) else []:
-        segments = (sector or {}).get("Segments") or []
-        for segment in segments if isinstance(segments, list) else []:
-            total += 1
-            done += bool((segment or {}).get("Status"))
-    return round(done / total, 3) if total else 0.0
+        segments = (sector or {}).get("Segments") if isinstance(sector, dict) else None
+        out.append(segments if isinstance(segments, list) else [])
+    return out
+
+
+def lap_fraction(line: dict[str, Any], sector_times: Sequence[float | None] = ()) -> float:
+    """Share of the lap done at the last timing loop passed.
+
+    The furthest mini-sector with a status is where the car is: loops can miss a car
+    (holes in the middle of a lap), so counting the lit mini-sectors would place it
+    behind. Mini-sectors are spread over their sector, and sectors weighted by the car's
+    own sector times when all are known (the outline is spaced in time), else by their
+    number of mini-sectors.
+    """
+    segments = _segment_lists(line)
+    counts = [len(s) for s in segments]
+    last: tuple[int, int] | None = None
+    for i, sector in enumerate(segments):
+        for j, segment in enumerate(sector):
+            if _int((segment or {}).get("Status")) if isinstance(segment, dict) else None:
+                last = (i, j)
+    if last is None or not sum(counts):
+        return 0.0
+    times = list(sector_times)
+    weights: list[float] = (
+        [t or 0.0 for t in times]
+        if len(times) == len(counts) and all(t is not None and t > 0 for t in times)
+        else [float(c) for c in counts]
+    )
+    i, j = last
+    done = sum(weights[:i]) + weights[i] * (j + 1) / counts[i]
+    return round(min(done / sum(weights), 1.0), 4)
 
 
 def _segment(value: Any) -> str:
@@ -269,7 +308,16 @@ def _tyres(app: dict[str, Any]) -> tuple[str | None, int | None, bool | None]:
     return stint.get("Compound"), age, None if new is None else str(new).lower() == "true"
 
 
-def _car(number: str, line: dict[str, Any], driver: dict[str, Any], app: dict[str, Any]) -> LiveCar:
+def _car(
+    number: str,
+    line: dict[str, Any],
+    driver: dict[str, Any],
+    app: dict[str, Any],
+    *,
+    track: CarTrack | None,
+    now: float | None,
+    sector_times: Sequence[float | None],
+) -> LiveCar:
     gap_s, laps_behind = gap(line.get("GapToLeader"))
     interval = line.get("IntervalToPositionAhead") or {}
     compound, age, new = _tyres(app)
@@ -295,7 +343,9 @@ def _car(number: str, line: dict[str, Any], driver: dict[str, Any], app: dict[st
         compound=compound,
         tyre_age=age,
         tyre_new=new,
-        lap_progress=_progress(line),
+        lap_progress=track.fraction if track else lap_fraction(line, sector_times),
+        progress_age_s=round(max(now - track.at, 0.0), 3) if track and now is not None else None,
+        lap_rate=round(track.rate, 6) if track and track.rate is not None else None,
         grid=_int(app.get("GridPos")) or None,
         sectors=_sectors(line),
     )
@@ -356,15 +406,71 @@ def _period(
     )
 
 
+@dataclass(slots=True)
+class CarTrack:
+    """Where a car was at the last timing loop it passed, when, and its recent pace."""
+
+    fraction: float
+    at: float
+    rate: float | None = None
+
+
+def _wrapped(delta: float) -> float:
+    """A change of lap fraction folded into [-0.5, 0.5): crossing the line is a small step."""
+    return (delta + 0.5) % 1.0 - 0.5
+
+
 class SessionHistory:
     """What the feed shows only once: pit-lane times (deleted from the topic after a
-    while) and weather readings, kept per lap."""
+    while), weather readings kept per lap, each car's last sector times, and when each
+    car passed its last timing loop (with ``at``, the time the update was applied)."""
 
     def __init__(self) -> None:
         self._pits: dict[tuple[int, int | None], float] = {}
         self._weather: dict[int | None, WeatherPoint] = {}
+        self._sector_times: dict[str, list[float | None]] = {}
+        self.tracks: dict[str, CarTrack] = {}
 
-    def update(self, state: LiveState) -> None:
+    def sector_times(self, number: str) -> list[float | None]:
+        return self._sector_times.get(number, [])
+
+    def _follow(self, lines: dict[str, Any], at: float) -> None:
+        for number, line in lines.items():
+            if not isinstance(line, dict):
+                continue
+            known = self._sector_times.setdefault(number, [])
+            sectors = line.get("Sectors") or []
+            for i, sector in enumerate(sectors if isinstance(sectors, list) else []):
+                value = (
+                    lap_seconds((sector or {}).get("Value")) if isinstance(sector, dict) else None
+                )
+                while len(known) <= i:
+                    known.append(None)
+                if value:
+                    known[i] = value
+            fraction = lap_fraction(line, known)
+            track = self.tracks.get(number)
+            if track is None:
+                self.tracks[number] = CarTrack(fraction, at)
+                continue
+            if fraction == track.fraction:
+                continue
+            step, elapsed = _wrapped(fraction - track.fraction), at - track.at
+            low, high = LAP_RATE_RANGE
+            if step > 0 and elapsed > 0 and low <= step / elapsed <= high:
+                pace = step / elapsed
+                track.rate = (
+                    pace
+                    if track.rate is None
+                    else track.rate + LAP_RATE_SMOOTHING * (pace - track.rate)
+                )
+            track.fraction, track.at = fraction, at
+
+    def update(self, state: LiveState, at: float | None = None) -> None:
+        if at is not None:
+            lines = state.get("TimingData").get("Lines") or {}
+            if isinstance(lines, dict):
+                self._follow(lines, at)
         times = state.get("PitLaneTimeCollection").get("PitTimes") or {}
         for key, item in times.items() if isinstance(times, dict) else []:
             if not isinstance(item, dict):
@@ -400,14 +506,26 @@ def _raining(weather: dict[str, Any]) -> bool:
     return str(weather.get("Rainfall")) not in ("", "0", "None")
 
 
-def view(state: LiveState, history: SessionHistory | None = None) -> LiveView:
+def view(
+    state: LiveState, history: SessionHistory | None = None, now: float | None = None
+) -> LiveView:
+    """The session as the UI shows it. ``now`` (same clock as ``SessionHistory.update``)
+    dates each car's last timing loop."""
     info = state.get("SessionInfo")
     meeting = info.get("Meeting") or {}
     lines = state.get("TimingData").get("Lines") or {}
     apps = state.get("TimingAppData").get("Lines") or {}
     drivers = state.get("DriverList")
     cars = [
-        _car(number, line, drivers.get(number) or {}, apps.get(number) or {})
+        _car(
+            number,
+            line,
+            drivers.get(number) or {},
+            apps.get(number) or {},
+            track=history.tracks.get(number) if history else None,
+            now=now,
+            sector_times=history.sector_times(number) if history else [],
+        )
         for number, line in lines.items()
         if number.isdigit() and isinstance(line, dict)
     ]

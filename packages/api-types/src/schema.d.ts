@@ -1756,9 +1756,19 @@ export interface components {
       tyre_new: boolean | null;
       /**
        * Format: double
-       * @description Share of the current lap completed
+       * @description Share of the lap (in time) done at the last timing loop passed
        */
       lap_progress: number;
+      /**
+       * Format: double
+       * @description Seconds since the car passed that timing loop
+       */
+      progress_age_s: number | null;
+      /**
+       * Format: double
+       * @description Recent pace between timing loops, in laps per second
+       */
+      lap_rate: number | null;
       /** @description Starting position */
       grid: number | null;
       sectors: components["schemas"]["LiveSector"][];

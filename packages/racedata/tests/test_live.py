@@ -26,7 +26,14 @@ from racedata.live.protocol import (
     encode,
     subscribe,
 )
-from racedata.live.snapshot import SessionHistory, gap, lap_seconds, session_start, view
+from racedata.live.snapshot import (
+    SessionHistory,
+    gap,
+    lap_fraction,
+    lap_seconds,
+    session_start,
+    view,
+)
 
 SNAPSHOT = json.loads(
     (FIXTURES_ROOT / "livetiming" / "snapshot-mexico-2026.json").read_text(encoding="utf-8")
@@ -93,6 +100,67 @@ def test_feed_updates_change_the_view() -> None:
 
 
 # ------------------------------------------------------------------ view
+
+
+def line(*sectors: list[int], times: tuple[str, ...] = ()) -> dict[str, Any]:
+    """A TimingData line whose mini-sectors have these status codes."""
+    return {
+        "Sectors": [
+            {"Value": times[i] if i < len(times) else "", "Segments": [{"Status": c} for c in s]}
+            for i, s in enumerate(sectors)
+        ]
+    }
+
+
+def test_lap_fraction_places_the_car_at_the_furthest_loop_passed() -> None:
+    holed = line([2048, 2048], [0, 2048], [0, 0])  # a loop missed in sector 2
+
+    assert lap_fraction(holed) == pytest.approx(4 / 6, abs=1e-3)
+    assert lap_fraction(line([0, 0], [0, 0])) == 0.0
+
+
+def test_lap_fraction_weights_sectors_by_the_car_sector_times() -> None:
+    first_sector_done = line([2048, 2048], [0, 0], [0, 0])
+
+    assert lap_fraction(first_sector_done, [20.0, 40.0, 40.0]) == pytest.approx(0.2)
+    assert lap_fraction(first_sector_done, [20.0, None, 40.0]) == pytest.approx(1 / 3, abs=1e-3)
+
+
+def tracked(history: SessionHistory, at: float, *sectors: list[int]) -> None:
+    live = LiveState()
+    live.apply_snapshot({"TimingData": {"Lines": {"1": line(*sectors)}}})
+    history.update(live, at=at)
+
+
+def test_history_learns_each_car_pace_between_timing_loops() -> None:
+    history = SessionHistory()
+    tracked(history, 100.0, [2048, 0], [0, 0])  # 1/4 of the lap
+    tracked(history, 110.0, [2048, 2048], [0, 0])  # 1/2, ten seconds later
+
+    track = history.tracks["1"]
+    assert (track.fraction, track.at) == (0.5, 110.0)
+    assert track.rate == pytest.approx(0.025)  # a quarter lap in 10 s: a 40 s lap
+
+
+def test_history_ignores_implausible_pace_and_crosses_the_line() -> None:
+    history = SessionHistory()
+    tracked(history, 0.0, [2048, 2048], [2048, 0])  # 3/4
+    tracked(history, 0.1, [2048, 2048], [2048, 2048])  # a quarter lap in 0.1 s: not learnt
+    assert history.tracks["1"].rate is None
+
+    tracked(history, 10.1, [2048, 0], [0, 0])  # over the line to 1/4: a quarter lap in 10 s
+
+    assert history.tracks["1"].rate == pytest.approx(0.025)
+
+
+def test_view_dates_each_car_last_timing_loop() -> None:
+    live, history = state(), SessionHistory()
+    history.update(live, at=50.0)
+
+    car = view(live, history, now=53.5).cars[0]
+
+    assert car.progress_age_s == 3.5
+    assert car.lap_rate is None
 
 
 def test_view_reads_the_session_and_converts_its_start_to_utc() -> None:

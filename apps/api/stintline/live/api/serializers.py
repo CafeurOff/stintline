@@ -61,7 +61,15 @@ class LiveCarSerializer(serializers.Serializer[Any]):
     compound = serializers.CharField(allow_null=True)
     tyre_age = serializers.IntegerField(allow_null=True)
     tyre_new = serializers.BooleanField(allow_null=True)
-    lap_progress = serializers.FloatField(help_text="Share of the current lap completed")
+    lap_progress = serializers.FloatField(
+        help_text="Share of the lap (in time) done at the last timing loop passed"
+    )
+    progress_age_s = serializers.FloatField(
+        allow_null=True, help_text="Seconds since the car passed that timing loop"
+    )
+    lap_rate = serializers.FloatField(
+        allow_null=True, help_text="Recent pace between timing loops, in laps per second"
+    )
     grid = serializers.IntegerField(allow_null=True, help_text="Starting position")
     sectors = LiveSectorSerializer(many=True)
     pit_now = PitNowSerializer(allow_null=True, help_text="Where the car rejoins if it pits now")
