@@ -1,5 +1,5 @@
 # StintLine — live process (ADR 0011, 0030): follows the official live timing hub through the
-# relay, publishes a snapshot every second to the Redis cache and /ws/live, and transcribes
+# relay, publishes a snapshot every half second to the Redis cache and /ws/live, and transcribes
 # new team radio clips (Whisper base.en, ~500 MB). Primary server only (SCHEDULED_UNITS).
 # Installed by vps-infra app-apply; runs /opt/stintline/current.
 [Unit]
