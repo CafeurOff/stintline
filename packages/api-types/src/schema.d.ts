@@ -1806,6 +1806,11 @@ export interface components {
       /** @description clear, yellow, safety_car, virtual_safety_car, vsc_ending, red */
       track_status: string;
       remaining: string | null;
+      /**
+       * Format: double
+       * @description Seconds left on the session clock when published
+       */
+      remaining_s: number | null;
       cars: components["schemas"]["LiveCar"][];
       race_control: components["schemas"]["RaceControl"][];
       team_radio: components["schemas"]["Radio"][];

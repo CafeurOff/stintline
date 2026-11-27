@@ -169,6 +169,8 @@ class LiveView(_DTO):
     total_laps: int | None
     track_status: str
     remaining: str | None
+    remaining_s: float | None = None
+    """Seconds left on the session clock at ``now``, run on while the clock is running."""
     cars: list[LiveCar]
     race_control: list[RaceControl]
     team_radio: list[Radio]
@@ -233,6 +235,19 @@ def _float(value: Any) -> float | None:
         return float(str(value))
     except ValueError:
         return None
+
+
+def remaining_seconds(clock: dict[str, Any], now: float | None) -> float | None:
+    """Session clock left: ``Remaining`` as of ``Utc``, run down to ``now`` (epoch seconds)
+    while ``Extrapolating`` (the clock stops under red flags and between parts)."""
+    match = re.match(r"^(\d+):(\d{2}):(\d{2})$", str(clock.get("Remaining") or ""))
+    if not match:
+        return None
+    left = float(int(match.group(1)) * 3600 + int(match.group(2)) * 60 + int(match.group(3)))
+    since = _utc(clock.get("Utc"))
+    if clock.get("Extrapolating") and since is not None and now is not None:
+        left -= max(now - since.timestamp(), 0.0)
+    return round(max(left, 0.0), 1)
 
 
 def _segment_lists(line: dict[str, Any]) -> list[list[Any]]:
@@ -552,6 +567,7 @@ def view(
         total_laps=_int(lap_count.get("TotalLaps")),
         track_status=TRACK_STATUS.get(str(state.get("TrackStatus").get("Status")), "clear"),
         remaining=state.get("ExtrapolatedClock").get("Remaining"),
+        remaining_s=remaining_seconds(state.get("ExtrapolatedClock"), now),
         cars=cars,
         race_control=[
             RaceControl(

@@ -131,6 +131,9 @@ class LiveSnapshotSerializer(serializers.Serializer[Any]):
         help_text="clear, yellow, safety_car, virtual_safety_car, vsc_ending, red"
     )
     remaining = serializers.CharField(allow_null=True)
+    remaining_s = serializers.FloatField(
+        allow_null=True, help_text="Seconds left on the session clock when published"
+    )
     cars = LiveCarSerializer(many=True)
     race_control = RaceControlSerializer(many=True)
     team_radio = RadioSerializer(many=True)

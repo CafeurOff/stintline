@@ -4086,6 +4086,11 @@ components:
         remaining:
           type: string
           nullable: true
+        remaining_s:
+          type: number
+          format: double
+          nullable: true
+          description: Seconds left on the session clock when published
         cars:
           type: array
           items:
@@ -4142,6 +4147,7 @@ components:
       - race_control
       - reference_session_id
       - remaining
+      - remaining_s
       - session
       - team_radio
       - timeline

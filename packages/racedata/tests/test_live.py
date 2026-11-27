@@ -31,6 +31,7 @@ from racedata.live.snapshot import (
     gap,
     lap_fraction,
     lap_seconds,
+    remaining_seconds,
     session_start,
     view,
 )
@@ -454,3 +455,15 @@ def test_hub_urls_point_at_the_official_hub_or_at_a_relay() -> None:
         "http://localhost:8787/signalrcore/negotiate",
         "ws://localhost:8787/signalrcore",
     )
+
+
+def test_remaining_seconds_run_down_while_the_clock_runs() -> None:
+    utc = "2026-11-27T13:00:00Z"
+    start = datetime(2026, 11, 27, 13, 0, tzinfo=UTC).timestamp()
+    running = {"Remaining": "01:00:00", "Utc": utc, "Extrapolating": True}
+    stopped = {**running, "Extrapolating": False}
+
+    assert remaining_seconds(running, start + 90) == 3510.0
+    assert remaining_seconds(stopped, start + 90) == 3600.0
+    assert remaining_seconds(running, start + 7200) == 0.0
+    assert remaining_seconds({}, start) is None
