@@ -164,6 +164,23 @@ def test_publisher_keeps_pit_lane_times_the_feed_deletes() -> None:
     assert data["weather_history"][0]["lap"] == 71
 
 
+def test_publisher_reads_the_circuit_once_per_session() -> None:
+    calls: list[int | None] = []
+
+    def context(key: int | None) -> CircuitContext:
+        calls.append(key)
+        return CONTEXT
+
+    pub = Publisher(clock=lambda: 0.0, context=context)
+    pub.apply(Snapshot(SNAPSHOT))
+
+    assert pub.needs_circuit() is True
+    pub.take_if_due(force=True)
+    pub.take_if_due(force=True)
+    assert pub.needs_circuit() is False
+    assert calls == [65]
+
+
 def test_publisher_ignores_other_events() -> None:
     pub = publisher([0.0])
     pub.apply(Snapshot({}))
